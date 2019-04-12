@@ -149,8 +149,8 @@ DGsource='Draine'                                        ! set source of dust op
 DGmodel='draine_rv3.1.dat'                               ! set model for dust optical properties
 DGlMIN=66                                                ! set line number where dust properties start
 DGlMAX=560                                               ! set line number where dust properties end
-DGkapV=0.30000E-17                                       ! set volume opacity for pure scattering (1/cm)
-DGkapM=0.20000E+03                                       ! set mass opacity for pure scattering (cm^2/g)
+DGkapV=0.30000E-17                                       ! set volume opacity for pure scattering (1/cm) [Kappa/Density]
+DGkapM=0.20000E+03                                       ! set mass opacity for pure scattering (cm^2/g) [KAPPA(Lambda)]
                                                          ! Wavelengths (WL)
 WLdelta=0.10                                             ! set spacing of optical properties
 WLdcl=0.10                                               ! set weight of slope-change
