@@ -882,11 +882,26 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
     PGy=-0.1E+31                                         !     set PGy to extremely low value
+	
+	
+	!! This section calculates data for the analytic result
+	!! of the MB spectrum.
+	!! We want Log Log space. WTpMB is the probability integrated,
+	!! so here we are taking the numeric differential 
+	!! so as to check the MBB curve is as expected.
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
+	
+	!! This section calculates data for the MBB curve from
+	!! the MCRT version, by calling RT_LumPack_MB.
+	!! Here we are returned an array of times each bin is
+	!! called. This gives us a measure of the probability
+	!! when divided by the NPacketsInverse (frequentist)
+	!! and again is numerically differentiated to check
+	!! that the MBB curve works as expected.
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
     WTpACC=0                                             !     set accumulator to zero
