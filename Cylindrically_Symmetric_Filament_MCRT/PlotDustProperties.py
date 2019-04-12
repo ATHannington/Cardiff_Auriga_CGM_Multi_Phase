@@ -42,7 +42,7 @@ date_created= "05/04/2019"
 #
 ##
 ##
-date_last_edited= "012/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
+date_last_edited= "12/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
 
 																				#Input directory into which to save plots here                                #
 savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
@@ -150,7 +150,7 @@ def func_BB_lam(lambda_arr,hc_kbt_arr):
 	Notes:		Created 11/04/2019 by ATH. Working as of 11/04/2019
 	"""
 	
-	bb_data = 1./((lambda_arr**5)*(np.exp(hc_kbt_arr)-1.))
+	bb_data = 1./((lambda_arr**5)*(np.exp(hc_kbt_arr*(1./lambda_arr.value))-1.))
 	return bb_data
 
 
@@ -391,6 +391,7 @@ for temp in range(0,ntemps,1):													#[FOR] indices up to number of temper
 plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")								#Give plot relevant axes labels and a title.								  #
 plt.ylabel(f"Log10(Planck Function or Spectral Density) [Log10(1/cm^5)]")
 plt.title("Log10(Planck Function or Spectral Density) versus Log10(Wavelength)")
+plt.ylim(ymin=math.log10(1e-4))
 plt.legend()																	#Display plot legend. 														  #
 plt.show()																		#Show plot on screen.														  #
 
@@ -405,6 +406,7 @@ for temp in range(0,ntemps,1):
 plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")
 plt.ylabel(f"Log10(Volume Emissivity) [Log10(1/(cm^3 g))]")
 plt.title("Log10(Volume Emissivity) versus Log10(Wavelength)")
+plt.ylim(ymin=math.log10(1e-4))
 plt.legend()
 plt.show()
 

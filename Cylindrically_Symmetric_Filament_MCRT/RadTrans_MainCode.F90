@@ -507,142 +507,6 @@ ENDIF                                                    ! [ENDIF]
 END SUBROUTINE RT_DustPropertiesFromDraine
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-
-! !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! SUBROUTINE RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
-! !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-! ! This subroutine plots the optical properties of the dust grains, and 
-! ! modified Planck spectra at a selection of temperatures. It is given:
-! !   the number of wavelengths            (WLlTOT);   
-! !   the discrete wavelengths             (WLlam(1:WLlTOT)); 
-! !   the discrete extinction opacities    (WLchi(1:WLlTOT)); 
-! !   and the discrete albedos             (WLalb(1:WLlTOT)).
-
-! IMPLICIT NONE                                            ! [] DECLARATIONS
-! INTEGER,     INTENT(IN)                     :: WLlTOT    ! the number of discrete wavelengths
-! REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT) :: WLlam     ! the discrete  wavelengths
-! REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT) :: WLchi     ! the discrete extinction opacities
-! REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT) :: WLalb     ! the discrete albedos
-! INTEGER                                     :: TEk       ! a dummy temperature ID
-! REAL(KIND=8),DIMENSION(1:5)                 :: teT       ! the prescribed temperatures
-! INTEGER                                     :: WLl       ! a dummy wavelength ID
-! REAL(KIND=8)                                :: WLlamMAX  ! the maximum wavelength
-! REAL(KIND=8)                                :: WLlamMIN  ! the minimum wavelength
-! REAL(KIND=8)                                :: ZZdumR    ! a dummy real
-                                                         ! ! FOR PGPLOT
-! REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGx       ! array for abscissa (log10[lam])
-! REAL(KIND=4)                                :: PGxMAX    ! upper limit on abscissa
-! REAL(KIND=4)                                :: PGxMIN    ! lower limit on abscissa
-! REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGy       ! array for ordinate (log10[chi,PlanckFn])
-! REAL(KIND=4)                                :: PGyMAX    ! upper limit on ordinate
-! REAL(KIND=4)                                :: PGyMIN    ! lower limit on ordinate
-! REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGz       ! array for ordinate (log10[alb,VolEm])
-! REAL(KIND=4)                                :: PGzMAX    ! upper limit on ordinate
-! REAL(KIND=4)                                :: PGzMIN    ! lower limit on ordinate
-
-                                                         ! ! [] DUST PROPERTIES
-! PGxMIN=+0.1E+11                                          ! set PGx_MIN to improbably high value
-! PGxMAX=-0.1E+11                                          ! set PGx_MAX to improbably low value
-! PGyMIN=+0.1E+11                                          ! set PGy_MIN to improbably high value
-! PGyMAX=-0.1E+11                                          ! set PGy_MAX to improbably low value
-! DO WLl=1,WLlTOT                                          ! start loop over wavelengths
-  ! PGx(WLl)=LOG10(WLlam(WLl))                             !   compute LOG10[lam]
-  ! IF (PGx(WLl)<PGxMIN) PGxMIN=PGx(WLl)                   !   reduce PGx_MIN, as appropriate
-  ! IF (PGx(WLl)>PGxMAX) PGxMAX=PGx(WLl)                   !   increase PGx_MAX, as appropriate
-  ! PGy(WLl)=LOG10(WLchi(WLl))                             !   compute LOG10[chi]
-  ! IF (PGy(WLl)<PGyMIN) PGyMIN=PGy(WLl)                   !   reduce PGy_MIN, as appropriate
-  ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)                   !   increase PGy_MAX, as appropriate
-  ! PGz(WLl)=10*WLalb(WLl)                                 !   compute 10 x alb
-! ENDDO                                                    ! end loop over wavelengths
-! ZZdumR=0.1*(PGxMAX-PGxMIN)                               ! compute margin for abscissa
-! PGxMIN=PGxMIN-ZZdumR                                     ! compute minimum abscissa
-! PGxMAX=PGxMAX+ZZdumR                                     ! compute maximum abscissa
-! ZZdumR=0.1*(PGyMAX-PGyMIN)                               ! compute margin for ordinate
-! PGyMIN=PGyMIN-ZZdumR                                     ! compute minimum ordinate
-! PGyMAX=PGyMAX+ZZdumR                                     ! compute maximum ordinate
-! WRITE (*,*) ' '                                          ! print blank line
-! CALL PGBEG(0,'/XWINDOW',1,1)                             ! open PGPLOT to display on screen
-! !CALL PGBEG(0,'/PS',1,2)                                  ! open PGPLOT to produce postscript
-! CALL PGSLW(1)                                            ! select line weight
-! CALL PGSCH(0.9)                                          ! select character height
-! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)              ! construct frame
-! CALL PGLAB('log\d10\u[\gl/\gmm]','     log\d10\u[\gx/cm\u2\dg\u-1\d]  and  10\fia',&
-     ! &'DUST EXTINCTION OPACITY, \gx, AND ALBEDO, \fia\fn, AS A FUNCTION OF WAVELENGTH, \gl.')
-! CALL PGSLS(1)                                            ! select full line
-! CALL PGLINE(WLlTOT,PGx,PGy)                              ! plot extinction curve
-! CALL PGSLS(2)                                            ! select dashed line
-! CALL PGLINE(WLlTOT,PGx,PGz)                              ! plot 10 x albedo
-! PGx(1)=-1.00; PGx(2)=+0.00                               ! set limiting abscissae of lines
-! PGy(1)=-2.70; PGy(2)=-2.70                               ! set limiting ordinates of extinction full-line legend
-! PGz(1)=-3.80; PGz(2)=-3.80                               ! set limiting ordinates of albedo dashed-line legend
-! CALL PGSLS(1)                                            ! select full line
-! CALL PGLINE(2,PGx,PGy)                                   ! draw full line
-! CALL PGTEXT(+0.30,-2.80,'DUST EXTINCTION OPACITY,')      ! print extinction ...
-! CALL PGTEXT(+1.05,-3.20,'log\d10\u[\gx/cm\u2\dg\u-1\d]') ! ... full-line legend
-! CALL PGSLS(2)                                            ! select dashed line
-! CALL PGLINE(2,PGx,PGz)                                   ! draw dashed line
-! CALL PGTEXT(+0.30,-3.90,'DUST ALBEDO, 10\fia\fn')        ! print albedo dashed-line legend
-! CALL PGEND                                               ! close PGPLOT
-! WRITE (*,*) ' '                                          ! print blank line
-
-                                                         ! ! [] PLANCK FUNCTIONS AND VOLUME EMISSIVITIES
-! teT(1)=3.16; teT(2)=10.0; teT(3)=31.6; teT(4)=100.; teT(5)=316. ! input selected temperatures
-! CALL PGBEG(0,'/XWINDOW',1,1)                             ! open PGPLOT to display on screen
-! !CALL PGBEG(0,'/PS',1,2)                                  ! open PGPLOT to produce postscript
-! CALL PGENV(0.2,4.6,-4.2,+0.6,0,0)                        ! construct frame
-! CALL PGLAB('      log\d10\u[\gl/\gmm]','       log\d10\u[\fiB\fn\d\gl\u(\fiT\fn)]  and  log\d10\u[\fij\fn\d\gl\u(\fiT\fn)]',&
-! &'PLANCK FUNCTION, \fiB\fn\d\gl\u(\fiT\fn), AND VOLUME EMISSIVITY, \fij\fn\d\gl\u(\fiT\fn), AS A FUNCTION OF WAVELENGTH, \gl. ')
-! DO TEk=1,5                                               ! start loop over temperatures
-  ! ZZdumR=(0.143878E+05)/teT(TEk)                         !   compute lambda_T=hc/kT
-  ! WLlamMIN=0.03*ZZdumR                                   !   compute minimum significant wavelength
-  ! WLlamMAX=10.0*ZZdumR                                   !   compute maximum significant wavelength
-  ! PGyMAX=-0.1E+21                                        !   set PGyMAX to absurdly low value
-  ! PGzMAX=-0.1E+21                                        !   set PGzMAX to absurdly low value
-  ! PGy=-0.2E+21                                           !   set all PGy to even lower value
-  ! PGz=-0.2E+21                                           !   set all PGz to even lower value
-  ! DO WLl=1,WLlTOT                                        !   start loop over wavelengths
-    ! IF (WLlam(WLl)<WLlamMIN) CYCLE                       !     [IF] wavelength very low, [CYCLE]
-    ! IF (WLlam(WLl)>WLlamMAX) CYCLE                       !     [IF] wavelength very high, [CYCLE]
-    ! PGy(WLl)=1./                                        &!     compute ...........
-           ! &(WLlam(WLl)**5*(EXP(ZZdumR/WLlam(WLl))-1.))  !     ... Planck Function
-    ! PGz(WLl)=PGy(WLl)*WLchi(WLl)*(1.-WLalb(WLl))         !     compute volume emissivity
-    ! PGy(WLl)=LOG10(PGy(WLl))                             !     compute LOG(PGy)
-    ! PGz(WLl)=LOG10(PGz(WLl))                             !     compute LOG(PGz)
-    ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)                 !     update PGyMAX, as appropriate
-    ! IF (PGz(WLl)>PGzMAX) PGzMAX=PGz(WLl)                 !     update PGzMAX, as appropriate
-  ! ENDDO                                                  !   end loop over wavelengths
-  ! PGy=PGy-PGyMAX                                         !   normalise PGy
-  ! PGz=PGz-PGzMAX                                         !   normalise PGz
-  ! CALL PGSLS(2)                                          !   invoke dashed line
-  ! CALL PGLINE(WLlTOT,PGx,PGy)                            !   plot Planck Function
-  ! CALL PGSLS(1)                                          !   invoke full line
-  ! CALL PGLINE(WLlTOT,PGx,PGz)                            !   plot volume emissivity
-  ! CALL PGTEXT(+0.85,+0.13,'316.K')                       !   label 316.K plots
-  ! CALL PGTEXT(+1.30,+0.13,'100.K')                       !   label 100.K plots
-  ! CALL PGTEXT(+1.75,+0.13,'31.6K')                       !   label 31.6K plots
-  ! CALL PGTEXT(+2.25,+0.13,'10.0K')                       !   label 10.0K plots
-  ! CALL PGTEXT(+2.75,+0.13,'3.16K')                       !   label 3.16K plots
-  ! CALL PGTEXT(+3.60,+0.13,'\fiB\fn\d\gl\u(\fiT\fn)')     !   print Planck-Function dashed-line legend
-  ! CALL PGTEXT(+3.62,-0.13,'\fij\fn\d\gl\u(\fiT\fn)')     !   print volume-emissivity full-line legend
-  ! PGx(1)=+3.96; PGx(2)=+4.34                             !   set limiting abscissae of lines 
-  ! PGy(1)=+0.17; PGy(2)=+0.17                             !   set limiting ordinates of Planck-Function dashed-line
-  ! PGz(1)=-0.09; PGz(2)=-0.09                             !   set limiting ordinates of volume-emssivity full-line
-  ! CALL PGSLS(2)                                          !   select dashed line 
-  ! CALL PGLINE(2,PGx,PGy)                                 !   draw Planck-Function dashed line
-  ! CALL PGSLS(1)                                          !   select full line
-  ! CALL PGLINE(2,PGx,PGz)                                 !   draw volume-emissivity full line
-! ENDDO                                                    ! end loop over temperatures
-! CALL PGEND                                               ! close PGPLOT
-! WRITE (*,*) ' '                                          ! print blank line
-
-! !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! END SUBROUTINE RT_PlotDustProperties
-! !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -788,6 +652,23 @@ REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGz       ! array for log10[VolEm
 REAL(KIND=4)                                :: PGzMAX    ! upper limit on log10[VolEm]
 REAL(KIND=4)                                :: PGzMIN    ! lower limit on log10[VolEm]
 
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!ATH Added variables:
+Character(len=50) 							:: BBconstantsFile = "BBconstants.csv", &
+											   & BBdataFile = "BBdata.csv", &
+											   & MBconstantsFile = "MBconstants.csv", &
+											   & MBdataFile = "MBdata.csv", &
+											   & DM1constantsFile = "DM1constants.csv", &
+											   & DM1dataFile = "DM1data.csv", &
+											   & DM2constantsFile = "DM2constants.csv", &
+											   & DM2dataFile = "DM2data.csv", &
+Integer*4 									:: readcheck
+Integer*4 									:: i
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+
                                                          ! [] INITIALISATION
 WTlBBlo=0;   WTlMBlo=0;   WTlDMlo=0                      ! set WTl[BB,MB,DM]lo to zero
 WTlBBup=0;   WTlMBup=0;   WTlDMup=0                      ! set WTl[BB,MB,DM]up to zero
@@ -919,38 +800,68 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
     
 ENDDO                                                    ! end loop over discrete temperatures
 
-! IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNOSTIC PLOTS
-  ! WLlTOTrea=DBLE(WLlTOT)                                 !   compute REAL(WLlTOT)
-  ! WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
-  ! DO WLl=1,WLlTOT                                        !     start loop over wavelengths
-    ! PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
-  ! ENDDO                                                  !     end loop over wavelengths
-  ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
-      ! PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
-                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ! ENDDO                                                !     end loop over wavelengths
-    ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    ! WTpACC=0                                             !     set accumulator to zero
-    ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      ! CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
-      ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    ! ENDDO                                                !     end loop over luminosity packets
-    ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-      ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
-                                          ! &WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
-    ! ENDDO                                                !     end loop over significant wavelengths
-                                                         ! !     [] PLOT BB SPECTRA TO SCREEN
-    ! WRITE (*,*) ' '                                      !     print blank line
-    ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNOSTIC PLOTS
+  WLlTOTrea=DBLE(WLlTOT)                                 !   compute REAL(WLlTOT)
+  WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
+  DO WLl=1,WLlTOT                                        !     start loop over wavelengths
+    PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
+  ENDDO                                                  !     end loop over wavelengths
+  DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
+    PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
+    PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
+    PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
+    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
+      PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
+                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+    ENDDO                                                !     end loop over wavelengths
+    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+    WTpACC=0                                             !     set accumulator to zero
+    DO WLl=1,WTpack                                      !     start loop over luminosity packets
+      CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
+      WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
+    ENDDO                                                !     end loop over luminosity packets
+    PGz=-0.1E+31                                         !     set PGz to extremely low value
+    DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
+      PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
+                                          &WLdlam(WLl))  !       ... probability (ordinate)
+      IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
+    ENDDO                                                !     end loop over significant wavelengths
+                                                         !     [] PLOT BB SPECTRA TO SCREEN
+    WRITE (*,*) ' '                                      !     print blank line
+    WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	OPEN(1,"...")
+	WRITE(1,"()") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
+	CLOSE(1)
+	OPEN(1,"...")
+	WRITE(1,"()") (/WLlam, PGx, PGy, PGz/)
+	
+	
+	
+	OPEN(1,file=trim(adjustl(BBconstantsFile)),iostat=readcheck)
+	WRITE(1,"(A4,1x,A4,1x,A4,1x,A4)") (/"xmin","xmax","ymin","ymax"/)
+	WRITE(1,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3)") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
+	close(1)
+	
+	OPEN(1,file=trim(adjustl(BBdataFile)),iostat=readcheck)
+	WRITE(1,"(A4,1x,A4,1x,A4)") (/"lam","xLL","yBB","zBB"/)
+	WRITE(1,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3)") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
+	close(1)
+	
+	
+	do i = 1, WLlTOT
+		WRITE(1,"(E9.3,1x,E9.3,1x,E9.3)") (/WLlam(i),WLchi(i),WLalb(i)/)
+	enddo
+	
+	CLOSE(1)
+	
+	
+	
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
@@ -961,41 +872,39 @@ ENDDO                                                    ! end loop over discret
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
-    ! &'BB EMISSION PROBABILITIES, \fiWTpBB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    ! CALL PGSLS(1)                                        !     set line style to 'full'
-    ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    ! CALL PGEND                                           !     close PGPLOT
-  ! ENDDO                                                  !   end loop over temperatures
-  ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      ! PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
-                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ! ENDDO                                                !     end loop over wavelengths
-    ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    ! WTpACC=0                                             !     set accumulator to zero
-    ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      ! CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
-      ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    ! ENDDO                                                !     end loop over luminosity packets
-    ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-       ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
-                                          ! &WLdlam(WLl))  !       ... probability (ordinate)
-    ! ENDDO                                                !     end loop over significant wavelengths
-                                                         ! !     [] PLOT MB SPECTRA TO SCREEN
-    ! WRITE (*,*) ' '                                      !     print blank line
-    ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	
+  ENDDO                                                  !   end loop over temperatures
+  
+  DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
+    PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
+    PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
+    PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
+    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    DO WLl=1,WLlTOT                                      !     start loop over wavelengths
+      PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
+                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+    ENDDO                                                !     end loop over wavelengths
+    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+    WTpACC=0                                             !     set accumulator to zero
+    DO WLl=1,WTpack                                      !     start loop over luminosity packets
+      CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
+      WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
+    ENDDO                                                !     end loop over luminosity packets
+    PGz=-0.1E+31                                         !     set PGz to extremely low value
+    DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
+       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
+                                          &WLdlam(WLl))  !       ... probability (ordinate)
+    ENDDO                                                !     end loop over significant wavelengths
+                                                         !     [] PLOT MB SPECTRA TO SCREEN
+    WRITE (*,*) ' '                                      !     print blank line
+    WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
@@ -1006,41 +915,37 @@ ENDDO                                                    ! end loop over discret
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
-    ! &'MB EMISSION PROBABILITIES, \fiWTpMB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    ! CALL PGSLS(1)                                        !     set line style to 'full'
-    ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    ! CALL PGEND                                           !     close PGPLOT
-  ! ENDDO                                                  !   end loop over temperatures
-  ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      ! PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
-                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ! ENDDO                                                !     end loop over wavelengths
-    ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    ! WTpACC=0                                             !     set accumulator to zero
-    ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      ! CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
-      ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    ! ENDDO                                                !     end loop over luminosity packets
-    ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-       ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
-                                          ! &WLdlam(WLl))  !       ... probability (ordinate)
-    ! ENDDO                                                !     end loop over significant wavelengths
-                                                         ! !     [] PLOT DM SPECTRA TO SCREEN
-    ! WRITE (*,*) ' '                                      !     print blank line
-    ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	
+  ENDDO                                                  !   end loop over temperatures
+  
+  DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
+    PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
+    PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
+    PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
+    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    DO WLl=1,WLlTOT                                      !     start loop over wavelengths
+      PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
+                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+    ENDDO                                                !     end loop over wavelengths
+    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+    WTpACC=0                                             !     set accumulator to zero
+    DO WLl=1,WTpack                                      !     start loop over luminosity packets
+      CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
+      WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
+    ENDDO                                                !     end loop over luminosity packets
+    PGz=-0.1E+31                                         !     set PGz to extremely low value
+    DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
+       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
+                                          &WLdlam(WLl))  !       ... probability (ordinate)
+    ENDDO                                                !     end loop over significant wavelengths
+                                                         !     [] PLOT DM SPECTRA TO SCREEN
+    WRITE (*,*) ' '                                      !     print blank line
+    WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1051,34 +956,32 @@ ENDDO                                                    ! end loop over discret
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    ! CALL PGSLS(1)                                        !     set line style to 'full'
-    ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    ! CALL PGEND                                           !     close PGPLOT
-  ! ENDDO                                                  !   end loop over temperatures
-  ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      ! PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
-                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-      ! PGz(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute DM emission ......
-                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      ! IF (PGz(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ! ENDDO                                                !     end loop over wavelengths
-    ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-                                                         ! !     [] PLOT TO SCREEN
-    ! WRITE (*,*) ' '                                      !     print blank line
-    ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	
+  ENDDO                                                  !   end loop over temperatures
+  
+  DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
+    PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
+    PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
+    PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
+    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    DO WLl=1,WLlTOT                                      !     start loop over wavelengths
+      PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
+                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+      PGz(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute DM emission ......
+                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      IF (PGz(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+    ENDDO                                                !     end loop over wavelengths
+    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+                                                         !     [] PLOT TO SCREEN
+    WRITE (*,*) ' '                                      !     print blank line
+    WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+	
+	
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1089,17 +992,9 @@ ENDDO                                                    ! end loop over discret
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    ! CALL PGSLS(1)                                        !     set line style to 'full'
-    ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    ! CALL PGEND                                           !     close PGPLOT
-  ! ENDDO                                                  !   end loop over temperatures
-! ENDIF                                                    ! end diagnostic plots
+  ENDDO                                                  !   end loop over temperatures
+  
+ENDIF                                                    ! end diagnostic plots
 
 DO TEk=0,TEkTOT,10
   WRITE (6,"(I5,F11.3,2E15.3)") TEk,teT(TEk),teLMmb(TEk),teLMTdm(TEk)
