@@ -391,7 +391,7 @@ for temp in range(0,ntemps,1):													#[FOR] indices up to number of temper
 plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")								#Give plot relevant axes labels and a title.								  #
 plt.ylabel(f"Log10(Planck Function or Spectral Density) [Log10(1/cm^5)]")
 plt.title("Log10(Planck Function or Spectral Density) versus Log10(Wavelength)")
-plt.ylim(ymin=math.log10(1e-4))
+plt.ylim(bottom=math.log10(1e-4))
 plt.legend()																	#Display plot legend. 														  #
 plt.show()																		#Show plot on screen.														  #
 
@@ -406,7 +406,7 @@ for temp in range(0,ntemps,1):
 plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")
 plt.ylabel(f"Log10(Volume Emissivity) [Log10(1/(cm^3 g))]")
 plt.title("Log10(Volume Emissivity) versus Log10(Wavelength)")
-plt.ylim(ymin=math.log10(1e-4))
+plt.ylim(bottom=math.log10(1e-4))
 plt.legend()
 plt.show()
 
