@@ -163,8 +163,8 @@ teTmax=272.5                                             ! set maximum temperatu
 TElist=1                                                 ! set flag to list temperatures
                                                          ! Probabilities
 PRnTOT=1000                                              ! set number of reference probabities
-WTpack=1000000                                           ! set number of calls for plotting probabilities
-WTplot=0                                                 ! set flag to plot probabilities
+WTpack=10000000                                           ! set number of calls for plotting probabilities
+WTplot=1                                                 ! set flag to plot probabilities
                                                          ! WTplot MUST BE 0 OR A LARGE INTEGER !!!!!
                                                          ! Background Radiation Field (RF)
 BGkBB=29                                                 ! set temperature-ID of background BB radiation field
@@ -224,10 +224,12 @@ ALLOCATE (RFjLAM(1:WLlTOT,1:CFcTOT))                     ! allocate RFjLAM array
 
 IF (WLplot==1) then
 	!CALL RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
-	OPEN(1,file=trim(adjustl(DustPropertiesFilename)),iostat=readcheck)
+	OPEN(1,file=trim(adjustl(DustPropertiesFilename)),&
+	& iostat=readcheck)
 	WRITE(1,"(A3,1x,A3,1x,A3)") (/"lam","chi","alb"/)
 	do i = 1, WLlTOT
-		WRITE(1,"(E9.3,1x,E9.3,1x,E9.3)") (/WLlam(i),WLchi(i),WLalb(i)/)
+		WRITE(1,"(E9.3,1x,E9.3,1x,E9.3)") &
+		&(/WLlam(i),WLchi(i),WLalb(i)/)
 	enddo
 	
 	CLOSE(1)
@@ -235,8 +237,8 @@ ENDIF
 
 CALL RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
 
-! CALL RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,PRnTOT,WTpack,WTplot,&
-! &WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
+CALL RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,PRnTOT,WTpack,WTplot,&
+&WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
 
 !CALL RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
 
@@ -641,32 +643,34 @@ INTEGER,DIMENSION(0:TEkTOT)                 :: WTlMIN    ! ID of shortest signif
 INTEGER,DIMENSION(1:WLlTOT)                 :: WTpACC    ! sampling accumulator
 REAL(KIND=8)                                :: WTpackINV ! 1/REAL(WTpack)
                                                          ! [] PGPLOT
-REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGx       ! array for log10[lam] (abscissa)
-REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGxx      ! array for log10[lam+dlam] (abscissa)
-REAL(KIND=4)                                :: PGxMAX    ! upper limit on log10[lam]
-REAL(KIND=4)                                :: PGxMIN    ! lower limit on log10[lam]
-REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
-REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
-REAL(KIND=4)                                :: PGyMIN    ! lower limit on log10[PlanckFn]
-REAL(KIND=4),DIMENSION(1:WLlTOT)            :: PGz       ! array for log10[VolEm] (ordinate) 
-REAL(KIND=4)                                :: PGzMAX    ! upper limit on log10[VolEm]
-REAL(KIND=4)                                :: PGzMIN    ! lower limit on log10[VolEm]
+REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGx       ! array for log10[lam] (abscissa)
+REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGxx      ! array for log10[lam+dlam] (abscissa)
+REAL(KIND=8)                                :: PGxMAX    ! upper limit on log10[lam]
+REAL(KIND=8)                                :: PGxMIN    ! lower limit on log10[lam]
+REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
+REAL(KIND=8)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
+REAL(KIND=8)                                :: PGyMIN    ! lower limit on log10[PlanckFn]
+REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGz       ! array for log10[VolEm] (ordinate) 
+REAL(KIND=8)                                :: PGzMAX    ! upper limit on log10[VolEm]
+REAL(KIND=8)                                :: PGzMIN    ! lower limit on log10[VolEm]
 
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !ATH Added variables:
-Character(len=50) 							:: BBconstantsFile = "BBconstants.csv", &
-											   & BBdataFile = "BBdata.csv", &
-											   & MBconstantsFile = "MBconstants.csv", &
-											   & MBdataFile = "MBdata.csv", &
-											   & DM1constantsFile = "DM1constants.csv", &
-											   & DM1dataFile = "DM1data.csv", &
-											   & DM2constantsFile = "DM2constants.csv", &
-											   & DM2dataFile = "DM2data.csv", &
+Character(len=50) :: BBconstantsFile= "BBconstants.csv",&
+			   & BBanalyticFile = "BBAnalytic.csv", &
+			   & BBmcrtFile		= "BBMCRT.csv",		&
+			   & MBconstantsFile= "MBconstants.csv",&
+			   & MBanalyticFile = "MBAnalytic.csv", &
+			   & MBmcrtFile		= "MBMCRT.csv",		&
+			   & DMconstantsFile= "DMconstants.csv",&
+			   & DManalyticFile = "DMAnalytic.csv", &
+			   & DMmcrtFile		= "DMMCRT.csv",		&
+			   & LambdaDataFile = "WLData.csv"
 Integer*4 									:: readcheck
 Integer*4 									:: i
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
 
                                                          ! [] INITIALISATION
@@ -800,24 +804,86 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
     
 ENDDO                                                    ! end loop over discrete temperatures
 
+!---------------------------------------------------------
+!---------------------------------------------------------
+!			Diagnostics plotting						 !
+!				& relevant data output					 !
+!---------------------------------------------------------
+!---------------------------------------------------------
+
+
+WTlMIN = 1
+WTlMAX = WLlTOT
+
+
 IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNOSTIC PLOTS
   WLlTOTrea=DBLE(WLlTOT)                                 !   compute REAL(WLlTOT)
   WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
+  
+   OPEN(1,file=trim(adjustl(LambdaDataFile)),&
+  &iostat=readcheck)									 !Open a seperate file for wavelength data. This
+														 !..ensures we only write this data once.
+
+  IF(readcheck .ne. 0) then								 !Same creation/"read" check as previous
+	  print*,(/LambdaDataFile, &
+	  & " not read successfully! Aborting program!"/)
+	  STOP
+  ENDIF
+  
   DO WLl=1,WLlTOT                                        !     start loop over wavelengths
     PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
+	WRITE(1,"(E9.2,1x)") (/PGx(WLl)/)
   ENDDO                                                  !     end loop over wavelengths
+
+  OPEN(2,file=trim(adjustl(BBconstantsFile)),&
+  &iostat=readcheck)										 !Open file for BB constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/BBconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
+  ENDIF
+  WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
+  
+  OPEN(3,file=trim(adjustl(BBanalyticFile)),&
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..BB curve.
+  IF(readcheck .ne. 0) then
+	  print*,(/BBanalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
+  ENDIF
+
+	
+  OPEN(4,file=trim(adjustl(BBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
+														 !..BB curve, sampled from RT_LumPack_BB
+  IF(readcheck .ne. 0) then
+   	print*,(/BBmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
+  ENDIF
+
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    PGy=(-1d-10)                                        !     set PGy to extremely low value
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+	  WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ENDDO                                                !     end loop over wavelengths
-    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    ENDDO                                                !     end loop over wavelengths   
+	WRITE(3,*)
+	PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+	
+	
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
@@ -827,40 +893,13 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
+	  WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)
       IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
     ENDDO                                                !     end loop over significant wavelengths
+	WRITE(4,*)
                                                          !     [] PLOT BB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-	
-	
-	OPEN(1,"...")
-	WRITE(1,"()") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
-	CLOSE(1)
-	OPEN(1,"...")
-	WRITE(1,"()") (/WLlam, PGx, PGy, PGz/)
-	
-	
-	
-	OPEN(1,file=trim(adjustl(BBconstantsFile)),iostat=readcheck)
-	WRITE(1,"(A4,1x,A4,1x,A4,1x,A4)") (/"xmin","xmax","ymin","ymax"/)
-	WRITE(1,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3)") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
-	close(1)
-	
-	OPEN(1,file=trim(adjustl(BBdataFile)),iostat=readcheck)
-	WRITE(1,"(A4,1x,A4,1x,A4)") (/"lam","xLL","yBB","zBB"/)
-	WRITE(1,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3)") (/PGxMIN,PGxMAX,PGyMIN,PGyMAX/)
-	close(1)
-	
-	
-	do i = 1, WLlTOT
-		WRITE(1,"(E9.3,1x,E9.3,1x,E9.3)") (/WLlam(i),WLchi(i),WLalb(i)/)
-	enddo
-	
-	CLOSE(1)
-	
-	
-	
 	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
@@ -877,11 +916,47 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	
   ENDDO                                                  !   end loop over temperatures
   
+  close(1)												 !Close lambda data file
+  close(2)												 !Close BB constants file
+  close(3)												 !Close Analytic BB data file
+  close(4)												 !Close MCRT BB data file
+   
+  OPEN(2,file=trim(adjustl(MBconstantsFile)),&
+  &iostat=readcheck)										 !Open file for MB constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/MBconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
+  ENDIF
+  WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
+  
+  OPEN(3,file=trim(adjustl(MBanalyticFile)),&
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..MB curve.
+  IF(readcheck .ne. 0) then
+	  print*,(/MBanalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
+  ENDIF
+
+	
+  OPEN(4,file=trim(adjustl(MBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
+														 !..MB curve, sampled from RT_LumPack_BB
+  IF(readcheck .ne. 0) then
+   	print*,(/MBmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
+  ENDIF
+
+  
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    PGy=(-1d-10)                                        !     set PGy to extremely low value
 	
 	
 	!! This section calculates data for the analytic result
@@ -892,8 +967,10 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
+	WRITE(3,*)
 	
 	!! This section calculates data for the MBB curve from
 	!! the MCRT version, by calling RT_LumPack_MB.
@@ -904,6 +981,11 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	!! that the MBB curve works as expected.
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+	
+		
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
@@ -913,7 +995,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
+	   WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)									  
     ENDDO                                                !     end loop over significant wavelengths
+	WRITE(4,*)
                                                          !     [] PLOT MB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
@@ -934,19 +1018,59 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	
 	
   ENDDO                                                  !   end loop over temperatures
+  close(2)
+  close(3)
+  close(4)
+  
+  OPEN(2,file=trim(adjustl(DMconstantsFile)),&
+  &iostat=readcheck)									 !Open file for DM constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/DMconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
+  ENDIF
+  WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
+  
+  OPEN(3,file=trim(adjustl(DManalyticFile)),&
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..DM curve.
+  IF(readcheck .ne. 0) then
+	  print*,(/DManalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
+  ENDIF
+
+	
+  OPEN(4,file=trim(adjustl(DMmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
+														 !..DM curve, sampled from RT_LumPack_BB
+  IF(readcheck .ne. 0) then
+   	print*,(/DMmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
+  ENDIF
+  
   
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    PGy=-0.1E+31                                         !     set PGy to extremely low value
+    PGy=(-1d-10)                                        !     set PGy to extremely low value
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+	  WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
+	WRITE(3,*)
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+	
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
@@ -956,7 +1080,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
+	   WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)
     ENDDO                                                !     end loop over significant wavelengths
+	WRITE(4,*)
                                                          !     [] PLOT DM SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
@@ -976,38 +1102,38 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	
   ENDDO                                                  !   end loop over temperatures
   
-  DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    PGy=-0.1E+31                                         !     set PGy to extremely low value
-    DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
-                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-      PGz(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute DM emission ......
-                                    &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      IF (PGz(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ENDDO                                                !     end loop over wavelengths
-    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-                                                         !     [] PLOT TO SCREEN
-    WRITE (*,*) ' '                                      !     print blank line
-    WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
+  ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
+    ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
+    ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
+    ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
+    ! PGy=(-1d-10)                                        !     set PGy to extremely low value
+    ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
+      ! PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
+                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+      ! PGz(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute DM emission ......
+                                    ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
+      ! IF (PGz(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
+    ! ENDDO                                                !     end loop over wavelengths
+    ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+    ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
+                                                         ! !     [] PLOT TO SCREEN
+    ! WRITE (*,*) ' '                                      !     print blank line
+    ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
 	
 	
 	
-    ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
-    ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    ! CALL PGSLS(1)                                        !     set line style to 'full'
-    ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    ! CALL PGEND                                           !     close PGPLOT
-                                                         ! !     [] SAVE TO POSTSCRIPT FILE 
-  ENDDO                                                  !   end loop over temperatures
+    ! ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
+    ! ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
+    ! ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
+    ! ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
+    ! ! CALL PGSLS(2)                                        !     set line style to 'dashed'
+    ! ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
+    ! ! CALL PGSLS(1)                                        !     set line style to 'full'
+    ! ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
+    ! ! CALL PGEND                                           !     close PGPLOT
+                                                         ! ! !     [] SAVE TO POSTSCRIPT FILE 
+  ! ENDDO                                                  !   end loop over temperatures
   
 ENDIF                                                    ! end diagnostic plots
 

@@ -20,7 +20,7 @@ print (str(now))
 
 
 ##
-date_last_edited= "12/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
+date_last_edited= "18/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
 
 																				#Input directory into which to save plots here                                #
 savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
@@ -28,7 +28,22 @@ savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
 																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
 																				#      using today's date at runtime.                                         #
 
-importstring = "ProbabilitiesData.csv"												#File for data to be imported for plotting.                                   #
+#------------------------------------------------------------------------------#
+#Files for data to be imported for plotting.                                   #
+lambdaDataPath  = "WLData.csv"
+#Black Body Data:
+BBconstantsPath = "BBconstants.csv"
+BBAnalyticPath  = "BBAnalytic.csv"
+BBmcrtPath 		= "BBMCRT.csv"
+#Modified Black Body data:
+MBconstantsPath = "MBconstants.csv"
+MBAnalyticPath  = "MBAnalytic.csv"
+MBmcrtPath 		= "MBMCRT.csv"
+#Differential Modified Black Body data:
+DMconstantsPath = "DMconstants.csv"
+DMAnalyticPath  = "DMAnalytic.csv"
+DMmcrtPath 		= "DMMCRT.csv"
+
 
 ##
 
@@ -96,7 +111,7 @@ def func_datetime_savepath (input_savepath_string):
 #                                                                               #
 print("*****")
 print()
-print("**Plot Dust Properties Program**")
+print("**Plot Emission Probabilities Program**")
 print()
 print(f"Author: {author}")
 print(f"Email: {email}")
@@ -120,207 +135,93 @@ del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
 #                                                                               #
 #                                                                               #
 
-read_data = pd.read_csv(importstring,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+lambdaData 	 = np.loadtxt(lambdaDataPath)
 
-print()
-print("File read from:", importstring)
-del importstring																#Clear importstring from memory                                               #
-print("Data Frame shape:")
-print(read_data.shape)															#Confirm data is of correct shape                                             #
+###Load into Data frame, omit header for data, skip spaces, and tranpose for ease of plotting
+BBconstants  = pd.read_csv(BBconstantsPath,delimiter=" ")			#We read the data into a Pandas Data Frame                                    #
+BBAnalytic	 = pd.read_csv(BBAnalyticPath,delimiter=" ",header=None, \
+skipinitialspace =True).T
+BBMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
+skipinitialspace =True).T
 
-print()
+MBconstants  = pd.read_csv(MBconstantsPath,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+MBAnalytic	 = pd.read_csv(MBAnalyticPath,delimiter=" ",header=None, \
+skipinitialspace =True).T
+MBMCRT		 = pd.read_csv(MBmcrtPath,delimiter=" ",header=None, \
+skipinitialspace =True).T
+
+DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+DMAnalytic	 = pd.read_csv(DMAnalyticPath,delimiter=" ",header=None, \
+skipinitialspace =True).T
+DMMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
+skipinitialspace =True,).T
 
 
 
 
+###
+###Cut off end NaN from Fortran Carriage Return Space
+###
+BBAnalytic.drop(BBAnalytic.tail(1).index,inplace=True)
+BBMCRT.drop(BBMCRT.tail(1).index,inplace=True)
+MBAnalytic.drop(MBAnalytic.tail(1).index,inplace=True)
+MBMCRT.drop(MBMCRT.tail(1).index,inplace=True)
+DMAnalytic.drop(DMAnalytic.tail(1).index,inplace=True)
+DMMCRT.drop(DMMCRT.tail(1).index,inplace=True)
 
-#===============================================================================#
-#				Original FORTRAN90 Code EXCERPT by Prof. A. P. Whitworth		#
-#						Extracted 12/04/2019									#
-#																				#
-#																				#
-#===============================================================================#
+
+###Replace all values with float64 and "coerce" unrecognised into NaNs
+for cols in BBAnalytic.columns.values:
+	BBAnalytic[cols] = pd.to_numeric(BBAnalytic[cols], errors='coerce')
+	BBMCRT[cols] = pd.to_numeric(BBMCRT[cols], errors='coerce')
+	MBAnalytic[cols] = pd.to_numeric(MBAnalytic[cols], errors='coerce')
+	MBMCRT[cols] = pd.to_numeric(MBMCRT[cols], errors='coerce')
+	DMAnalytic[cols] = pd.to_numeric(DMAnalytic[cols], errors='coerce')
+	DMMCRT[cols] = pd.to_numeric(DMMCRT[cols], errors='coerce')
+
+#-------------------------------------------------------------------------------#
+
+# print()
+# print("***")
+# print("Data Details (for debugging):")
+# print()
+# print()
+# print("Wavelength:")
+# print(lambdaData,np.shape(lambdaData))
+# print()
+# print("BB:")
+# print("Constants:",BBconstants,np.shape(BBconstants),BBconstants.columns.values)
+# print("Analytic:",BBAnalytic,np.shape(BBAnalytic),BBAnalytic.columns.values)
+# print("MCRT:",BBMCRT,np.shape(BBMCRT),BBMCRT.columns.values)
+# print()
+# print("MB:")
+# print("Constants:",MBconstants,np.shape(MBconstants),MBconstants.columns.values)
+# print("Constants:",MBconstants,np.shape(MBconstants),MBconstants.columns.values)
+# print("Analytic:",MBAnalytic,np.shape(MBAnalytic),MBAnalytic.columns.values)
+# print("MCRT:",MBMCRT,np.shape(MBMCRT),MBMCRT.columns.values)
+# print()
+# print("DM(BB):")
+# print("Constants:",DMconstants,np.shape(DMconstants),DMconstants.columns.values)
+# print("Analytic:",DMAnalytic,np.shape(DMAnalytic),DMAnalytic.columns.values)
+# print("MCRT:",DMMCRT,np.shape(DMMCRT),DMMCRT.columns.values)
 
 
+fig = plt.figure()
+for i in range(0, len(BBconstants['temp'])):
+	plt.plot(lambdaData,BBAnalytic[i], color="black", label=f"BB Analytic T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,BBMCRT[i],color="red",label=f"BB MCRT T={BBconstants['temp'][i]}")
+fig.legend()
 
-# ! IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNOSTIC PLOTS
-  # ! WLlTOTrea=DBLE(WLlTOT)                                 !   compute REAL(WLlTOT)
-  # ! WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
-  # ! DO WLl=1,WLlTOT                                        !     start loop over wavelengths
-    # ! PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
-  # ! ENDDO                                                  !     end loop over wavelengths
-  # ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    # ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    # ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    # ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    # ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    # ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
-      # ! PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
-                                    # ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    # ! ENDDO                                                !     end loop over wavelengths
-    # ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    # ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    # ! WTpACC=0                                             !     set accumulator to zero
-    # ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      # ! CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
-      # ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    # ! ENDDO                                                !     end loop over luminosity packets
-    # ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    # ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-      # ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
-                                          # ! &WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
-    # ! ENDDO                                                !     end loop over significant wavelengths
-                                                         # ! !     [] PLOT BB SPECTRA TO SCREEN
-    # ! WRITE (*,*) ' '                                      !     print blank line
-    # ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    # ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
-    # ! &'BB EMISSION PROBABILITIES, \fiWTpBB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-                                                         # ! !     [] SAVE TO POSTSCRIPT FILE 
-    # ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
-    # ! &'BB EMISSION PROBABILITIES, \fiWTpBB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-  # ! ENDDO                                                  !   end loop over temperatures
-  # ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    # ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    # ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    # ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    # ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    # ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      # ! PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
-                                    # ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    # ! ENDDO                                                !     end loop over wavelengths
-    # ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    # ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    # ! WTpACC=0                                             !     set accumulator to zero
-    # ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      # ! CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
-      # ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    # ! ENDDO                                                !     end loop over luminosity packets
-    # ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    # ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-       # ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
-                                          # ! &WLdlam(WLl))  !       ... probability (ordinate)
-    # ! ENDDO                                                !     end loop over significant wavelengths
-                                                         # ! !     [] PLOT MB SPECTRA TO SCREEN
-    # ! WRITE (*,*) ' '                                      !     print blank line
-    # ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    # ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
-    # ! &'MB EMISSION PROBABILITIES, \fiWTpMB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-                                                         # ! !     [] SAVE TO POSTSCRIPT FILE 
-    # ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
-    # ! &'MB EMISSION PROBABILITIES, \fiWTpMB\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-  # ! ENDDO                                                  !   end loop over temperatures
-  # ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    # ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    # ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    # ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    # ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    # ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      # ! PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
-                                    # ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    # ! ENDDO                                                !     end loop over wavelengths
-    # ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    # ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    # ! WTpACC=0                                             !     set accumulator to zero
-    # ! DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      # ! CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
-      # ! WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
-    # ! ENDDO                                                !     end loop over luminosity packets
-    # ! PGz=-0.1E+31                                         !     set PGz to extremely low value
-    # ! DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
-       # ! PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
-                                          # ! &WLdlam(WLl))  !       ... probability (ordinate)
-    # ! ENDDO                                                !     end loop over significant wavelengths
-                                                         # ! !     [] PLOT DM SPECTRA TO SCREEN
-    # ! WRITE (*,*) ' '                                      !     print blank line
-    # ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    # ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    # ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-                                                         # ! !     [] SAVE TO POSTSCRIPT FILE 
-    # ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    # ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-  # ! ENDDO                                                  !   end loop over temperatures
-  # ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
-    # ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
-    # ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
-    # ! PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
-    # ! PGy=-0.1E+31                                         !     set PGy to extremely low value
-    # ! DO WLl=1,WLlTOT                                      !     start loop over wavelengths
-      # ! PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
-                                    # ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-      # ! PGz(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute DM emission ......
-                                    # ! &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      # ! IF (PGz(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    # ! ENDDO                                                !     end loop over wavelengths
-    # ! PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
-    # ! PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-                                                         # ! !     [] PLOT TO SCREEN
-    # ! WRITE (*,*) ' '                                      !     print blank line
-    # ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    # ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    # ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-                                                         # ! !     [] SAVE TO POSTSCRIPT FILE 
-    # ! CALL PGBEG(0,'/PS',1,1)                              !     open PGPLOT to produce postscript
-    # ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
-    # ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
-    # ! &'DM EMISSION PROBABILITIES, \fiWTpDM\fn, AS A FUNCTION OF WAVELENGTH, \gl. ')
-    # ! CALL PGSLS(2)                                        !     set line style to 'dashed'
-    # ! CALL PGLINE(WLlTOT,PGx,PGy)                          !     plot discrete probabilities
-    # ! CALL PGSLS(1)                                        !     set line style to 'full'
-    # ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
-    # ! CALL PGEND                                           !     close PGPLOT
-  # ! ENDDO                                                  !   end loop over temperatures
-# ! ENDIF                                                    ! end diagnostic plots
+fig = plt.figure()
+for i in range(0, len(MBconstants['temp'])):
+	plt.plot(lambdaData,MBAnalytic[i], color="black",label=f"MB Analytic T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,MBMCRT[i], color="red",label=f"MB MCRT T={BBconstants['temp'][i]}")
+fig.legend()
+
+fig = plt.figure()
+for i in range(0, len(MBconstants['temp'])):
+	plt.plot(lambdaData,MBAnalytic[i],color="black", label=f"DM Analytic T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,MBMCRT[i],color="red", label=f"DM MCRT T={BBconstants['temp'][i]}")
+fig.legend()
+plt.show()
+
