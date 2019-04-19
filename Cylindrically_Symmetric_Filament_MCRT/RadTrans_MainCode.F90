@@ -163,7 +163,7 @@ teTmax=272.5                                             ! set maximum temperatu
 TElist=1                                                 ! set flag to list temperatures
                                                          ! Probabilities
 PRnTOT=1000                                              ! set number of reference probabities
-WTpack=10000000                                           ! set number of calls for plotting probabilities
+WTpack=1000000                                           ! set number of calls for plotting probabilities
 WTplot=1                                                 ! set flag to plot probabilities
                                                          ! WTplot MUST BE 0 OR A LARGE INTEGER !!!!!
                                                          ! Background Radiation Field (RF)
@@ -228,7 +228,7 @@ IF (WLplot==1) then
 	& iostat=readcheck)
 	WRITE(1,"(A3,1x,A3,1x,A3)") (/"lam","chi","alb"/)
 	do i = 1, WLlTOT
-		WRITE(1,"(E9.3,1x,E9.3,1x,E9.3)") &
+		WRITE(1,"(F10.3,1x,F10.3,1x,F10.3)") &
 		&(/WLlam(i),WLchi(i),WLalb(i)/)
 	enddo
 	
@@ -832,7 +832,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   
   DO WLl=1,WLlTOT                                        !     start loop over wavelengths
     PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
-	WRITE(1,"(E9.2,1x)") (/PGx(WLl)/)
+	WRITE(1,"(F10.3)") (/PGx(WLl)/)
   ENDDO                                                  !     end loop over wavelengths
 
   OPEN(2,file=trim(adjustl(BBconstantsFile)),&
@@ -873,7 +873,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-	  WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
+	  WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths   
 	WRITE(3,*)
@@ -893,7 +893,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-	  WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)
+	  WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
       IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
     ENDDO                                                !     end loop over significant wavelengths
 	WRITE(4,*)
@@ -967,7 +967,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
+      WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
 	WRITE(3,*)
@@ -995,7 +995,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-	   WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)									  
+	   WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)									  
     ENDDO                                                !     end loop over significant wavelengths
 	WRITE(4,*)
                                                          !     [] PLOT MB SPECTRA TO SCREEN
@@ -1061,7 +1061,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-	  WRITE(3,"(E9.2,1x)",advance="no") (/PGy(WLl)/)
+	  WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
 	WRITE(3,*)
@@ -1080,7 +1080,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-	   WRITE(4,"(E9.2,1x)",advance="no") (/PGz(WLl)/)
+	   WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
     ENDDO                                                !     end loop over significant wavelengths
 	WRITE(4,*)
                                                          !     [] PLOT DM SPECTRA TO SCREEN

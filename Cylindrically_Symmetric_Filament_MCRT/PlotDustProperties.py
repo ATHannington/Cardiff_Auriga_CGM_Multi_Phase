@@ -46,7 +46,7 @@ date_last_edited= "12/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!       
 
 																				#Input directory into which to save plots here                                #
 savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
-"Cylindrically_Symmetric_Filament_MCRT/"
+"Cylindrically_Symmetric_Filament_MCRT/Dust/"
 																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
 																				#      using today's date at runtime.                                         #
 
@@ -79,27 +79,6 @@ kb = kb.cgs
 #		Below are functions etc. used by this program                           #
 #                                                                               #
 #                                                                               #
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
-def func_log10_of_df_attribute (dataframe, attribute_string):
-	"""
-	Description: Function for returning log10 of a dataframe column, specified 
-				by attribute string. E.g. for a dataframe, df, with attribute 
-				"numbers",func_log10_of_df_attribute (dataframe =df,
-				attribute_string = "numbers") would return a LIST of Log10 of 
-				that column of the data frame.
-	Inputs:		Var: Dataframe			Type:Pandas Data Frame
-														Dtype: Float/int 
-														(numeric)
-				Var: attribute_string	Type: string 	Dtype: char
-	Outputs:	Var: log10list			Type: list		Dtype: Same as input
-				------
-	Notes:		Created 09/04/2019 by ATH. Working as of 09/04/2019
-	"""
-	
-	log10list= [math.log10(dataframe[attribute_string][i]) for i in \
-	range(0,len(dataframe[attribute_string]),1)] 
-	return log10list
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
 def func_datetime_savepath (input_savepath_string):
@@ -185,32 +164,46 @@ del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
 #                                                                               #
 #                                                                               #
 
-read_data = pd.read_csv(importstring,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+read_data = pd.read_csv(importstring,delimiter=" ", \
+skipinitialspace =True, na_values=["-Infinity", "Infinity"])								#We read the data into a Pandas Data Frame                                    #
 
 print()
 print("File read from:", importstring)
 del importstring																#Clear importstring from memory                                               #
 print("Data Frame shape:")
 print(read_data.shape)															#Confirm data is of correct shape                                             #
-
+print(read_data.columns.values)
+#print(read_data)
 print()
+
+
+#-------------------------------------------------------------------------------#
+# 						Data Manipulation Section							    #
+#																			    #
+#-------------------------------------------------------------------------------#
+print()
+print("Manipulating in data! [part 1/3]")
 
 																				#Create lists of Log10(Lambda),                                               #
 #print("Test! lam(0)=", read_data['lam'][0])
-x_lamLog10= func_log10_of_df_attribute(dataframe = read_data,\
- attribute_string = 'lam')
-#print("Test! Log10(lam(0))=", x_lamLog10[0])
+
+																				#A rather involved process... We convert the values to Log10 values and then  #
+x_lamLog10 = np.log10(read_data['lam'])											#  check whether the return are inf or NaN. Replace with NaN if so as can be  #
+																				#    ignored through numpy's NaNmax and NaNmin routines, and otherwise aren't 
+																				#      plotted.
+x_lamLog10 = np.where(((np.isnan(x_lamLog10)==False)&\
+(np.isinf(x_lamLog10)==False)),x_lamLog10,float('NaN'))
 
 																				#    and of Log10(Chi).                                                       #
 #print("Test! chi(0)=", read_data['chi'][0])
-y_chiLog10= func_log10_of_df_attribute(dataframe = read_data,\
- attribute_string = 'chi')
-#print("Test! Log10(chi(0))=", y_chiLog10[0])
+y_chiLog10 = np.log10(read_data['chi'])
+y_chiLog10 = np.where(((np.isnan(y_chiLog10)==False)&\
+(np.isinf(y_chiLog10)==False)),y_chiLog10,float('NaN')) 
 
-xmin = min(x_lamLog10)															#         then find max and min values for each, to use for axes in plots.    #
-xmax = max(x_lamLog10)
-ymin = min(y_chiLog10)
-ymax = max(y_chiLog10)
+xmin = np.nanmin(x_lamLog10)													#  then find max and min values for each, to use for axes in plots, ignoring  #
+xmax = np.nanmax(x_lamLog10)													#    any NaNs.																  #
+ymin = np.nanmin(y_chiLog10)
+ymax = np.nanmax(y_chiLog10)
 
 																				#Create a list of 10 times the albedo. This is used to bring the Albedo up to #
 																				#    a comparable scale with Log10(chi) and Log10(lambda).                    #
@@ -237,11 +230,13 @@ zmin = zmin - deltaz
 del deltafrac,deltax,deltay,deltaz												#Clear deltafrac, deltax, deltay from memory                                  #
 
 #-------------------------------------------------------------------------------#
-#		Data manipulation complete.                                             #
-#           Begin Plotting!                                                     #
+#           Begin Plotting														#
 #                                                                               #
 #		Much of the following has been adapted from the Matplotlib documentation#
 #                                                                               #
+
+print()
+print("Creating first plots!")
 
 fig, ax1 = plt.subplots()														#Start new fig and axis with plt.subplots()                                   #
 
@@ -288,6 +283,8 @@ fig.savefig(datetimesavepath + "Log10-chi_10Albedo_versus" + \
 #                                                                               #
 #                                                                               #
 
+print()
+print("Manipulating data [part 2/3]!")
 
 ntemps = len(temperatures)														#Grab number of temperatures used                                             #
 nlambda = len(read_data['lam'])													#Grab number of wavelength data points                                        #
@@ -349,6 +346,10 @@ del hc_kb, lambda_T, yMax
 																				#This section near entirely follows the section above's logic. Please see     #
 																				#  above																	  #
 
+print()
+print("Manipulating data [part 3/3]!")
+
+
 alb_squareArr = np.full((ntemps,nlambda),read_data['alb'])\
 *u.dimensionless_unscaled														#[temps,lambda] shaped array of dimensionless albedo data.					  #
 
@@ -382,6 +383,9 @@ del alb_squareArr, chi_squareArr, z_vol_emiss, z_vol_emiss_masked, zmax			#Delet
 
 #-------------------------------------------------------------------------------#
 
+print()
+print("Creating final (second) set of plots!")
+
 fig = plt.figure()																#Creating figure helps prevent blanck outputs for fig.savefig().			  #
 for temp in range(0,ntemps,1):													#[FOR] indices up to number of temperatures [THEN]							  #
 																				#  plot Log10Planck data for a given temperature against log10(wavelength)	  #
@@ -412,6 +416,8 @@ plt.show()
 
 fig.savefig(datetimesavepath + "Log10-Volume-Emissivity_versus" + \
 "_Log10-Wavelength.jpeg")
+
+
 print("END")																	#----  END OF PROGRAM !! ----                                                 #
 #===============================================================================#
 

@@ -24,7 +24,7 @@ date_last_edited= "18/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!       
 
 																				#Input directory into which to save plots here                                #
 savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
-"Cylindrically_Symmetric_Filament_MCRT/"
+"Cylindrically_Symmetric_Filament_MCRT/Probabilities/"
 																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
 																				#      using today's date at runtime.                                         #
 
@@ -135,33 +135,54 @@ del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
 #                                                                               #
 #                                                                               #
 
-lambdaData 	 = np.loadtxt(lambdaDataPath)
+datetimesavepath = func_datetime_savepath(savepath)								#Generate savepath for plots												  #
 
-###Load into Data frame, omit header for data, skip spaces, and tranpose for ease of plotting
-BBconstants  = pd.read_csv(BBconstantsPath,delimiter=" ")			#We read the data into a Pandas Data Frame                                    #
+print()
+print("Loading in data!")
+
+
+																				#Read in Wavelength Data into single columned Data Frame.					  #
+																				# We have omitted any infered header(column title) and skipped any white space#
+lambdaData 	 = pd.read_csv(lambdaDataPath, header=None, \
+skipinitialspace =True)
+
+###Load into Data frame, omit header for data, skip spaces, 
+###    and tranpose for ease of plotting
+BBconstants  = pd.read_csv(BBconstantsPath,delimiter=" ")						#We read the constants data into a Pandas Data Frame                          #
+																				#We read in the analytic and MCRT data,currently in format of one row per temp#
+																				#  we omit headers again [this would just be indices], skip whitespace, and   #
+																				#    set any Fortran90 +/-"Infinity" values to NaN.							  #
+																				#      We transpose the data so each data set is in one temperature index col #
+																				#        i.e. one column per temperature, labelled by temp number [0,1,2,3...]#
 BBAnalytic	 = pd.read_csv(BBAnalyticPath,delimiter=" ",header=None, \
-skipinitialspace =True).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 BBMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
-skipinitialspace =True).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
-MBconstants  = pd.read_csv(MBconstantsPath,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+MBconstants  = pd.read_csv(MBconstantsPath,delimiter=" ")						
 MBAnalytic	 = pd.read_csv(MBAnalyticPath,delimiter=" ",header=None, \
-skipinitialspace =True).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 MBMCRT		 = pd.read_csv(MBmcrtPath,delimiter=" ",header=None, \
-skipinitialspace =True).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
-DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")								#We read the data into a Pandas Data Frame                                    #
+DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")						
 DMAnalytic	 = pd.read_csv(DMAnalyticPath,delimiter=" ",header=None, \
-skipinitialspace =True).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 DMMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
-skipinitialspace =True,).T
+skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
 
+print("Data loading complete!")
 
-
+print()
+print("Manipulating data!")
 ###
-###Cut off end NaN from Fortran Carriage Return Space
+###Cut off end NaN from Fortran Carriage Return Space							
 ###
+																				#Here we have used online resources to determine the method by which to omit  #
+																				#  the last row of the data. In this instance, the last row is a NaN brought  #
+																				#    about by the space at each carriage return from Fortran90. Without this  #
+																				#     fix then there is +1 "entry", creating a mismatch in len with wavelength#
 BBAnalytic.drop(BBAnalytic.tail(1).index,inplace=True)
 BBMCRT.drop(BBMCRT.tail(1).index,inplace=True)
 MBAnalytic.drop(MBAnalytic.tail(1).index,inplace=True)
@@ -170,17 +191,20 @@ DMAnalytic.drop(DMAnalytic.tail(1).index,inplace=True)
 DMMCRT.drop(DMMCRT.tail(1).index,inplace=True)
 
 
-###Replace all values with float64 and "coerce" unrecognised into NaNs
-for cols in BBAnalytic.columns.values:
-	BBAnalytic[cols] = pd.to_numeric(BBAnalytic[cols], errors='coerce')
-	BBMCRT[cols] = pd.to_numeric(BBMCRT[cols], errors='coerce')
-	MBAnalytic[cols] = pd.to_numeric(MBAnalytic[cols], errors='coerce')
-	MBMCRT[cols] = pd.to_numeric(MBMCRT[cols], errors='coerce')
-	DMAnalytic[cols] = pd.to_numeric(DMAnalytic[cols], errors='coerce')
-	DMMCRT[cols] = pd.to_numeric(DMMCRT[cols], errors='coerce')
+																				#---CURRENTLY OMITTED CODE---												  #
+																				#This section updates each columns of each data data-frame with a float64     #
+																				#  version of the data. It "coerces" any non-numeric values to NaNs.		  #
+# ###Replace all values with float64 and "coerce" unrecognised into NaNs
+# for cols in BBAnalytic.columns.values:
+	# BBAnalytic[cols] = pd.to_numeric(BBAnalytic[cols], errors='coerce')
+	# BBMCRT[cols] = pd.to_numeric(BBMCRT[cols], errors='coerce')
+	# MBAnalytic[cols] = pd.to_numeric(MBAnalytic[cols], errors='coerce')
+	# MBMCRT[cols] = pd.to_numeric(MBMCRT[cols], errors='coerce')
+	# DMAnalytic[cols] = pd.to_numeric(DMAnalytic[cols], errors='coerce')
+	# DMMCRT[cols] = pd.to_numeric(DMMCRT[cols], errors='coerce')
 
 #-------------------------------------------------------------------------------#
-
+																				# Debugging print statements...												  #
 # print()
 # print("***")
 # print("Data Details (for debugging):")
@@ -206,22 +230,112 @@ for cols in BBAnalytic.columns.values:
 # print("MCRT:",DMMCRT,np.shape(DMMCRT),DMMCRT.columns.values)
 
 
+
+#-------------------------------------------------------------------------------
+																				#Here we find the "limiting ordinates" (max and min for each axis).These are  #
+																				#  part of the constants file, but the max and min must reflect the max and   #
+																				#    min of all temperatures being shown so as to not omit any data.          #
+																				#      It should be noted that the max and min cut off the lower y-axis, where#
+																				#       results start to become spurious, and there is no available MCRT data.#
+BBxMin = np.min(BBconstants['xmin'])
+BBxMax = np.max(BBconstants['xmax'])
+BByMin = np.min(BBconstants['ymin'])
+BByMax = np.max(BBconstants['ymax'])
+
+MBxMin = np.min(MBconstants['xmin'])
+MBxMax = np.max(MBconstants['xmax'])
+MByMin = np.min(MBconstants['ymin'])
+MByMax = np.max(MBconstants['ymax'])
+
+DMxMin = np.min(DMconstants['xmin'])
+DMxMax = np.max(DMconstants['xmax'])
+DMyMin = np.min(DMconstants['ymin'])
+DMyMax = np.max(DMconstants['ymax'])
+
+print()
+print("Beginning Plotting!")
+
+																				#A fairly standard plotting section. Each plot is overlayed with the MCRT and #
+																				#  analytic data from each temperature. Each curve is labelled appropriately  #
+																				#    with temperature and data type (analytic vs MCRT) using f-strings.       #
+																				#     Xlims and Ylims set from above and in Fortran90 code. Plots are then    #
+																				#      titled, labelled, legend added, and saved in date-time directory.      #
+
+
 fig = plt.figure()
 for i in range(0, len(BBconstants['temp'])):
-	plt.plot(lambdaData,BBAnalytic[i], color="black", label=f"BB Analytic T={BBconstants['temp'][i]}")
-	plt.plot(lambdaData,BBMCRT[i],color="red",label=f"BB MCRT T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,BBAnalytic[i], label=\
+	f"BB Analytic T={BBconstants['temp'][i]}K")
+	plt.plot(lambdaData,BBMCRT[i],label=\
+	f"BB MCRT T={BBconstants['temp'][i]}K")
+plt.xlabel('Log10(Wavelength) [Log10(microns)]')
+plt.ylabel('Log10(BB Probability) [dimensionless]')
+plt.title('Log10(Black Body Probabilities) against Log10(Wavelength)'+'\n'\
++ 'for given temperatures')
+plt.xlim(BBxMin, BBxMax)
+plt.ylim(BByMin, BByMax)
 fig.legend()
+
+fig.savefig(datetimesavepath+\
+'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.jpeg')
 
 fig = plt.figure()
 for i in range(0, len(MBconstants['temp'])):
-	plt.plot(lambdaData,MBAnalytic[i], color="black",label=f"MB Analytic T={BBconstants['temp'][i]}")
-	plt.plot(lambdaData,MBMCRT[i], color="red",label=f"MB MCRT T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,MBAnalytic[i],label=\
+	f"MB Analytic T={BBconstants['temp'][i]}K")
+	plt.plot(lambdaData,MBMCRT[i],label=\
+	f"MB MCRT T={MBconstants['temp'][i]}K")
+plt.xlabel('Log10(Wavelength) [Log10(microns)]')
+plt.ylabel('Log10(MB Probability) [dimensionless]')
+plt.title('Log10(Modified Black Body Probabilities) against Log10(Wavelength)'+\
+'\n' + 'for given temperatures')
+plt.xlim(MBxMin, MBxMax)
+plt.ylim(MByMin, MByMax)
 fig.legend()
+
+fig.savefig(datetimesavepath+\
+'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
 
 fig = plt.figure()
 for i in range(0, len(MBconstants['temp'])):
-	plt.plot(lambdaData,MBAnalytic[i],color="black", label=f"DM Analytic T={BBconstants['temp'][i]}")
-	plt.plot(lambdaData,MBMCRT[i],color="red", label=f"DM MCRT T={BBconstants['temp'][i]}")
+	plt.plot(lambdaData,DMAnalytic[i],label=\
+	f"DM Analytic T={BBconstants['temp'][i]}K")
+	plt.plot(lambdaData,DMMCRT[i], label=\
+	f"DM MCRT T={DMconstants['temp'][i]}K")
+plt.xlabel('Log10(Wavelength) [Log10(microns)]')
+plt.ylabel('Log10(DMBB Probability) [dimensionless]')
+plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
++'against Log10(Wavelength)'+'\n'+ 'for given temperatures')
+plt.xlim(DMxMin, DMxMax)
+plt.ylim(DMyMin, DMyMax)
 fig.legend()
+
+fig.savefig(datetimesavepath+\
+'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
+
+finxMin = min([DMxMin, MBxMin])
+finxMax = max([DMxMax, MBxMax])
+finyMin = min([DMyMin, MByMin])
+finyMax = max([DMyMax, MByMax])
+
+fig = plt.figure()
+for i in range(0, len(MBconstants['temp'])):
+	plt.plot(lambdaData,DMAnalytic[i],label=\
+	f"DM Analytic T={DMconstants['temp'][i]}K")
+	plt.plot(lambdaData,MBAnalytic[i], label=\
+	f"MB Analytic T={MBconstants['temp'][i]}K")
+plt.xlabel('Log10(Wavelength) [Log10(microns)]')
+plt.ylabel('Log10(DMBB Probability) [dimensionless]')
+plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
++'against Log10(Wavelength)'+'\n'+ 'for given temperatures')
+plt.xlim(DMxMin, DMxMax)
+plt.ylim(DMyMin, DMyMax)
+fig.legend()
+
+fig.savefig(datetimesavepath \
++'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.jpeg')
+
 plt.show()
 
+print()
+print("END")																	#---PROGRAM END!---													 		  #
