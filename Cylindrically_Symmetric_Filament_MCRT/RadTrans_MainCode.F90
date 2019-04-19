@@ -2,7 +2,8 @@
 ! RadTrans_MainCode.F90
 ! =====================
 
-! Last updated: 2019.Mar.13 (line 1879)
+! Last updated (Ant): 2019.Mar.13 (line 1879)
+! Last updated (ATH): 19/04/2019
 
 ! Desktop: gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/star/lib `pgplot_link`
 ! Laptop:  gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/opt/local/lib -lpgplot -lX11
@@ -43,7 +44,16 @@
 ! Timing:
 !   TBD
 !   TBD
-
+!
+!Notes:
+! RT_Cyl1DSchuster_DetailedBalance not working!!
+!
+! All data to be written for Python:
+!	Must allow for csv formatting and be SQUARE/RECTANGULAR
+!	Must be outputted in Fx.y style (e.g. F10.3). Python cannot handle Fortran
+!	Scientific notation
+!
+!
 !************************
 PROGRAM RadTrans_MainCode
 !************************
