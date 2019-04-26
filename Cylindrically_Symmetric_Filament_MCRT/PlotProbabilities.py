@@ -168,7 +168,7 @@ skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")						
 DMAnalytic	 = pd.read_csv(DMAnalyticPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
-DMMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
+DMMCRT		 = pd.read_csv(DMmcrtPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
 
@@ -274,8 +274,8 @@ plt.title('Log10(Black Body Probabilities) against Log10(Wavelength)'+'\n'\
 + 'for given temperatures')
 plt.xlim(BBxMin, BBxMax)
 plt.ylim(BByMin, BByMax)
-fig.legend()
 
+fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
 'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.jpeg')
 
@@ -291,15 +291,15 @@ plt.title('Log10(Modified Black Body Probabilities) against Log10(Wavelength)'+\
 '\n' + 'for given temperatures')
 plt.xlim(MBxMin, MBxMax)
 plt.ylim(MByMin, MByMax)
-fig.legend()
 
+fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
 'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
 
 fig = plt.figure()
-for i in range(0, len(MBconstants['temp'])):
+for i in range(0, len(DMconstants['temp'])):
 	plt.plot(lambdaData,DMAnalytic[i],label=\
-	f"DM Analytic T={BBconstants['temp'][i]}K")
+	f"DM Analytic T={DMconstants['temp'][i]}K")
 	plt.plot(lambdaData,DMMCRT[i], label=\
 	f"DM MCRT T={DMconstants['temp'][i]}K")
 plt.xlabel('Log10(Wavelength) [Log10(microns)]')
@@ -308,8 +308,8 @@ plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
 +'against Log10(Wavelength)'+'\n'+ 'for given temperatures')
 plt.xlim(DMxMin, DMxMax)
 plt.ylim(DMyMin, DMyMax)
-fig.legend()
 
+fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
 'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
 
@@ -327,11 +327,12 @@ for i in range(0, len(MBconstants['temp'])):
 plt.xlabel('Log10(Wavelength) [Log10(microns)]')
 plt.ylabel('Log10(DMBB Probability) [dimensionless]')
 plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
-+'against Log10(Wavelength)'+'\n'+ 'for given temperatures')
++'& Log10(Modified Black Body Probabilities)'+'\n' \
++'against Log10(Wavelength)for given temperatures')
 plt.xlim(DMxMin, DMxMax)
 plt.ylim(DMyMin, DMyMax)
-fig.legend()
 
+fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath \
 +'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.jpeg')
 

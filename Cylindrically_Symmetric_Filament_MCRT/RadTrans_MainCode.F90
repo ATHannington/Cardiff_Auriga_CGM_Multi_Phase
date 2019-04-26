@@ -151,8 +151,8 @@ CFw0=(0.1500E+18)                                        ! set core radius (cm)
 CFschP=1                                                 ! set radial density exponent for Schuster profile
 CFwB=(0.1500E+19)                                        ! set boundary radius (cm)
 CFcTOT=100                                               ! set number of shells
-CFlist=0                                                 ! set flag to sanction diagnostics for cells
-CFprof=0                                                 ! set flag to sanction diagnostics for profile
+CFlist=1                                                 ! set flag to sanction diagnostics for cells
+CFprof=1                                                 ! set flag to sanction diagnostics for profile
 WRITE (6,"(/, A16)") trim(CFgeom)                        ! trial write statement
                                                          ! Dust Grain Properties (DG)
 DGsource='Draine'                                        ! set source of dust optical properties
@@ -164,7 +164,7 @@ DGkapM=0.20000E+03                                       ! set mass opacity for 
                                                          ! Wavelengths (WL)
 WLdelta=0.10                                             ! set spacing of optical properties
 WLdcl=0.10                                               ! set weight of slope-change
-WLprint=0                                                ! set flag to list some dust optical props.
+WLprint=1                                                ! set flag to list some dust optical props.
 WLplot=1                                                 ! set flag to plot optical properties
                                                          ! Temperatures (TE)
 TEkTOT=100                                               ! set number of temperatures required
@@ -250,23 +250,23 @@ CALL RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
 CALL RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,PRnTOT,WTpack,WTplot,&
 &WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
 
-!CALL RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
+CALL RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
 
-!CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFwB,CFcTOT,CFw,CFw2,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFwB,CFcTOT,CFw,CFw2,LPpTOT)
 
-!CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,CFmuTOT,CFsig)
+CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,CFmuTOT,CFsig)
 
-!CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFwB,CFcTOT,CFw,CFw2,DGkapV,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFwB,CFcTOT,CFw,CFw2,DGkapV,LPpTOT)
 
-!CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
-!&(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
+&(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
 
 
 !	VVV THIS TEST IS NOT WORKING!! VVV
 !
-!CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
-!&WLlTOT,WLlam,WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,&
-!&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL)
+! CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
+! &WLlTOT,WLlam,WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,&
+! &WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL)
 !
 !
 
@@ -791,6 +791,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
   WTlDMup(PRnTOT,TEk)=WTlMAX(TEk)+1                      !   special extreme case
 
   IF (WTplot<0) THEN                                     !   [] RAW DIAGNOSTICS
+	PRINT*,"RT_EmProbs_DMBB Raw diagnostics Data"
     WRITE (6,"(/,2X,'WLl:',6X,'WLlam:',5X,'WLdlam:',8X,'WTpBB:',/)")
     DO WLl=111,115
       WRITE (6,"(I6,2F12.3,3F14.6)") WLl,WLlam(WLl),WLdlam(WLl),WTpBB(WLl,TEk),WTpMB(WLl,TEk),WTpDM(WLl,TEk)
@@ -904,11 +905,18 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
 	  WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
-      IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) WRITE (*,*) WLl,WLlam(WLl),PGz(WLl)
+      
+	  IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) then
+		! PRINT*,"((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0))"
+		! PRINT*,"WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)[MCRT BB]"
+		WRITE (*,*) WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)
+	  ENDIF
     ENDDO                                                !     end loop over significant wavelengths
 	WRITE(4,*)
                                                          !     [] PLOT BB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
+	PRINT*,"RT_EmProbs_DMBB BB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
 	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
@@ -1010,6 +1018,8 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	WRITE(4,*)
                                                          !     [] PLOT MB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
+		PRINT*,"RT_EmProbs_DMBB MB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
 	
 	
@@ -1095,6 +1105,8 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 	WRITE(4,*)
                                                          !     [] PLOT DM SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
+	PRINT*,"RT_EmProbs_DMBB DMBB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
 	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
@@ -1147,6 +1159,8 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   
 ENDIF                                                    ! end diagnostic plots
 
+PRINT*," "
+PRINT*,"TEk,teT(TEk),teLMmb(TEk),teLMTdm(TEk)"
 DO TEk=0,TEkTOT,10
   WRITE (6,"(I5,F11.3,2E15.3)") TEk,teT(TEk),teLMmb(TEk),teLMTdm(TEk)
 ENDDO
@@ -1753,7 +1767,7 @@ IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E10.3,X,F10.5,15X,E10.3,6X,F10.1,13X,E10.3,6X,F10.5)")&          ! ... selected points ...
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=ZZzz*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
