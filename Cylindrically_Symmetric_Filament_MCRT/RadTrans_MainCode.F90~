@@ -3,17 +3,12 @@
 ! =====================
 
 ! Last updated (Ant): 2019.Mar.13 (line 1879)
+! Last updated (ATH): 19/04/2019
+
 ! Desktop: gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/star/lib `pgplot_link`
 ! Laptop:  gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/opt/local/lib -lpgplot -lX11
 !          gfortran -O0 -fbounds-check -o RUN RadTrans_MainCode.F90 -L/opt/local/lib -lpgplot -lX11
 ! Run with ./RUN
-
-!
-!To complie:            gfortran -o2 -o run RadTrans_MainCode.F90
-! or, for debugging:    gfortran -o2 -g -fbounds-check -o run RadTrans_MainCode.F90
-!
-!To RUN:
-!   ./run
 
 ! The value of pi is 3.14159274
 ! 2^(-1/2) = 0.70710678
@@ -54,9 +49,9 @@
 ! RT_Cyl1DSchuster_DetailedBalance not working!!
 !
 ! All data to be written for Python:
-!   Must allow for csv formatting and be SQUARE/RECTANGULAR
-!   Must be outputted in Fx.y style (e.g. F10.3). Python cannot handle Fortran
-!   Scientific notation
+!	Must allow for csv formatting and be SQUARE/RECTANGULAR
+!	Must be outputted in Fx.y style (e.g. F10.3). Python cannot handle Fortran
+!	Scientific notation
 !
 !
 !************************
@@ -140,20 +135,13 @@ REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE     :: RFjLAM    ! mean intensity in wav
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !ATH Added variables:
-Character(len=50)                           :: DustPropertiesFilename = &
-                                              & "DustProperties.csv"
-Integer*4                                   :: readcheck
-Integer*4                                   :: i
-INTEGER                                     :: BGkGO         !ID of temperature for cfLgo
+Character(len=50) 							:: DustPropertiesFilename = &
+											  & "DustProperties.csv"
+Integer*4 									:: readcheck
+Integer*4 									:: i
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-
-PRINT*,""
-print*,"***+++***"
-print*,"[@RadTrans_MainCode]: Program Start!"
-print*,"***+++***"
-PRINT*,""
 
                                                          ! [] INPUT PARAMETERS
                                                          ! Configuration (CF)
@@ -162,13 +150,12 @@ CFrho0=0.1000E-18                                        ! set central density (
 CFw0=(0.1500E+18)                                        ! set core radius (cm)
 CFschP=1                                                 ! set radial density exponent for Schuster profile
 CFwB=(0.1500E+19)                                        ! set boundary radius (cm)
-CFcTOT=100!100                                               ! set number of shells
-CFlist=0                                                 ! set flag to sanction diagnostics for cells
-CFprof=0                                                 ! set flag to sanction diagnostics for profile
+CFcTOT=100                                               ! set number of shells
+CFlist=1                                                 ! set flag to sanction diagnostics for cells
+CFprof=1                                                 ! set flag to sanction diagnostics for profile
 
-print*,
 Print*,"Selected Geometry:"
-print*,trim(CFgeom)                                      ! Write Selected geometry to screen
+WRITE (6,"(/, A16)") trim(CFgeom)                        ! trial write statement
                                                          ! Dust Grain Properties (DG)
 DGsource='Draine'                                        ! set source of dust optical properties
 DGmodel='draine_rv3.1.dat'                               ! set model for dust optical properties
@@ -182,7 +169,7 @@ WLdcl=0.10                                               ! set weight of slope-c
 WLprint=0                                                ! set flag to list some dust optical props.
 WLplot=0                                                ! set flag to plot optical properties
                                                          ! Temperatures (TE)
-TEkTOT=200                                               ! set number of temperatures required
+TEkTOT=100                                               ! set number of temperatures required
 teTmin=2.725                                             ! set minimum temperature
 teTmax=272.5                                             ! set maximum temperature
 TElist=0                                                 ! set flag to list temperatures
@@ -191,15 +178,10 @@ PRnTOT=1000                                              ! set number of referen
 WTpack=1000000                                           ! set number of calls for plotting probabilities
 WTplot=0                                                 ! set flag to plot probabilities
                                                          ! Background Radiation Field (RF)
-BGkBB= 58!58                                                 ! set temperature-ID of background BB radiation field
-BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
-
-BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch temperature for cfLgo
-IF (BGkGO.ge.BGkBB) then
-    print*,"WARNING [@RadTrans_MainCode]:  BGkGO cfLgo temperature .ge. background temp!!"
-endif
+BGkBB=29                                                 ! set temperature-ID of background BB radiation field
+BGfBB=+0.1000E+01                                        ! set dilution factor of background BB radiation field
                                                          ! Luminosity packets (LP)
-LPpTOT=1000000!1000000                                   ! set number of packets
+LPpTOT=1000000                                           ! set number of packets
 
                                                          ! [] ALLOCATIONS 1
 ALLOCATE (cfL(1:CFcTOT))                                 ! allocate cfL array
@@ -252,19 +234,19 @@ ALLOCATE (WTpDM(0:WLlTOT,0:TEkTOT))                      ! allocate WTpDM array
 ALLOCATE (RFjLAM(1:WLlTOT,1:CFcTOT))                     ! allocate RFjLAM array
 
 IF (WLplot==1) then
-    !CALL RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
-    OPEN(1,file=trim(adjustl(DustPropertiesFilename)),&
-    & iostat=readcheck)
-    WRITE(1,"(A3,1x,A3,1x,A3)") (/"lam","chi","alb"/)
-    do i = 1, WLlTOT
-        WRITE(1,"(F10.3,1x,F10.3,1x,F10.3)") &
-        &(/WLlam(i),WLchi(i),WLalb(i)/)
-    enddo
-    
-    CLOSE(1)
+	!CALL RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
+	OPEN(1,file=trim(adjustl(DustPropertiesFilename)),&
+	& iostat=readcheck)
+	WRITE(1,"(A3,1x,A3,1x,A3)") (/"lam","chi","alb"/)
+	do i = 1, WLlTOT
+		WRITE(1,"(F10.3,1x,F10.3,1x,F10.3)") &
+		&(/WLlam(i),WLchi(i),WLalb(i)/)
+	enddo
+	
+	CLOSE(1)
 ENDIF
 
-!!!!!       Main Subroutine Calls:          !!!!!
+!!!!!		Main Subroutine Calls:			!!!!!
 CALL RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
 
 CALL RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam, &
@@ -276,7 +258,7 @@ CALL RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
 CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,CFmuTOT,CFsig)
 
 
-!!!!!           TESTS:                  !!!!!!
+!!!!!			TESTS:					!!!!!!
 
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFwB,CFcTOT,CFw,CFw2,LPpTOT)
 
@@ -286,21 +268,18 @@ CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,
 ! &(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
 
 
-!   VVV THIS TEST IS NOT WORKING!! VVV
+!	VVV THIS TEST IS NOT WORKING!! VVV
 
 CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw, & 
 &CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
 &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
 &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-&LPpTOT,RFjLAM,cfT,cfL,BGkGO)
+&LPpTOT,RFjLAM,cfT,cfL)
 
 
 
-PRINT*,""
-print*,"***+++***"
-print*,"[@RadTrans_MainCode]: Program Complete!"
-print*,"***+++***"
-PRINT*,""
+
+
 !****************************
 END PROGRAM RadTrans_MainCode
 !****************************
@@ -585,12 +564,8 @@ ENDDO                                                    ! end loop over tempera
 
                                                          ! [] CONDITIONAL DIAGNOSTIC PRINTOUT
 IF (TElist==1) THEN                                      ! [IF] printout sanctioned, [THEN]
-    print*," "
-    PRINT*,"TElist .eq. 1! Temperature Diagnostics: "
-    PRINT*,"TEk,teT(TEk)"
-    DO TEk=0,TEkTOT,10
-        WRITE (6,"(I5,F11.3)") TEk,teT(TEk)
-    ENDDO
+  WRITE (6,"(/,4X,'DISCRETE TEMPERATURES (TEkTOT =',I4,'):')") TEkTOT
+  WRITE (6,"(6F9.3,8X,6F9.3,/)") teT(0:5),teT(TEkTOT-5:TEkTOT) !
 ENDIF                                                    ! [ENDIF]
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -628,7 +603,7 @@ SUBROUTINE RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,PRnTOT,WTp
 !   the MB emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpMB(0:WLlTOT,0:TEkTOT)); 
 !   the ID of longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT    (WTlMBlo(1:WLlTOT,0:TEkTOT)); 
 !   the ID of shortest wavelength with WTpMB(ID,k)>=l/lTOT       (WTlMBup(1:WLlTOT,0:TEkTOT));
-!   the MB luminosity per unit mass                              ( (0:TEkTOT));
+!   the MB luminosity per unit mass                              (teLMmb(0:TEkTOT));
 
   
 !   the DM emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpDM(0:WLlTOT,0:TEkTOT)); 
@@ -701,17 +676,17 @@ REAL(KIND=8)                                :: PGzMIN    ! lower limit on log10[
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !ATH Added variables:
 Character(len=50) :: BBconstantsFile= "BBconstants.csv",&
-               & BBanalyticFile = "BBAnalytic.csv", &
-               & BBmcrtFile     = "BBMCRT.csv",     &
-               & MBconstantsFile= "MBconstants.csv",&
-               & MBanalyticFile = "MBAnalytic.csv", &
-               & MBmcrtFile     = "MBMCRT.csv",     &
-               & DMconstantsFile= "DMconstants.csv",&
-               & DManalyticFile = "DMAnalytic.csv", &
-               & DMmcrtFile     = "DMMCRT.csv",     &
-               & LambdaDataFile = "WLData.csv"
-Integer                                     :: readcheck
-Integer                                     :: i
+			   & BBanalyticFile = "BBAnalytic.csv", &
+			   & BBmcrtFile		= "BBMCRT.csv",		&
+			   & MBconstantsFile= "MBconstants.csv",&
+			   & MBanalyticFile = "MBAnalytic.csv", &
+			   & MBmcrtFile		= "MBMCRT.csv",		&
+			   & DMconstantsFile= "DMconstants.csv",&
+			   & DManalyticFile = "DMAnalytic.csv", &
+			   & DMmcrtFile		= "DMMCRT.csv",		&
+			   & LambdaDataFile = "WLData.csv"
+Integer*4 									:: readcheck
+Integer*4 									:: i
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
@@ -766,12 +741,6 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
   WTpMB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher MB em. probs. to unity
   teLMTdm(TEk)=(0.215343E+17)*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
                                           (teT(TEk)**2)  !   .........mass, per unit temperature
-                                          
-!!!!
-!
-!   print*,"emprobs-dmbb teLMTdm(TEk)",teLMTdm(TEk)
-!
-!!!!
   WTpDM(WTlMIN(TEk):WTlMAX(TEk),TEk)=                   &!   normalise DM .......
                    &WTpDM(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpDM(WTlMAX(TEk),TEk)  !   ...... probabilities
@@ -830,7 +799,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
   WTlDMup(PRnTOT,TEk)=WTlMAX(TEk)+1                      !   special extreme case
 
   IF (WTplot<0) THEN                                     !   [] RAW DIAGNOSTICS
-    PRINT*,"RT_EmProbs_DMBB Raw diagnostics Data"
+	PRINT*,"RT_EmProbs_DMBB Raw diagnostics Data"
     WRITE (6,"(/,2X,'WLl:',6X,'WLlam:',5X,'WLdlam:',8X,'WTpBB:',/)")
     DO WLl=111,115
       WRITE (6,"(I6,2F12.3,3F14.6)") WLl,WLlam(WLl),WLdlam(WLl),WTpBB(WLl,TEk),WTpMB(WLl,TEk),WTpDM(WLl,TEk)
@@ -856,8 +825,8 @@ ENDDO                                                    ! end loop over discret
 
 !---------------------------------------------------------
 !---------------------------------------------------------
-!           Diagnostics plotting                         !
-!               & relevant data output                   !
+!			Diagnostics plotting						 !
+!				& relevant data output					 !
 !---------------------------------------------------------
 !---------------------------------------------------------
 
@@ -871,48 +840,48 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
   
    OPEN(1,file=trim(adjustl(LambdaDataFile)),&
-  &iostat=readcheck)                                     !Open a seperate file for wavelength data. This
-                                                         !..ensures we only write this data once.
+  &iostat=readcheck)									 !Open a seperate file for wavelength data. This
+														 !..ensures we only write this data once.
 
-  IF(readcheck .ne. 0) then                              !Same creation/"read" check as previous
-      print*,(/LambdaDataFile, &
-      & " not read successfully! Aborting program!"/)
-      STOP
+  IF(readcheck .ne. 0) then								 !Same creation/"read" check as previous
+	  print*,(/LambdaDataFile, &
+	  & " not read successfully! Aborting program!"/)
+	  STOP
   ENDIF
   
   DO WLl=1,WLlTOT                                        !     start loop over wavelengths
     PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
-    WRITE(1,"(F10.3)") (/PGx(WLl)/)
+	WRITE(1,"(F10.3)") (/PGx(WLl)/)
   ENDDO                                                  !     end loop over wavelengths
 
   OPEN(2,file=trim(adjustl(BBconstantsFile)),&
-  &iostat=readcheck)                                         !Open file for BB constants
-                                                         !..here trim and adjustl will remove any unecessary
-                                                         !..white space at the start of the filename.
-  IF(readcheck .ne. 0) then                              !..Check file was created/"read" correctly
-      print*,(/BBconstantsFile,&
-    &  " not read successfully! Aborting program!"/)     !....ELSE error code and STOP
-      STOP
+  &iostat=readcheck)										 !Open file for BB constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/BBconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
-  &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
   
   OPEN(3,file=trim(adjustl(BBanalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
-                                                          !..BB curve.
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..BB curve.
   IF(readcheck .ne. 0) then
-      print*,(/BBanalyticFile,&
-      & " not read successfully! Aborting program!"/)
-      STOP
+	  print*,(/BBanalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
   ENDIF
 
-    
+	
   OPEN(4,file=trim(adjustl(BBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
-                                                         !..BB curve, sampled from RT_LumPack_BB
+														 !..BB curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
-    print*,(/BBmcrtFile, &
-    & " not read successfully! Aborting program!"/)
-    STOP
+   	print*,(/BBmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
   ENDIF
 
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
@@ -923,17 +892,17 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpBB(WLl,TEk)-WTpBB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
+	  WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths   
-    WRITE(3,*)
-    PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
+	WRITE(3,*)
+	PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
-    
-    WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
-    &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+	
+	
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
@@ -943,21 +912,21 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-      WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
+	  WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
       
-      IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) then
-        ! PRINT*,"((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0))"
-        ! PRINT*,"WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)[MCRT BB]"
-        WRITE (*,*) WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)
-      ENDIF
+	  IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) then
+		! PRINT*,"((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0))"
+		! PRINT*,"WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)[MCRT BB]"
+		WRITE (*,*) WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)
+	  ENDIF
     ENDDO                                                !     end loop over significant wavelengths
-    WRITE(4,*)
+	WRITE(4,*)
                                                          !     [] PLOT BB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
-    PRINT*,"RT_EmProbs_DMBB BB Plotting Data"
-    PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
+	PRINT*,"RT_EmProbs_DMBB BB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
@@ -968,44 +937,44 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+	
+	
+	
   ENDDO                                                  !   end loop over temperatures
   
-  close(1)                                               !Close lambda data file
-  close(2)                                               !Close BB constants file
-  close(3)                                               !Close Analytic BB data file
-  close(4)                                               !Close MCRT BB data file
+  close(1)												 !Close lambda data file
+  close(2)												 !Close BB constants file
+  close(3)												 !Close Analytic BB data file
+  close(4)												 !Close MCRT BB data file
    
   OPEN(2,file=trim(adjustl(MBconstantsFile)),&
-  &iostat=readcheck)                                         !Open file for MB constants
-                                                         !..here trim and adjustl will remove any unecessary
-                                                         !..white space at the start of the filename.
-  IF(readcheck .ne. 0) then                              !..Check file was created/"read" correctly
-      print*,(/MBconstantsFile,&
-    &  " not read successfully! Aborting program!"/)     !....ELSE error code and STOP
-      STOP
+  &iostat=readcheck)										 !Open file for MB constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/MBconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
-  &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
   
   OPEN(3,file=trim(adjustl(MBanalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
-                                                          !..MB curve.
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..MB curve.
   IF(readcheck .ne. 0) then
-      print*,(/MBanalyticFile,&
-      & " not read successfully! Aborting program!"/)
-      STOP
+	  print*,(/MBanalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
   ENDIF
 
-    
+	
   OPEN(4,file=trim(adjustl(MBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
-                                                         !..MB curve, sampled from RT_LumPack_BB
+														 !..MB curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
-    print*,(/MBmcrtFile, &
-    & " not read successfully! Aborting program!"/)
-    STOP
+   	print*,(/MBmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
   ENDIF
 
   
@@ -1014,35 +983,35 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
     PGy=(-1d-10)                                        !     set PGy to extremely low value
-    
-    
-    !! This section calculates data for the analytic result
-    !! of the MB spectrum.
-    !! We want Log Log space. WTpMB is the probability integrated,
-    !! so here we are taking the numeric differential 
-    !! so as to check the MBB curve is as expected.
+	
+	
+	!! This section calculates data for the analytic result
+	!! of the MB spectrum.
+	!! We want Log Log space. WTpMB is the probability integrated,
+	!! so here we are taking the numeric differential 
+	!! so as to check the MBB curve is as expected.
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
       WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
-    WRITE(3,*)
-    
-    !! This section calculates data for the MBB curve from
-    !! the MCRT version, by calling RT_LumPack_MB.
-    !! Here we are returned an array of times each bin is
-    !! called. This gives us a measure of the probability
-    !! when divided by the NPacketsInverse (frequentist)
-    !! and again is numerically differentiated to check
-    !! that the MBB curve works as expected.
+	WRITE(3,*)
+	
+	!! This section calculates data for the MBB curve from
+	!! the MCRT version, by calling RT_LumPack_MB.
+	!! Here we are returned an array of times each bin is
+	!! called. This gives us a measure of the probability
+	!! when divided by the NPacketsInverse (frequentist)
+	!! and again is numerically differentiated to check
+	!! that the MBB curve works as expected.
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
-        
-    WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
-    &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+	
+		
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
@@ -1052,17 +1021,17 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-       WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)                                    
+	   WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)									  
     ENDDO                                                !     end loop over significant wavelengths
-    WRITE(4,*)
+	WRITE(4,*)
                                                          !     [] PLOT MB SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
-        PRINT*,"RT_EmProbs_DMBB MB Plotting Data"
-    PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
+		PRINT*,"RT_EmProbs_DMBB MB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
-    
-    
+	
+	
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
@@ -1073,42 +1042,42 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+	
+	
+	
   ENDDO                                                  !   end loop over temperatures
   close(2)
   close(3)
   close(4)
   
   OPEN(2,file=trim(adjustl(DMconstantsFile)),&
-  &iostat=readcheck)                                     !Open file for DM constants
-                                                         !..here trim and adjustl will remove any unecessary
-                                                         !..white space at the start of the filename.
-  IF(readcheck .ne. 0) then                              !..Check file was created/"read" correctly
-      print*,(/DMconstantsFile,&
-    &  " not read successfully! Aborting program!"/)     !....ELSE error code and STOP
-      STOP
+  &iostat=readcheck)									 !Open file for DM constants
+														 !..here trim and adjustl will remove any unecessary
+														 !..white space at the start of the filename.
+  IF(readcheck .ne. 0) then								 !..Check file was created/"read" correctly
+	  print*,(/DMconstantsFile,&
+	&  " not read successfully! Aborting program!"/)	 !....ELSE error code and STOP
+	  STOP
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
-  &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
+  &(/"temp","xmin","xmax","ymin","ymax"/)				 !Write header text to file
   
   OPEN(3,file=trim(adjustl(DManalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
-                                                          !..DM curve.
+  & iostat=readcheck)									 !Open a second file, for the analytic data of the 
+														  !..DM curve.
   IF(readcheck .ne. 0) then
-      print*,(/DManalyticFile,&
-      & " not read successfully! Aborting program!"/)
-      STOP
+	  print*,(/DManalyticFile,&
+	  & " not read successfully! Aborting program!"/)
+	  STOP
   ENDIF
 
-    
+	
   OPEN(4,file=trim(adjustl(DMmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
-                                                         !..DM curve, sampled from RT_LumPack_BB
+														 !..DM curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
-    print*,(/DMmcrtFile, &
-    & " not read successfully! Aborting program!"/)
-    STOP
+   	print*,(/DMmcrtFile, &
+	& " not read successfully! Aborting program!"/)
+	STOP
   ENDIF
   
   
@@ -1120,16 +1089,16 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpDM(WLl,TEk)-WTpDM(WLl-1,TEk))-  &!       compute DM emission ......
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
-      WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
+	  WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
-    WRITE(3,*)
+	WRITE(3,*)
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
-    WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
-    &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+	
+	WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
+	&(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)				 !..Write single value constants to file
+	
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
@@ -1139,15 +1108,15 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-       WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
+	   WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
     ENDDO                                                !     end loop over significant wavelengths
-    WRITE(4,*)
+	WRITE(4,*)
                                                          !     [] PLOT DM SPECTRA TO SCREEN
     WRITE (*,*) ' '                                      !     print blank line
-    PRINT*,"RT_EmProbs_DMBB DMBB Plotting Data"
-    PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
+	PRINT*,"RT_EmProbs_DMBB DMBB Plotting Data"
+	PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
+	
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1158,9 +1127,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
                                                          ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+	
+	
+	
   ENDDO                                                  !   end loop over temperatures
   
   ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
@@ -1181,9 +1150,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
                                                          ! !     [] PLOT TO SCREEN
     ! WRITE (*,*) ' '                                      !     print blank line
     ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
-    
-    
+	
+	
+	
     ! ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1197,6 +1166,13 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   ! ENDDO                                                  !   end loop over temperatures
   
 ENDIF                                                    ! end diagnostic plots
+
+PRINT*," "
+PRINT*,"TEk,teT(TEk),teLMmb(TEk),teLMTdm(TEk)"
+DO TEk=0,TEkTOT,10
+  WRITE (6,"(I5,F11.3,2E15.3)") TEk,teT(TEk),teLMmb(TEk),teLMTdm(TEk)
+ENDDO
+
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_EmProbs_DMBB
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1776,7 +1752,7 @@ REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: CFmu      ! density in cells (g/c
 REAL(KIND=8),INTENT(OUT)                    :: CFmuTOT   ! total line-density of filament (g/cm)
 REAL(KIND=8),INTENT(OUT)                    :: CFsig     ! surface-density through spine (g/cm^2)
                                                          ! [] DRONES
-REAL(KIND=8)                                :: coeff      ! coefficient
+REAL(KIND=8)                                :: ZZzz      ! coefficient
 INTEGER                                     :: CFc       ! dummy ID of shell
 REAL(KIND=8)                                :: CFzet2HI  ! zeta^2 outer
 REAL(KIND=8)                                :: CFzet2LO  ! zeta^2 inner
@@ -1789,12 +1765,12 @@ REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[
 IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
                                                          ! [] CASE p=1
 IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
+  ZZzz=6.2831853*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
     CFrho(CFc)=2.*CFrho0*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO)) !     compute CFmu
+    CFmu(CFc)=ZZzz*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO)) !     compute CFmu
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
@@ -1802,58 +1778,58 @@ IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
     &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
+  CFmuTOT=ZZzz*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
   CFsig=2.*CFrho0*CFw0*LOG(CFw(CFcTOT)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=2
 IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
-  coeff=3.14159274*CFrho0*CFw0**2
+  ZZzz=3.14159274*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
     CFrho(CFc)=CFrho0*LOG((1.+CFzet2HI)/(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*LOG((1.+CFzet2HI)/(1.+CFzet2LO))      !     compute CFmu
+    CFmu(CFc)=ZZzz*LOG((1.+CFzet2HI)/(1.+CFzet2LO))      !     compute CFmu
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc)           !     print out selected points on profile
   ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*LOG(1.+CFzet2HI)                          !   compute total line-density
+  CFmuTOT=ZZzz*LOG(1.+CFzet2HI)                          !   compute total line-density
   CFsig=2.*CFrho0*CFw0*ATAN(CFw(CFcTOT)/CFw0)            !   compute surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=3
 IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
+  ZZzz=6.2831853*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
     CFrho(CFc)=2.*CFrho0*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))
+    CFmu(CFc)=ZZzz*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc)           !     print out selected points on profile
   ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*(1.-(1./SQRT(1.+CFzet2HI))) !   compute total line-density
+  CFmuTOT=ZZzz*(1.-(1./SQRT(1.+CFzet2HI))) !   compute total line-density
   CFsig=2.*CFrho0*CFw(CFcTOT)/SQRT(1.+CFzet2HI)          !   compute surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=4
 IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
-  coeff=3.14159274*CFrho0*CFw0**2
+  ZZzz=3.14159274*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
     CFrho(CFc)=CFrho0*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))
+    CFmu(CFc)=ZZzz*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc)           !     print out selected points on profile
   ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
+  CFmuTOT=ZZzz*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
   CFsig=CFrho0*CFw0*(ATAN(CFw(CFcTOT)/CFw0)+(CFw(CFcTOT)/(CFw0*(1.+CFzet2HI)))) ! surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] DIAGNOSTICS
@@ -2036,7 +2012,7 @@ END SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
 &WLlTOT,WLlam,WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,&
-&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL,BGkGO)
+&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL)
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2121,16 +2097,10 @@ INTEGER,     INTENT(IN),                                &! ID of shortest wavele
 REAL(KIND=8),INTENT(IN),DIMENSION(0:TEkTOT) :: teLMTdm   ! MB luminosity per unit mass
 INTEGER,     INTENT(IN)                     :: PRnTOT    ! the number of reference probabilities
 INTEGER,     INTENT(IN)                     :: LPpTOT    ! the number of luminosity packets
-
-
-INTEGER, INTENT(IN)                         :: BGkGO         !ID of temperature for cfLgo
-
-
 REAL(KIND=8),INTENT(OUT),                               &! the mean intensity in cell CFc, in wavelength ...
      DIMENSION(1:WLlTOT,1:CFcTOT)           :: RFjLAM    ! .... interval [WLlam(WLl),WLlam(WLl)+WLdlam(WLl)] 
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfT       ! the temperature in each cell
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfL       ! the line-luminosity absorbed by each cell
-
 
 INTEGER                                     :: CFc,CFcc  ! dummy shell IDs
 !REAL(KIND=8)                                :: CFtauTOT  ! total optical depth through filament
@@ -2141,7 +2111,7 @@ REAL(KIND=8)                                :: LPalb     ! albedo of luminosity 
 REAL(KIND=8)                                :: LPalfa    ! 'outwardness' of packet (pc)
 REAL(KIND=8)                                :: LPbeta    ! squared tangent-distance (pc^2)
 REAL(KIND=8)                                :: LPchi     ! extinction opacity of luminosity packet
-REAL(KIND=8)                                :: LPdeltaL    ! line-luminosity of a luminosity packet
+REAL(KIND=8)                                :: LPdltL    ! line-luminosity of a luminosity packet
 REAL(KIND=8),DIMENSION(1:3)                 :: LPe       ! direction of luminosity packet (unit vector)
 REAL(KIND=8)                                :: LPe1122   ! e_x^2+e_y^2
 INTEGER                                     :: LPl       ! wavelength-ID of luminosity packet
@@ -2165,53 +2135,24 @@ INTEGER                                     :: NMeIN,NMeSC,NMtau
 REAL(KIND=8),DIMENSION(1:3)                 :: MUeIN,SDeIN
 REAL(KIND=8),DIMENSION(1:3)                 :: MUeSC,SDeSC
 REAL(KIND=8)                                :: MUtau,SDtau
-REAL(KIND=8)                                :: TeRatio       ! weighting factor
+REAL(KIND=8)                                :: ZZzz       ! weighting factor
+
+Real(Kind=8) :: test
+
+LPdltL=((0.35628897E+03)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
+                                         &/DBLE(LPpTOT)  ! ... a single luminosity packet	(0.35628897E+03)								 
+Print*,"LPdltL",LPdltL
+print*,"teT(BGkBB)",teT(BGkBB)
 
 
-Real(kind=8)                                ::  rfI
-Real(kind=8)                                ::  rfH         !Heating term from Lucy 1999 method
-REAL(KIND=8),DIMENSION(1:CFcTOT)            ::  rfTemp      !Lucy line addition temp
-integer(KIND=8),DIMENSION(1:CFcTOT)         ::  LPnScatter, LPnAbsorb
-Character(len=50)                           :: CellTempFilename = &
-                                              & "detailed-balance-RT_cell_temperatures.csv"
-integer                                     ::  readcheck
-integer                                     :: i
-Real(kind=8)                                :: LmRatio
 
-
-LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
-                                         &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)                                 
-                                         
+										 
 CFw2B=CFwB**2                                            ! compute W_B squared
 RFjLAM=0.                                                ! set mean intensities to zero
-cfT=teT(BGkGO)!teT(0)
-CFk=BGkGO!1
-
+cfT=teT(0)
+CFk=1
 cfL=0.                                                   ! set line-luminosity absorbed by each cell to zero
-cfLgo(1:CFcTOT)=CFmu(1:CFcTOT)*teLMmb(BGkGO)
-
-
-LPnScatter = 0
-LPnAbsorb = 0
-
-
-
-!Diagnostics print statements
-!print*," "
-!print*,"teT(BGkBB)",teT(BGkBB)
-!print*,"teT(BGkGO) cfLgo temp = ", teT(BGkGO), " K"
-!print*,"cell initialised temp cfT(1)",cfT(1)," K"
-!print*," "
-!print*,"cfLgo(1)",cfLgo(1)
-!print*,"LPdeltaL",LPdeltaL
-!print*," "
-
-!Sanity Check: If this condition isn't met we will overshoot
-! cfLgo when increasing temperature, and temperature errors will occur!!
-IF(cfLgo(1).lt.LPdeltaL) then
-print*,"WARNING[@Detailed-Balance]: Luminosity condition FALSE!!! CFlGO < LPdeltaL! Please Adjust BGkGO!"
-ENDIF
-
+cfLgo(1:CFcTOT)=CFmu(1:CFcTOT)*teLMmb(BGkBB)
 LPnSCA=0                                                 ! set number of scatterings to zero
 NMeIN=0;   MUeIN=0.;   SDeIN=0.                          ! *****
 NMeSC=0;   MUeSC=0.;   SDeSC=0.                          ! *****
@@ -2221,16 +2162,15 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   &                  (CFwB,LPr,LPr1122,LPe,LPtau)        !   ... a luminosity packet
   NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
   NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
-  
-  CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
-  
   CALL RT_LumPack_BB(BGkBB,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,LPl)
-  
   LPchi=WLchi(LPl)                                       !   record extinction opacity of luminosity packet
   LPalb=WLalb(LPl)                                       !   albedo of luminosity packet
-
+  CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
+ 
   DO WHILE (CFc<=CFcTOT)                                 !   keep going until packet exits filament
   
+     !print*, "cfT(CFc)", cfT(CFc)
+
     LPsTAU=LPtau/(CFrho(CFc)*LPchi)                      !     convert optical depth to distance
     CFcc=CFc                                             !     record ID of shell being entered
     LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
@@ -2239,203 +2179,102 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       LPs=-LPalfa+                                      &!       compute .......
       &SQRT(LPalfa**2+((CFw2(CFc)-LPr1122)/LPe1122))     !       ... path length
       CFc=CFc+1                                          !       increase shell ID
-
+	  !print*,"LPs alpha<0",LPs
     ELSE                                                 !     [ELSE] travelling inward, so
       LPbeta=LPalfa**2+((CFw2(CFc-1)-LPr1122)/LPe1122)   !       compute beta, and
       IF (LPbeta>0.) THEN                                !       [IF] LPbeta>0, [THEN] hits inner shell
         LPs=-LPalfa-SQRT(LPbeta)                         !         compute path
         CFc=CFc-1                                        !         decrease shell ID
-
+		!print*,"LPs alpha>0",LPs
       ELSE                                               !       [ELSE] traverses shell, so
         LPs=-LPalfa+                                    &!         compute .......
         &SQRT(LPalfa**2+(CFw2(CFc)-LPr1122)/LPe1122)     !         ... path length
         CFc=CFc+1                                        !         increase shell ID
-
+		!print*,"LPs alpha else",LPs
       ENDIF                                              !       [ENDIF] inward cases done
     ENDIF                                                !     [ENDIF] all cases done
-
+	
     IF (LPsTAU<LPs) THEN                                 !     [IF] range of packet too small
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
       CFc=CFcc                                           !       record that still in same shell
       RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
+  
+!Print*,RFjLAM(LPl,CFc)
 
       CALL RT_ReDirectIsotropic(LPe,LPtau)               !       generate new direction and optical depth
       NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
       NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
       LPnSCA=LPnSCA+1                                    !       increment number of scatterings
       CALL RANDOM_NUMBER(LRD)
+	  ! print*,"LPalb",LPalb
+	  ! print*,"LRD",LRD
+
+	  !Need some system here to cool the shells
+	  !Need some way of checking temperature not decreasing
+	  !How would the shells cool?
+
+
+
+
       IF (LRD>LPalb) THEN
-
-        LPnAbsorb(CFc) = LPnAbsorb(CFc) + 1 
-
-        cfL(CFc)=cfL(CFc)+LPdeltaL
+        cfL(CFc)=cfL(CFc)+LPdltL
         IF (cfL(CFc)<cfLgo(CFc)) THEN
-          !CALL RT_LumPack_MB(0,TEkTOT,PRnTOT,WLlTOT, &
-          !& WTpMB,WTlMBlo,WTlMBup,LPl)
-          CALL RT_LumPack_MB(BGkGO,TEkTOT,PRnTOT,WLlTOT, &
-          & WTpMB,WTlMBlo,WTlMBup,LPl)        
+          CALL RT_LumPack_MB(0,TEkTOT,PRnTOT,WLlTOT, &
+		  & WTpMB,WTlMBlo,WTlMBup,LPl)
         ELSE
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-        !Temperature Checks:
-        !If temperature of cell has increased into next increment
-        !in last loop, then increase temp. counter.
-          Do while(cfT(CFc)>teT(CFk(CFc))) 
-            CFk(CFc)=CFk(CFc)+1
-          enddo
-        !TeRatio: Checks the closeness of continuous cell temp. (cfT) to 
-        !boundaries of discrete temp.. TeRatio -> 1 as cfT -> teT(CFk(CFc-1))
-        ! i.e. the lower boundary of temperature.
-        !TeRatio -> 0 as cfT -> teT(CFk(CFc)) i.e. upper bound
-        !Therefore if LRD<TeRatio the temperature will randomly decrease with
-        !high probability if cfT ~ teT(CFk(CFc)).
-        
-          TEk=CFk(CFc)
-          TeRatio=(teT(TEk)-cfT(CFc))/(teT(TEk)-teT(TEk-1))
+          IF(cfT(CFc)>teT(CFk(CFc))) CFk(CFc)=CFk(CFc)+1
+
+        !  IF (CFk(CFc).le. 1) print*,"help!"
+
+          ZZzz=(teT(CFk(CFc))-cfT(CFc))/(teT(CFk(CFc))-teT(CFk(CFc-1)))
           CALL RANDOM_NUMBER(LRD)
-          IF (LRD.le.TeRatio) TEk =TEk-1
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-          
-        !Increase Cell temperature. See documentation
-          cfT(CFc)=cfT(CFc)+(LPdeltaL/(CFmu(CFc)*teLMTdm(TEk)))
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-        !Randomly call new wavelength from cell Temp based DMBB.
-          CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT, &
-          & WTpDM,WTlDMlo,WTlDMup,LPl)
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+          IF (LRD>ZZzz) CFk(CFc) =CFk(CFc)-1
+          cfT(CFc)=cfT(CFc)+(LPdltL/(CFmu(CFc)*teLMTdm(CFk(CFc))))
+          CALL RT_LumPack_DM(CFk(CFc),TEkTOT,PRnTOT,WLlTOT, &
+		  & WTpDM,WTlDMlo,WTlDMup,LPl)
         ENDIF
-            
+			
         LPchi=WLchi(LPl)
         LPalb=WLalb(LPl)
-      ENDIF   
+      ENDIF
     ELSE
-      LPnScatter(CFcc) = LPnScatter(CFcc) + 1
-    
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
-      RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
+      RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
-    LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
-    
+    LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distane from spine
+	
   ENDDO                                                  !   packet exits filament 
-  
-  If(mod(dble(LPp),(dble(LPpTOT)/10.d0)).eq. 0.d0) then
-    print("(A7,1x,F7.2,1x,A3)"),"@DB: ", (dble(LPp)/dble(LPpTOT))*100.d0," %"
-  endif
   
 ENDDO                                                    ! end loop over luminosity packets
 
-do CFc=1,CFcTOT,1
-    rfI = 0.d0
-    do LPl=1,WLlTOT,1
-        rfI = rfI+(WLchi(LPl)*(1.d0-WLalb(LPl))*RFjLAM(LPl,CFc))    !CGS. Lucy 1999
-    enddo
-    rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*(3.14159265359d0))
-
-    do TEK=1,TEkTOT,1
-        If(teLMmb(TEk).gt.rfH)then
-            LmRatio=(rfH - teLMmb(TEk-1))/(teLMmb(TEk)-teLMmb(TEk-1))
-            rfTemp(CFc) = teT(TEk-1) + (teT(TEk)-teT(TEk-1))*LmRatio
-            EXIT
-        endif
-    enddo
-enddo
- 
-!print*, 
-!print*,"Lucy intercept added temp: rfTemp(LPl,CFc):" 
-!do CFc=1,CFcTOT,1
-!   IF(rfTemp(CFc).ne.0.d0) THEN
-!       print*,"CFc",CFc
-!       print*,"temp",rfTemp(CFc)
-!   ENDIF
-!enddo
-!print*," "
-
 print*,"-+-+-+-+-"
-!print*,"Ant's Diagnostics:"
-!print*," "
-!Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
-!WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
-!Print*,"TEkTOT,BGfBB,teT(BGkBB)"
-!WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
-!Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
-!WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
-!print*,"LPpTOT,LPpTOT"
-!WRITE (*,*) LPpTOT,LPpTOT
+print*,"Ant's Diagnostics:"
+print*," "
+Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
+WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
+Print*,"TEkTOT,BGfBB,teT(BGkBB)"
+WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
+Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
+WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
+print*,"PRnTOT,LPpTOT"
+WRITE (*,*) PRnTOT,LPpTOT
 
 print*," "
 print*,"ATH diag:"
 print*," "
+print*,"The mean intensities at each wavelength and in each cell:"
+print*,"RFjLAM(1:WLlTOT,CFcTOT)"!RFjLAM(1,1),RFjLAM(WLlTOT/2,CFcTOT/2),RFjLAM(WLlTOT,CFcTOT)"
+print*,RFjLAM(1:WLlTOT,CFcTOT)
 print*,"The temperature of each cell:"
 print*,"cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)"
 print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
-print*," "
-print*,"LPnSCA/LPpTOT",dble(LPnSCA)/dble(LPpTOT)
-print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
-print*,LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)
-print*," "
-print*,"LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)"
-print*,LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)
-print*," "
+print*,"The line-luninosity absorbed by each cell:"
+print*,"cfL(1),cfL(CFcTOT/2),cfL(CFcTOT)"
+print*,"cfL(1:CFcTOT)"
+print*,cfL(1:CFcTOT)
 
 
-print*,"Saving Temperatures versus cells:"
-print*,"Filename = ", CellTempFilename
-OPEN(1,file=trim(adjustl(CellTempFilename)),&
-& iostat=readcheck)
-IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
-WRITE(1,"(5(A4,1x))") (/"cell","temp","lucy","EquT","PTOT"/)
-do i = 1, CFcTOT
-    IF (i.eq.1) then
-        WRITE(1,"(4(F15.8,1x),F10.0)") &
-        &(/dble(i),cfT(i),rfTemp(i),teT(BGkBB),dble(LPpTOT)/)
-    ELSE
-        WRITE(1,"(F15.8,1x,F15.8,1x,F15.8)") &
-        &(/dble(i),cfT(i),rfTemp(i)/)
-    ENDIF
-enddo
-close(1)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_Cyl1DSchuster_DetailedBalance
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-!ATH Added subroutines:
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE WL_cms_microns_convert(WLlTOT, WLlamIN, WLlamOUT, FLAG)
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!This is a very basic subroutine to handle any conversion
-! between cms and microns for wavelengths.
-
-!IN:
-!WLlamIN(1:WLlTOT)                                                  !Wavelengths array passed in, and to be converted
-!FLAG                                                               !Flag to which units to convert to. EITHER 'cm' or 'mu' ONLY!!!
-
-!OUT
-!WLlamIN(1:WLlTOT)                                                  !Wavelengths array passed out, after having been converted
-
-
-IMPLICIT NONE
-INTEGER, INTENT(IN)                             :: WLlTOT           ! the number of discrete wavelengths
-REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT)     :: WLlamIN
-Character(len=2), intent(in)                    :: FLAG 
-REAL(KIND=8),INTENT(OUT),DIMENSION(1:WLlTOT)    :: WLlamOUT
-REAL (kind=8)                                   :: ConversionConst
-
-ConversionConst = 1.00d4
-
-If(FLAG.eq."cm") then
-    WLlamOUT = WLlamIN * ConversionConst
-else if(FLAG.eq."mu") then
-    WLlamOUT = WLlamIN * (1.d0/ConversionConst)
-else    
-    print*,"WARNING! [@cms_to_microns]: Invalid conversion flag."
-    print*,"Must be coverted to 'cm' [centimeters] or to 'mu' [microns]."
-    print*,"No conversion has been completed! WLlamOUT = WLlamIN"
-    
-    WLlamOUT = WLlamIN
-endif
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-END SUBROUTINE WL_cms_microns_convert
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
