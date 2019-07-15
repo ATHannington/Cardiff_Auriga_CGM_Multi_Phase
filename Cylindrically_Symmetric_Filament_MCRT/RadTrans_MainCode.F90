@@ -45,7 +45,7 @@
 !   RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity
 !   ++++++++++++++++
 !   RT_Cyl1D_GlobalParameters
-!   
+!
 ! Timing:
 !   TBD
 !   TBD
@@ -199,7 +199,7 @@ IF (BGkGO.ge.BGkBB) then
     print*,"WARNING [@RadTrans_MainCode]:  BGkGO cfLgo temperature .ge. background temp!!"
 endif
                                                          ! Luminosity packets (LP)
-LPpTOT=1000000!1000000                                   ! set number of packets
+LPpTOT= int(1E6)!1000000                                   ! set number of packets
 
                                                          ! [] ALLOCATIONS 1
 ALLOCATE (cfL(1:CFcTOT))                                 ! allocate cfL array
@@ -260,7 +260,7 @@ IF (WLplot==1) then
         WRITE(1,"(F10.3,1x,F10.3,1x,F10.3)") &
         &(/WLlam(i),WLchi(i),WLalb(i)/)
     enddo
-    
+
     CLOSE(1)
 ENDIF
 
@@ -288,7 +288,7 @@ CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,
 
 !   VVV THIS TEST IS NOT WORKING!! VVV
 
-CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw, & 
+CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw, &
 &CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
 &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
 &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
@@ -311,30 +311,30 @@ SUBROUTINE RT_DustPropertiesFromDraine(DGmodel,DGlMIN,&
 &DGlMAX,WLdelta,WLdcl,WLprint,WLlTOT,WLlam,WLdlam,WLchi,WLalb)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-! This subroutine imports dust properties from one of the Draine (2003) tabulated models, and 
+! This subroutine imports dust properties from one of the Draine (2003) tabulated models, and
 ! interpolates to find regularly spaced values in the range specified by the IDs [DGlMIN,DGlMAX].
-  
+
 ! It is given:
-!   the name of the Draine model file                     (DGmodel); 
-!   the line number for the longest wavelength needed     (DGlMIN); 
-!   the line number for the shortest wavelength needed    (DGlMAX); 
+!   the name of the Draine model file                     (DGmodel);
+!   the line number for the longest wavelength needed     (DGlMIN);
+!   the line number for the shortest wavelength needed    (DGlMAX);
 !   the spacing parameter                                 (WLdelta);
-!   the weight for the slope-change                       (WLdcl);   
+!   the weight for the slope-change                       (WLdcl);
 !   and a flag to print out some optical properties       (WLprint).
-  
+
 ! It reads in the data from the Draine model file, viz.
-!   wavelengths                                           (DGlam(1:DGlMAX)); 
-!   extinction opacities                                  (DGchi(1:DGlMAX)); 
-!   albedos                                               (DGalb(1:DGlMAX)); 
+!   wavelengths                                           (DGlam(1:DGlMAX));
+!   extinction opacities                                  (DGchi(1:DGlMAX));
+!   albedos                                               (DGalb(1:DGlMAX));
 !   and mean scattering cosines                           (DGmsc(1:DGlMAX)).
-  
+
 ! It returns the interpolated:
-!   number of discrete wavelengths                        (WLlTOT); 
-!   wavelengths                                           (WLlam(1:1500)); 
-!   wavelength intervals                                  (WLdlam(1:1500)); 
-!   extinction opacities                                  (WLchi(1:1500)); 
+!   number of discrete wavelengths                        (WLlTOT);
+!   wavelengths                                           (WLlam(1:1500));
+!   wavelength intervals                                  (WLdlam(1:1500));
+!   extinction opacities                                  (WLchi(1:1500));
 !   and albedos                                           (WLalb(1:1500)).
-  
+
 ! These have been adjusted according to the Irving Approximation, so the
 ! scattering can then be treated as isotropic. The array receiving these
 ! interpolated values is immediately rescoped, outside the subroutine, to
@@ -390,7 +390,7 @@ REAL(KIND=8)                                :: Wup       ! weight of upper (shor
                                                          ! [] READ IN TABULATED DATA
 OPEN (UNIT=5,FILE=DGmodel,STATUS='old',ACTION='read')    ! open data file
 DO DGl=-DGlMIN,DGlMAX                                    ! start loop over input file
-  IF (DGl<1) THEN                                        !   [IF] in header-text part, [THEN] 
+  IF (DGl<1) THEN                                        !   [IF] in header-text part, [THEN]
     READ(5,*) rhubarb                                    !     [READ] into dummy character string
   ELSE                                                   !   [ELSE]
     READ (5,"(E11.5,F7.4,F8.4,E10.3,E10.3,F8.5)")       &!     [READ] ........
@@ -405,16 +405,16 @@ IF (WLprint==1) THEN                                     ! [IF] sanctioned, [THE
   WRITE (6,"(3X,'chi:',3X,5E10.3,6X,5E10.3)") DGchi(1:5),DGchi(DGlMAX-4:DGlMAX)
   WRITE (6,"(3X,'alb:',3X,5F10.5,6X,5F10.5)") DGalb(1:5),DGalb(DGlMAX-4:DGlMAX)
   WRITE (6,"(3X,'msc:',3X,5F10.5,6X,5F10.5)") DGmsc(1:5),DGmsc(DGlMAX-4:DGlMAX)
-ENDIF                                                    ! [ENDIF] 
+ENDIF                                                    ! [ENDIF]
 
                                                          ! [] IMPLEMENT IRVING APPROXIMATION
 DO DGl=1,DGlMAX                                          ! start loop over input file
   factor=1.-(DGmsc(DGl)*DGalb(DGl))                      !   compute factor
-  IF (DGmodel=='draine_rv3.1.dat')                      &!   adjust extinction opacity ... 
+  IF (DGmodel=='draine_rv3.1.dat')                      &!   adjust extinction opacity ...
   &             DGchi(DGl)=factor*DGchi(DGl)/(1.870E-26) !   ..... and normalise for R=3.1
-  IF (DGmodel=='draine_rv4.0.dat')                      &!   adjust extinction opacity ... 
+  IF (DGmodel=='draine_rv4.0.dat')                      &!   adjust extinction opacity ...
   &             DGchi(DGl)=factor*DGchi(DGl)/(1.969E-26) !   ..... and normalise for R=4.0
-  IF (DGmodel=='draine_rv5.5.dat')                      &!   adjust extinction opacity ... 
+  IF (DGmodel=='draine_rv5.5.dat')                      &!   adjust extinction opacity ...
   &             DGchi(DGl)=factor*DGchi(DGl)/(2.199E-26) !   ..... and normalise for R=5.5
   DGalb(DGl)=(1.-DGmsc(DGl))*DGalb(DGl)/factor           !   adjust albedo
   DGmsc(DGl)=0.                                          !   set mean scattering cosine to zero
@@ -543,7 +543,7 @@ IF (WLprint==1) THEN                                     ! [IF] sanctioned, [THE
   WRITE (6,"(3X,'alb:',3X,5F10.5,6X,5F10.5)") WLalb(WLlTOT-9:WLlTOT-5),WLalb(WLlTOT-4:WLlTOT)
   WRITE (*,*) ' '                                        !   blank line
 ENDIF                                                    ! [ENDIF]
-   
+
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_DustPropertiesFromDraine
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -554,13 +554,13 @@ SUBROUTINE RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
 
 ! This subroutine computes the discrete temperatures.
 ! It is given:
-!   the number of temperatures needed      (TEkTOT); 
-!   the minimum temperature                (teTmin); 
-!   the maximum temperature                (teTmax);  
+!   the number of temperatures needed      (TEkTOT);
+!   the minimum temperature                (teTmin);
+!   the maximum temperature                (teTmax);
 !   and a flag to trigger printout         (TElist).
-  
+
 ! It returns:
-!   the discrete temperatures              (teT(0:TEkTOT)), 
+!   the discrete temperatures              (teT(0:TEkTOT)),
 !   where T(0)=teTmin and T(TEkTOT)=teTmax.
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
@@ -604,37 +604,37 @@ SUBROUTINE RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,PRnTOT,WTp
 &WTplot,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-! This subroutine computes the emission probabilites for blackbody radiation (BB), modified 
+! This subroutine computes the emission probabilites for blackbody radiation (BB), modified
 ! blackbody radiation (MB) and temperature-differential modified blackbody radiation (DM).
 
 ! It is given:
-!   the number of discrete temperatures                          (TEkTOT); 
-!   the discrete temperatures                                    (teT(0:TEkTOT)); 
-!   the number of discrete wavelengths                           (WLlTOT); 
-!   the discrete wavelengths                                     (WLlam(1:WLlTOT)); 
-!   the corresponding wavelength intervals                       (WLdlam(1:WLlTOT)); 
-!   the discrete extinction opacities                            (WLchi(1:WLlTOT)); 
-!   the discrete albedos                                         (WLalb(1:WLlTOT)); 
-!   the number of reference probabilities                        (PRnTOT); 
-!   the number of calls for estimating the probabilities         (WTpack);   
-!   and a flag to plot the probabilities                         (WTplot). 
+!   the number of discrete temperatures                          (TEkTOT);
+!   the discrete temperatures                                    (teT(0:TEkTOT));
+!   the number of discrete wavelengths                           (WLlTOT);
+!   the discrete wavelengths                                     (WLlam(1:WLlTOT));
+!   the corresponding wavelength intervals                       (WLdlam(1:WLlTOT));
+!   the discrete extinction opacities                            (WLchi(1:WLlTOT));
+!   the discrete albedos                                         (WLalb(1:WLlTOT));
+!   the number of reference probabilities                        (PRnTOT);
+!   the number of calls for estimating the probabilities         (WTpack);
+!   and a flag to plot the probabilities                         (WTplot).
 
 ! It returns:
-!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpBB(0:WLlTOT,0:TEkTOT)); 
-!   the ID of longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT    (WTlBBlo(1:WLlTOT,0:TEkTOT)); 
+!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpBB(0:WLlTOT,0:TEkTOT));
+!   the ID of longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT    (WTlBBlo(1:WLlTOT,0:TEkTOT));
 !   the ID of shortest wavelength with WTpBB(ID,k)>=l/lTOT       (WTlBBup(1:WLlTOT,0:TEkTOT)).
 
-  
-!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpMB(0:WLlTOT,0:TEkTOT)); 
-!   the ID of longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT    (WTlMBlo(1:WLlTOT,0:TEkTOT)); 
+
+!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpMB(0:WLlTOT,0:TEkTOT));
+!   the ID of longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT    (WTlMBlo(1:WLlTOT,0:TEkTOT));
 !   the ID of shortest wavelength with WTpMB(ID,k)>=l/lTOT       (WTlMBup(1:WLlTOT,0:TEkTOT));
 !   the MB luminosity per unit mass                              ( (0:TEkTOT));
 
-  
-!   the DM emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpDM(0:WLlTOT,0:TEkTOT)); 
-!   the ID of longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT    (WTlDMlo(1:WLlTOT,0:TEkTOT)); 
+
+!   the DM emission probability for [lam(l),dlam(l)] at T=T(k)   (WTpDM(0:WLlTOT,0:TEkTOT));
+!   the ID of longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT    (WTlDMlo(1:WLlTOT,0:TEkTOT));
 !   the ID of shortest wavelength with WTpDM(ID,k)>=l/lTOT       (WTlDMup(1:WLlTOT,0:TEkTOT));
-!   and the DM luminosity per unit mass per unit temperature     (teLMTdm(0:TEkTOT)).  
+!   and the DM luminosity per unit mass per unit temperature     (teLMTdm(0:TEkTOT)).
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 INTEGER,     INTENT(IN)                     :: TEkTOT    ! number of discrete temperatures
@@ -693,7 +693,7 @@ REAL(KIND=8)                                :: PGxMIN    ! lower limit on log10[
 REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
 REAL(KIND=8)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
 REAL(KIND=8)                                :: PGyMIN    ! lower limit on log10[PlanckFn]
-REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGz       ! array for log10[VolEm] (ordinate) 
+REAL(KIND=8),DIMENSION(1:WLlTOT)            :: PGz       ! array for log10[VolEm] (ordinate)
 REAL(KIND=8)                                :: PGzMAX    ! upper limit on log10[VolEm]
 REAL(KIND=8)                                :: PGzMIN    ! lower limit on log10[VolEm]
 
@@ -728,7 +728,7 @@ ENDDO                                                    ! end loop over referen
 
                                                          ! [] TEMPERATURE LOOP
 DO TEk=0,TEkTOT                                          ! start loop over discrete temperatures
-   
+
                                                          !   [] RANGE OF WAVELENGTHS
   TElamT=(0.143878E+05)/teT(TEk)                         !   compute hc/kT(k)
   DO WLl=1,WLlTOT                                        !   start forward loop over wavelengths
@@ -739,7 +739,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
     IF (WLlam(WLl)>30.00*TElamT) CYCLE                   !     [IF] wavelength too long, [CYCLE]
     WTlMAX(TEk)=WLl;   EXIT                              !     record WTlMAX and [EXIT]
   ENDDO                                                  !   end backwards loop over wavelengths
- 
+
                                                          !   [] PROBABILITIES
   DO WLl=WTlMIN(TEk),WTlMAX(TEk)                         !   start loop over significant wavelengths
     WTbbEXP=EXP(TElamT/WLlam(WLl))                       !     compute e^[hc/kTminLambda]
@@ -766,7 +766,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
   WTpMB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher MB em. probs. to unity
   teLMTdm(TEk)=(0.215343E+17)*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
                                           (teT(TEk)**2)  !   .........mass, per unit temperature
-                                          
+
 !!!!
 !
 !   print*,"emprobs-dmbb teLMTdm(TEk)",teLMTdm(TEk)
@@ -776,7 +776,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
                    &WTpDM(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpDM(WTlMAX(TEk),TEk)  !   ...... probabilities
   WTpDM(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher DM em. probs. to unity
-  
+
                                                          !   [] IDs OF LOWER WAVELENGTHS FOR DMBB EMISSION
   WLl=WTlMAX(TEk)+1                                      !   set WLl just above highest significant ID
   DO PRn=PRnTOT,2,-1                                     !   scan ref.probs. downwards to penultimate
@@ -802,7 +802,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
     WTlDMlo(PRn,TEk)=WLl                                 !     record WTlDMlo
   ENDDO                                                  !   scan done
   WTlDMlo(1,TEk)=WTlMIN(TEk)-1                           !   special extreme case
-  
+
                                                          !   [] IDs OF UPPER WAVELENGTHS FOR DMBB EMISSION
   WLl=WTlMIN(TEk)-1                                      !   set WLl just below highest significant ID
   DO PRn=1,PRnTOT-1                                      !   scan ref.probs. upwards to penultimate
@@ -851,7 +851,7 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
     ENDDO
     WRITE (*,*) ' '
   ENDIF
-    
+
 ENDDO                                                    ! end loop over discrete temperatures
 
 !---------------------------------------------------------
@@ -869,7 +869,7 @@ WTlMAX = WLlTOT
 IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNOSTIC PLOTS
   WLlTOTrea=DBLE(WLlTOT)                                 !   compute REAL(WLlTOT)
   WTpackINV=1./DBLE(WTpack)                              !   compute WTpackINV=1/WTpack
-  
+
    OPEN(1,file=trim(adjustl(LambdaDataFile)),&
   &iostat=readcheck)                                     !Open a seperate file for wavelength data. This
                                                          !..ensures we only write this data once.
@@ -879,7 +879,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       & " not read successfully! Aborting program!"/)
       STOP
   ENDIF
-  
+
   DO WLl=1,WLlTOT                                        !     start loop over wavelengths
     PGx(WLl)=LOG10(WLlam(WLl))                           !       compute boundary wavelength (abscissa)
     WRITE(1,"(F10.3)") (/PGx(WLl)/)
@@ -896,9 +896,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
   &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
-  
+
   OPEN(3,file=trim(adjustl(BBanalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
+  & iostat=readcheck)                                    !Open a second file, for the analytic data of the
                                                           !..BB curve.
   IF(readcheck .ne. 0) then
       print*,(/BBanalyticFile,&
@@ -906,7 +906,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       STOP
   ENDIF
 
-    
+
   OPEN(4,file=trim(adjustl(BBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
                                                          !..BB curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
@@ -925,15 +925,15 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
                                     &LOG10(WLdlam(WLl))  !       ... probability (ordinate)
       WRITE(3,"(F10.3,1x)",advance="no") (/PGy(WLl)/)
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
-    ENDDO                                                !     end loop over wavelengths   
+    ENDDO                                                !     end loop over wavelengths
     WRITE(3,*)
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
-    
+
+
     WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
     &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
@@ -944,7 +944,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/       &!       compute BB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
       WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
-      
+
       IF ((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0)) then
         ! PRINT*,"((TEk==(TEkTOT/2)).AND.(MOD(WLl,10)==0))"
         ! PRINT*,"WLl,WLlam(WLl),DBLE(WTpACC(WLl)),PGz(WLl)[MCRT BB]"
@@ -957,7 +957,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     PRINT*,"RT_EmProbs_DMBB BB Plotting Data"
     PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
+
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpBB\fn]',&
@@ -967,17 +967,17 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGSLS(1)                                        !     set line style to 'full'
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
-                                                         ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+                                                         ! !     [] SAVE TO POSTSCRIPT FILE
+
+
+
   ENDDO                                                  !   end loop over temperatures
-  
+
   close(1)                                               !Close lambda data file
   close(2)                                               !Close BB constants file
   close(3)                                               !Close Analytic BB data file
   close(4)                                               !Close MCRT BB data file
-   
+
   OPEN(2,file=trim(adjustl(MBconstantsFile)),&
   &iostat=readcheck)                                         !Open file for MB constants
                                                          !..here trim and adjustl will remove any unecessary
@@ -989,9 +989,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
   &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
-  
+
   OPEN(3,file=trim(adjustl(MBanalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
+  & iostat=readcheck)                                    !Open a second file, for the analytic data of the
                                                           !..MB curve.
   IF(readcheck .ne. 0) then
       print*,(/MBanalyticFile,&
@@ -999,7 +999,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       STOP
   ENDIF
 
-    
+
   OPEN(4,file=trim(adjustl(MBmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
                                                          !..MB curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
@@ -1008,18 +1008,18 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     STOP
   ENDIF
 
-  
+
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
     PGyMAX=-0.1E+11                                      !     set PGyMAX to very low value
     PGy=(-1d-10)                                        !     set PGy to extremely low value
-    
-    
+
+
     !! This section calculates data for the analytic result
     !! of the MB spectrum.
     !! We want Log Log space. WTpMB is the probability integrated,
-    !! so here we are taking the numeric differential 
+    !! so here we are taking the numeric differential
     !! so as to check the MBB curve is as expected.
     DO WLl=1,WLlTOT                                      !     start loop over wavelengths
       PGy(WLl)=LOG10(WTpMB(WLl,TEk)-WTpMB(WLl-1,TEk))-  &!       compute BB emission ......
@@ -1028,7 +1028,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       IF (PGy(WLl)>PGyMAX) PGyMAX=PGy(WLl)               !       update max ordinate as appropriate
     ENDDO                                                !     end loop over wavelengths
     WRITE(3,*)
-    
+
     !! This section calculates data for the MBB curve from
     !! the MCRT version, by calling RT_LumPack_MB.
     !! Here we are returned an array of times each bin is
@@ -1038,11 +1038,11 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     !! that the MBB curve works as expected.
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
-        
+
+
     WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
     &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
@@ -1052,7 +1052,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     DO WLl=WTlMIN(TEk),WTlMAX(TEk)                       !     start loop over significant wavelengths
        PGz(WLl)=LOG10(DBLE(WTpACC(WLl))*WTpackINV/      &!       compute MB emission ......
                                           &WLdlam(WLl))  !       ... probability (ordinate)
-       WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)                                    
+       WRITE(4,"(F10.3,1x)",advance="no") (/PGz(WLl)/)
     ENDDO                                                !     end loop over significant wavelengths
     WRITE(4,*)
                                                          !     [] PLOT MB SPECTRA TO SCREEN
@@ -1060,9 +1060,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
         PRINT*,"RT_EmProbs_DMBB MB Plotting Data"
     PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
-    
-    
+
+
+
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpMB\fn]',&
@@ -1072,15 +1072,15 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGSLS(1)                                        !     set line style to 'full'
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
-                                                         ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+                                                         ! !     [] SAVE TO POSTSCRIPT FILE
+
+
+
   ENDDO                                                  !   end loop over temperatures
   close(2)
   close(3)
   close(4)
-  
+
   OPEN(2,file=trim(adjustl(DMconstantsFile)),&
   &iostat=readcheck)                                     !Open file for DM constants
                                                          !..here trim and adjustl will remove any unecessary
@@ -1092,9 +1092,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
   ENDIF
   WRITE(2,"(A4,1x,A4,1x,A4,1x,A4,1x,A4)") &
   &(/"temp","xmin","xmax","ymin","ymax"/)                !Write header text to file
-  
+
   OPEN(3,file=trim(adjustl(DManalyticFile)),&
-  & iostat=readcheck)                                    !Open a second file, for the analytic data of the 
+  & iostat=readcheck)                                    !Open a second file, for the analytic data of the
                                                           !..DM curve.
   IF(readcheck .ne. 0) then
       print*,(/DManalyticFile,&
@@ -1102,7 +1102,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
       STOP
   ENDIF
 
-    
+
   OPEN(4,file=trim(adjustl(DMmcrtFile)),iostat=readcheck)!Same process of opening file for MCRT data of
                                                          !..DM curve, sampled from RT_LumPack_BB
   IF(readcheck .ne. 0) then
@@ -1110,8 +1110,8 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     & " not read successfully! Aborting program!"/)
     STOP
   ENDIF
-  
-  
+
+
   DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
@@ -1126,10 +1126,10 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     WRITE(3,*)
     PGyMAX=PGyMAX+0.2                                    !     compute maximum Planck Function (ordinate)
     PGyMIN=PGyMAX-2.6                                    !     compute minimum Planck Function (ordinate)
-    
+
     WRITE(2,"(E9.3,1x,E9.3,1x,E9.3,1x,E9.3,1x,E9.3)")&
     &(/teT(TEk),PGxMIN,PGxMAX,PGyMIN,PGyMAX/)                !..Write single value constants to file
-    
+
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
       CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
@@ -1147,7 +1147,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     PRINT*,"RT_EmProbs_DMBB DMBB Plotting Data"
     PRINT*,"teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))"
     WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
+
     ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1157,12 +1157,12 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! CALL PGSLS(1)                                        !     set line style to 'full'
     ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! CALL PGEND                                           !     close PGPLOT
-                                                         ! !     [] SAVE TO POSTSCRIPT FILE 
-    
-    
-    
+                                                         ! !     [] SAVE TO POSTSCRIPT FILE
+
+
+
   ENDDO                                                  !   end loop over temperatures
-  
+
   ! DO TEk=0,TEkTOT,(TEkTOT/2)                             !   start loop over temperatures
     ! PGxMIN=LOG10(WLlam(WTlMIN(TEk)))+0.2                 !     compute maximum abscissa
     ! PGxMAX=LOG10(WLlam(WTlMAX(TEk)))-1.1                 !     compute maximum abscissa
@@ -1181,9 +1181,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
                                                          ! !     [] PLOT TO SCREEN
     ! WRITE (*,*) ' '                                      !     print blank line
     ! WRITE (6,"(F11.3,2(5X,I5,F15.5))") teT(TEk),WTlMIN(TEk),WLlam(WTlMIN(TEk)),WTlMAX(TEk),WLlam(WTlMAX(TEk))
-    
-    
-    
+
+
+
     ! ! CALL PGBEG(0,'/XWINDOW',1,1)                         !     open PGPLOT to display on screen
     ! ! CALL PGENV(PGxMIN,PGxMAX,PGyMIN,PGyMAX,0,0)          !     construct frame
     ! ! CALL PGLAB('log\d10\u[\gl/\gmm]','log\d10\u[\fiWTpDM\fn]',&
@@ -1193,9 +1193,9 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
     ! ! CALL PGSLS(1)                                        !     set line style to 'full'
     ! ! CALL PGLINE(WLlTOT,PGx,PGz)                          !     plot estimated probabilities
     ! ! CALL PGEND                                           !     close PGPLOT
-                                                         ! ! !     [] SAVE TO POSTSCRIPT FILE 
+                                                         ! ! !     [] SAVE TO POSTSCRIPT FILE
   ! ENDDO                                                  !   end loop over temperatures
-  
+
 ENDIF                                                    ! end diagnostic plots
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_EmProbs_DMBB
@@ -1208,16 +1208,16 @@ SUBROUTINE RT_LumPack_BB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,WLlEM)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! This subroutine is given:
-!   a temperature ID                                                 (TEk); 
+!   a temperature ID                                                 (TEk);
 !   the number of temperatures                                       (TEkTOT);
-!   the number of reference probabilities                            (PRnTOT);    
-!   the number of wavelengths                                        (WLlTOT); 
-!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpBB(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT    (WTlBBlo(1:WLlTOT,1:TEkTOT)); 
-!   and the ID of the shortest wavelength with WTpBB(ID,k)>=l/lTOT   (WTlBBup(1:WLlTOT,1:TEkTOT)). 
+!   the number of reference probabilities                            (PRnTOT);
+!   the number of wavelengths                                        (WLlTOT);
+!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpBB(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT    (WTlBBlo(1:WLlTOT,1:TEkTOT));
+!   and the ID of the shortest wavelength with WTpBB(ID,k)>=l/lTOT   (WTlBBup(1:WLlTOT,1:TEkTOT)).
 
 ! It returns:
-!   the wavelength ID of the emitted luminosity packet               (WLlEM). 
+!   the wavelength ID of the emitted luminosity packet               (WLlEM).
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 INTEGER,     INTENT(IN)                     :: TEk       ! temperature ID
@@ -1265,15 +1265,15 @@ SUBROUTINE RT_LumPack_MB(TEk,TEkTOT,PRnTOT,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! This subroutine is given:
-!   a temperature ID                                                 (TEk); 
+!   a temperature ID                                                 (TEk);
 !   the number of temperatures                                       (TEkTOT);
-!   the number of reference probabilities                            (PRnTOT);    
-!   the number of wavelengths                                        (WLlTOT); 
-!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpMB(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT    (WTlMBlo(1:WLlTOT,1:TEkTOT)); 
-!   and the ID of the shortest wavelength with WTpMB(ID,k)>=l/lTOT   (WTlMBup(1:WLlTOT,1:TEkTOT)). 
+!   the number of reference probabilities                            (PRnTOT);
+!   the number of wavelengths                                        (WLlTOT);
+!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpMB(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT    (WTlMBlo(1:WLlTOT,1:TEkTOT));
+!   and the ID of the shortest wavelength with WTpMB(ID,k)>=l/lTOT   (WTlMBup(1:WLlTOT,1:TEkTOT)).
 ! It returns:
-!   the wavelength ID of the emitted luminosity packet               (WLlEM). 
+!   the wavelength ID of the emitted luminosity packet               (WLlEM).
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 INTEGER,     INTENT(IN)                     :: TEk       ! temperature ID
@@ -1321,15 +1321,15 @@ SUBROUTINE RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! This subroutine is given:
-!   a temperature ID                                                 (TEk); 
+!   a temperature ID                                                 (TEk);
 !   the number of temperatures                                       (TEkTOT);
-!   the number of reference probabilities                            (PRnTOT);    
-!   the number of wavelengths                                        (WLlTOT); 
-!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpDM(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT    (WTlDMlo(1:WLlTOT,1:TEkTOT)); 
-!   and the ID of the shortest wavelength with WTpDM(ID,k)>=l/lTOT   (WTlDMup(1:WLlTOT,1:TEkTOT)). 
+!   the number of reference probabilities                            (PRnTOT);
+!   the number of wavelengths                                        (WLlTOT);
+!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)       (WTpDM(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT    (WTlDMlo(1:WLlTOT,1:TEkTOT));
+!   and the ID of the shortest wavelength with WTpDM(ID,k)>=l/lTOT   (WTlDMup(1:WLlTOT,1:TEkTOT)).
 ! It returns:
-!   the wavelength ID of the emitted luminosity packet               (WLlEM). 
+!   the wavelength ID of the emitted luminosity packet               (WLlEM).
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 INTEGER,     INTENT(IN)                     :: TEk       ! temperature ID
@@ -1377,13 +1377,13 @@ SUBROUTINE RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! This subroutine is given:
-!   the boundary radius of the filament             (CFwB); 
+!   the boundary radius of the filament             (CFwB);
 !   the number of shells (aka cells)                (CFcTOT);
 !   and a flag for diagnostic printout              (CFlist).
- 
+
 ! It returns :
-!   the boundary radii of the shells                (CFw(0:CFcTOT)); 
-!   and the squared boundary radii of the shells    (CFw2(0:CFcTOT)). 
+!   the boundary radii of the shells                (CFw(0:CFcTOT));
+!   and the squared boundary radii of the shells    (CFw2(0:CFcTOT)).
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 REAL(KIND=8),INTENT(IN)                     :: CFwB      ! boundary radius of the filament (in cm)
@@ -1412,20 +1412,20 @@ ENDIF
 END SUBROUTINE RT_Cyl1D_LinearShellSpacing
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-           
+
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_Cyl1D_InjectIsotropic(CFwB,LPr,LPr1122,LPe,LPtau)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! This subroutine is given:
-!   the radius of the domain boundary               (CFwB).   
+!   the radius of the domain boundary               (CFwB).
 
 ! It returns:
-!   the injection position                          (LPr(1:3)); 
-!   the injection distance from the spine           (LPr1122); 
-!   random injection direction-cosines              (LPe(1:3)); 
-!   and a random optical depth                      (LPtau).  
+!   the injection position                          (LPr(1:3));
+!   the injection distance from the spine           (LPr1122);
+!   random injection direction-cosines              (LPe(1:3));
+!   and a random optical depth                      (LPtau).
 
 IMPLICIT NONE                                            ! DECLARATIONS:
 REAL(KIND=8),INTENT(IN)                     :: CFwB      ! radius of domain boundary
@@ -1462,7 +1462,7 @@ SUBROUTINE RT_ReDirectIsotropic(LPe,LPtau)
 
 ! This subroutine returns:
 !   isotropic random direction-cosines   (LPe(1:3));
-!   and a random optical depth           (LPtau).  
+!   and a random optical depth           (LPtau).
 
 IMPLICIT NONE                                            ! DECLARATIONS:
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:3)     :: LPe       ! isotropic random direction-cosines
@@ -1496,16 +1496,16 @@ SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFwB,CFcTOT,CFw,CFw2,LPp
 ! The mean intensity should be the same in all shells.
 
 ! It is given:
-!   the boundary radius of the filament                    (CFwB); 
-!   the number of shells                                   (CFcTOT); 
-!   the boundary radii of the shells                       (CFw(0:CFcTOT)); 
-!   the boundary radii of the shells squared               (CFw2(0:CFcTOT)); 
-!   and the number of luminosity packets to be injected    (LPpTOT). 
+!   the boundary radius of the filament                    (CFwB);
+!   the number of shells                                   (CFcTOT);
+!   the boundary radii of the shells                       (CFw(0:CFcTOT));
+!   the boundary radii of the shells squared               (CFw2(0:CFcTOT));
+!   and the number of luminosity packets to be injected    (LPpTOT).
 
 ! It prints out:
-!   the angle-mean intensity in each shell                 (RFj(0:CFcTOT)) --- should be  ~1; 
-!   its mean                                               (RFmuJ)         --- should be  ~1; 
-!   and its standard deviation                             (RFsdJ)         --- should be <<1. 
+!   the angle-mean intensity in each shell                 (RFj(0:CFcTOT)) --- should be  ~1;
+!   its mean                                               (RFmuJ)         --- should be  ~1;
+!   and its standard deviation                             (RFsdJ)         --- should be <<1.
 
 IMPLICIT NONE                                            ! [] DECLARATIONS
 REAL(KIND=8),INTENT(IN)                     :: CFwB      ! boundary radius of filament
@@ -1603,16 +1603,16 @@ SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity&
 ! This subroutine deals with the pure scattering case, with uniform scattering opacity.
 
 ! It is given:
-!   the boundary radius of the filament                   (CFwB); 
-!   the number of shells                                  (CFcTOT); 
+!   the boundary radius of the filament                   (CFwB);
+!   the number of shells                                  (CFcTOT);
 !   the boundary radii of the shells                      (CFw(0:CFc_TOT));
 !   the boundary radii of the shells squared              (CFw2(0:CFc_tot));
-!   the volume scattering opacity coefficient             (DGkapV); 
-!   and the number of luminosity packets to be injected   (LPpTOT). 
+!   the volume scattering opacity coefficient             (DGkapV);
+!   and the number of luminosity packets to be injected   (LPpTOT).
 
 ! It prints out:
-!   the normalised angle-mean intensity in each shell     (RFj(0:CFcTOT)) --- should be  ~1; 
-!   its mean                                              (RFmuJ)         --- should be  ~1; 
+!   the normalised angle-mean intensity in each shell     (RFj(0:CFcTOT)) --- should be  ~1;
+!   its mean                                              (RFmuJ)         --- should be  ~1;
 !   and its standard deviation                            (RFsdJ)         --- should be <<1.
 
 IMPLICIT NONE                                            ! DECLARATIONS
@@ -1746,23 +1746,23 @@ END SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,CFmuTOT,CFsig)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-! This subroutine computes the cell densities, the total line mass, and the 
+
+! This subroutine computes the cell densities, the total line mass, and the
 ! column-density through the spine for a filament with a Schuster profile.
 
 ! It is given:
-!   the density on the spine of the filament (g/cm^3)          (CFrho0); 
-!   the core radius (cm)                                       (CFw0); 
-!   the radial density exponent for a Schuster profile         (CFschP); 
-!   the number of shells                                       (CFcTOT); 
+!   the density on the spine of the filament (g/cm^3)          (CFrho0);
+!   the core radius (cm)                                       (CFw0);
+!   the radial density exponent for a Schuster profile         (CFschP);
+!   the number of shells                                       (CFcTOT);
 !   the boundary radii of the shells (cm)                      (CFw(0:CFcTOT));
-!   and a flag to sanction diagnostics                         (CFprof).   
+!   and a flag to sanction diagnostics                         (CFprof).
 
-! It returns:  
+! It returns:
 !   the volume-densities in the shells (g/cm^3)                (CFrho(1:CFcTOT));
-!   the line-densities of the shells (g/cm)                    (CFmu(1:CFcTOT)); 
-!   the total line-density of the filament (g/cm)              (CFmuTOT); 
-!   and the total column-density through the spine (g/cm^2)    (CFsig). 
+!   the line-densities of the shells (g/cm)                    (CFmu(1:CFcTOT));
+!   the total line-density of the filament (g/cm)              (CFmuTOT);
+!   and the total column-density through the spine (g/cm^2)    (CFsig).
 
 IMPLICIT NONE                                            ! DECLARATIONS
 REAL(KIND=8),INTENT(IN)                     :: CFrho0    ! density on spine (g/cm^3)
@@ -1890,18 +1890,18 @@ SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
 ! This subroutine deals with the pure scattering case, with a Schuster density profile.
 
 ! It is given:
-!   the boundary radius of the filament                   (CFwB); 
-!   the number of shells                                  (CFcTOT); 
-!   the boundary radii of the shells                      (CFw(0:CFc_TOT)); 
+!   the boundary radius of the filament                   (CFwB);
+!   the number of shells                                  (CFcTOT);
+!   the boundary radii of the shells                      (CFw(0:CFc_TOT));
 !   the boundary radii of the shells squared              (CFw2(0:CFc_tot));
 !   the density in the shells                             (CFrho(1:CFcTOT));
-!   the surface density through the spine                 (CFsig);   
-!   the mass scattering opacity coefficient               (DGkapM); 
-!   and the number of luminosity packets to be injected   (LPpTOT). 
+!   the surface density through the spine                 (CFsig);
+!   the mass scattering opacity coefficient               (DGkapM);
+!   and the number of luminosity packets to be injected   (LPpTOT).
 
 ! It prints out:
-!   the normalised angle-mean intensity in each shell     (RFj(0:CFcTOT)) --- should be  ~1; 
-!   its mean                                              (RFmuJ)         --- should be  ~1; 
+!   the normalised angle-mean intensity in each shell     (RFj(0:CFcTOT)) --- should be  ~1;
+!   its mean                                              (RFmuJ)         --- should be  ~1;
 !   and its standard deviation                            (RFsdJ)         --- should be <<1.
 
 IMPLICIT NONE                                            ! DECLARATIONS
@@ -2043,45 +2043,45 @@ SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkT
 ! This subroutine deals with the pure scattering case, with a Schuster density profile.
 
 ! It is given:
-!   the boundary radius of the filament                               (CFwB); 
-!   the number of shells                                              (CFcTOT); 
-!   the boundary radii of the shells                                  (CFw(0:CFc_TOT)); 
-!   the boundary radii of the shells squared                          (CFw2(0:CFc_tot)); 
-!   the volume-densities in the shells                                (CFrho(1:CFcTOT)); 
-!   the line-densities of the shells                                  (CFmu(1:CFcTOT)); 
-!   the number of discrete temperatures                               (TEkTOT); 
-!   the discrete temperatures                                         (teT(0:TEkTOT)); 
+!   the boundary radius of the filament                               (CFwB);
+!   the number of shells                                              (CFcTOT);
+!   the boundary radii of the shells                                  (CFw(0:CFc_TOT));
+!   the boundary radii of the shells squared                          (CFw2(0:CFc_tot));
+!   the volume-densities in the shells                                (CFrho(1:CFcTOT));
+!   the line-densities of the shells                                  (CFmu(1:CFcTOT));
+!   the number of discrete temperatures                               (TEkTOT);
+!   the discrete temperatures                                         (teT(0:TEkTOT));
 !   the temperature-ID of the background blackbody radiation field    (BGkBB);
 !   the dilution factor of the background blackbody radiation field   (BGfBB);
-!   the number of discrete wavelengths                                (WLlTOT); 
-!   the discrete wavelengths                                          (WLlam(1:WLlTOT));  
-!   the corresponding wavelength intervals                            (WLdlam(1:WLlTOT)); 
-!   the corresponding extinction opacities                            (WLchi(1:WLlTOT)); 
-!   the corresponding albedos                                         (WLalb(1:WLlTOT));   
-!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpBB(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT     (WTlBBlo(1:WLlTOT,1:TEkTOT)); 
-!   the ID of the shortest wavelength with WTpBB(ID,k)>=l/lTOT        (WTlBBup(1:WLlTOT,1:TEkTOT)); 
-!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpMB(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT     (WTlMBlo(1:WLlTOT,1:TEkTOT)); 
+!   the number of discrete wavelengths                                (WLlTOT);
+!   the discrete wavelengths                                          (WLlam(1:WLlTOT));
+!   the corresponding wavelength intervals                            (WLdlam(1:WLlTOT));
+!   the corresponding extinction opacities                            (WLchi(1:WLlTOT));
+!   the corresponding albedos                                         (WLalb(1:WLlTOT));
+!   the BB emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpBB(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT     (WTlBBlo(1:WLlTOT,1:TEkTOT));
+!   the ID of the shortest wavelength with WTpBB(ID,k)>=l/lTOT        (WTlBBup(1:WLlTOT,1:TEkTOT));
+!   the MB emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpMB(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpMB(ID,k)<=(l-1)/lTOT     (WTlMBlo(1:WLlTOT,1:TEkTOT));
 !   the ID of the shortest wavelength with WTpMB(ID,k)>=l/lTOT        (WTlMBup(1:WLlTOT,1:TEkTOT));
-!   the MB luminosity per unit mass at each temperature               (teLMmb(0:TEkTOT)); 
-!   the DM emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpDM(0:WLlTOT,1:TEkTOT)); 
-!   the ID of the longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT     (WTlDMlo(1:WLlTOT,1:TEkTOT)); 
+!   the MB luminosity per unit mass at each temperature               (teLMmb(0:TEkTOT));
+!   the DM emission probability for [lam(l),dlam(l)] at T=T(k)        (WTpDM(0:WLlTOT,1:TEkTOT));
+!   the ID of the longest wavelength with WTpDM(ID,k)<=(l-1)/lTOT     (WTlDMlo(1:WLlTOT,1:TEkTOT));
 !   the ID of the shortest wavelength with WTpDM(ID,k)>=l/lTOT        (WTlDMup(1:WLlTOT,1:TEkTOT));
-!   the DM luminosity per unit mass per unit temperature              (teLMTdm(0:TEkTOT));   
-!   the number of reference probabilities                             (PRnTOT); 
-!   and the number of luminosity packets to be injected               (LPpTOT). 
+!   the DM luminosity per unit mass per unit temperature              (teLMTdm(0:TEkTOT));
+!   the number of reference probabilities                             (PRnTOT);
+!   and the number of luminosity packets to be injected               (LPpTOT).
 
 ! It returns:
-!   the mean intensities at each wavelength and in each cell          (RFjLAM(1:WLlTOT,1:CFcTOT)); 
-!   the temperature of each cell                                      (cfT(1:CFcTOT)); 
-!   the line-luninosity absorbed by each cell                         (cfL(1:CFcTOT)). 
+!   the mean intensities at each wavelength and in each cell          (RFjLAM(1:WLlTOT,1:CFcTOT));
+!   the temperature of each cell                                      (cfT(1:CFcTOT));
+!   the line-luninosity absorbed by each cell                         (cfL(1:CFcTOT)).
 
 ! It prints out
-!   the cell-mean of the mean intensity (at selected wavelengths)     (RFmuJlam(1:WLlTOT)); 
-!   and the cell-SD of the mean intensity (at selected wavelengths)   (RFsdJlam(1:WLlTOT)); 
-!   the cell-mean of the temperature                                  (CFmuT(1:CFcTOT)); 
-!   the cell-SD of the temperature                                    (CFsdT(1:CFcTOT)); 
+!   the cell-mean of the mean intensity (at selected wavelengths)     (RFmuJlam(1:WLlTOT));
+!   and the cell-SD of the mean intensity (at selected wavelengths)   (RFsdJlam(1:WLlTOT));
+!   the cell-mean of the temperature                                  (CFmuT(1:CFcTOT));
+!   the cell-SD of the temperature                                    (CFsdT(1:CFcTOT));
 
 IMPLICIT NONE                                            ! DECLARATIONS
 REAL(KIND=8),INTENT(IN)                     :: CFwB      ! boundary radius of filament (cm)
@@ -2127,14 +2127,14 @@ INTEGER, INTENT(IN)                         :: BGkGO         !ID of temperature 
 
 
 REAL(KIND=8),INTENT(OUT),                               &! the mean intensity in cell CFc, in wavelength ...
-     DIMENSION(1:WLlTOT,1:CFcTOT)           :: RFjLAM    ! .... interval [WLlam(WLl),WLlam(WLl)+WLdlam(WLl)] 
+     DIMENSION(1:WLlTOT,1:CFcTOT)           :: RFjLAM    ! .... interval [WLlam(WLl),WLlam(WLl)+WLdlam(WLl)]
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfT       ! the temperature in each cell
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfL       ! the line-luminosity absorbed by each cell
 
 
 INTEGER                                     :: CFc,CFcc  ! dummy shell IDs
 !REAL(KIND=8)                                :: CFtauTOT  ! total optical depth through filament
-INTEGER,DIMENSION(0:CFcTOT)                 :: CFk       ! ID of temperature just above cell temperature 
+INTEGER,DIMENSION(0:CFcTOT)                 :: CFk       ! ID of temperature just above cell temperature
 REAL(KIND=8),DIMENSION(1:CFcTOT)            :: cfLgo     ! cell luminosity above which temperature is updated
 REAL(KIND=8)                                :: CFw2B     ! squared boundary radius (pc^2)
 REAL(KIND=8)                                :: LPalb     ! albedo of luminosity packet
@@ -2180,8 +2180,8 @@ Real(kind=8)                                :: LmRatio
 
 
 LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
-                                         &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)                                 
-                                         
+                                         &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)
+
 CFw2B=CFwB**2                                            ! compute W_B squared
 RFjLAM=0.                                                ! set mean intensities to zero
 cfT=teT(BGkGO)!teT(0)
@@ -2221,16 +2221,16 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   &                  (CFwB,LPr,LPr1122,LPe,LPtau)        !   ... a luminosity packet
   NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
   NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
-  
+
   CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
-  
+
   CALL RT_LumPack_BB(BGkBB,TEkTOT,PRnTOT,WLlTOT,WTpBB,WTlBBlo,WTlBBup,LPl)
-  
+
   LPchi=WLchi(LPl)                                       !   record extinction opacity of luminosity packet
   LPalb=WLalb(LPl)                                       !   albedo of luminosity packet
 
   DO WHILE (CFc<=CFcTOT)                                 !   keep going until packet exits filament
-  
+
     LPsTAU=LPtau/(CFrho(CFc)*LPchi)                      !     convert optical depth to distance
     CFcc=CFc                                             !     record ID of shell being entered
     LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
@@ -2266,62 +2266,62 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       CALL RANDOM_NUMBER(LRD)
       IF (LRD>LPalb) THEN
 
-        LPnAbsorb(CFc) = LPnAbsorb(CFc) + 1 
+        LPnAbsorb(CFc) = LPnAbsorb(CFc) + 1
 
         cfL(CFc)=cfL(CFc)+LPdeltaL
         IF (cfL(CFc)<cfLgo(CFc)) THEN
           !CALL RT_LumPack_MB(0,TEkTOT,PRnTOT,WLlTOT, &
           !& WTpMB,WTlMBlo,WTlMBup,LPl)
           CALL RT_LumPack_MB(BGkGO,TEkTOT,PRnTOT,WLlTOT, &
-          & WTpMB,WTlMBlo,WTlMBup,LPl)        
+          & WTpMB,WTlMBlo,WTlMBup,LPl)
         ELSE
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !Temperature Checks:
         !If temperature of cell has increased into next increment
         !in last loop, then increase temp. counter.
-          Do while(cfT(CFc)>teT(CFk(CFc))) 
+          Do while(cfT(CFc)>teT(CFk(CFc)))
             CFk(CFc)=CFk(CFc)+1
           enddo
-        !TeRatio: Checks the closeness of continuous cell temp. (cfT) to 
+        !TeRatio: Checks the closeness of continuous cell temp. (cfT) to
         !boundaries of discrete temp.. TeRatio -> 1 as cfT -> teT(CFk(CFc-1))
         ! i.e. the lower boundary of temperature.
         !TeRatio -> 0 as cfT -> teT(CFk(CFc)) i.e. upper bound
         !Therefore if LRD<TeRatio the temperature will randomly decrease with
         !high probability if cfT ~ teT(CFk(CFc)).
-        
+
           TEk=CFk(CFc)
           TeRatio=(teT(TEk)-cfT(CFc))/(teT(TEk)-teT(TEk-1))
           CALL RANDOM_NUMBER(LRD)
           IF (LRD.le.TeRatio) TEk =TEk-1
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-          
+        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
         !Increase Cell temperature. See documentation
           cfT(CFc)=cfT(CFc)+(LPdeltaL/(CFmu(CFc)*teLMTdm(TEk)))
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !Randomly call new wavelength from cell Temp based DMBB.
           CALL RT_LumPack_DM(TEk,TEkTOT,PRnTOT,WLlTOT, &
           & WTpDM,WTlDMlo,WTlDMup,LPl)
-        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         ENDIF
-            
+
         LPchi=WLchi(LPl)
         LPalb=WLalb(LPl)
-      ENDIF   
+      ENDIF
     ELSE
       LPnScatter(CFcc) = LPnScatter(CFcc) + 1
-    
+
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
       RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
-    
-  ENDDO                                                  !   packet exits filament 
-  
+
+  ENDDO                                                  !   packet exits filament
+
   If(mod(dble(LPp),(dble(LPpTOT)/10.d0)).eq. 0.d0) then
     print("(A7,1x,F7.2,1x,A3)"),"@DB: ", (dble(LPp)/dble(LPpTOT))*100.d0," %"
   endif
-  
+
 ENDDO                                                    ! end loop over luminosity packets
 
 do CFc=1,CFcTOT,1
@@ -2339,9 +2339,9 @@ do CFc=1,CFcTOT,1
         endif
     enddo
 enddo
- 
-!print*, 
-!print*,"Lucy intercept added temp: rfTemp(LPl,CFc):" 
+
+!print*,
+!print*,"Lucy intercept added temp: rfTemp(LPl,CFc):"
 !do CFc=1,CFcTOT,1
 !   IF(rfTemp(CFc).ne.0.d0) THEN
 !       print*,"CFc",CFc
@@ -2418,7 +2418,7 @@ SUBROUTINE WL_cms_microns_convert(WLlTOT, WLlamIN, WLlamOUT, FLAG)
 IMPLICIT NONE
 INTEGER, INTENT(IN)                             :: WLlTOT           ! the number of discrete wavelengths
 REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT)     :: WLlamIN
-Character(len=2), intent(in)                    :: FLAG 
+Character(len=2), intent(in)                    :: FLAG
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:WLlTOT)    :: WLlamOUT
 REAL (kind=8)                                   :: ConversionConst
 
@@ -2428,11 +2428,11 @@ If(FLAG.eq."cm") then
     WLlamOUT = WLlamIN * ConversionConst
 else if(FLAG.eq."mu") then
     WLlamOUT = WLlamIN * (1.d0/ConversionConst)
-else    
+else
     print*,"WARNING! [@cms_to_microns]: Invalid conversion flag."
     print*,"Must be coverted to 'cm' [centimeters] or to 'mu' [microns]."
     print*,"No conversion has been completed! WLlamOUT = WLlamIN"
-    
+
     WLlamOUT = WLlamIN
 endif
 
