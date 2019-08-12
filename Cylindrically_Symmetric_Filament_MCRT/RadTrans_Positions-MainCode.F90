@@ -24,7 +24,7 @@
 ! M_Sun = (0.198910E+34) g
 ! amu = (0.166054E-23) g
 ! g/cm = (0.155129E-15) M_Sun/pc
-! M_Sun/pc = (0.644623E+15) g/cm
+! M_Sun/pc = (0.644623E+16) g/cm
 ! H2/g = (0.210775E+24)
 ! g/H2 = (0.474444E-23)
 
@@ -62,7 +62,9 @@
 !************************
 PROGRAM RadTrans_MainCode
 !************************
-IMPLICIT NONE                                            ! [] DECLARATIONS:                                                         ! Configuration (CF)
+
+IMPLICIT NONE                                            ! [] DECLARATIONS:
+                                                         ! Configuration (CF)
 INTEGER                                     :: CFcTOT    ! number of (cylindrical) shells
 CHARACTER(LEN=20)                           :: CFgeom    ! geometry of configuration
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: cfL       ! line-luminosity absorbed by cell
@@ -139,7 +141,7 @@ Character(len=50)                           :: DustPropertiesFilename = &
 Integer*4                                   :: readcheck
 Integer*4                                   :: i
 INTEGER                                     :: BGkGO         !ID of temperature for cfLgo
-INTEGER(Kind=4)                                     :: DBTestFlag
+
 
 PRINT*,""
 print*,"***+++***"
@@ -185,8 +187,6 @@ WTplot=0                                                 ! set flag to plot prob
                                                          ! Background Radiation Field (RF)
 BGkBB= 58!58                                                 ! set temperature-ID of background BB radiation field
 BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
-
-DBTestFlag = 1                                            !Diagnostic test flag for tests and print statements.
 
 BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch temperature for cfLgo
 IF (BGkGO.ge.BGkBB) then
@@ -282,11 +282,11 @@ CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,
 
 !   VVV THIS TEST IS NOT WORKING!! VVV
 
-CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
+CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw, &
 &CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
 &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
 &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-&LPpTOT,RFjLAM,cfT,cfL,BGkGO,DBTestFlag)
+&LPpTOT,RFjLAM,cfT,cfL,BGkGO)
 
 
 
@@ -1468,8 +1468,6 @@ REAL(KIND=8)                                :: sintheta  ! sine of polar angle (
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
 LPe(1)=2.*LRD-1.                                         ! compute LPe(1)
 sintheta=SQRT(1.-LPe(1)**2)                              ! compute sintheta
-
-
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
 phi=6.2831853*LRD                                        ! compute phi
 LPe(2)=sintheta*COS(phi)                                 ! compute LPe(2)
@@ -1888,7 +1886,6 @@ SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
 ! It is given:
 !   the boundary radius of the filament                   (CFwB);
 !   the number of shells                                  (CFcTOT);
-
 !   the boundary radii of the shells                      (CFw(0:CFc_TOT));
 !   the boundary radii of the shells squared              (CFw2(0:CFc_tot));
 !   the density in the shells                             (CFrho(1:CFcTOT));
@@ -2031,9 +2028,9 @@ END SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
+SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
 &WLlTOT,WLlam,WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,&
-&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL,BGkGO,DBTestFlag)
+&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL,BGkGO)
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2082,7 +2079,6 @@ SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw,CFw2,CFrho,CFmu
 
 IMPLICIT NONE                                            ! DECLARATIONS
 REAL(KIND=8),INTENT(IN)                     :: CFwB      ! boundary radius of filament (cm)
-REAL(KIND=8),INTENT(IN)                     :: CFw0      ! Core radius of filament (cm)
 INTEGER,     INTENT(IN)                     :: CFcTOT    ! number of shells
 REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw       ! boundary radii of shells (cm)
 REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw2      ! squared boundary radii of shells (cm^2)
@@ -2119,13 +2115,16 @@ INTEGER,     INTENT(IN),                                &! ID of shortest wavele
 REAL(KIND=8),INTENT(IN),DIMENSION(0:TEkTOT) :: teLMTdm   ! MB luminosity per unit mass
 INTEGER,     INTENT(IN)                     :: PRnTOT    ! the number of reference probabilities
 INTEGER,     INTENT(IN)                     :: LPpTOT    ! the number of luminosity packets
-INTEGER, INTENT(IN)                         :: BGkGO     !ID of temperature for cfLgo
-Integer(Kind=4), INTENT(IN)                 :: DBTestFlag !Diagnostic test flag for tests and print statements.
+
+
+INTEGER, INTENT(IN)                         :: BGkGO         !ID of temperature for cfLgo
+
 
 REAL(KIND=8),INTENT(OUT),                               &! the mean intensity in cell CFc, in wavelength ...
      DIMENSION(1:WLlTOT,1:CFcTOT)           :: RFjLAM    ! .... interval [WLlam(WLl),WLlam(WLl)+WLdlam(WLl)]
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfT       ! the temperature in each cell
 REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: cfL       ! the line-luminosity absorbed by each cell
+
 
 INTEGER                                     :: CFc,CFcc  ! dummy shell IDs
 !REAL(KIND=8)                                :: CFtauTOT  ! total optical depth through filament
@@ -2162,6 +2161,7 @@ REAL(KIND=8),DIMENSION(1:3)                 :: MUeSC,SDeSC
 REAL(KIND=8)                                :: MUtau,SDtau
 REAL(KIND=8)                                :: TeRatio       ! weighting factor
 
+
 Real(kind=8)                                ::  rfI
 Real(kind=8)                                ::  rfH         !Heating term from Lucy 1999 method
 REAL(KIND=8),DIMENSION(1:CFcTOT)            ::  rfTemp      !Lucy line addition temp
@@ -2172,11 +2172,12 @@ integer                                     ::  readcheck
 integer                                     :: i
 Real(kind=8)                                :: LmRatio
 
-character(len=40)                           :: tmpFilename = "db_N-a_S-i_M-c_V-c_T-e_P-t_W-f.csv"
-Real(kind=8)                                ::CFv
-integer(kind=4)                             :: LPlFixed     !Fixed wavelength index at roughly below wavelength value
-Real(kind=8)                                :: WLfixed = 300.d0 !Fixed 300 microns wavelength
+INTEGER                                     :: modCount
+character(len=20)                           :: positionsFilename = "positions-WL.csv"
 
+modCount = LPpTOT/100
+open(2,file=positionsFilename)
+write(2,"(3(A2,1x))") (/"x","y","l"/)
 
 LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
                                          &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)
@@ -2212,14 +2213,14 @@ print*,"WARNING[@Detailed-Balance]: Luminosity condition FALSE!!! CFlGO < LPdelt
 ENDIF
 
 LPnSCA=0                                                 ! set number of scatterings to zero
-! NMeIN=0;   MUeIN=0.;   SDeIN=0.                          ! *****
-! NMeSC=0;   MUeSC=0.;   SDeSC=0.                          ! *****
-! NMtau=0;   MUtau=0.;   SDtau=0.                          ! *****
+NMeIN=0;   MUeIN=0.;   SDeIN=0.                          ! *****
+NMeSC=0;   MUeSC=0.;   SDeSC=0.                          ! *****
+NMtau=0;   MUtau=0.;   SDtau=0.                          ! *****
 DO LPp=1,LPpTOT                                          ! start loop over luminosity packets
   CALL RT_Cyl1D_InjectIsotropic                         &!   generate and inject ...
   &                  (CFwB,LPr,LPr1122,LPe,LPtau)        !   ... a luminosity packet
-  ! NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
-  ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
+  NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
+  NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
 
   CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
 
@@ -2259,8 +2260,8 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
 
       CALL RT_ReDirectIsotropic(LPe,LPtau)               !       generate new direction and optical depth
-      ! NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
-      ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
+      NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
+      NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
       LPnSCA=LPnSCA+1                                    !       increment number of scatterings
       CALL RANDOM_NUMBER(LRD)
       IF (LRD>LPalb) THEN
@@ -2315,6 +2316,11 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
 
+    If(mod(dble(LPp),dble(modCount)).eq. 0.d0) then
+      write(2,"(3(F18.8,1x))") (/LPr(1)/(0.308568E+19),LPr(2)/(0.308568E+19),WLlam(LPl)/)
+    endif
+
+
   ENDDO                                                  !   packet exits filament
 
   If(mod(dble(LPp),(dble(LPpTOT)/10.d0)).eq. 0.d0) then
@@ -2323,7 +2329,11 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
 ENDDO                                                    ! end loop over luminosity packets
 
-!-------------------------------------------------------------------------------
+
+Close(2)
+
+
+
 do CFc=1,CFcTOT,1
     rfI = 0.d0
     do LPl=1,WLlTOT,1
@@ -2350,86 +2360,50 @@ enddo
 !enddo
 !print*," "
 
-If (DBTestFlag == 1) then
-  print*,"-+-+-+-+-"
-  !print*,"Ant's Diagnostics:"
-  !print*," "
-  !Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
-  !WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
-  !Print*,"TEkTOT,BGfBB,teT(BGkBB)"
-  !WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
-  !Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
-  !WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
-  !print*,"LPpTOT,LPpTOT"
-  !WRITE (*,*) LPpTOT,LPpTOT
+print*,"-+-+-+-+-"
+!print*,"Ant's Diagnostics:"
+!print*," "
+!Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
+!WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
+!Print*,"TEkTOT,BGfBB,teT(BGkBB)"
+!WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
+!Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
+!WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
+!print*,"LPpTOT,LPpTOT"
+!WRITE (*,*) LPpTOT,LPpTOT
 
-  print*," "
-  print*,"ATH diag:"
-  print*," "
-  print*,"The temperature of each cell:"
-  print*,"cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)"
-  print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
-  print*," "
-  print*,"LPnSCA/LPpTOT",dble(LPnSCA)/dble(LPpTOT)
-  print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
-  print*,LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)
-  print*," "
-  print*,"LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)"
-  print*,LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)
-  print*," "
-
+print*," "
+print*,"ATH diag:"
+print*," "
+print*,"The temperature of each cell:"
+print*,"cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)"
+print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
+print*," "
+print*,"LPnSCA/LPpTOT",dble(LPnSCA)/dble(LPpTOT)
+print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
+print*,LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)
+print*," "
+print*,"LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)"
+print*,LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)
+print*," "
 
 
-!-------------------------------------------------------------------------------
-  !Find WLl nearest to WLfixed wavelength
-  do i=1,WLlTOT
-    if (WLlam(i) .le. WLfixed) THEN
-        LPlFixed = i
+print*,"Saving Temperatures versus cells:"
+print*,"Filename = ", CellTempFilename
+OPEN(1,file=trim(adjustl(CellTempFilename)),&
+& iostat=readcheck)
+IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
+WRITE(1,"(5(A4,1x))") (/"cell","temp","lucy","EquT","PTOT"/)
+do i = 1, CFcTOT
+    IF (i.eq.1) then
+        WRITE(1,"(4(F15.8,1x),F10.0)") &
+        &(/dble(i),cfT(i),rfTemp(i),teT(BGkBB),dble(LPpTOT)/)
     ELSE
-        EXIT
+        WRITE(1,"(F15.8,1x,F15.8,1x,F15.8)") &
+        &(/dble(i),cfT(i),rfTemp(i)/)
     ENDIF
-  enddo
-
-  open(1, file=adjustl(trim(tmpFilename)))
-
-  print*, "Writing: "
-  print*, tmpFilename
-
-  write(1,"(7(A3,1x))") (/"N-a","S-i","M-c","V-c","T-e","P-t","W-f"/)
-
-  do i=1,CFcTOT
-    CFv = 3.14159274d0 *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
-    CFv = CFv*((0.324078E-18)**2)
-    if (i==1) THEN
-      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
-      & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
-    ELSE
-      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
-      & ,CFv/)
-    endif
-  enddo
-  close(1)
-  print*,"Written!"
-  print*,""
-!-------------------------------------------------------------------------------
-
-  print*,"Saving Temperatures versus cells:"
-  print*,"Filename = ", CellTempFilename
-  OPEN(1,file=trim(adjustl(CellTempFilename)),&
-  & iostat=readcheck)
-  IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
-  WRITE(1,"(5(A4,1x))") (/"cell","temp","lucy","EquT","PTOT"/)
-  do i = 1, CFcTOT
-      IF (i.eq.1) then
-          WRITE(1,"(4(F15.8,1x),F10.0)") &
-          &(/dble(i),cfT(i),rfTemp(i),teT(BGkBB),dble(LPpTOT)/)
-      ELSE
-          WRITE(1,"(F15.8,1x,F15.8,1x,F15.8)") &
-          &(/dble(i),cfT(i),rfTemp(i)/)
-      ENDIF
-  enddo
-  close(1)
-ENDIF
+enddo
+close(1)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_Cyl1DSchuster_DetailedBalance
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
