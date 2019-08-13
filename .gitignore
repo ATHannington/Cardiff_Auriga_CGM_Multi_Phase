@@ -3,3 +3,7 @@
 ###Output Data###
 *.csv
 *.exe
+
+###Output Images###
+*.png
+*.jpg

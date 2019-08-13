@@ -169,12 +169,12 @@ DGlMAX=560                                               ! set line number where
 DGkapV=0.30000E-17                                       ! set volume opacity for pure scattering (1/cm) [Kappa/Density]
 DGkapM=0.20000E+03                                       ! set mass opacity for pure scattering (cm^2/g) [KAPPA(Lambda)]
                                                          ! Wavelengths (WL)
-WLdelta=0.10                                             ! set spacing of optical properties
+WLdelta=0.10!0.10                                        ! set spacing of optical properties
 WLdcl=0.10                                               ! set weight of slope-change
 WLprint=0                                                ! set flag to list some dust optical props.
-WLplot=0                                                ! set flag to plot optical properties
+WLplot=0                                                 ! set flag to plot optical properties
                                                          ! Temperatures (TE)
-TEkTOT=200                                               ! set number of temperatures required
+TEkTOT=100                                               ! set number of temperatures required
 teTmin=2.725                                             ! set minimum temperature
 teTmax=272.5                                             ! set maximum temperature
 TElist=0                                                 ! set flag to list temperatures
@@ -183,17 +183,36 @@ PRnTOT=1000                                              ! set number of referen
 WTpack=1000000                                           ! set number of calls for plotting probabilities
 WTplot=0                                                 ! set flag to plot probabilities
                                                          ! Background Radiation Field (RF)
-BGkBB= 58!58                                                 ! set temperature-ID of background BB radiation field
+BGkBB= 29!29                                             ! set temperature-ID of background BB radiation field
 BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
-
-DBTestFlag = 1                                            !Diagnostic test flag for tests and print statements.
-
 BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch temperature for cfLgo
+
+DBTestFlag = 1                                           !Diagnostic test flag for tests and print statements in detailed balance RT
+                                                         !***Luminosity packets (LP)***
+LPpTOT= int(1E7)!1E6 standard                            ! set number of packets
+
+
+
+!! SANITY CHECK: Does the selected temperature make sense? !!
+
 IF (BGkGO.ge.BGkBB) then
-    print*,"WARNING [@RadTrans_MainCode]:  BGkGO cfLgo temperature .ge. background temp!!"
+    print*,"WARNING [@RadTrans_MainCode]:  BGkGO cfLgo temperature .ge. background temp (BGkBB)!"
+    print*,"  BGkGO MUST be less than BGkBB!"
 endif
-                                                         ! Luminosity packets (LP)
-LPpTOT= int(1E6)!1000000                                   ! set number of packets
+
+If (BGkBB .ge. int(ceiling(dble(TEkTOT)*0.99d0))) THEN
+  print*,"WARNING [@RadTrans_MainCode]:  BGkBB background RF temp >=99% of maximum computation temp (TEkTOT)!"
+else if (BGkBB .eq. TEkTOT) THEN
+  print*,"WARNING [@RadTrans_MainCode]:  BGkBB background RF temp at 100% of maximum computation temp (TEkTOT)!"
+  print*,"**Program Failure likely**!!"
+else if (BGkBB .le. int(ceiling(dble(TEkTOT)*0.01d0))) THEN
+  print*,"WARNING [@RadTrans_MainCode]:  BGkBB background RF temp <=1% of maximum computation temp (TEkTOT)! &
+  & This is near computational minimum!"
+else if (BGkBB .eq. 0) THEN
+  print*,"WARNING [@RadTrans_MainCode]:  BGkBB background RF temp at 0% of maximum computation temp (TEkTOT)! &
+  & This is at computational minimum!"
+  print*,"**Program Failure likely**!!"
+ENDIF
 
                                                          ! [] ALLOCATIONS 1
 ALLOCATE (cfL(1:CFcTOT))                                 ! allocate cfL array
