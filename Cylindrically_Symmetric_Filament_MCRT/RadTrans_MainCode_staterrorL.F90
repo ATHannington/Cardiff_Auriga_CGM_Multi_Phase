@@ -150,7 +150,7 @@ PRINT*,""
                                                          ! [] INPUT PARAMETERS
                                                          ! Configuration (CF)
 CFgeom='Cylindrical1D'                                   ! set geometry of configuration
-CFrho0=0.1000E-18 !0.1000E-18                            ! set central density (g/cm^3)
+CFrho0=0.1000E-18                                        ! set central density (g/cm^3)
 CFw0=(0.1500E+18)                                        ! set core radius (cm)
 CFschP=1                                                 ! set radial density exponent for Schuster profile
 CFwB=(0.1500E+19)                                        ! set boundary radius (cm)
@@ -183,13 +183,14 @@ PRnTOT=1000                                              ! set number of referen
 WTpack=1000000                                           ! set number of calls for plotting probabilities
 WTplot=0                                                 ! set flag to plot probabilities
                                                          ! Background Radiation Field (RF)
-BGkBB= 29!29                                             ! set temperature-ID of background BB radiation field
+BGkBB= 70!29                                             ! set temperature-ID of background BB radiation field
 BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
 BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch temperature for cfLgo
 
 DBTestFlag = 1                                           !Diagnostic test flag for tests and print statements in detailed balance RT
                                                          !***Luminosity packets (LP)***
-LPpTOT= int(1E7)!1E6 standard                            ! set number of packets
+LPpTOT= int(1E6)!1E6 standard                            ! set number of packets
+
 
 
 !! SANITY CHECK: Does the selected temperature make sense? !!
@@ -297,11 +298,14 @@ CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
 ! &(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
 
-! CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
-! &CFw2,CFrho,CFmu,CFsig,cfT,cfL,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
-! &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
-! &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-! &LPpTOT,RFjLAM,BGkGO,DBTestFlag)
+
+!   VVV THIS TEST IS NOT WORKING!! VVV
+
+CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
+&CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
+&WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
+&WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
+&LPpTOT,RFjLAM,cfT,cfL,BGkGO,DBTestFlag)
 
 
 
@@ -1796,31 +1800,8 @@ REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGx       ! array for log10[lam] 
 REAL(KIND=4)                                :: PGxMAX    ! upper limit on log10[lam]
 REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
 REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
-character(len=50)                           :: filename ="density_cell.csv"
-
-open(1,file=trim(adjustl(filename)))
 
 IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
-
-IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  CFrho=CFrho0
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFmu(CFc)=coeff*0.5d0*(CFzet2HI - CFzet2LO) !     compute CFm
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-
-  CFmuTOT=coeff*CFzet2HI*0.5d0                            !   compute total line-density
-  CFsig=2.*CFrho0*CFw(CFcTOT)                             !   compute surface-density through spine
-ENDIF
-
                                                          ! [] CASE p=1
 IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
   coeff=6.2831853*CFrho0*CFw0**2
@@ -1837,7 +1818,7 @@ IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
     &CFc,CFw(CFc),PGx(CFc),CFrho(CFc),PGy(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=coeff*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
-  CFsig=2.*CFrho0*CFw0*LOG((CFw(CFcTOT)/CFw0)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
+  CFsig=2.*CFrho0*CFw0*LOG(CFw(CFcTOT)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=2
 IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
@@ -1890,17 +1871,6 @@ IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
   CFmuTOT=coeff*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
   CFsig=CFrho0*CFw0*(ATAN(CFw(CFcTOT)/CFw0)+(CFw(CFcTOT)/(CFw0*(1.+CFzet2HI)))) ! surface-density through spine
 ENDIF                                                    ! [ENDIF]
-
-write(1,"(4(A3,1x))") (/"rho","pos","shp","rh0"/)
-do CFc=1,CFcTOT
-  if (CFC ==1 ) THEN
-    write(1,"(ES18.5,1x,ES18.5,1x,ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc),dble(CFschP),CFrho0/)
-  else
-    write(1,"(ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc)/)
-  endif
-enddo
-
-close(1)
                                                          ! [] DIAGNOSTICS
 ! IF (CFprof==1) THEN                                      ! [IF] diagnostics sanctioned, [THEN]
   ! WRITE (6,"(/,3X,'TOTAL LINE-DENSITY:',16X,E10.3,' g/cm',7X,F10.3,' MSun/pc')") CFmuTOT,(0.155129E-15)*CFmuTOT
@@ -2080,11 +2050,9 @@ END SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
-&CFw2,CFrho,CFmu,CFsig,cfT,cfL,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
-&WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
-&WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-&LPpTOT,RFjLAM,BGkGO,DBTestFlag)
+SUBROUTINE RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw,CFw2,CFrho,CFmu,TEkTOT,teT,BGkBB,BGfBB,&
+&WLlTOT,WLlam,WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,&
+&WTlDMup,teLMTdm,PRnTOT,LPpTOT,RFjLAM,cfT,cfL,BGkGO,DBTestFlag)
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2139,7 +2107,6 @@ REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw       ! boundary radii of she
 REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw2      ! squared boundary radii of shells (cm^2)
 REAL(KIND=8),INTENT(IN),DIMENSION(1:CFcTOT) :: CFrho     ! volume-densities in shells (g/cm^3)
 REAL(KIND=8),INTENT(IN),DIMENSION(1:CFcTOT) :: CFmu      ! line-densities in shells (g/cm)
-REAL(KIND=8),INTENT(IN)                     :: CFsig     ! surface-density through spine (g/cm^2)
 INTEGER,     INTENT(IN)                     :: TEkTOT    ! number of discrete temperatures
 REAL(KIND=8),INTENT(IN),DIMENSION(0:TEkTOT) :: teT       ! discrete temperatures
 INTEGER,     INTENT(IN)                     :: BGkBB     ! temperature-ID of background BB radiation field
@@ -2228,14 +2195,9 @@ character(len=40)                           :: tmpFilename = "db_N-a_S-i_M-c_V-c
 Real(kind=8)                                ::CFv
 integer(kind=4)                             :: LPlFixed     !Fixed wavelength index at roughly below wavelength value
 Real(kind=8)                                :: WLfixed = 300.d0 !Fixed 300 microns wavelength
-
-
-Real(kind=8),DIMENSION(1:CFcTOT)            :: errLucy,errStnd
+Real(kind=8),DIMENSION(1:CFcTOT)            :: statError, approxErrorL,approxErrorS,NTot
 Integer,DIMENSION(1:CFcTOT)                 :: RFinter
-Real(kind=8)                                :: chiBar, lamMax, tauBar
-
-
-
+Real(kind=8)                                :: statErrorAlpha,chiToT
 LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
                                          &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)
 
@@ -2314,16 +2276,13 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
     IF (LPsTAU<LPs) THEN                                 !     [IF] range of packet too small
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
       CFc=CFcc                                           !       record that still in same shell
-
       RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
       RFinter(CFc) = RFinter(CFc) + 1
-      LPnScatter(CFcc) = LPnScatter(CFcc) + 1
-      LPnSCA=LPnSCA+1                                    !       increment number of scatterings
 
       CALL RT_ReDirectIsotropic(LPe,LPtau)               !       generate new direction and optical depth
       ! NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
       ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
-
+      LPnSCA=LPnSCA+1                                    !       increment number of scatterings
       CALL RANDOM_NUMBER(LRD)
       IF (LRD>LPalb) THEN
 
@@ -2369,8 +2328,11 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
         LPalb=WLalb(LPl)
       ENDIF
     ELSE
+      LPnScatter(CFcc) = LPnScatter(CFcc) + 1
+
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
       RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
+      RFinter(CFcc) = RFinter(CFcc) + 1
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
@@ -2384,21 +2346,36 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 ENDDO                                                    ! end loop over luminosity packets
 
 !------------------------------------------------------------------------------
+statError = 0.d0
 do CFc=1,CFcTOT,1
     rfI = 0.d0
+    chiToT = 0.d0
     do LPl=1,WLlTOT,1
         rfI = rfI+(WLchi(LPl)*(1.d0-WLalb(LPl))*RFjLAM(LPl,CFc))    !CGS. Lucy 1999
+        chiToT = chiToT + WLchi(LPl)
     enddo
     rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*(3.14159265359d0))
+
     do TEK=1,TEkTOT,1
         If(teLMmb(TEk).gt.rfH)then
             LmRatio=(rfH - teLMmb(TEk-1))/(teLMmb(TEk)-teLMmb(TEk-1))
             rfTemp(CFc) = teT(TEk-1) + (teT(TEk)-teT(TEk-1))*LmRatio
+            statErrorAlpha = ((teT(TEk)-teT(TEk-1))/(teLMmb(TEk)-teLMmb(TEk-1)))
+            print*,(statErrorAlpha)
             EXIT
         endif
     enddo
-    errLucy(CFc) = rfTemp(CFc)*(1.d0/(SQRT(dble(RFinter(CFc)))))
-    errStnd(CFC) = cfT(CFc)*(1.d0/(SQRT(dble(LPnAbsorb(CFc)))))
+
+    do LPl=1,WLlTOT,1
+        statError(CFc) = statError(CFc) + (LPdeltaL*((WLchi(LPl)*(1.d0-WLalb(LPl)))/(CFmu(CFc)*chiToT))*statErrorAlpha)
+    enddo
+
+    statError(CFc) = SQRT((statError(CFc)**2)*dble(RFinter(CFc)))
+    print*,(statError(CFc))
+    statError(CFc) = SQRT(statError(CFc))
+    print*,(statError(CFc))
+    approxErrorL(CFc) = rfTemp(CFc)*(1.d0/(SQRT(dble(RFinter(CFc)))))
+    approxErrorS(CFC) = cfT(CFc)*(1.d0/(SQRT(dble(LPnAbsorb(CFc)))))
 enddo
 
 !print*,
@@ -2410,19 +2387,6 @@ enddo
 !   ENDIF
 !enddo
 !print*," "
-
-lamMax = (0.288*(1.d4))/teT(BGkBB)
-
-do i=1,WLlTOT,1
-  If(WLlam(i) .ge. lamMax) THEN
-    chiBar = WLchi(i)
-    EXIT
-  endif
-enddo
-
-tauBar = chiBar*CFsig
-
-
 
 If (DBTestFlag == 1) then
   print*,"-+-+-+-+-"
@@ -2445,10 +2409,6 @@ If (DBTestFlag == 1) then
   print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
   print*," "
   print*,"LPnSCA/LPpTOT",dble(LPnSCA)/dble(LPpTOT)
-  print*,"CFsig",CFsig
-  print*,"chiBar",chiBar
-  print*,"lamMax",lamMax
-  print*,"tauBar",tauBar
   print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
   print*,LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)
   print*," "
@@ -2496,14 +2456,14 @@ If (DBTestFlag == 1) then
   OPEN(1,file=trim(adjustl(CellTempFilename)),&
   & iostat=readcheck)
   IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
-  WRITE(1,"(8(A4,1x))") (/"cell","temp","lucy","ErrL","ErrS","EquT","PTOT"/)
+  WRITE(1,"(8(A4,1x))") (/"cell","temp","lucy","AErL","AErS","SErL","EquT","PTOT"/)
   do i = 1, CFcTOT
       IF (i.eq.1) then
-          WRITE(1,"(6(F18.10,1x),F10.0)") &
-          &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i),teT(BGkBB),dble(LPpTOT)/)
+          WRITE(1,"(7(F18.10,1x),F10.0)") &
+          &(/dble(i),cfT(i),rfTemp(i),approxErrorL(i),approxErrorS(i),statError(i),teT(BGkBB),dble(LPpTOT)/)
       ELSE
-          WRITE(1,"(5(F18.10,1x))") &
-          &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i)/)
+          WRITE(1,"(6(F18.10,1x))") &
+          &(/dble(i),cfT(i),rfTemp(i),approxErrorL(i),approxErrorS(i),statError(i)/)
       ENDIF
   enddo
   close(1)

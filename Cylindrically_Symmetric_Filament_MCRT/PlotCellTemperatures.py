@@ -53,10 +53,15 @@ fracErrLucy,fracRmsLucy=frac_error(obs=read_data['lucy'],exp=expected)
 ### Find percentage values, then mean and Stnd. Dev. ###
 read_data['temp'] = read_data['temp']/equibTemp
 read_data['lucy'] = read_data['lucy']/equibTemp
+read_data['ErrS']=read_data['ErrS']/equibTemp
+read_data['ErrL']=read_data['ErrL']/equibTemp
 
+#Inverse weights to make worse errors have less affect on the mean
+weightsStd = np.array([(1./(read_data['ErrS'][i])) for i in range(len(read_data['ErrS']))])
+weightsLucy = np.array([(1./(read_data['ErrL'][i])) for i in range(len(read_data['ErrL']))])
 
-meanStd = read_data['temp'].mean()
-meanLucy = read_data['lucy'].mean()
+meanStd = np.average(read_data['temp'],weights=weightsStd)
+meanLucy = np.average(read_data['lucy'],weights=weightsLucy)
 sdStd = read_data['temp'].std()
 sdLucy = read_data['lucy'].std()
 
@@ -72,13 +77,6 @@ results.rename(index={0:'standard',1:'lucy'}, inplace=True)                    #
 ### Plotting Lists ###
 meanStdList = [meanStd for i in range(len(read_data['cell']))]
 meanLucyList = [meanLucy for i in range(len(read_data['cell']))]
-
-# upperStd = [(meanStd+sdStd) for i in range(len(read_data['cell']))]
-# lowerStd = [(meanStd-sdStd) for i in range(len(read_data['cell']))]
-#
-# upperLucy = [(meanLucy+sdLucy) for i in range(len(read_data['cell']))]
-# lowerLucy = [(meanLucy-sdLucy) for i in range(len(read_data['cell']))]
-
 ### Write analysis to file ###
 print("Writing to file!")
 
@@ -90,22 +88,31 @@ print("Beginning Plots!")
 
 fig, ax = plt.subplots()
 
-ax.plot(read_data['cell'],read_data['temp'],color='black',label="Standard method")
-ax.plot(read_data['cell'],read_data['lucy'],color='red',label="Lucy(1999) method")
 
-ax.plot(read_data['cell'],meanStdList,color='cyan',label="Standard method mean")
-ax.plot(read_data['cell'],meanLucyList,color='green',label="Lucy(1999) method mean")
 
-# ax.fill_between(read_data['cell'], upperStd, lowerStd,\
-# facecolor='cyan',alpha=0.5,interpolate=True)
-# ax.fill_between(read_data['cell'],upperLucy, lowerLucy,\
-# facecolor='green',alpha=0.5,interpolate=True)
+opacity = 0.20
+colourStd = "Blue"
+colourLucy = "Red"
+styleStd = "--"
+styleLucy = "-."
+
+ax.plot(read_data['cell'],read_data['temp'],color=colourStd,label="Standard method")
+ax.plot(read_data['cell'],read_data['lucy'],color=colourLucy,label="Lucy(1999) method")
+ax.fill_between(read_data['cell'], read_data['temp']+read_data['ErrS'], read_data['temp']-read_data['ErrS'],\
+ facecolor=colourStd,alpha=opacity,interpolate=True)
+ax.fill_between(read_data['cell'], read_data['lucy']+read_data['ErrL'], read_data['lucy']-read_data['ErrL'],\
+ facecolor=colourLucy,alpha=opacity,interpolate=True)
+
+ax.plot(read_data['cell'],meanStdList,color=colourStd,linestyle="--",label="Standard method mean")
+ax.plot(read_data['cell'],meanLucyList,color=colourLucy,linestyle=":",label="Lucy(1999) method mean")
+
+
 
 
 ax.set_xlabel("Cell Number")
 ax.set_ylabel("Cell Temperature Fraction [dimensionless]")
-ax.set_xlim(1,max(read_data['cell']))
-ax.set_ylim(min(min(read_data['lucy']),min(read_data['temp'])),max(max(read_data['lucy']),max(read_data['temp'])))
+# ax.set_xlim(1,max(read_data['cell']))
+# ax.set_ylim(min(min(read_data['lucy']),min(read_data['temp'])),max(max(read_data['lucy']),max(read_data['temp'])))
 
 ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.yaxis.set_minor_locator(AutoMinorLocator())
