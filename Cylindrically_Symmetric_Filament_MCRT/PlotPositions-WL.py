@@ -18,5 +18,5 @@ plt.ylabel('y coordinate [pc]')
 plt.title(f'Plot of X and Y coordinates for {LPpTOT:.2E} LP packets' + '\n'\
 +f'during {subroutine}')
 cbar = plt.colorbar(mainplot,label="Wavelength [Microns]")
-plt.savefig(f"postions_vs._wl_{subroutine}_n={numberRows}_LPpTOT={LPpTOT:.2E}.png")
+plt.savefig(f"postions_vs._wl_{subroutine}_n={numberRows}_LPpTOT={LPpTOT:.2E}.jpg")
 plt.show()

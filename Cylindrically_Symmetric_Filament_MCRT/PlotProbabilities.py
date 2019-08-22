@@ -62,8 +62,8 @@ adapted_from_affiliation = "Cardiff University, Wales, UK"
 date_created= "12/04/2019"
 
 #
-# Notes: Python program for plotting emission probabilities from 
-# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric 
+# Notes: Python program for plotting emission probabilities from
+# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric
 #		 Filamentary Molecular Clouds.
 #		 Equivalent subroutine in A.P.W's code:
 #		 # SUBROUTINE RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,\
@@ -82,17 +82,17 @@ date_created= "12/04/2019"
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
 def func_datetime_savepath (input_savepath_string):
 	"""
-	Description: Function for generating a savepath string and creating 
+	Description: Function for generating a savepath string and creating
 				subsequent directory.
-				NOTE: this function will NOT create all intermediate level 
-				directories in path name. To do this, please see Python 
+				NOTE: this function will NOT create all intermediate level
+				directories in path name. To do this, please see Python
 				documentation on os.makedirs()
 	Inputs:		Var: input_savepath_string	Type:string 	Dtype: char
 	Outputs:	Var: savepath				Type: string	Dtype: char
 				------
 	Notes:		Created 09/04/2019 by ATH. Working as of 09/04/2019
 	"""
-	
+
 	save_date = str(now.strftime("%Y-%m-%d-%H-%M"))
 	savepath = input_savepath_string + "/" + save_date +"/"
 	print()
@@ -146,7 +146,7 @@ print("Loading in data!")
 lambdaData 	 = pd.read_csv(lambdaDataPath, header=None, \
 skipinitialspace =True)
 
-###Load into Data frame, omit header for data, skip spaces, 
+###Load into Data frame, omit header for data, skip spaces,
 ###    and tranpose for ease of plotting
 BBconstants  = pd.read_csv(BBconstantsPath,delimiter=" ")						#We read the constants data into a Pandas Data Frame                          #
 																				#We read in the analytic and MCRT data,currently in format of one row per temp#
@@ -159,13 +159,13 @@ skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 BBMCRT		 = pd.read_csv(BBmcrtPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
-MBconstants  = pd.read_csv(MBconstantsPath,delimiter=" ")						
+MBconstants  = pd.read_csv(MBconstantsPath,delimiter=" ")
 MBAnalytic	 = pd.read_csv(MBAnalyticPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 MBMCRT		 = pd.read_csv(MBmcrtPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 
-DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")						
+DMconstants  = pd.read_csv(DMconstantsPath,delimiter=" ")
 DMAnalytic	 = pd.read_csv(DMAnalyticPath,delimiter=" ",header=None, \
 skipinitialspace =True, na_values=["-Infinity", "Infinity"]).T
 DMMCRT		 = pd.read_csv(DMmcrtPath,delimiter=" ",header=None, \
@@ -177,7 +177,7 @@ print("Data loading complete!")
 print()
 print("Manipulating data!")
 ###
-###Cut off end NaN from Fortran Carriage Return Space							
+###Cut off end NaN from Fortran Carriage Return Space
 ###
 																				#Here we have used online resources to determine the method by which to omit  #
 																				#  the last row of the data. In this instance, the last row is a NaN brought  #
@@ -277,7 +277,7 @@ plt.ylim(BByMin, BByMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.jpeg')
+'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.jpg')
 
 fig = plt.figure()
 for i in range(0, len(MBconstants['temp'])):
@@ -294,7 +294,7 @@ plt.ylim(MByMin, MByMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
+'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpg')
 
 fig = plt.figure()
 for i in range(0, len(DMconstants['temp'])):
@@ -311,7 +311,7 @@ plt.ylim(DMyMin, DMyMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpeg')
+'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpg')
 
 finxMin = min([DMxMin, MBxMin])
 finxMax = max([DMxMax, MBxMax])
@@ -334,7 +334,7 @@ plt.ylim(DMyMin, DMyMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath \
-+'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.jpeg')
++'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.jpg')
 
 plt.show()
 

@@ -123,5 +123,5 @@ ax.legend()
 
 plt.title("Cell Temperature Fraction versus Cell Number from Detailed Balance MCRT" \
 +"\n"+ "Equib Temperature = " + str(round(equibTemp,2)) + " [K]." + f" LPpTOT = {LPpTOT:.2E}")
-plt.savefig("cells-vs-temperature_detailed-balance-RT"+f"_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}" +".png")
+plt.savefig("cells-vs-temperature_detailed-balance-RT"+f"_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}" +".jpg")
 plt.show()

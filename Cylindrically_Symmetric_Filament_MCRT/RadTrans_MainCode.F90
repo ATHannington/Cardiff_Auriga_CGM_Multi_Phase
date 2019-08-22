@@ -155,8 +155,8 @@ CFw0=(0.1500E+18)                                        ! set core radius (cm)
 CFschP=1                                                 ! set radial density exponent for Schuster profile
 CFwB=(0.1500E+19)                                        ! set boundary radius (cm)
 CFcTOT=100!100                                               ! set number of shells
-CFlist=0                                                 ! set flag to sanction diagnostics for cells
-CFprof=0                                                 ! set flag to sanction diagnostics for profile
+CFlist=1                                                 ! set flag to sanction diagnostics for cells
+CFprof=1                                                 ! set flag to sanction diagnostics for profile
 
 print*,
 Print*,"Selected Geometry:"
@@ -171,17 +171,17 @@ DGkapM=0.20000E+03                                       ! set mass opacity for 
                                                          ! Wavelengths (WL)
 WLdelta=0.10!0.10                                        ! set spacing of optical properties
 WLdcl=0.10                                               ! set weight of slope-change
-WLprint=0                                                ! set flag to list some dust optical props.
-WLplot=0                                                 ! set flag to plot optical properties
+WLprint=1                                                ! set flag to list some dust optical props.
+WLplot=1                                                 ! set flag to plot optical properties
                                                          ! Temperatures (TE)
 TEkTOT=100                                               ! set number of temperatures required
 teTmin=2.725                                             ! set minimum temperature
 teTmax=272.5                                             ! set maximum temperature
-TElist=0                                                 ! set flag to list temperatures
+TElist=1                                                 ! set flag to list temperatures
                                                          ! Probabilities
 PRnTOT=1000                                              ! set number of reference probabities
 WTpack=1000000                                           ! set number of calls for plotting probabilities
-WTplot=0                                                 ! set flag to plot probabilities
+WTplot=1                                                 ! set flag to plot probabilities
                                                          ! Background Radiation Field (RF)
 BGkBB= 29!29                                             ! set temperature-ID of background BB radiation field
 BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
@@ -189,7 +189,7 @@ BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch t
 
 DBTestFlag = 1                                           !Diagnostic test flag for tests and print statements in detailed balance RT
                                                          !***Luminosity packets (LP)***
-LPpTOT= int(1E7)!1E6 standard                            ! set number of packets
+LPpTOT= int(1E6)!1E6 standard                            ! set number of packets
 
 
 !! SANITY CHECK: Does the selected temperature make sense? !!
@@ -297,11 +297,11 @@ CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
 ! &(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
 
-! CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
-! &CFw2,CFrho,CFmu,CFsig,cfT,cfL,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
-! &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
-! &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-! &LPpTOT,RFjLAM,BGkGO,DBTestFlag)
+CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
+&CFw2,CFrho,CFmu,CFsig,cfT,cfL,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
+&WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
+&WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
+&LPpTOT,RFjLAM,BGkGO,DBTestFlag)
 
 
 

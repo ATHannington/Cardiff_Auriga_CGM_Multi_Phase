@@ -5,12 +5,14 @@
 #		Details of this program below.                                          #
 #-------------------------------------------------------------------------------#
 import matplotlib.pyplot as plt
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import numpy as np
 import pandas as pd
 import math
 import datetime
 import os
 from astropy import units as u
+from astropy.modeling.blackbody import blackbody_lambda
 #from astropy.modeling.blackbody import blackbody_lambda
 
 
@@ -34,8 +36,8 @@ adapted_from_affiliation = "Cardiff University, Wales, UK"
 date_created= "05/04/2019"
 
 #
-# Notes: Python program for plotting dust properties from 
-# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric 
+# Notes: Python program for plotting dust properties from
+# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric
 #		 Filamentary Molecular Clouds.
 #		 Equivalent subroutine in A.P.W's code:
 #		 # SUBROUTINE RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
@@ -45,8 +47,8 @@ date_created= "05/04/2019"
 date_last_edited= "12/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
 
 																				#Input directory into which to save plots here                                #
-savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
-"Cylindrically_Symmetric_Filament_MCRT/Dust/"
+savepath = "./media/sf_OneDrive_-_Cardiff_University/Documents/ATH_PhD/"+ \
+"_PhD_Output/Cylindrically_Symmetric_Filament_MCRT/Dust"
 																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
 																				#      using today's date at runtime.                                         #
 
@@ -83,18 +85,18 @@ kb = kb.cgs
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
 def func_datetime_savepath (input_savepath_string):
 	"""
-	Description: Function for generating a savepath string and creating 
+	Description: Function for generating a savepath string and creating
 				subsequent directory.
-				NOTE: this function will NOT create all intermediate level 
-				directories in path name. To do this, please see Python 
+				NOTE: this function will NOT create all intermediate level
+				directories in path name. To do this, please see Python
 				documentation on os.makedirs()
 	Inputs:		Var: input_savepath_string	Type:string 	Dtype: char
 	Outputs:	Var: savepath				Type: string	Dtype: char
 				------
 	Notes:		Created 09/04/2019 by ATH. Working as of 09/04/2019
 	"""
-	
-	save_date = str(now.strftime("%Y-%m-%d-%H-%M"))
+
+	save_date = str(now.strftime("%Y-%m-%d"))#-%H-%M"))
 	savepath = input_savepath_string + "/" + save_date +"/"
 	print()
 	print("Savepath generated! Datetime used!")
@@ -109,13 +111,13 @@ def func_BB_lam(lambda_arr,hc_kbt_arr):
 	"""
 	Description: Function for generating a 2D NumPy array of Black Body Spectral
 				Density, as a function of wavelength, and un-normalised.
-				hc_kbt_arr input should be a 2D [n,m] array h*c/(kb*T) and 
+				hc_kbt_arr input should be a 2D [n,m] array h*c/(kb*T) and
 				shaped:
 				[ T_1 T_1 ... ->]
 				[ T_2 T_2 ...	]
 				[  v   v  ...	]
 				[ T_n T_n ...T_n]
-				lambda_arr input should be a 2D [n,m]array of wavelengths in 
+				lambda_arr input should be a 2D [n,m]array of wavelengths in
 				appropriate units and shaped:
 				[ l_1 l_2 ->	]
 				[ l_1 l_2 ...	]
@@ -128,7 +130,7 @@ def func_BB_lam(lambda_arr,hc_kbt_arr):
 				------
 	Notes:		Created 11/04/2019 by ATH. Working as of 11/04/2019
 	"""
-	
+
 	bb_data = 1./((lambda_arr**5)*(np.exp(hc_kbt_arr*(1./lambda_arr.value))-1.))
 	return bb_data
 
@@ -165,7 +167,7 @@ del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
 #                                                                               #
 
 read_data = pd.read_csv(importstring,delimiter=" ", \
-skipinitialspace =True, na_values=["-Infinity", "Infinity"])								#We read the data into a Pandas Data Frame                                    #
+skipinitialspace =True, na_values=["-Infinity", "Infinity"])					#We read the data into a Pandas Data Frame                                    #
 
 print()
 print("File read from:", importstring)
@@ -189,7 +191,7 @@ print("Manipulating in data! [part 1/3]")
 
 																				#A rather involved process... We convert the values to Log10 values and then  #
 x_lamLog10 = np.log10(read_data['lam'])											#  check whether the return are inf or NaN. Replace with NaN if so as can be  #
-																				#    ignored through numpy's NaNmax and NaNmin routines, and otherwise aren't 
+																				#    ignored through numpy's NaNmax and NaNmin routines, and otherwise aren't
 																				#      plotted.
 x_lamLog10 = np.where(((np.isnan(x_lamLog10)==False)&\
 (np.isinf(x_lamLog10)==False)),x_lamLog10,float('NaN'))
@@ -198,7 +200,7 @@ x_lamLog10 = np.where(((np.isnan(x_lamLog10)==False)&\
 #print("Test! chi(0)=", read_data['chi'][0])
 y_chiLog10 = np.log10(read_data['chi'])
 y_chiLog10 = np.where(((np.isnan(y_chiLog10)==False)&\
-(np.isinf(y_chiLog10)==False)),y_chiLog10,float('NaN')) 
+(np.isinf(y_chiLog10)==False)),y_chiLog10,float('NaN'))
 
 xmin = np.nanmin(x_lamLog10)													#  then find max and min values for each, to use for axes in plots, ignoring  #
 xmax = np.nanmax(x_lamLog10)													#    any NaNs.																  #
@@ -208,7 +210,7 @@ ymax = np.nanmax(y_chiLog10)
 																				#Create a list of 10 times the albedo. This is used to bring the Albedo up to #
 																				#    a comparable scale with Log10(chi) and Log10(lambda).                    #
 
-z_10alb = [(10.*read_data['alb'][i]) for i in \
+z_10alb = [(10*read_data['alb'][i]) for i in \
 range(0,len(read_data['alb']),1)]
 
 zmin = min(z_10alb)
@@ -241,12 +243,12 @@ print("Creating first plots!")
 fig, ax1 = plt.subplots()														#Start new fig and axis with plt.subplots()                                   #
 
 color = 'red'																	#Set first colour                                                             #
-plot2 = ax1.plot(x_lamLog10, y_chiLog10, color=color, label = "Chi")			#    Plot Log10(Chi) against Log10(Wavelength), in above colour, 
+plot2 = ax1.plot(x_lamLog10, y_chiLog10, color=color, label = r"$\chi$: Absorption Coeff. per unit mass")			#    Plot Log10(Chi) against Log10(Wavelength), in above colour,
 																				#        with legend label "chi".											  #
 ax1.set_xlim(xmin,xmax)															#        Set axes to have max and min values as calculated                    #
-ax1.set_ylim(ymin,ymax)
-ax1.set_xlabel("Log10(Wavelength)   [ Log10(microns) ]")							#            Set x axis label, with units                                 #
-ax1.set_ylabel("Log10(Chi)   [ Log10(cm^2 / g) ]",color=color)					#                Set y axis label, with units, in color defined above.        #
+ax1.set_ylim(min(ymin,zmin),max(ymax,zmax))
+ax1.set_xlabel(r"$Log_{10}(\lambda)$ [$\mu$m]")									#            Set x axis label, with units                              		  #
+ax1.set_ylabel(r"$Log_{10}(\chi)$ [$cm^{2}$ $g^{-1}$]",color=color)				#                Set y axis label, with units, in color defined above.        #
 
 ax2 = ax1.twinx()																#Set second axis plot to have a twin of the first's x-axis.                   #
 
@@ -254,25 +256,29 @@ color='blue'
 																				#Plot 10*Albedo against Log10(Wavelength), dashed, in colour 2, legend label  #
 																				#  "Albedo".
 plot1 = ax2.plot(x_lamLog10, z_10alb,color=color, linestyle="-" ,\
-label = "10*Albedo")
+label = r"$10*a$: albedo")
 ax2.set_xlim(xmin,xmax)															#    Set axes limits to min  and max of new variables                         #
-ax2.set_ylim(zmin,zmax)															
-ax2.set_xlabel("Log10(Wavelength)   [ Log10(microns) ]")						#        Set axis labels, with units.                                         #
-ax2.set_ylabel("10*Albedo   [Unitless]", color=color)
+ax2.set_ylim(min(ymin,zmin),max(ymax,zmax))
+ax1.set_xlabel(r"$Log_{10}(\lambda)$ [$\mu$m]")									#            Set x axis label, with units                              		  #
+ax2.set_ylabel(r"$10*a$ [/]", color=color)
 
-plt.title("Comparative Plot of Log10(Chi) and 10*Albedo" + "\n" \
-+ "versus Log10(Wavelength)")
+plt.title(r"Comparative Plot of $Log_{10}$(Absorption Coeff. per unit mass) and 10*Albedo" + "\n" \
++ r"versus $Log_{10}$(Wavelength)")
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)		#Attach Legend to image, in adjusted upper right [NOTE: Standard Upper Right  #
 																				#  does not work here. Ejects image out of frame, overlapping with 2nd y-axis #
 																				#    tickers]. We have added "borderaxespad=0." to remind self option exists. #
 fig.tight_layout()																#According to Maplotlib documentation this line is needed to ensure the second#
 																				#  axis does not become clipped.                                              #
+
+ax1.xaxis.set_minor_locator(AutoMinorLocator())
+ax1.yaxis.set_minor_locator(AutoMinorLocator())
+ax1.grid(which="both")
 plt.show()																		#Show figure!                                                                 #
 
 
-datetimesavepath = func_datetime_savepath(savepath)								#Create dated subdirectory and savepath directory path.                       #
-fig.savefig(datetimesavepath + "Log10-chi_10Albedo_versus" + \
-"_Log10-Wavelength.jpeg")
+# datetimesavepath = func_datetime_savepath(savepath)								#Create dated subdirectory and savepath directory path.                       #
+fig.savefig("Log10-chi_10Albedo_versus" + \
+"_Log10-Wavelength.png")
 
 
 
@@ -290,57 +296,75 @@ ntemps = len(temperatures)														#Grab number of temperatures used       
 nlambda = len(read_data['lam'])													#Grab number of wavelength data points                                        #
 hc_kb = h*c / kb																#Calculate constant                                                           #
 
-lambda_arr = np.full((ntemps,nlambda),read_data['lam'])							#Temporary array of lambda data. Needed for black body function.              #
-lambda_arr = lambda_arr*u.micron												#    Shape [temp,lambda]. Give units of microns.                              #
-lambda_arr = lambda_arr.cgs														#        Convert microns to CGS.											  #
-#-------------------------------------------------------------------------------#
+lam = np.array(read_data['lam'])*u.micron
+lam = (lam).to(u.angstrom)
 
-lambda_T = hc_kb/temperatures													#Calculate (h*c)/(kb*T). This will be shape [temp]. Needed for exponent#
-																				#    in Black Body function.												  #
+planck_arr = np.array([((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*\
+(blackbody_lambda(lam,temperatures[t]))).to(u.micron**(-5)) \
+for t in range(len(temperatures))])
 
-lambdaMin = lambda_T*0.03														#Lambda min and max set as in A. P. Whitworth's original code.				  #
-lambdaMax = lambda_T*10.0
-
-hc_kbt_arr = (np.full((nlambda,ntemps),lambda_T)).T								#Make exponent data into Matrix form. Final shape [temp,lambda]. Needs to be  #
-																				#  input as [lambda,temp] and transposed to get obtain correct shape without  #
-																				#    chopping data or throwing errors.
-planck_arr = func_BB_lam(lambda_arr,hc_kbt_arr)									#Put exponent and lambda data through un-normalised Black Body function.      #
-planck_units = planck_arr.unit													#    Grab units of Planck data for re-assignment to data later.				  #
-#print(planck_units)
-
-lam = lambda_arr[0]																#Lambda array no longer needed, so one copy of the lambda data taken as 1D    #
-																				#  array, and 2D array deleted.												  #
-del lambda_arr																	#    ^^^.																	  #
-
-planck_masked = np.zeros((ntemps,nlambda))										#Setup blank array for masked planck data. Shape [temps,lambda].			  #
-for index in range(0,ntemps,1):													#[FOR] indices up to number of temperatures [THEN]							  #
-																				#  assign to temp column of planck_masked array, the set of planck data that  #
-																				#    is bounded by Lambda>= Lambda_min & Lambda<=Lambda_max [ELSE]
-	planck_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
-	&(lam.value<=lambdaMax[index].value),planck_arr[index],None))				#      fill else entries with NaN.											  #
-																				#NOTE: "&" has to be used (not "and") to get "index wise" entries that works  #
-																				#  without throwing error. If not, an error about truthyness of multiple entry#
-																				#    arrays will be thrown. 												  #
-planck_masked = planck_masked*planck_units										#Give the masked array correct units for debugging or future use.			  #
+# print((((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*(blackbody_lambda(lam,temperatures[0]))[0])).to(u.micron**(-5)))
+lam = (lam).to(u.micron)
+lam_tmp = lam.value
+x_lamLog10 = np.log10(lam_tmp)
+planck_arr_dimensionless = np.array([(((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*\
+(blackbody_lambda(lam,temperatures[t]))).to(u.micron**(-5))).value \
+for t in range(len(temperatures))])
+# planck_arr_dimensionless = np.array([ for t in range(len(temperatures))])
+y_PlanckLog10 = np.log10(planck_arr_dimensionless)
+#
+#
+# lambda_arr = np.full((ntemps,nlambda),read_data['lam'])							#Temporary array of lambda data. Needed for black body function.              #
+# lambda_arr = lambda_arr*u.micron												#    Shape [temp,lambda]. Give units of microns.                              #
+# lambda_arr = lambda_arr.cgs														#        Convert microns to CGS.											  #
+# #-------------------------------------------------------------------------------#
+#
+# lambda_T = hc_kb/temperatures													#Calculate (h*c)/(kb*T). This will be shape [temp]. Needed for exponent#
+# 																				#    in Black Body function.											  #
+#
+# lambdaMin = (lambda_T.value)*0.03														#Lambda min and max set as in A. P. Whitworth's original code.				  #
+# lambdaMax = (lambda_T.value)*10.0
+#
+# hc_kbt_arr = (np.full((nlambda,ntemps),lambda_T)).T								#Make exponent data into Matrix form. Final shape [temp,lambda]. Needs to be  #
+# 																				#  input as [lambda,temp] and transposed to get obtain correct shape without  #
+# 																				#    chopping data or throwing errors.
+# planck_arr = func_BB_lam(lambda_arr,hc_kbt_arr)									#Put exponent and lambda data through un-normalised Black Body function.      #
+# planck_units = planck_arr.unit													#    Grab units of Planck data for re-assignment to data later.				  #
+# #print(planck_units)
+#
+# lam = lambda_arr[0]																#Lambda array no longer needed, so one copy of the lambda data taken as 1D    #
+# 																				#  array, and 2D array deleted.												  #
+# del lambda_arr																	#    ^^^.																	  #
+#
+# planck_masked = np.zeros((ntemps,nlambda))										#Setup blank array for masked planck data. Shape [temps,lambda].			  #
+# for index in range(0,ntemps,1):													#[FOR] indices up to number of temperatures [THEN]							  #
+# 																				#  assign to temp column of planck_masked array, the set of planck data that  #
+# 																				#    is bounded by Lambda>= Lambda_min & Lambda<=Lambda_max [ELSE]
+# 	planck_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
+# 	&(lam.value<=lambdaMax[index].value),planck_arr[index],None))				#      fill else entries with NaN.											  #
+# 																				#NOTE: "&" has to be used (not "and") to get "index wise" entries that works  #
+# 																				#  without throwing error. If not, an error about truthyness of multiple entry#
+# 																				#    arrays will be thrown. 												  #
+# planck_masked = planck_masked*planck_units										#Give the masked array correct units for debugging or future use.			  #
 
 # print("lambdaMin",lambdaMin,np.shape(lambdaMin))
 # print("planck_masked",planck_masked,planck_masked[0],\
 # np.shape(planck_masked),planck_masked.unit)
-
-y_PlanckLog10=np.log10(planck_masked.value)										#np.Log10 to take the Log10 of every entry in the array. ".value" must be     #
-																				#    used as the data technically still has units (contrary to definition of  #
-																				#      a logarithm.															  #
-																				#        We have taken the log to ???										  #
-
-yMax = (np.full((nlambda,ntemps),np.nanmax(y_PlanckLog10,axis=1))).T			#Find the maximum NON-NaN value of each temperature column of the Log10 planck#
-																				#  data. This is then copied into an array, with each temp column holding     #
-																				#    nlambda copies of this maximum. This is inefficient, but makes it easy to#
+#
+# y_PlanckLog10=np.log10(planck_masked.value)										#np.Log10 to take the Log10 of every entry in the array. ".value" must be     #
+# 																				#    used as the data technically still has units (contrary to definition of  #
+# 																				#      a logarithm.															  #
+# 																				#        We have taken the log to ???										  #
+#
+# yMax = (np.full((nlambda,ntemps),np.nanmax(y_PlanckLog10,axis=1))).T			#Find the maximum NON-NaN value of each temperature column of the Log10 planck#
+# 																				#  data. This is then copied into an array, with each temp column holding     #
+# 																				#    nlambda copies of this maximum. This is inefficient, but makes it easy to#
 																				#      subtract this maximum from the entire set of PlanckLog10 data.		  #
 # print("yMax",yMax,yMax[0],np.shape(yMax))
-
-y_PlanckLog10 = y_PlanckLog10 - yMax											#This subtraction effectively "normalises" the PlanckLog10 data.			  #
-
-del hc_kb, lambda_T, yMax
+#
+# y_PlanckLog10 = y_PlanckLog10 - yMax											#This subtraction effectively "normalises" the PlanckLog10 data.			  #
+#
+# del hc_kb, lambda_T, yMax
 
 #-------------------------------------------------------------------------------#
 																				#This section near entirely follows the section above's logic. Please see     #
@@ -349,73 +373,85 @@ del hc_kb, lambda_T, yMax
 print()
 print("Manipulating data [part 3/3]!")
 
-
-alb_squareArr = np.full((ntemps,nlambda),read_data['alb'])\
-*u.dimensionless_unscaled														#[temps,lambda] shaped array of dimensionless albedo data.					  #
-
-chi_squareArr = (np.full((ntemps,nlambda),read_data['chi'])*((u.cm**2)/(u.g)))\
-.cgs																			#[temps,lambda] shaped array of chi (extinction opacity) data with correct	  #
-																				#  units																	  #
-
-z_vol_emiss = planck_arr*chi_squareArr*(1.-alb_squareArr)						#Combine planck data with chi and albedo to obtain volume emissivity		  #
-																				#  units [1/(cm^3 g)]														  #
-vol_emiss_units = z_vol_emiss.unit
-
-z_vol_emiss_masked = np.zeros((ntemps,nlambda))
-for index in range(0,ntemps,1):
-	z_vol_emiss_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
-	&(lam.value<=lambdaMax[index].value),z_vol_emiss[index],None))
-
-z_vol_emiss_masked = z_vol_emiss_masked*vol_emiss_units
-
-#print("z_vol_emiss_masked",z_vol_emiss_masked,z_vol_emiss_masked[0],\
-#np.shape(z_vol_emiss_masked),z_vol_emiss_masked.unit)
-
-z_VELog10=np.log10(z_vol_emiss_masked.value)
-
-zMax = (np.full((nlambda,ntemps),np.nanmax(z_VELog10,axis=1))).T
-
-#print("zMax",zMax,zMax[0],np.shape(zMax))
-
-z_VELog10 = z_VELog10 - zMax
-
-del alb_squareArr, chi_squareArr, z_vol_emiss, z_vol_emiss_masked, zmax			#Delete obselete data.														  #
+albedo = np.array(read_data['alb'])*u.dimensionless_unscaled
+chi = np.array(read_data['chi'])*((u.cm**2)/(u.g))
+modPlanck_arr = chi*(1.0 - albedo)*planck_arr
+modPlanck_arr_dimensionless = chi.value*(1.0 - albedo.value)*planck_arr_dimensionless
+z_modPlanckLog10 = np.log10(modPlanck_arr_dimensionless)
+#
+#
+# alb_squareArr = np.full((ntemps,nlambda),read_data['alb'])\
+# *u.dimensionless_unscaled														#[temps,lambda] shaped array of dimensionless albedo data.					  #
+#
+# chi_squareArr = (np.full((ntemps,nlambda),read_data['chi'])*((u.cm**2)/(u.g)))\
+# .cgs																			#[temps,lambda] shaped array of chi (extinction opacity) data with correct	  #
+# 																				#  units																	  #
+#
+# z_vol_emiss = planck_arr*chi_squareArr*(1.-alb_squareArr)						#Combine planck data with chi and albedo to obtain volume emissivity		  #
+# 																				#  units [1/(cm^3 g)]														  #
+# vol_emiss_units = z_vol_emiss.unit
+#
+# z_vol_emiss_masked = np.zeros((ntemps,nlambda))
+# for index in range(0,ntemps,1):
+# 	z_vol_emiss_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
+# 	&(lam.value<=lambdaMax[index].value),z_vol_emiss[index],None))
+#
+# z_vol_emiss_masked = z_vol_emiss_masked*vol_emiss_units
+#
+# #print("z_vol_emiss_masked",z_vol_emiss_masked,z_vol_emiss_masked[0],\
+# #np.shape(z_vol_emiss_masked),z_vol_emiss_masked.unit)
+#
+# z_VELog10=np.log10(z_vol_emiss_masked.value)
+#
+# zMax = (np.full((nlambda,ntemps),np.nanmax(z_VELog10,axis=1))).T
+#
+# #print("zMax",zMax,zMax[0],np.shape(zMax))
+#
+# z_VELog10 = z_VELog10 - zMax
+#
+# del alb_squareArr, chi_squareArr, z_vol_emiss, z_vol_emiss_masked, zmax			#Delete obselete data.														  #
 
 #-------------------------------------------------------------------------------#
 
 print()
 print("Creating final (second) set of plots!")
 
-fig = plt.figure()																#Creating figure helps prevent blanck outputs for fig.savefig().			  #
+fig, ax = plt.subplots()																#Creating figure helps prevent blanck outputs for fig.savefig().			  #
 for temp in range(0,ntemps,1):													#[FOR] indices up to number of temperatures [THEN]							  #
 																				#  plot Log10Planck data for a given temperature against log10(wavelength)	  #
-	plt.plot(x_lamLog10,y_PlanckLog10[temp],label = \
-	f"Log10 Planck function at temperature {temperatures[temp]}")
+	ax.plot(x_lamLog10,y_PlanckLog10[temp],label = \
+	r"$Log_{10}(B_{\lambda})$"+f" at {temperatures[temp]:.2f}")
 
-plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")								#Give plot relevant axes labels and a title.								  #
-plt.ylabel(f"Log10(Planck Function or Spectral Density) [Log10(1/cm^5)]")
-plt.title("Log10(Planck Function or Spectral Density) versus Log10(Wavelength)")
-plt.ylim(bottom=math.log10(1e-4))
-plt.legend()																	#Display plot legend. 														  #
+
+
+ax.set_xlabel(r"$Log_{10}(\lambda)$ [$\mu m$]")								#Give plot relevant axes labels and a title.								  #
+ax.set_ylabel(r"$Log_{10}(B_{\lambda})$ [$\mu m^{-5}$]")
+ax.set_title(r"$Log_{10}$(Planck Function) versus $Log_{10}$(Wavelength)")
+ax.set_ylim(bottom=math.log10(1e-20),top=math.log10(1e5))
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
+plt.legend(loc='upper right')																	#Display plot legend. 														  #
 plt.show()																		#Show plot on screen.														  #
 
-fig.savefig(datetimesavepath + "Log10-planck_versus" + \
-"_Log10-Wavelength.jpeg")														#Save plot in savepath directory.											  #
+fig.savefig("Log10-planck_versus_Log10-Wavelength.png")														#Save plot in savepath directory.											  #
 
-fig = plt.figure()
+fig, ax = plt.subplots()
 																				#As above but now for Log10 of Volume Emissivity.							  #
 for temp in range(0,ntemps,1):
-	plt.plot(x_lamLog10,z_VELog10[temp],label = \
-	f"Volume emissivity at temperature {temperatures[temp]}")
-plt.xlabel(f"Log10(Wavelength) [Log10(microns)]")
-plt.ylabel(f"Log10(Volume Emissivity) [Log10(1/(cm^3 g))]")
-plt.title("Log10(Volume Emissivity) versus Log10(Wavelength)")
-plt.ylim(bottom=math.log10(1e-4))
-plt.legend()
+	ax.plot(x_lamLog10,z_modPlanckLog10[temp],label = \
+	r"$Log_{10}(B^{Mod.}_{\lambda})$"+f" at {temperatures[temp]:.2f}")
+plt.xlabel(r"$Log_{10}(\lambda)$ [$\mu m$]")								#Give plot relevant axes labels and a title.								  #
+plt.ylabel(r"$Log_{10}(B^{Mod.}_{\lambda})$ [$\mu m^{-5}$]")
+ax.set_title(r"$Log_{10}$(Modified Planck Function) versus $Log_{10}$(Wavelength)")
+ax.set_ylim(bottom=math.log10(1e-20),top=math.log10(1e5))
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
+plt.legend(loc='upper right')
 plt.show()
 
-fig.savefig(datetimesavepath + "Log10-Volume-Emissivity_versus" + \
-"_Log10-Wavelength.jpeg")
+fig.savefig("Log10-Volume-Emissivity_versus_Log10-Wavelength.png")
 
 
 print("END")																	#----  END OF PROGRAM !! ----                                                 #
@@ -440,11 +476,11 @@ print("END")																	#----  END OF PROGRAM !! ----                      
 # ! SUBROUTINE RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
 # ! !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# ! ! This subroutine plots the optical properties of the dust grains, and 
+# ! ! This subroutine plots the optical properties of the dust grains, and
 # ! ! modified Planck spectra at a selection of temperatures. It is given:
-# ! !   the number of wavelengths            (WLlTOT);   
-# ! !   the discrete wavelengths             (WLlam(1:WLlTOT)); 
-# ! !   the discrete extinction opacities    (WLchi(1:WLlTOT)); 
+# ! !   the number of wavelengths            (WLlTOT);
+# ! !   the discrete wavelengths             (WLlam(1:WLlTOT));
+# ! !   the discrete extinction opacities    (WLchi(1:WLlTOT));
 # ! !   and the discrete albedos             (WLalb(1:WLlTOT)).
 
 # ! IMPLICIT NONE                                            ! [] DECLARATIONS
@@ -553,10 +589,10 @@ print("END")																	#----  END OF PROGRAM !! ----                      
   # ! CALL PGTEXT(+2.75,+0.13,'3.16K')                       !   label 3.16K plots
   # ! CALL PGTEXT(+3.60,+0.13,'\fiB\fn\d\gl\u(\fiT\fn)')     !   print Planck-Function dashed-line legend
   # ! CALL PGTEXT(+3.62,-0.13,'\fij\fn\d\gl\u(\fiT\fn)')     !   print volume-emissivity full-line legend
-  # ! PGx(1)=+3.96; PGx(2)=+4.34                             !   set limiting abscissae of lines 
+  # ! PGx(1)=+3.96; PGx(2)=+4.34                             !   set limiting abscissae of lines
   # ! PGy(1)=+0.17; PGy(2)=+0.17                             !   set limiting ordinates of Planck-Function dashed-line
   # ! PGz(1)=-0.09; PGz(2)=-0.09                             !   set limiting ordinates of volume-emssivity full-line
-  # ! CALL PGSLS(2)                                          !   select dashed line 
+  # ! CALL PGSLS(2)                                          !   select dashed line
   # ! CALL PGLINE(2,PGx,PGy)                                 !   draw Planck-Function dashed line
   # ! CALL PGSLS(1)                                          !   select full line
   # ! CALL PGLINE(2,PGx,PGz)                                 !   draw volume-emissivity full line

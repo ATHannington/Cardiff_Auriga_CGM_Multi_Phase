@@ -23,6 +23,6 @@ plt.ylabel(r"Cell Density $[g$ $cm^{-3}]$")
 plt.title(f"Density vs. Cell number" + f" -- Schuster profile of p = {int(read_data['shp'][0]):d}"\
 +"\n"+r"$Rho_{0}$ = " + f"{read_data['rh0'][0]:.5E}"+r" $[g$ $cm^{-3}]$")
 
-plt.savefig(f"density_vs_cell_schuster_p={int(read_data['shp'][0]):d}.png")
+plt.savefig(f"density_vs_cell_schuster_p={int(read_data['shp'][0]):d}.jpg")
 
 plt.show()
