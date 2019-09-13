@@ -292,21 +292,26 @@ fig.savefig("Log10-chi_10Albedo_versus" + \
 print()
 print("Manipulating data [part 2/3]!")
 
-ntemps = len(temperatures)														#Grab number of temperatures used                                             #
-nlambda = len(read_data['lam'])													#Grab number of wavelength data points                                        #
-hc_kb = h*c / kb																#Calculate constant                                                           #
+# ntemps = len(temperatures)														#Grab number of temperatures used                                             #
+# nlambda = len(read_data['lam'])													#Grab number of wavelength data points                                        #
+# hc_kb = h*c / kb																#Calculate constant                                                           #
 
 lam = np.array(read_data['lam'])*u.micron
-lam = (lam).to(u.angstrom)
+lam = (lam).to(u.angstrom)														#convert to angstrom for astropy blackbody_lambda (required)
 
+																				#remove dimensions of ergs, per Second per steradian
+																				#will then have cm^-4 angs^-1
+																				# convert entire value to  mcirons^-5
+																				# have one row per temperature
 planck_arr = np.array([((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*\
 (blackbody_lambda(lam,temperatures[t]))).to(u.micron**(-5)) \
 for t in range(len(temperatures))])
 
 # print((((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*(blackbody_lambda(lam,temperatures[0]))[0])).to(u.micron**(-5)))
-lam = (lam).to(u.micron)
+lam = (lam).to(u.micron)														#convert back to microns for plots
 lam_tmp = lam.value
 x_lamLog10 = np.log10(lam_tmp)
+																				# Same as above (only way it would work) but take .value of entire entry
 planck_arr_dimensionless = np.array([(((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*\
 (blackbody_lambda(lam,temperatures[t]))).to(u.micron**(-5))).value \
 for t in range(len(temperatures))])

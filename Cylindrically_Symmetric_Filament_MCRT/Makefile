@@ -1,6 +1,6 @@
 FCOMP = gfortran
-FCFLAGS = -O2 -march=native -flto
-FCFLAGS = -O2 -freal-4-real-8 -march=native -flto
+FCFLAGS = -O3 -march=native -flto
+FCFLAGS = -O3 -freal-4-real-8 -march=native -flto
 FCDEBUG = -g -fbacktrace -fcheck=all -fbounds-check -ffpe-trap=invalid,overflow,underflow,denormal
 FCBUILD = -Wall -Wextra -pedantic
 #FCOMP = ifort
@@ -8,10 +8,11 @@ FCBUILD = -Wall -Wextra -pedantic
 #FCDEBUG = -g -debug -traceback -check all
 #FCBUILD = -warn all -stand f08
 
-PROGRAM = RadTrans_MainCode.F90
+PROGRAM = run
 
 ### Put modules to be included here! ###
-SRCS = 
+SRCS=		RadTrans_Subroutines.f90 \
+						RadTrans_MainCode.F90
 
 OBJECTS = $(SRCS:.f90=.o)
 
@@ -30,6 +31,6 @@ $(PROGRAM):	$(OBJECTS)
 .PHONY:	clean
 
 clean:
-	rm -f *.o *.mod *.MOD execfile
+	rm -f *.o *.mod *.MOD run
 
 ### Courtesy of Dr. Lewis McMillan, St. Andrews ###
