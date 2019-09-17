@@ -15,8 +15,8 @@ module CONSTANTS
     CHARACTER(LEN=20),parameter       :: DGmodel='draine_rv3.1.dat'             ! dust model (e.g. 'draine_rv3.1.dat')
     INTEGER,parameter                 :: DGlMAX=560                             ! line number where dust properties end
     INTEGER,parameter                 :: DGlMIN=66                             ! line number where dust properties start
-    REAL(KIND=8),parameter            :: DGkapM=0.30000E-17                     ! mass opacity, only for pure scattering (cm^2/g)
-    REAL(KIND=8),parameter            :: DGkapV=0.20000E+03                     ! volume opacity, only for pure scattering (1/cm)
+    REAL(KIND=8),parameter            :: DGkapV=0.30000E-17                     ! mass opacity, only for pure scattering (cm^2/g)
+    REAL(KIND=8),parameter            :: DGkapM=0.20000E+03                     ! volume opacity, only for pure scattering (1/cm)
 
                                                                                 ! WAVELENGTHS [WL]
     REAL(KIND=8),parameter            :: WLdelta=0.10                           ! logarithmic spacing of optical properties

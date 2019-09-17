@@ -36,11 +36,11 @@ WLlTOT = 10
 #
 # #CFwB = 1.0
 #
-# WLMIN=1.E0
-# WLMAX=1.E2
+WLMIN=1.E0
+WLMAX=1.E2
 #
-# TESTWLHIGH = math.ceil((WLlTOT*2)/3)
-# TESTWLLOW = math.ceil((WLlTOT*1)/3)
+TESTWLHIGH = math.ceil((WLlTOT*2)/3)
+TESTWLLOW = math.ceil((WLlTOT*1)/3)
 #
 # teTmax = 1.E2
 # teTmin = 1.0

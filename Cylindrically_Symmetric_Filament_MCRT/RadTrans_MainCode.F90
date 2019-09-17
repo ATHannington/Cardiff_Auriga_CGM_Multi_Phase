@@ -169,8 +169,8 @@ ALLOCATE (WTlMBup(1:PRnTOT,0:TEkTOT))                    ! allocate WTlMBup arra
 ALLOCATE (WTlDMlo(1:PRnTOT,0:TEkTOT))                    ! allocate WTlDMlo array
 ALLOCATE (WTlDMup(1:PRnTOT,0:TEkTOT))                    ! allocate WTlDMup array
 
-IF (DGsource=='Draine') CALL RT_DustPropertiesFromDraine&
-     &(WLlTOT,WLlam,WLdlam,WLchi,WLalb)
+IF (DGsource=='Draine') &
+& CALL RT_DustPropertiesFromDraine(WLlTOT,WLlam,WLdlam,WLchi,WLalb)
 
                                                          ! [] RESCOPE DUST ARRAYS
 ALLOCATE (WLstore(1:WLlTOT))                             ! rescope ..............
@@ -214,9 +214,8 @@ ENDIF
 !!!!!       Main Subroutine Calls:          !!!!!
 CALL RT_Temperatures(teT)
 
-CALL RT_EmProbs_DMBB(teT,WLlTOT,WLlam,WLdlam, &
-&WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup, &
-&WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
+CALL RT_EmProbs_DMBB(teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,&
+&WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
 
 CALL RT_Cyl1D_LinearShellSpacing(CFw,CFw2)
 
@@ -224,12 +223,12 @@ CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
 
 !!!!!           TESTS:                  !!!!!!
-
-CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFw,CFw2)
-
-CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFw,CFw2)
-
-CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity(CFw,CFw2,CFrho,CFsig)
+! 
+! CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFw,CFw2)
+!
+! CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFw,CFw2)
+!
+! CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity(CFw,CFw2,CFrho,CFsig)
 
 CALL RT_Cyl1DSchuster_DetailedBalance(CFw, &
 &CFw2,CFrho,CFmu,CFsig,cfT,cfL,teT,WLlTOT,WLlam, &

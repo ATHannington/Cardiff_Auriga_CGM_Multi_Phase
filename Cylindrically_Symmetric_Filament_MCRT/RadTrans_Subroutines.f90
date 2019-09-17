@@ -1016,14 +1016,12 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
     CFcc=CFc                                             !     record ID of shell being entered
     LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
     alpha=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122      !     compute 'outwardness'
-    print*,"alpha",alpha
     IF (alpha>0.) THEN                                   !     [IF] travelling outward, [THEN]
       LPs=-alpha+                                       &!       compute .......
       &SQRT(alpha**2+((CFw2(CFc)-LPr1122)/LPe1122))      !       ... path length
       CFc=CFc+1                                          !       increase shell ID
     ELSE                                                 !     [ELSE] travelling inward, so
       beta=alpha**2+((CFw2(CFc-1)-LPr1122)/LPe1122)      !       compute beta, and
-      print*,"beta",beta
       IF (beta>0.) THEN                                  !       [IF] beta>0, [THEN] hits inner shell
         LPs=-alpha-SQRT(beta)                            !         compute path
         CFc=CFc-1                                        !         decrease shell ID
@@ -1055,15 +1053,11 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   ENDDO                                                  !   packet exits filament
 ENDDO                                                    ! end loop over luminosity packets
 alpha=CFwB/(2.*DBLE(LPpTOT))                             ! use alpha as normalisation coefficient
-print*,"RFj",RFj
-print*,"alpha=",alpha
-print*,"CFw2",CFw2
-STOP
+
 RFmuJ=0.                                                 ! set RFmuJ to zero
 RFsdJ=0.                                                 ! set RFsdJ to zero
 DO CFc=1,CFcTOT                                          ! start loop over shells
   RFj(CFc)=RFj(CFc)*alpha/(CFw2(CFc)-CFw2(CFc-1))        !   normalise intensity in cell
-print*,"RFj(CFc)",RFj(CFc)
   RFmuJ=RFmuJ+RFj(CFc)                                   !   increment mu_J0 accumulator
   RFsdJ=RFsdJ+(RFj(CFc)**2)                              !   increment sigma_J0 accumulator
 ENDDO                                                    ! end loop over shells
@@ -1384,7 +1378,7 @@ ENDDO                                                    ! end loop over shells
 RFmuJ=RFmuJ/DBLE(CFcTOT)                                 ! compute RFmuJ
 RFsdJ=SQRT((RFsdJ/DBLE(CFcTOT))-(RFmuJ**2))              ! compute RFsdJ
 CFtauTOT=CFsig*DGkapM
-WRITE (6,"(/,3X,'TEST CASE 1: SCHUSTER SCATTERING OPACITY, SHELL ANGLE-MEAN INTENSITIES (RFj)')")
+WRITE (6,"(/,3X,'TEST CASE 2: SCHUSTER SCATTERING OPACITY, SHELL ANGLE-MEAN INTENSITIES (RFj)')")
 WRITE (6,"(3X,'RFj:',4X,5F10.5,4X,'(innermost five shells)')") RFj(1:5)
 WRITE (6,"(3X,'RFj:',4X,5F10.5,4X,'(outermost five shells)')") RFj(CFcTOT-4:CFcTOT)
 WRITE (6,"(3X,'Shell-mean of angle-mean intensity, RFmuJ:',6X,F10.7)") RFmuJ
@@ -1613,7 +1607,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
   CALL RT_LumPack_BB(BGkBB,WLlTOT,WTpBB,WTlBBlo,WTlBBup,LPl)
 
-
+STOP
   LPchi=WLchi(LPl)                                       !   record extinction opacity of luminosity packet
   LPalb=WLalb(LPl)                                       !   albedo of luminosity packet
 
