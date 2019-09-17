@@ -73,6 +73,7 @@ INTEGER                                     :: WLl       ! dummy ID of exported 
 REAL(KIND=8)                                :: Wlo       ! weight of lower (longer) wavelength
 REAL(KIND=8)                                :: Wup       ! weight of upper (shorter) wavelength
 
+
                                                          ! [] READ IN TABULATED DATA
 OPEN (UNIT=5,FILE=DGmodel,STATUS='old',ACTION='read')    ! open data file
 DO DGl=-DGlMIN,DGlMAX                                    ! start loop over input file
@@ -230,6 +231,7 @@ IF (WLprint==1) THEN                                     ! [IF] sanctioned, [THE
   WRITE (*,*) ' '                                        !   blank line
 ENDIF                                                    ! [ENDIF]
 
+
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_DustPropertiesFromDraine
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -350,7 +352,6 @@ Integer                                     :: i
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-
                                                          ! [] INITIALISATION
 WTlBBlo=0;   WTlMBlo=0;   WTlDMlo=0                      ! set WTl[BB,MB,DM]lo to zero
 WTlBBup=0;   WTlMBup=0;   WTlDMup=0                      ! set WTl[BB,MB,DM]up to zero
@@ -365,7 +366,7 @@ ENDDO                                                    ! end loop over referen
 DO TEk=0,TEkTOT                                          ! start loop over discrete temperatures
 
                                                          !   [] RANGE OF WAVELENGTHS
-  TElamT=hckb/teT(TEk)                        !   compute hc/kT(k)
+  TElamT=(0.143878E+05)/teT(TEk)                         !   compute hc/kT(k)
   DO WLl=1,WLlTOT                                        !   start forward loop over wavelengths
     IF (WLlam(WLl)<0.027*TElamT) CYCLE                   !     [IF] wavelength too short, [CYCLE]
     WTlMIN(TEk)=WLl;   EXIT                              !     record WTlMIN and [EXIT]
@@ -394,14 +395,12 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
                    &WTpBB(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpBB(WTlMAX(TEk),TEk)  !   ...... probabilities
   WTpBB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher BB em. probs to unity
-  teLMmb(TEk)=(8.d0*pi*hc2)&
-                            &*WTpMB(WTlMAX(TEk),TEk)      !   compute the luminosity per unit mass
+  teLMmb(TEk)=(0.149671E+13)*WTpMB(WTlMAX(TEk),TEk)      !   compute the luminosity per unit mass
   WTpMB(WTlMIN(TEk):WTlMAX(TEk),TEk)=                   &!   normalise MB .......
                    &WTpMB(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpMB(WTlMAX(TEk),TEk)  !   ...... probabilities
   WTpMB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher MB em. probs. to unity
-  teLMTdm(TEk)=(8.d0*pi*h2c3kb)&
-                            &*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
+  teLMTdm(TEk)=(0.215343E+17)*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
                                           (teT(TEk)**2)  !   .........mass, per unit temperature
 
 !!!!
@@ -682,7 +681,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      Call RT_LumPack_MB(TEk,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
+      CALL RT_LumPack_MB(TEk,WLlTOT,WTpMB,WTlMBlo,WTlMBup,WLlEM)
       WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
     ENDDO                                                !     end loop over luminosity packets
     PGz=-0.1E+31                                         !     set PGz to extremely low value
@@ -769,7 +768,7 @@ IF (WTplot==1) THEN                                      ! [] CONDITIONAL DIAGNO
 
     WTpACC=0                                             !     set accumulator to zero
     DO WLl=1,WTpack                                      !     start loop over luminosity packets
-      Call RT_LumPack_DM(TEk,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
+      CALL RT_LumPack_DM(TEk,WLlTOT,WTpDM,WTlDMlo,WTlDMup,WLlEM)
       WTpACC(WLlEM)=WTpACC(WLlEM)+1                      !       increment WTpACC
     ENDDO                                                !     end loop over luminosity packets
     PGz=-0.1E+31                                         !     set PGz to extremely low value
@@ -1132,12 +1131,13 @@ REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGy       ! array for log10[Planc
 REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
 character(len=50)                           :: filename ="density_cell.csv"
 
+
 open(1,file=trim(adjustl(filename)))
 
 IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
 
 IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
-  coeff=twopi*CFrho0*CFw0**2
+  coeff=6.2831853*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   CFrho=CFrho0
   DO CFc=1,CFcTOT                                        !   start loop over cells
@@ -1148,7 +1148,7 @@ IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
     &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),gcmtomsolpc*CFmu(CFc) ! ............ on profile
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
 
   CFmuTOT=coeff*CFzet2HI*0.5d0                            !   compute total line-density
@@ -1157,7 +1157,7 @@ ENDIF
 
                                                          ! [] CASE p=1
 IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
-  coeff=twopi*CFrho0*CFw0**2
+  coeff=6.2831853*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1168,14 +1168,14 @@ IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
     IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
     &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),gcmtomsolpc*CFmu(CFc) ! ............ on profile
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=coeff*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
   CFsig=2.*CFrho0*CFw0*LOG((CFw(CFcTOT)/CFw0)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=2
 IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
-  coeff=pi*CFrho0*CFw0**2
+  coeff=3.14159274*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1192,7 +1192,7 @@ IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=3
 IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
-  coeff=twopi*CFrho0*CFw0**2
+  coeff=6.2831853*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1209,7 +1209,7 @@ IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=4
 IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
-  coeff=pi*CFrho0*CFw0**2
+  coeff=3.14159274*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1559,7 +1559,8 @@ Real(kind=8)                                :: chiBar, lamMax, tauBar
 
 
 
-LPdeltaL=((twopi*sigmasb)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
+
+LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
                                          &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)
 
 CFw2B=CFwB**2                                            ! compute W_B squared
@@ -1599,7 +1600,6 @@ LPnSCA=0                                                 ! set number of scatter
 DO LPp=1,LPpTOT                                          ! start loop over luminosity packets
   CALL RT_Cyl1D_InjectIsotropic                         &!   generate and inject ...
   &                  (LPr,LPr1122,LPe,LPtau)        !   ... a luminosity packet
-
   ! NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
   ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
 
@@ -1607,7 +1607,6 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
   CALL RT_LumPack_BB(BGkBB,WLlTOT,WTpBB,WTlBBlo,WTlBBup,LPl)
 
-STOP
   LPchi=WLchi(LPl)                                       !   record extinction opacity of luminosity packet
   LPalb=WLalb(LPl)                                       !   albedo of luminosity packet
 
@@ -1648,6 +1647,7 @@ STOP
       CALL RT_ReDirectIsotropic(LPe,LPtau)               !       generate new direction and optical depth
       ! NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
       ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
+
       CALL RANDOM_NUMBER(LRD)
       IF (LRD>LPalb) THEN
 
@@ -1683,7 +1683,7 @@ STOP
           cfT(CFc)=cfT(CFc)+(LPdeltaL/(CFmu(CFc)*teLMTdm(TEk)))
         !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !Randomly call new wavelength from cell Temp based DMBB.
-          CALL RT_LumPack_DM(TEk,WLlTOT,WTpDM,WTlDMlo,WTlDMup,LPl)
+          CALL RT_LumPack_DM(TEk,WLlTOT, WTpDM,WTlDMlo,WTlDMup,LPl)
         !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         ENDIF
 
@@ -1711,7 +1711,7 @@ do CFc=1,CFcTOT,1
     do LPl=1,WLlTOT,1
         rfI = rfI+(WLchi(LPl)*(1.d0-WLalb(LPl))*RFjLAM(LPl,CFc))    !CGS. Lucy 1999
     enddo
-    rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*pi)
+    rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*(3.14159265359d0))
     do TEK=1,TEkTOT,1
         If(teLMmb(TEk).gt.rfH)then
             LmRatio=(rfH - teLMmb(TEk-1))/(teLMmb(TEk)-teLMmb(TEk-1))
@@ -1798,13 +1798,13 @@ If (DBTestFlag == 1) then
   write(1,"(7(A3,1x))") (/"N-a","S-i","M-c","V-c","T-e","P-t","W-f"/)
 
   do i=1,CFcTOT
-    CFv = pi *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
-    CFv = CFv*(cmtopc**2)
+    CFv = 3.14159274d0 *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
+    CFv = CFv*((0.324078E-18)**2)
     if (i==1) THEN
-      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*cmtopc,CFmu(i)*gcmtomsolpc &
+      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
       & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
     ELSE
-      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*cmtopc,CFmu(i)*gcmtomsolpc &
+      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
       & ,CFv/)
     endif
   enddo
@@ -1869,12 +1869,11 @@ CALL RANDOM_NUMBER(LRD)                                  ! generate linear rando
 LPe(1)=SQRT(LRD)                                         ! compute LPe(1)
 sintheta=SQRT(1.-LRD)                                    ! compute sintheta
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
-phi=twopi*LRD                                        ! compute phi
+phi=6.2831853*LRD                                        ! compute phi
 LPe(2)=sintheta*COS(phi)                                 ! compute LPe(2)
 LPe(3)=sintheta*SIN(phi)                                 ! compute LPe(3)
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
 LPtau=-LOG(LRD)                                          ! compute optical depth
-
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_Cyl1D_InjectIsotropic
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1896,18 +1895,20 @@ REAL(KIND=8),INTENT(OUT)                    :: LPtau     ! random optical depth
 REAL(KIND=8)                                :: LRD       ! linear random deviate
 REAL(KIND=8)                                :: phi       ! azimuthal angle (phi)
 REAL(KIND=8)                                :: sintheta  ! sine of polar angle (theta)
-                                                         ! COMPUTATIONS:
+
+! COMPUTATIONS:
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
 LPe(1)=2.*LRD-1.                                         ! compute LPe(1)
 sintheta=SQRT(1.-LPe(1)**2)                              ! compute sintheta
 
 
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
-phi= twopi*LRD                                        ! compute phi
+phi=6.2831853*LRD                                        ! compute phi
 LPe(2)=sintheta*COS(phi)                                 ! compute LPe(2)
 LPe(3)=sintheta*SIN(phi)                                 ! compute LPe(3)
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
 LPtau=-LOG(LRD)                                          ! compute optical depth
+
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_ReDirectIsotropic
@@ -1936,6 +1937,7 @@ REAL(KIND=8),INTENT(OUT),DIMENSION(0:CFcTOT):: CFw2      ! squarred shell bounda
 INTEGER                                     :: CFc       ! dummy ID of shell
 REAL(KIND=8)                                :: CFdw      ! shell width
 
+
 CFdw=CFwB/DBLE(CFcTOT)                                   ! compute shell width
 DO CFc=0,CFcTOT                                          ! start loop over shells
   CFw(CFc)=CFdw*DBLE(CFc)                                !   compute outer shell radius
@@ -1944,8 +1946,8 @@ ENDDO                                                    ! end loop over shells
 
 IF (CFlist==1) THEN
   WRITE (6,"(/,3X,'SHELL BOUNDARIES, CFcTOT =',I4)") CFcTOT
-  WRITE (6,"(3X,'CFw/(pc):',6X,5E11.4)") CFw(1:CFcTOT)/pctocm
-  WRITE (6,"(3X,'CFw2/(pc^2):',3X,5E11.4)") CFw2(1:CFcTOT)/(pctocm**2)
+  WRITE (6,"(3X,'CFw/(pc):',6X,5E11.4)") CFw(1:CFcTOT)/(3.086E+18)
+  WRITE (6,"(3X,'CFw2/(pc^2):',3X,5E11.4)") CFw2(1:CFcTOT)/(9.521E+36)
   WRITE (*,*) ' '
 ENDIF
 
@@ -1978,22 +1980,22 @@ REAL(KIND=8)                                :: kTOTinv   ! REAL(1/kTOT)
 REAL(KIND=8)                                :: logTmax   ! LOG10(Tmax)
 REAL(KIND=8)                                :: logTmin   ! LOG10(Tmin)
 
-                                                         ! [] COMPUTE TEMPERATURES
+! [] COMPUTE TEMPERATURES
 kTOTinv=1./DBLE(TEkTOT)                                  ! compute 1/(k_TOT-1)
 logTmin=LOG10(teTmin)                                    ! compute LOG10[Tmin]
 logTmax=LOG10(teTmax)                                    ! compute LOG10[Tmax]
 DO TEk=0,TEkTOT                                          ! start loop over temperatures
-  teT(TEk)=10.**(kTOTinv*(DBLE(TEkTOT-TEk)*logTmin      &!   compute .................
-                                  &+DBLE(TEk)*logTmax))  !   ... discrete temperatures
+teT(TEk)=10.**(kTOTinv*(DBLE(TEkTOT-TEk)*logTmin      &!   compute .................
+&+DBLE(TEk)*logTmax))  !   ... discrete temperatures
 ENDDO                                                    ! end loop over temperatures
 
-                                                         ! [] CONDITIONAL DIAGNOSTIC PRINTOUT
+! [] CONDITIONAL DIAGNOSTIC PRINTOUT
 IF (TElist==1) THEN                                      ! [IF] printout sanctioned, [THEN]
-    print*," "
-    PRINT*,"Temperature Diagnostics: "
-    PRINT*,"teT(TEk)"
-    WRITE (6,"(F11.3)") teT(0:TEkTOT)
-ENDIF                                                    ! [ENDIF]
+print*," "
+PRINT*,"Temperature Diagnostics: "
+PRINT*,"teT(TEk)"
+WRITE (6,"(F11.3)") teT(0:TEkTOT)
+ENDIF                                                        ! [ENDIF]
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_Temperatures
@@ -2035,18 +2037,18 @@ INTEGER                                     :: WLlTR     ! ID of trial wavelengt
 INTEGER                                     :: WLlUP     ! ID of upper wavelength in binary search
 REAL(KIND=8)                                :: ZZcut     ! bifurcation cut
 
-                                                         ! [] COMPUTATION
+! [] COMPUTATION
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate
 WLl=CEILING(LRD*DBLE(PRnTOT))                                  ! compute probability-bin ID
 WLlLO=WTlBBlo(WLl,TEk)                                   ! register ID of largest lam(l) below bin
 WLlUP=WTlBBup(WLl,TEk)                                   ! register ID of smallest lam(l) above bin
 DO WHILE (WLlUP>WLlLO+1)                                 ! home in on wavelengths either side
-  WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
-  IF (WTpBB(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
-    WLlLO=WLlTR                                          !     increase WLlLO
-  ELSE                                                   !   [ELSE] too high
-    WLlUP=WLlTR                                          !     reduce WLlUP
-  ENDIF                                                  !  [ENDIF] sorted
+WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
+IF (WTpBB(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
+WLlLO=WLlTR                                          !     increase WLlLO
+ELSE                                                   !   [ELSE] too high
+WLlUP=WLlTR                                          !     reduce WLlUP
+ENDIF                                                  !  [ENDIF] sorted
 ENDDO                                                    ! found the wavelengths either side
 WLlEM=WLlUP                                              !   select upper wavelength ID
 
@@ -2090,18 +2092,18 @@ INTEGER                                     :: WLlTR     ! ID of trial wavelengt
 INTEGER                                     :: WLlUP     ! ID of upper wavelength in binary search
 REAL(KIND=8)                                :: ZZcut     ! bifurcation cut
 
-                                                         ! [] COMPUTATION
+! [] COMPUTATION
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate
 WLl=CEILING(LRD*DBLE(PRnTOT))                                  ! compute probability-bin ID
 WLlLO=WTlMBlo(WLl,TEk)                                   ! register ID of largest lam(l) below bin
 WLlUP=WTlMBup(WLl,TEk)                                   ! register ID of smallest lam(l) above bin
 DO WHILE (WLlUP>WLlLO+1)                                 ! home in on wavelengths either side
-  WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
-  IF (WTpMB(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
-    WLlLO=WLlTR                                          !     increase WLlLO
-  ELSE                                                   !   [ELSE] too high
-    WLlUP=WLlTR                                          !     reduce WLlUP
-  ENDIF                                                  !  [ENDIF] sorted
+WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
+IF (WTpMB(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
+WLlLO=WLlTR                                          !     increase WLlLO
+ELSE                                                   !   [ELSE] too high
+WLlUP=WLlTR                                          !     reduce WLlUP
+ENDIF                                                  !  [ENDIF] sorted
 ENDDO                                                    ! found the wavelengths either side
 WLlEM=WLlUP                                              !   select upper wavelength ID
 
@@ -2146,18 +2148,18 @@ INTEGER                                     :: WLlTR     ! ID of trial wavelengt
 INTEGER                                     :: WLlUP     ! ID of upper wavelength in binary search
 REAL(KIND=8)                                :: ZZcut     ! bifurcation cut
 
-                                                         ! [] COMPUTATION
+! [] COMPUTATION
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate
 WLl=CEILING(LRD*DBLE(PRnTOT))                                  ! compute probability-bin ID
 WLlLO=WTlDMlo(WLl,TEk)                                   ! register ID of largest lam(l) below bin
 WLlUP=WTlDMup(WLl,TEk)                                   ! register ID of smallest lam(l) above bin
 DO WHILE (WLlUP>WLlLO+1)                                 ! home in on wavelengths either side
-  WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
-  IF (WTpDM(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
-    WLlLO=WLlTR                                          !     increase WLlLO
-  ELSE                                                   !   [ELSE] too high
-    WLlUP=WLlTR                                          !     reduce WLlUP
-  ENDIF                                                  !  [ENDIF] sorted
+WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
+IF (WTpDM(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
+WLlLO=WLlTR                                          !     increase WLlLO
+ELSE                                                   !   [ELSE] too high
+WLlUP=WLlTR                                          !     reduce WLlUP
+ENDIF                                                  !  [ENDIF] sorted
 ENDDO                                                    ! found the wavelengths either side
 WLlEM=WLlUP                                              !   select upper wavelength ID
 
