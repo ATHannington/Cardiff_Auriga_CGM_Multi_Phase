@@ -55,6 +55,7 @@ savepath = "./media/sf_OneDrive_-_Cardiff_University/Documents/ATH_PhD/"+ \
 importstring = "DustProperties.csv"												#File for data to be imported for plotting.                                   #
 
 temperatures = np.array([3.16,10.0,31.6,100.,316.])*u.K							#Select temperatures to plot black body curves and modified black body curves #
+
 ##
 ##
 
@@ -292,7 +293,7 @@ fig.savefig("Log10-chi_10Albedo_versus" + \
 print()
 print("Manipulating data [part 2/3]!")
 
-# ntemps = len(temperatures)														#Grab number of temperatures used                                             #
+ntemps = len(temperatures)														#Grab number of temperatures used                                             #
 # nlambda = len(read_data['lam'])													#Grab number of wavelength data points                                        #
 # hc_kb = h*c / kb																#Calculate constant                                                           #
 

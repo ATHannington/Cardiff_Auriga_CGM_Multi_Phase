@@ -62,66 +62,42 @@
 !************************
 PROGRAM RadTrans_MainCode
 !************************
+USE CONSTANTS
+USE PHYSICAL_CONSTANTS
+
 IMPLICIT NONE                                            ! [] DECLARATIONS:                                                         ! Configuration (CF)
-INTEGER                                     :: CFcTOT    ! number of (cylindrical) shells
-CHARACTER(LEN=20)                           :: CFgeom    ! geometry of configuration
+
+                                                         !  CONFIGURATION [CF]
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: cfL       ! line-luminosity absorbed by cell
-INTEGER                                     :: CFlist    ! flag to sanction diagnostics for cells
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: CFmu      ! line-density of cell (g/cm)
 REAL(KIND=8)                                :: CFmuTOT   ! line-density of filment (g/cm)
-INTEGER                                     :: CFprof    ! flag to sanction diagnostics for profile
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: CFrho     ! density in cell (g/cm^3)
-REAL(KIND=8)                                :: CFrho0    ! central density (g/cm^3)
-INTEGER                                     :: CFschP    ! radial density exponent forn Schuster profile
 REAL(KIND=8)                                :: CFsig     ! column through centre (g/cm^2)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: cfT       ! temperature in cell (K)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: CFw       ! cell outer boundary radius (cm)
-REAL(KIND=8)                                :: CFw0      ! core radius (cm)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: CFw2      ! squared cell outer boundary radius (cm^2)
-REAL(KIND=8)                                :: CFwB      ! boundary radius (cm)
-                                                         ! [] DUST GRAIN OPTICAL PROPERTIES (DG)
-REAL(KIND=8)                                :: DGkapM    ! mass opacity, only for pure scattering (cm^2/g)
-REAL(KIND=8)                                :: DGkapV    ! volume opacity, only for pure scattering (1/cm)
-INTEGER                                     :: DGlMAX    ! line number where dust properties end
-INTEGER                                     :: DGlMIN    ! line number where dust properties start
-CHARACTER(LEN=20)                           :: DGmodel   ! dust model (e.g. 'draine_rv3.1.dat')
-CHARACTER(LEN=20)                           :: DGsource  ! source of dust properties (e.g. 'Draine')
+
                                                          ! [] LUMINOSITY PACKETS (LP)
 REAL(KIND=8),DIMENSION(1:3)                 :: LPe       ! direction of luminosity packet
 INTEGER                                     :: LPl       ! ID of luminosity packet's wavelength
 INTEGER                                     :: LPp       ! dummy ID of luminosity packet
-INTEGER                                     :: LPpTOT    ! number of luminosity packets
 REAL(KIND=8),DIMENSION(1:3)                 :: LPr       ! position of luminosity packet
 REAL(KIND=8)                                :: LPtau     ! opical depth of luminosity packet
-                                                         ! [] REFERENCE PROBABILITIES
-INTEGER                                     :: PRnTOT    ! number of reference probabilities
-                                                         ! [] RADIATION FIELD
-INTEGER                                     :: BGkBB     ! temperature-ID of background BB radiation field
-REAL(KIND=8)                                :: BGfBB     ! dilution factor of background BB radiation field
-                                                         ! [] TEMPERATURES (TE)
-INTEGER                                     :: TEkTOT    ! number of discrete temperatures
-INTEGER                                     :: TElist    ! flag to print out some temperatures
+
+                                                       ! [] TEMPERATURES (TE)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: teLMmb    ! MB luminosities per unit mass (cm^2/s^3)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: teLMTdm   ! DM lums per unit mass and unit temprtre (cm^2/s^3K)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: teT       ! discrete temperatures
 REAL(KIND=8)                                :: teTcmb    ! temperature of cosmic microwave background
-REAL(KIND=8)                                :: teTmax    ! maximum discrete temperature
-REAL(KIND=8)                                :: teTmin    ! minimum discrete temperature
                                                          ! [] WAVELENGTHS (WL)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: WLalb     ! albedos at discrete wavelengths
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: WLchi     ! extinction opacities at dscrt wvlngths (cm^2/g)
-REAL(KIND=8)                                :: WLdcl     ! weight of slope-change
-REAL(KIND=8)                                :: WLdelta   ! logarithmic spacing of optical properties
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: WLdlam    ! discrete wavelength intervals (in microns)
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: WLlam     ! discrete wavelengths (in microns)
 INTEGER                                     :: WLlTOT    ! number of discrete wavelengths
-INTEGER                                     :: WLplot    ! flag to trigger plotting of dust properties
-INTEGER                                     :: WLprint   ! flag to trigger printing of dust properties
 REAL(KIND=8),DIMENSION(:),ALLOCATABLE       :: WLstore   ! array for re-scoping other WL arrays
 INTEGER                                     :: WLl       ! dummy ID of discrete wavelength
                                                          ! [] PROBABILITIES DEPENDING ON lambda AND T (WT)
-INTEGER                                     :: WTpack    ! number of calls for plotting probabilities
-INTEGER                                     :: WTplot    ! flag to sanction plotting probabilities
 INTEGER,DIMENSION(:,:),ALLOCATABLE          :: WTlBBlo   ! ID of longest wavelength with WTpBB(ID,k)<=(l-1)/lTOT
 INTEGER,DIMENSION(:,:),ALLOCATABLE          :: WTlBBup   ! ID of shortest wavelength with WTpBB(ID,k)>=l/lTOT
 REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE     :: WTpBB     ! BB emission probabilities
@@ -138,8 +114,8 @@ Character(len=50)                           :: DustPropertiesFilename = &
                                               & "DustProperties.csv"
 Integer*4                                   :: readcheck
 Integer*4                                   :: i
-INTEGER                                     :: BGkGO         !ID of temperature for cfLgo
-INTEGER(Kind=4)                                     :: DBTestFlag
+
+
 
 PRINT*,""
 print*,"***+++***"
@@ -147,50 +123,9 @@ print*,"[@RadTrans_MainCode]: Program Start!"
 print*,"***+++***"
 PRINT*,""
 
-                                                         ! [] INPUT PARAMETERS
-                                                         ! Configuration (CF)
-CFgeom='Cylindrical1D'                                   ! set geometry of configuration
-CFrho0=0.1000E-18 !0.1000E-18                            ! set central density (g/cm^3)
-CFw0=(0.1500E+18)                                        ! set core radius (cm)
-CFschP=1                                                 ! set radial density exponent for Schuster profile
-CFwB=(0.1500E+19)                                        ! set boundary radius (cm)
-CFcTOT=100!100                                               ! set number of shells
-CFlist=1                                                 ! set flag to sanction diagnostics for cells
-CFprof=1                                                 ! set flag to sanction diagnostics for profile
-
 print*,
 Print*,"Selected Geometry:"
 print*,trim(CFgeom)                                      ! Write Selected geometry to screen
-                                                         ! Dust Grain Properties (DG)
-DGsource='Draine'                                        ! set source of dust optical properties
-DGmodel='draine_rv3.1.dat'                               ! set model for dust optical properties
-DGlMIN=66                                                ! set line number where dust properties start
-DGlMAX=560                                               ! set line number where dust properties end
-DGkapV=0.30000E-17                                       ! set volume opacity for pure scattering (1/cm) [Kappa/Density]
-DGkapM=0.20000E+03                                       ! set mass opacity for pure scattering (cm^2/g) [KAPPA(Lambda)]
-                                                         ! Wavelengths (WL)
-WLdelta=0.10!0.10                                        ! set spacing of optical properties
-WLdcl=0.10                                               ! set weight of slope-change
-WLprint=1                                                ! set flag to list some dust optical props.
-WLplot=1                                                 ! set flag to plot optical properties
-                                                         ! Temperatures (TE)
-TEkTOT=100                                               ! set number of temperatures required
-teTmin=2.725                                             ! set minimum temperature
-teTmax=272.5                                             ! set maximum temperature
-TElist=1                                                 ! set flag to list temperatures
-                                                         ! Probabilities
-PRnTOT=1000                                              ! set number of reference probabities
-WTpack=1000000                                           ! set number of calls for plotting probabilities
-WTplot=1                                                 ! set flag to plot probabilities
-                                                         ! Background Radiation Field (RF)
-BGkBB= 29!29                                             ! set temperature-ID of background BB radiation field
-BGfBB=1.00E0!0.100E0                                     ! set dilution factor of background BB radiation field
-BGkGO = ceiling(dble(BGkBB)*0.8d0)                       !Set MB to DMB switch temperature for cfLgo
-
-DBTestFlag = 1                                           !Diagnostic test flag for tests and print statements in detailed balance RT
-                                                         !***Luminosity packets (LP)***
-LPpTOT= int(1E6)!1E6 standard                            ! set number of packets
-
 
 !! SANITY CHECK: Does the selected temperature make sense? !!
 
@@ -235,7 +170,7 @@ ALLOCATE (WTlDMlo(1:PRnTOT,0:TEkTOT))                    ! allocate WTlDMlo arra
 ALLOCATE (WTlDMup(1:PRnTOT,0:TEkTOT))                    ! allocate WTlDMup array
 
 IF (DGsource=='Draine') CALL RT_DustPropertiesFromDraine&
-     &(DGmodel,DGlMIN,DGlMAX,WLdelta,WLdcl,WLprint,WLlTOT,WLlam,WLdlam,WLchi,WLalb)
+     &(WLlTOT,WLlam,WLdlam,WLchi,WLalb)
 
                                                          ! [] RESCOPE DUST ARRAYS
 ALLOCATE (WLstore(1:WLlTOT))                             ! rescope ..............
@@ -277,31 +212,30 @@ IF (WLplot==1) then
 ENDIF
 
 !!!!!       Main Subroutine Calls:          !!!!!
-CALL RT_Temperatures(TEkTOT,teTmin,teTmax,TElist,teT)
+CALL RT_Temperatures(teT)
 
-CALL RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam, &
-&WLchi,WLalb,PRnTOT,WTpack,WTplot,WTpBB,WTlBBlo,WTlBBup, &
+CALL RT_EmProbs_DMBB(teT,WLlTOT,WLlam,WLdlam, &
+&WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup, &
 &WTpMB,WTlMBlo,WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
 
-CALL RT_Cyl1D_LinearShellSpacing(CFwB,CFcTOT,CFlist,CFw,CFw2)
+CALL RT_Cyl1D_LinearShellSpacing(CFw,CFw2)
 
-CALL RT_Cyl1D_SchusterDensities(CFrho0,CFw0,CFschP,CFcTOT,CFw,CFprof,CFrho,CFmu,CFmuTOT,CFsig)
+CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
 
 !!!!!           TESTS:                  !!!!!!
 
-! CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFwB,CFcTOT,CFw,CFw2,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFw,CFw2)
 
-! CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFwB,CFcTOT,CFw,CFw2,DGkapV,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFw,CFw2)
 
-! CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
-! &(CFwB,CFcTOT,CFw,CFw2,CFrho,CFsig,DGkapM,LPpTOT)
+CALL RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity(CFw,CFw2,CFrho,CFsig)
 
-CALL RT_Cyl1DSchuster_DetailedBalance(CFwB,CFw0,CFcTOT,CFw, &
-&CFw2,CFrho,CFmu,CFsig,cfT,cfL,TEkTOT,teT,BGkBB,BGfBB,WLlTOT,WLlam, &
+CALL RT_Cyl1DSchuster_DetailedBalance(CFw, &
+&CFw2,CFrho,CFmu,CFsig,cfT,cfL,teT,WLlTOT,WLlam, &
 &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
-&WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm,PRnTOT, &
-&LPpTOT,RFjLAM,BGkGO,DBTestFlag)
+&WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm, &
+&RFjLAM)
 
 
 

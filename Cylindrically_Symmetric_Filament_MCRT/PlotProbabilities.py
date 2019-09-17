@@ -135,7 +135,7 @@ del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
 #                                                                               #
 #                                                                               #
 
-datetimesavepath = func_datetime_savepath(savepath)								#Generate savepath for plots												  #
+datetimesavepath = ""#func_datetime_savepath(savepath)								#Generate savepath for plots												  #
 
 print()
 print("Loading in data!")
@@ -277,7 +277,7 @@ plt.ylim(BByMin, BByMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.jpg')
+'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.png')
 
 fig = plt.figure()
 for i in range(0, len(MBconstants['temp'])):
@@ -294,7 +294,7 @@ plt.ylim(MByMin, MByMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpg')
+'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
 
 fig = plt.figure()
 for i in range(0, len(DMconstants['temp'])):
@@ -311,7 +311,7 @@ plt.ylim(DMyMin, DMyMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
-'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.jpg')
+'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
 
 finxMin = min([DMxMin, MBxMin])
 finxMax = max([DMxMax, MBxMax])
@@ -334,7 +334,7 @@ plt.ylim(DMyMin, DMyMax)
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath \
-+'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.jpg')
++'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.png')
 
 plt.show()
 

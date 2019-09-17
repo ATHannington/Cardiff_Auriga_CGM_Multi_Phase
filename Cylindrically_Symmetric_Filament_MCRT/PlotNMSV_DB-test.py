@@ -28,7 +28,7 @@ ax.set_ylabel(r'Number of Absorptions [/]')
 plt.title('Number of Absorptions per cell vs. Line Mass of a cell.' + '\n'\
  +f'{LPpTOT:.2E} LP packets during {subroutine}')
 
-fig.savefig(f"N-a_vs_M-c_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}K.jpg")
+fig.savefig(f"N-a_vs_M-c_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}K.png")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -44,6 +44,6 @@ ax2.set_ylabel(f'Total Path Length at {wavelength:.2f}'+r'${\mu}m$ [$m$]')
 plt.title(f'Line Volume vs. Total Path Length at {wavelength:.2f}'+r'${\mu}m$' + '\n'\
  +f'{LPpTOT:.2E} LP packets during {subroutine}')
 
-fig2.savefig(f"S-i_vs_V-c_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}K.jpg")
+fig2.savefig(f"S-i_vs_V-c_LPpTOT={LPpTOT:.2E}_T={equibTemp:.2f}K.png")
 
 plt.show()
