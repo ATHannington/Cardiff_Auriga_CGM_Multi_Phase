@@ -36,9 +36,9 @@ module CONSTANTS
                 INTEGER,parameter                 :: WTplot=1                               ! flag to sanction plotting probabilities
 
                                                                                 ! BACKGROUND RADIATION FIELD [BG]
-    INTEGER,parameter                 :: BGkBB=29!29                            ! temperature-ID of background BB radiation field
+    INTEGER,parameter                 :: BGkBB=80                            ! temperature-ID of background BB radiation field
     REAL(KIND=8),parameter            :: BGfBB=1.00E0!0.100E0                   ! dilution factor of background BB radiation field
-    INTEGER,parameter                 :: BGkGO=23                               ! ID of temperature for cfLgo ---- ceiling(dble(BGkBB)*0.8d0)
+    INTEGER,parameter                 :: BGkGO=64                               ! ID of temperature for cfLgo ---- ceiling(dble(BGkBB)*0.8d0)
 
                                                                                 ! LUMINOSITY PACKETS [LP]
     INTEGER,parameter                 :: LPpTOT= int(1E6)                       ! number of luminosity packets
