@@ -268,9 +268,9 @@ for i in range(0, len(BBconstants['temp'])):
 	f"BB Analytic T={BBconstants['temp'][i]}K")
 	plt.plot(lambdaData,BBMCRT[i],label=\
 	f"BB MCRT T={BBconstants['temp'][i]}K")
-plt.xlabel('Log10(Wavelength) [Log10(microns)]')
-plt.ylabel('Log10(BB Probability) [dimensionless]')
-plt.title('Log10(Black Body Probabilities) against Log10(Wavelength)'+'\n'\
+plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+plt.ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
+plt.title(r'$Log10$(Planck Function) against $Log10$(Wavelength)'+'\n'\
 + 'for given temperatures')
 plt.xlim(BBxMin, BBxMax)
 plt.ylim(BByMin, BByMax)
@@ -285,10 +285,10 @@ for i in range(0, len(MBconstants['temp'])):
 	f"MB Analytic T={BBconstants['temp'][i]}K")
 	plt.plot(lambdaData,MBMCRT[i],label=\
 	f"MB MCRT T={MBconstants['temp'][i]}K")
-plt.xlabel('Log10(Wavelength) [Log10(microns)]')
-plt.ylabel('Log10(MB Probability) [dimensionless]')
-plt.title('Log10(Modified Black Body Probabilities) against Log10(Wavelength)'+\
-'\n' + 'for given temperatures')
+plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+plt.ylabel(r'$Log10(B_{Mod.,\lambda}(T))$ [/]')
+plt.title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
++ 'for given temperatures')
 plt.xlim(MBxMin, MBxMax)
 plt.ylim(MByMin, MByMax)
 
@@ -302,10 +302,10 @@ for i in range(0, len(DMconstants['temp'])):
 	f"DM Analytic T={DMconstants['temp'][i]}K")
 	plt.plot(lambdaData,DMMCRT[i], label=\
 	f"DM MCRT T={DMconstants['temp'][i]}K")
-plt.xlabel('Log10(Wavelength) [Log10(microns)]')
-plt.ylabel('Log10(DMBB Probability) [dimensionless]')
-plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
-+'against Log10(Wavelength)'+'\n'+ 'for given temperatures')
+plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+plt.ylabel(r'$Log10(B_{Dif. Mod.,\lambda}(T))$ [/]')
+plt.title(r'$Log10$(Differential Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
++ 'for given temperatures')
 plt.xlim(DMxMin, DMxMax)
 plt.ylim(DMyMin, DMyMax)
 
@@ -324,11 +324,11 @@ for i in range(0, len(MBconstants['temp'])):
 	f"DM Analytic T={DMconstants['temp'][i]}K")
 	plt.plot(lambdaData,MBAnalytic[i], label=\
 	f"MB Analytic T={MBconstants['temp'][i]}K")
-plt.xlabel('Log10(Wavelength) [Log10(microns)]')
-plt.ylabel('Log10(DMBB Probability) [dimensionless]')
-plt.title('Log10(Differential Modified Black Body Probabilities)' + '\n'\
-+'& Log10(Modified Black Body Probabilities)'+'\n' \
-+'against Log10(Wavelength)for given temperatures')
+plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+plt.ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
+plt.title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
++ r'& $Log10$(Differential Modified Planck Function)'+'\n' \
++ r' against $Log10$(Wavelength)for given temperatures')
 plt.xlim(DMxMin, DMxMax)
 plt.ylim(DMyMin, DMyMax)
 

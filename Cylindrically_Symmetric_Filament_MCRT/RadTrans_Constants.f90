@@ -7,14 +7,14 @@ module CONSTANTS
     INTEGER,parameter                 :: CFschP=1                               ! radial density exponent forn Schuster profile
     REAL(KIND=8),parameter            :: CFwB=0.1500E+19                        ! boundary radius (cm)
     INTEGER,parameter                 :: CFcTOT=100                             ! number of (cylindrical) shells
-              INTEGER,parameter                 :: CFprof=1                               ! flag to sanction diagnostics for profile
-              INTEGER,parameter                 :: CFlist=1                               ! flag to sanction diagnostics for cells
+              INTEGER,parameter                 :: CFprof=0                               ! flag to sanction diagnostics for profile
+              INTEGER,parameter                 :: CFlist=0                               ! flag to sanction diagnostics for cells
 
                                                                                 ! DUST GRAINS [DG]
     CHARACTER(LEN=20),parameter       :: DGsource='Draine'                      ! source of dust properties (e.g. 'Draine')
     CHARACTER(LEN=20),parameter       :: DGmodel='draine_rv3.1.dat'             ! dust model (e.g. 'draine_rv3.1.dat')
-    INTEGER,parameter                 :: DGlMAX=560                             ! line number where dust properties end
-    INTEGER,parameter                 :: DGlMIN=66                             ! line number where dust properties start
+    INTEGER,parameter                 :: DGlMAX=660! ###560 ~= line 640###                             ! line number where dust properties end
+    INTEGER,parameter                 :: DGlMIN=66!66                             ! line number where dust properties start
     REAL(KIND=8),parameter            :: DGkapV=0.30000E-17                     ! mass opacity, only for pure scattering (cm^2/g)
     REAL(KIND=8),parameter            :: DGkapM=0.20000E+03                     ! volume opacity, only for pure scattering (1/cm)
 
@@ -25,23 +25,23 @@ module CONSTANTS
               INTEGER,parameter                           :: WLplot=1            ! flag to trigger plotting of dust properties
 
                                                                                 ! TEMPERATURES [TE]
-    INTEGER,parameter                 :: TEkTOT=100                             ! number of discrete temperatures
+    INTEGER,parameter                 :: TEkTOT=1000                             ! number of discrete temperatures
     REAL(KIND=8),parameter            :: teTmin=2.725                           ! minimum discrete temperature
-    REAL(KIND=8),parameter            :: teTmax=272.5                           ! maximum discrete temperature
-                INTEGER,parameter                           :: TElist=1            ! flag to print out some temperatures
+    REAL(KIND=8),parameter            :: teTmax=2725.0!272.5                           ! maximum discrete temperature
+                INTEGER,parameter                           :: TElist=0            ! flag to print out some temperatures
 
                                                                                 ! REFERENCE PROBABILITIES [PR]
     INTEGER,parameter                 :: PRnTOT=1000                            ! number of reference probabilities
                 INTEGER,parameter                 :: WTpack=1000000                         ! number of calls for plotting probabilities
-                INTEGER,parameter                 :: WTplot=1                               ! flag to sanction plotting probabilities
+                INTEGER,parameter                 :: WTplot=0                               ! flag to sanction plotting probabilities
 
                                                                                 ! BACKGROUND RADIATION FIELD [BG]
-    INTEGER,parameter                 :: BGkBB=80                            ! temperature-ID of background BB radiation field
+    INTEGER,parameter                 :: BGkBB=990                            ! temperature-ID of background BB radiation field
     REAL(KIND=8),parameter            :: BGfBB=1.00E0!0.100E0                   ! dilution factor of background BB radiation field
-    INTEGER,parameter                 :: BGkGO=64                               ! ID of temperature for cfLgo ---- ceiling(dble(BGkBB)*0.8d0)
+    INTEGER,parameter                 :: BGkGO=800                               ! ID of temperature for cfLgo ---- ceiling(dble(BGkBB)*0.8d0)
 
                                                                                 ! LUMINOSITY PACKETS [LP]
-    INTEGER,parameter                 :: LPpTOT= int(1E6)                       ! number of luminosity packets
+    INTEGER,parameter                 :: LPpTOT= int(1E7)                       ! number of luminosity packets
 
     INTEGER(Kind=4),parameter         :: DBTestFlag= 1                          !Diagnostic test flag for tests and print statements
 end module CONSTANTS

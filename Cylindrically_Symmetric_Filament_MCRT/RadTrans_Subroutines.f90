@@ -366,7 +366,7 @@ ENDDO                                                    ! end loop over referen
 DO TEk=0,TEkTOT                                          ! start loop over discrete temperatures
 
                                                          !   [] RANGE OF WAVELENGTHS
-  TElamT=(0.143878E+05)/teT(TEk)                         !   compute hc/kT(k)
+  TElamT=(hckb)/teT(TEk)                         !   compute hc/kT(k)
   DO WLl=1,WLlTOT                                        !   start forward loop over wavelengths
     IF (WLlam(WLl)<0.027*TElamT) CYCLE                   !     [IF] wavelength too short, [CYCLE]
     WTlMIN(TEk)=WLl;   EXIT                              !     record WTlMIN and [EXIT]
@@ -395,12 +395,12 @@ DO TEk=0,TEkTOT                                          ! start loop over discr
                    &WTpBB(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpBB(WTlMAX(TEk),TEk)  !   ...... probabilities
   WTpBB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher BB em. probs to unity
-  teLMmb(TEk)=(0.149671E+13)*WTpMB(WTlMAX(TEk),TEk)      !   compute the luminosity per unit mass
+  teLMmb(TEk)=(8.d0*pi*hc2)*WTpMB(WTlMAX(TEk),TEk)      !   compute the luminosity per unit mass
   WTpMB(WTlMIN(TEk):WTlMAX(TEk),TEk)=                   &!   normalise MB .......
                    &WTpMB(WTlMIN(TEk):WTlMAX(TEk),TEk)/ &!   ... emission .......
                                 &WTpMB(WTlMAX(TEk),TEk)  !   ...... probabilities
   WTpMB(WTlMAX(TEk)+1:WLlTOT,TEk)=1.                     !   set higher MB em. probs. to unity
-  teLMTdm(TEk)=(0.215343E+17)*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
+  teLMTdm(TEk)=(8.d0*pi*h2c3kb)*WTpDM(WTlMAX(TEk),TEk)/   &!   compute the luminosity per unit ...
                                           (teT(TEk)**2)  !   .........mass, per unit temperature
 
 !!!!
@@ -1137,7 +1137,7 @@ open(1,file=trim(adjustl(filename)))
 IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
 
 IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
+  coeff=twopi*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   CFrho=CFrho0
   DO CFc=1,CFcTOT                                        !   start loop over cells
@@ -1157,7 +1157,7 @@ ENDIF
 
                                                          ! [] CASE p=1
 IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
+  coeff=twopi*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1175,7 +1175,7 @@ IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=2
 IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
-  coeff=3.14159274*CFrho0*CFw0**2
+  coeff= pi*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1192,7 +1192,7 @@ IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=3
 IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
-  coeff=6.2831853*CFrho0*CFw0**2
+  coeff= twopi*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1209,7 +1209,7 @@ IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
 ENDIF                                                    ! [ENDIF]
                                                          ! [] CASE p=4
 IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
-  coeff=3.14159274*CFrho0*CFw0**2
+  coeff=pi*CFrho0*CFw0**2
   CFzet2LO=0.                                            !   set CFzet2LO to zero
   DO CFc=1,CFcTOT                                        !   start loop over cells
     CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
@@ -1560,7 +1560,7 @@ Real(kind=8)                                :: chiBar, lamMax, tauBar
 
 
 
-LPdeltaL=((0.35628897E-3)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
+LPdeltaL=((twopi*sigmasb)*CFwB*BGfBB*teT(BGkBB)**4)        &! compute line-luminosity of ...
                                          &/DBLE(LPpTOT)  ! ... a single luminosity packet   (0.35628897E+03)
 
 CFw2B=CFwB**2                                            ! compute W_B squared
@@ -1639,10 +1639,14 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
       CFc=CFcc                                           !       record that still in same shell
 
-      RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
-      RFinter(CFc) = RFinter(CFc) + 1
+
       LPnScatter(CFcc) = LPnScatter(CFcc) + 1
+      RFinter(CFc) = RFinter(CFc) + 1
       LPnSCA=LPnSCA+1                                    !       increment number of scatterings
+
+
+
+      RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
 
       CALL RT_ReDirectIsotropic(LPe,LPtau)               !       generate new direction and optical depth
       ! NMeSC=NMeSC+1;   MUeSC(1:3)=MUeSC(1:3)+ABS(LPe(1:3));   SDeSC(1:3)=SDeSC(1:3)+(LPe(1:3)**2) ! *****
@@ -1693,6 +1697,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
     ELSE
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
       RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
+      RFinter(CFcc) = RFinter(CFcc) + 1
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
@@ -1711,7 +1716,7 @@ do CFc=1,CFcTOT,1
     do LPl=1,WLlTOT,1
         rfI = rfI+(WLchi(LPl)*(1.d0-WLalb(LPl))*RFjLAM(LPl,CFc))    !CGS. Lucy 1999
     enddo
-    rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*(3.14159265359d0))
+    rfH=(LPdeltaL*rfI)/((CFw2(CFc)-CFw2(CFc-1))*(pi))
     do TEK=1,TEkTOT,1
         If(teLMmb(TEk).gt.rfH)then
             LmRatio=(rfH - teLMmb(TEk-1))/(teLMmb(TEk)-teLMmb(TEk-1))
@@ -1798,13 +1803,13 @@ If (DBTestFlag == 1) then
   write(1,"(7(A3,1x))") (/"N-a","S-i","M-c","V-c","T-e","P-t","W-f"/)
 
   do i=1,CFcTOT
-    CFv = 3.14159274d0 *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
-    CFv = CFv*((0.324078E-18)**2)
+    CFv = pi *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
+    CFv = CFv*((cmtopc)**2)
     if (i==1) THEN
-      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
+      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(cmtopc),CFmu(i)*(gcmtomsolpc) &
       & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
     ELSE
-      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(0.324078E-18),CFmu(i)*(0.155129E-15) &
+      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(cmtopc),CFmu(i)*(gcmtomsolpc) &
       & ,CFv/)
     endif
   enddo
@@ -1869,7 +1874,7 @@ CALL RANDOM_NUMBER(LRD)                                  ! generate linear rando
 LPe(1)=SQRT(LRD)                                         ! compute LPe(1)
 sintheta=SQRT(1.-LRD)                                    ! compute sintheta
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
-phi=6.2831853*LRD                                        ! compute phi
+phi=twopi*LRD                                        ! compute phi
 LPe(2)=sintheta*COS(phi)                                 ! compute LPe(2)
 LPe(3)=sintheta*SIN(phi)                                 ! compute LPe(3)
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
@@ -1903,7 +1908,7 @@ sintheta=SQRT(1.-LPe(1)**2)                              ! compute sintheta
 
 
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]
-phi=6.2831853*LRD                                        ! compute phi
+phi=twopi*LRD                                        ! compute phi
 LPe(2)=sintheta*COS(phi)                                 ! compute LPe(2)
 LPe(3)=sintheta*SIN(phi)                                 ! compute LPe(3)
 CALL RANDOM_NUMBER(LRD)                                  ! generate linear random deviate on [0,1]

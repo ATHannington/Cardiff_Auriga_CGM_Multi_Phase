@@ -7,3 +7,9 @@
 ###Output Images###
 *.png
 *.jpg
+
+###Compiled Files###
+*.o
+
+###Executable###
+run
