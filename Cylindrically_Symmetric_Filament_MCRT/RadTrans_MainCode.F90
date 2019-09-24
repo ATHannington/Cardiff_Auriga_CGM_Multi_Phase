@@ -155,10 +155,10 @@ ALLOCATE (CFrho(1:CFcTOT))                               ! allocate CFrho array
 ALLOCATE (cfT(1:CFcTOT))                                 ! allocate cfT array
 ALLOCATE (CFw(0:CFcTOT))                                 ! allocate CFw array
 ALLOCATE (CFw2(0:CFcTOT))                                ! allocate CFw2 array
-ALLOCATE (WLlam(1:1000))                                 ! temporary ............
-ALLOCATE (WLdlam(1:1000))                                ! ... storage ..........
-ALLOCATE (WLchi(1:1000))                                 ! ....... for dust .....
-ALLOCATE (WLalb(1:1000))                                 ! ........... properties
+ALLOCATE (WLlam(1:10000))                                 ! temporary ............
+ALLOCATE (WLdlam(1:10000))                                ! ... storage ..........
+ALLOCATE (WLchi(1:10000))                                 ! ....... for dust .....
+ALLOCATE (WLalb(1:10000))                                 ! ........... properties
 ALLOCATE (teT(0:TEkTOT))                                 ! allocate teT array
 ALLOCATE (teLMmb(0:TEkTOT))                              ! allocate teLMmb array
 ALLOCATE (teLMTdm(0:TEkTOT))                             ! allocate teLMTdm array
@@ -223,7 +223,7 @@ CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
 
 !!!!!           TESTS:                  !!!!!!
-! 
+!
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFw,CFw2)
 !
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFw,CFw2)
@@ -235,8 +235,6 @@ CALL RT_Cyl1DSchuster_DetailedBalance(CFw, &
 &WLdlam,WLchi,WLalb,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo,&
 &WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm, &
 &RFjLAM)
-
-
 
 PRINT*,""
 print*,"***+++***"

@@ -1184,8 +1184,9 @@ IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
-    &CFc,CFw(CFc),CFrho(CFc)         !     print out selected points on profile
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=coeff*LOG(1.+CFzet2HI)                          !   compute total line-density
   CFsig=2.*CFrho0*CFw0*ATAN(CFw(CFcTOT)/CFw0)            !   compute surface-density through spine
@@ -1201,8 +1202,9 @@ IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
-    &CFc,CFw(CFc),CFrho(CFc)         !     print out selected points on profile
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=coeff*(1.-(1./SQRT(1.+CFzet2HI))) !   compute total line-density
   CFsig=2.*CFrho0*CFw(CFcTOT)/SQRT(1.+CFzet2HI)          !   compute surface-density through spine
@@ -1218,12 +1220,19 @@ IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
     CFzet2LO=CFzet2HI                                    !     update CFzet2LO
     ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
     ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF (MOD(CFc,INT(DBLE(CFcTOT)/30.))==0) WRITE (6,"(I7,15X,E10.3,5X,F10.5,21X,E10.3,7X,F10.1)") &
-    &CFc,CFw(CFc),CFrho(CFc)      !     print out selected points on profile
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
   ENDDO                                                  !   end loop over cells
   CFmuTOT=coeff*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
   CFsig=CFrho0*CFw0*(ATAN(CFw(CFcTOT)/CFw0)+(CFw(CFcTOT)/(CFw0*(1.+CFzet2HI)))) ! surface-density through spine
 ENDIF                                                    ! [ENDIF]
+
+IF((CFschP .lt. 0).or.(CFschP.gt. 4)) THEN
+  print*,"[@RT_SchusterDensities:] WARNING! FATAL! Density profiles only defined for&
+  & 0<= CFschP <= 4! Program will ABORT!"
+  STOP
+ENDIF
 
 write(1,"(4(A3,1x))") (/"rho","pos","shp","rh0"/)
 do CFc=1,CFcTOT
@@ -1515,7 +1524,6 @@ REAL(KIND=8)                                :: LPdeltaL    ! line-luminosity of 
 REAL(KIND=8),DIMENSION(1:3)                 :: LPe       ! direction of luminosity packet (unit vector)
 REAL(KIND=8)                                :: LPe1122   ! e_x^2+e_y^2
 INTEGER                                     :: LPl       ! wavelength-ID of luminosity packet
-INTEGER                                     :: LPnSCA    ! number of scatterings
 INTEGER                                     :: LPp       ! dummy ID of luminosity packet
 REAL(KIND=8),DIMENSION(1:3)                 :: LPr       ! position of luninosity packet
 REAL(KIND=8)                                :: LPr1122   ! r_x^2+r_y^2
@@ -1540,7 +1548,9 @@ REAL(KIND=8)                                :: TeRatio       ! weighting factor
 Real(kind=8)                                ::  rfI
 Real(kind=8)                                ::  rfH         !Heating term from Lucy 1999 method
 REAL(KIND=8),DIMENSION(1:CFcTOT)            ::  rfTemp      !Lucy line addition temp
-integer(KIND=8),DIMENSION(1:CFcTOT)         ::  LPnScatter, LPnAbsorb
+integer(KIND=8),DIMENSION(1:CFcTOT)         ::  LPnScatter, LPnAbsorb, LucyInter
+INTEGER(Kind=8)                             ::  LPnScaTOT,LPnAbsTOT, LPnInterTOT
+Integer(kind=8)                             ::  LucyInterTOT
 Character(len=50)                           :: CellTempFilename = &
                                               & "detailed-balance-RT_cell_temperatures.csv"
 integer                                     ::  readcheck
@@ -1548,13 +1558,13 @@ integer                                     :: i
 Real(kind=8)                                :: LmRatio
 
 character(len=40)                           :: tmpFilename = "db_N-a_S-i_M-c_V-c_T-e_P-t_W-f.csv"
-Real(kind=8)                                ::CFv
+Real(kind=8)                                :: CFv
 integer(kind=4)                             :: LPlFixed     !Fixed wavelength index at roughly below wavelength value
 Real(kind=8)                                :: WLfixed = 300.d0 !Fixed 300 microns wavelength
 
 
 Real(kind=8),DIMENSION(1:CFcTOT)            :: errLucy,errStnd
-Integer,DIMENSION(1:CFcTOT)                 :: RFinter
+
 Real(kind=8)                                :: chiBar, lamMax, tauBar
 
 
@@ -1574,7 +1584,7 @@ cfLgo(1:CFcTOT)=CFmu(1:CFcTOT)*teLMmb(BGkGO)
 
 LPnScatter = 0
 LPnAbsorb = 0
-RFinter = 0
+LucyInter = 0
 
 
 !Diagnostics print statements
@@ -1592,8 +1602,6 @@ RFinter = 0
 IF(cfLgo(1).lt.LPdeltaL) then
 print*,"WARNING[@Detailed-Balance]: Luminosity condition FALSE!!! CFlGO < LPdeltaL! Please Adjust BGkGO!"
 ENDIF
-
-LPnSCA=0                                                 ! set number of scatterings to zero
 ! NMeIN=0;   MUeIN=0.;   SDeIN=0.                          ! *****
 ! NMeSC=0;   MUeSC=0.;   SDeSC=0.                          ! *****
 ! NMtau=0;   MUtau=0.;   SDtau=0.                          ! *****
@@ -1641,10 +1649,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
 
       LPnScatter(CFcc) = LPnScatter(CFcc) + 1
-      RFinter(CFc) = RFinter(CFc) + 1
-      LPnSCA=LPnSCA+1                                    !       increment number of scatterings
-
-
+      LucyInter(CFc) = LucyInter(CFc) + 1
 
       RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
 
@@ -1697,7 +1702,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
     ELSE
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
       RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
-      RFinter(CFcc) = RFinter(CFcc) + 1
+      LucyInter(CFcc) = LucyInter(CFcc) + 1
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
@@ -1709,6 +1714,17 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   endif
 
 ENDDO                                                    ! end loop over luminosity packets
+
+
+
+LPnScaTOT=0;LPnAbsTOT=0; LPnInterTOT=0; LucyInterTOT=0;
+do CFc=1,CFcTOT,1
+    LPnScaTOT = LPnScaTOT + LPnScatter(CFc)
+    LPnAbsTOT = LPnAbsTOT + LPnScatter(CFc)
+    LucyInterTOT = LucyInterTOT + LucyInter(CFc)
+ENDDO
+
+LPnInterTOT = LPnScaTOT + LPnAbsTOT
 
 !------------------------------------------------------------------------------
 do CFc=1,CFcTOT,1
@@ -1724,7 +1740,7 @@ do CFc=1,CFcTOT,1
             EXIT
         endif
     enddo
-    errLucy(CFc) = rfTemp(CFc)*(1.d0/(SQRT(dble(RFinter(CFc)))))
+    errLucy(CFc) = rfTemp(CFc)*(1.d0/(SQRT(dble(LucyInter(CFc)))))
     errStnd(CFC) = cfT(CFc)*(1.d0/(SQRT(dble(LPnAbsorb(CFc)))))
 enddo
 
@@ -1742,6 +1758,7 @@ lamMax = (0.288*(1.d4))/teT(BGkBB)
 
 do i=1,WLlTOT,1
   If(WLlam(i) .ge. lamMax) THEN
+    LPlFixed = i
     chiBar = WLchi(i)
     EXIT
   endif
@@ -1771,9 +1788,8 @@ If (DBTestFlag == 1) then
   print*,"cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)"
   print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
   print*," "
-  print*,"LPnSCA/LPpTOT",dble(LPnSCA)/dble(LPpTOT)
-  print*,"CFsig",CFsig
-  print*,"chiBar",chiBar
+  print*,"LucyInterTOT",LucyInterTOT,"LPnInterTOT",LPnInterTOT
+  print*,"LPnInterTOT/LPpTOT",dble(LPnInterTOT)/dble(LPpTOT)
   print*,"lamMax",lamMax
   print*,"tauBar",tauBar
   print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
@@ -1806,10 +1822,10 @@ If (DBTestFlag == 1) then
     CFv = pi *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
     CFv = CFv*((cmtopc)**2)
     if (i==1) THEN
-      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(cmtopc),CFmu(i)*(gcmtomsolpc) &
+      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
       & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
     ELSE
-      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i))*(cmtopc),CFmu(i)*(gcmtomsolpc) &
+      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
       & ,CFv/)
     endif
   enddo

@@ -13,7 +13,7 @@ PROGRAM = run
 ### Put modules to be included here! ###
 SRCS=	RadTrans_Constants.f90 \
 						RadTrans_Subroutines.f90 \
-						RadTrans_MainCode.F90
+						RadTrans_MainCode.f90
 
 OBJECTS = $(SRCS:.f90=.o)
 

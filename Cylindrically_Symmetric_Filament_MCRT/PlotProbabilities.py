@@ -5,6 +5,7 @@
 #		Details of this program below.                                          #
 #-------------------------------------------------------------------------------#
 import matplotlib.pyplot as plt
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import numpy as np
 import pandas as pd
 import math
@@ -262,52 +263,61 @@ print("Beginning Plotting!")
 																				#      titled, labelled, legend added, and saved in date-time directory.      #
 
 
-fig = plt.figure()
+fig, ax = plt.subplots()
 for i in range(0, len(BBconstants['temp'])):
-	plt.plot(lambdaData,BBAnalytic[i], label=\
+	ax.plot(lambdaData,BBAnalytic[i], label=\
 	f"BB Analytic T={BBconstants['temp'][i]}K")
-	plt.plot(lambdaData,BBMCRT[i],label=\
+	ax.plot(lambdaData,BBMCRT[i],label=\
 	f"BB MCRT T={BBconstants['temp'][i]}K")
-plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
-plt.ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
-plt.title(r'$Log10$(Planck Function) against $Log10$(Wavelength)'+'\n'\
+ax.set_xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+ax.set_ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
+ax.set_title(r'$Log10$(Planck Function) against $Log10$(Wavelength)'+'\n'\
 + 'for given temperatures')
-plt.xlim(BBxMin, BBxMax)
-plt.ylim(BByMin, BByMax)
+ax.set_xlim(BBxMin, BBxMax)
+ax.set_ylim(BByMin, BByMax)
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
 'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.png')
 
-fig = plt.figure()
+fig, ax= plt.subplots()
 for i in range(0, len(MBconstants['temp'])):
-	plt.plot(lambdaData,MBAnalytic[i],label=\
+	ax.plot(lambdaData,MBAnalytic[i],label=\
 	f"MB Analytic T={BBconstants['temp'][i]}K")
-	plt.plot(lambdaData,MBMCRT[i],label=\
+	ax.plot(lambdaData,MBMCRT[i],label=\
 	f"MB MCRT T={MBconstants['temp'][i]}K")
-plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
-plt.ylabel(r'$Log10(B_{Mod.,\lambda}(T))$ [/]')
-plt.title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
+ax.set_xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+ax.set_ylabel(r'$Log10(B_{Mod.,\lambda}(T))$ [/]')
+ax.set_title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
 + 'for given temperatures')
-plt.xlim(MBxMin, MBxMax)
-plt.ylim(MByMin, MByMax)
+ax.set_xlim(MBxMin, MBxMax)
+ax.set_ylim(MByMin, MByMax)
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
 'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
 
-fig = plt.figure()
+fig, ax = plt.subplots()
 for i in range(0, len(DMconstants['temp'])):
-	plt.plot(lambdaData,DMAnalytic[i],label=\
+	ax.plot(lambdaData,DMAnalytic[i],label=\
 	f"DM Analytic T={DMconstants['temp'][i]}K")
-	plt.plot(lambdaData,DMMCRT[i], label=\
+	ax.plot(lambdaData,DMMCRT[i], label=\
 	f"DM MCRT T={DMconstants['temp'][i]}K")
-plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
-plt.ylabel(r'$Log10(B_{Dif. Mod.,\lambda}(T))$ [/]')
-plt.title(r'$Log10$(Differential Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
+ax.set_xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+ax.set_ylabel(r'$Log10(B_{Dif. Mod.,\lambda}(T))$ [/]')
+ax.set_title(r'$Log10$(Differential Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
 + 'for given temperatures')
-plt.xlim(DMxMin, DMxMax)
-plt.ylim(DMyMin, DMyMax)
+ax.set_xlim(DMxMin, DMxMax)
+ax.set_ylim(DMyMin, DMyMax)
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath+\
@@ -318,19 +328,22 @@ finxMax = max([DMxMax, MBxMax])
 finyMin = min([DMyMin, MByMin])
 finyMax = max([DMyMax, MByMax])
 
-fig = plt.figure()
+fig,ax = plt.subplots()
 for i in range(0, len(MBconstants['temp'])):
-	plt.plot(lambdaData,DMAnalytic[i],label=\
+	ax.plot(lambdaData,DMAnalytic[i],label=\
 	f"DM Analytic T={DMconstants['temp'][i]}K")
-	plt.plot(lambdaData,MBAnalytic[i], label=\
+	ax.plot(lambdaData,MBAnalytic[i], label=\
 	f"MB Analytic T={MBconstants['temp'][i]}K")
-plt.xlabel(r'$Log10(\lambda)$ [$\mu m$]')
-plt.ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
-plt.title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
+ax.set_xlabel(r'$Log10(\lambda)$ [$\mu m$]')
+ax.set_ylabel(r'$Log10(B_{\lambda}(T))$ [/]')
+ax.set_title(r'$Log10$(Modified Planck Function) against $Log10$(Wavelength)'+'\n'\
 + r'& $Log10$(Differential Modified Planck Function)'+'\n' \
 + r' against $Log10$(Wavelength)for given temperatures')
-plt.xlim(DMxMin, DMxMax)
-plt.ylim(DMyMin, DMyMax)
+ax.set_xlim(DMxMin, DMxMax)
+ax.set_ylim(DMyMin, DMyMax)
+ax.grid(which="both")
+ax.xaxis.set_minor_locator(AutoMinorLocator())
+ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
 fig.savefig(datetimesavepath \

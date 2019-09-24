@@ -17,7 +17,8 @@ print(f"Schuster exponent p = {int(read_data['shp'][0]):d}")
 print(r"$Rho_{0}$ density of Schuster filament in $g cm^{-3}$ = " + f"{read_data['rh0'][0]:.5E}")
 print()
 
-plt.plot(read_data['pos'],read_data['rho'])
+plt.scatter(read_data['pos'],read_data['rho'])
+plt.ylim(min(read_data['rho']),max(read_data['rho']))
 plt.xlabel("Cell Number [/]")
 plt.ylabel(r"Cell Density $[g$ $cm^{-3}]$")
 plt.title(f"Density vs. Cell number" + f" -- Schuster profile of p = {int(read_data['shp'][0]):d}"\

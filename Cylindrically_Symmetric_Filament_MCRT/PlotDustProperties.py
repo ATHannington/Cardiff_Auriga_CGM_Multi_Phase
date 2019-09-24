@@ -447,8 +447,8 @@ fig, ax = plt.subplots()
 for temp in range(0,ntemps,1):
 	ax.plot(x_lamLog10,z_modPlanckLog10[temp],label = \
 	r"$Log_{10}(B^{Mod.}_{\lambda})$"+f" at {temperatures[temp]:.2f}")
-plt.xlabel(r"$Log_{10}(\lambda)$ [$\mu m$]")								#Give plot relevant axes labels and a title.								  #
-plt.ylabel(r"$Log_{10}(B^{Mod.}_{\lambda})$ [$\mu m^{-5}$]")
+ax.set_xlabel(r"$Log_{10}(\lambda)$ [$\mu m$]")								#Give plot relevant axes labels and a title.								  #
+ax.set_ylabel(r"$Log_{10}(B^{Mod.}_{\lambda})$ [$\mu m^{-5}$]")
 ax.set_title(r"$Log_{10}$(Modified Planck Function) versus $Log_{10}$(Wavelength)")
 ax.set_ylim(bottom=math.log10(1e-20),top=math.log10(1e5))
 ax.grid(which="both")

@@ -10,6 +10,14 @@
 
 ###Compiled Files###
 *.o
+*.mod
+
+###Compiled F2py files###
+*.so
+
+###Whatever these are? Tmp files?###
+*.*~
+3
 
 ###Executable###
 run
