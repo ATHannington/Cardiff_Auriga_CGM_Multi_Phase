@@ -2,9 +2,9 @@ module CONSTANTS
     IMPLICIT NONE
                                                                                 !  CONFIGURATION [CF]
     CHARACTER(LEN=20),parameter       :: CFgeom='Cylindrical1D'                 ! geometry of configuration
-    REAL(KIND=8),parameter            :: CFrho0=0.1000E-18                      ! central density (g/cm^3)
+    REAL(KIND=8)            :: CFrho0=0.1000E-18                      ! central density (g/cm^3)
     REAL(KIND=8),parameter            :: CFw0=0.1500E+18                        ! core radius (cm)
-    INTEGER,parameter                 :: CFschP=5                               ! radial density exponent forn Schuster profile
+    INTEGER,parameter                 :: CFschP=1                               ! radial density exponent forn Schuster profile
     REAL(KIND=8),parameter            :: CFwB=0.1500E+19                        ! boundary radius (cm)
     INTEGER,parameter                 :: CFcTOT=100                             ! number of (cylindrical) shells
               INTEGER,parameter                    :: CFprof=0                  ! flag to sanction diagnostics for profile
@@ -44,6 +44,13 @@ module CONSTANTS
     INTEGER,parameter                 :: LPpTOT= int(1E7)                       ! number of luminosity packets
 
               INTEGER(Kind=4),parameter            :: DBTestFlag= 1             !Diagnostic test flag for tests and print statements
+
+
+
+    Real(kind=8)                      :: TAUconst = 5.d-1
+    ! Real(kind=8)                      :: RHOconst = 1.d-18
+    ! Real(kind=8)                      :: MUconst = 1.d+17
+    ! Real(kind=8)                      :: SIGconst = 1.d-1
 end module CONSTANTS
 
 ! The value of pi is 3.14159274

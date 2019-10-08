@@ -115,6 +115,9 @@ Character(len=50)                           :: DustPropertiesFilename = &
 Integer*4                                   :: readcheck
 Integer*4                                   :: i
 
+Integer(kind=4)                             :: LPlFixed
+Real(kind=8)                                :: lamMax,chiBar, CFrhoTOT
+
 
 
 PRINT*,""
@@ -219,7 +222,42 @@ CALL RT_EmProbs_DMBB(teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,&
 
 CALL RT_Cyl1D_LinearShellSpacing(CFw,CFw2)
 
+
+
+
+!!! #### This Section of Code should set a constant tau regardless on temp ###!!
+lamMax = (0.288*(1.d4))/teT(BGkBB)
+
+do i=1,WLlTOT,1
+  If(WLlam(i) .ge. lamMax) THEN
+    LPlFixed = i
+    chiBar = WLchi(i)
+    EXIT
+  endif
+enddo
+
+! print*,"chibar/CFrho0",chibar/CFrho0
+! CFrho0 = CFrho0 * TAUconst/chiBar
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
+
+CFrho0 = CFrho0 * (TAUconst/(chiBar*CFsig))
+
+CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
+! CFrhoTOT = 0.d0
+! do i=1,CFcTOT
+!   CFrhoTOT = CFrhoTOT + CFrho(i)
+! enddo
+! print*,"CFrhoTOT",CFrhoTOT
+! print*,"CFmuTOT",CFmuTOT
+! print*,"CFsig",CFsig
+! CFrho = (CFrho/CFrhoTOT)*RHOconst*(TAUconst/chiBar)
+! CFmu=(CFmu/CFmuTOT)*MUconst*(TAUconst/chiBar)
+! CFsig = SIGConst*(TAUconst/chiBar)
+
+!------------------------------------------------------------------------------!
+
+
+
 
 
 !!!!!           TESTS:                  !!!!!!
