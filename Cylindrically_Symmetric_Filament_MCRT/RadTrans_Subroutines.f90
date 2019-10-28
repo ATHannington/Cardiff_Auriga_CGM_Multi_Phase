@@ -1094,182 +1094,6 @@ END SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-! This subroutine computes the cell densities, the total line mass, and the
-! column-density through the spine for a filament with a Schuster profile.
-
-! It is given:
-!   the boundary radii of the shells (cm)                      (CFw(0:CFcTOT));
-!   and a flag to sanction diagnostics                         (CFprof).
-
-! It returns:
-!   the volume-densities in the shells (g/cm^3)                (CFrho(1:CFcTOT));
-!   the line-densities of the shells (g/cm)                    (CFmu(1:CFcTOT));
-!   the total line-density of the filament (g/cm)              (CFmuTOT);
-!   and the total column-density through the spine (g/cm^2)    (CFsig).
-USE CONSTANTS
-USE PHYSICAL_CONSTANTS
-IMPLICIT NONE                                             ! DECLARATIONS
-REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw       ! boundary radii of cells (cm)
-REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: CFrho     ! density in cells (g/cm^3)
-REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: CFmu      ! density in cells (g/cm)
-REAL(KIND=8),INTENT(OUT)                    :: CFmuTOT   ! total line-density of filament (g/cm)
-REAL(KIND=8),INTENT(OUT)                    :: CFsig     ! surface-density through spine (g/cm^2)
-                                                         ! [] DRONES
-REAL(KIND=8)                                :: coeff      ! coefficient
-INTEGER                                     :: CFc       ! dummy ID of shell
-REAL(KIND=8)                                :: CFzet2HI  ! zeta^2 outer
-REAL(KIND=8)                                :: CFzet2LO  ! zeta^2 inner
-                                                         ! [] PGPLOT
-REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGx       ! array for log10[lam] (abscissa)
-REAL(KIND=4)                                :: PGxMAX    ! upper limit on log10[lam]
-REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
-REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
-character(len=50)                           :: filename ="density_cell.csv"
-
-
-open(1,file=trim(adjustl(filename)))
-
-IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
-
-IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
-  coeff=twopi*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  CFrho=CFrho0
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFmu(CFc)=coeff*0.5d0*(CFzet2HI - CFzet2LO) !     compute CFm
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-
-  CFmuTOT=coeff*CFzet2HI*0.5d0                            !   compute total line-density
-  CFsig=2.*CFrho0*CFw(CFcTOT)                             !   compute surface-density through spine
-ENDIF
-
-                                                         ! [] CASE p=1
-IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
-  coeff=twopi*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFrho(CFc)=2.*CFrho0*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO)) !     compute CFmu
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
-  CFsig=2.*CFrho0*CFw0*LOG((CFw(CFcTOT)/CFw0)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
-ENDIF                                                    ! [ENDIF]
-                                                         ! [] CASE p=2
-IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
-  coeff= pi*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFrho(CFc)=CFrho0*LOG((1.+CFzet2HI)/(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*LOG((1.+CFzet2HI)/(1.+CFzet2LO))      !     compute CFmu
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*LOG(1.+CFzet2HI)                          !   compute total line-density
-  CFsig=2.*CFrho0*CFw0*ATAN(CFw(CFcTOT)/CFw0)            !   compute surface-density through spine
-ENDIF                                                    ! [ENDIF]
-                                                         ! [] CASE p=3
-IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
-  coeff= twopi*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFrho(CFc)=2.*CFrho0*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*(1.-(1./SQRT(1.+CFzet2HI))) !   compute total line-density
-  CFsig=2.*CFrho0*CFw(CFcTOT)/SQRT(1.+CFzet2HI)          !   compute surface-density through spine
-ENDIF                                                    ! [ENDIF]
-                                                         ! [] CASE p=4
-IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
-  coeff=pi*CFrho0*CFw0**2
-  CFzet2LO=0.                                            !   set CFzet2LO to zero
-  DO CFc=1,CFcTOT                                        !   start loop over cells
-    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
-    CFrho(CFc)=CFrho0*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))/(CFzet2HI-CFzet2LO)
-    CFmu(CFc)=coeff*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))
-    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
-    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
-    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
-    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
-    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
-    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
-  ENDDO                                                  !   end loop over cells
-  CFmuTOT=coeff*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
-  CFsig=CFrho0*CFw0*(ATAN(CFw(CFcTOT)/CFw0)+(CFw(CFcTOT)/(CFw0*(1.+CFzet2HI)))) ! surface-density through spine
-ENDIF                                                    ! [ENDIF]
-
-IF((CFschP .lt. 0).or.(CFschP.gt. 4)) THEN
-  print*,"[@RT_SchusterDensities:] WARNING! FATAL! Density profiles only defined for&
-  & 0<= CFschP <= 4! Program will ABORT!"
-  STOP
-ENDIF
-
-write(1,"(4(A3,1x))") (/"rho","pos","shp","rh0"/)
-do CFc=1,CFcTOT
-  if (CFC ==1 ) THEN
-    write(1,"(ES18.5,1x,ES18.5,1x,ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc),dble(CFschP),CFrho0/)
-  else
-    write(1,"(ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc)/)
-  endif
-enddo
-
-close(1)
-                                                         ! [] DIAGNOSTICS
-! IF (CFprof==1) THEN                                      ! [IF] diagnostics sanctioned, [THEN]
-  ! WRITE (6,"(/,3X,'TOTAL LINE-DENSITY:',16X,E10.3,' g/cm',7X,F10.3,' MSun/pc')") CFmuTOT,(0.155129E-15)*CFmuTOT
-  ! WRITE (6,"(3X,'CENTRAL SURFACE-DENSITY:',9X,E10.3,' g/cm^2',7X,E10.3,' H2/cm^2',/)") CFsig,(0.210775E+24)*CFsig
-  ! CALL PGBEG(0,'/XWINDOW',1,1)                           !   open PGPLOT to display on screen
-  ! !CALL PGBEG(0,'/PS',1,2)                                !   open PGPLOT to produce postscript
-  ! PGxMAX=1.1*PGx(CFcTOT)                                 !   compute maximum abscissa
-  ! PGyMAX=1.1*PGy(1)                                      !   compute maximum ordinate
-  ! CALL PGENV(0.0,PGxMAX,0.0,PGyMAX,0,0)                  !   construct frame
-  ! CALL PGLAB('\fiw\fn/pc','         \fin\fn\dH\d2\u\u/cm\u-3\d','SCHUSTER DENSITY PROFILE')
-  ! CALL PGLINE(CFcTOT,PGx,PGy)                            !   plot profile
-  ! DO CFc=1,40                                            !   start loop over sample points
-    ! PGx(CFc)=0.025*DBLE(CFc)*PGx(CFcTOT)                 !     compute abscissa of sample point
-    ! PGy(CFc)=(0.210775E+24)*CFrho0/((1.+((0.308568E+19) &!     compute ordinate ...
-              ! &*PGx(CFc)/CFw0)**2)**(DBLE(0.5*CFschP)))  !     .... of sample point
-  ! ENDDO                                                  !   end loop over sample points
-  ! CALL PGPT(40,PGx,PGy,0)                                !   plot sample points
-  ! CALL PGEND                                             !   close PGPLOT
-! ENDIF                                                    ! [ENDIF] plots made
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-END SUBROUTINE RT_Cyl1D_SchusterDensities
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity&
 &(CFw,CFw2,CFrho,CFsig)
@@ -2175,12 +1999,12 @@ WLl=CEILING(LRD*DBLE(PRnTOT))                                  ! compute probabi
 WLlLO=WTlDMlo(WLl,TEk)                                   ! register ID of largest lam(l) below bin
 WLlUP=WTlDMup(WLl,TEk)                                   ! register ID of smallest lam(l) above bin
 DO WHILE (WLlUP>WLlLO+1)                                 ! home in on wavelengths either side
-WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
-IF (WTpDM(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
-WLlLO=WLlTR                                          !     increase WLlLO
-ELSE                                                   !   [ELSE] too high
-WLlUP=WLlTR                                          !     reduce WLlUP
-ENDIF                                                  !  [ENDIF] sorted
+  WLlTR=(WLlLO+WLlUP)/2                                  !   compute middle wavelength ID
+  IF (WTpDM(WLlTR,TEk)<LRD) THEN                         !   [IF] low, [THEN]
+    WLlLO=WLlTR                                          !     increase WLlLO
+  ELSE                                                   !   [ELSE] too high
+    WLlUP=WLlTR                                          !     reduce WLlUP
+  ENDIF                                                  !  [ENDIF] sorted
 ENDDO                                                    ! found the wavelengths either side
 WLlEM=WLlUP                                              !   select upper wavelength ID
 
@@ -2226,3 +2050,176 @@ endif
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE WL_cms_microns_convert
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBROUTINE RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+! This subroutine computes the cell densities, the total line mass, and the
+! column-density through the spine for a filament with a Schuster profile.
+
+! It is given:
+!   the boundary radii of the shells (cm)                      (CFw(0:CFcTOT));
+!   and a flag to sanction diagnostics                         (CFprof).
+
+! It returns:
+!   the volume-densities in the shells (g/cm^3)                (CFrho(1:CFcTOT));
+!   the line-densities of the shells (g/cm)                    (CFmu(1:CFcTOT));
+!   the total line-density of the filament (g/cm)              (CFmuTOT);
+!   and the total column-density through the spine (g/cm^2)    (CFsig).
+USE CONSTANTS
+USE PHYSICAL_CONSTANTS
+IMPLICIT NONE                                             ! DECLARATIONS
+REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw       ! boundary radii of cells (cm)
+REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: CFrho     ! density in cells (g/cm^3)
+REAL(KIND=8),INTENT(OUT),DIMENSION(1:CFcTOT):: CFmu      ! density in cells (g/cm)
+REAL(KIND=8),INTENT(OUT)                    :: CFmuTOT   ! total line-density of filament (g/cm)
+REAL(KIND=8),INTENT(OUT)                    :: CFsig     ! surface-density through spine (g/cm^2)
+                                                         ! [] DRONES
+REAL(KIND=8)                                :: coeff      ! coefficient
+INTEGER                                     :: CFc       ! dummy ID of shell
+REAL(KIND=8)                                :: CFzet2HI  ! zeta^2 outer
+REAL(KIND=8)                                :: CFzet2LO  ! zeta^2 inner
+                                                         ! [] PGPLOT
+REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGx       ! array for log10[lam] (abscissa)
+REAL(KIND=4)                                :: PGxMAX    ! upper limit on log10[lam]
+REAL(KIND=4),DIMENSION(1:CFcTOT)            :: PGy       ! array for log10[PlanckFn] (ordinate)
+REAL(KIND=4)                                :: PGyMAX    ! upper limit on log10[PlanckFn]
+character(len=50)                           :: filename ="density_cell.csv"
+
+
+open(1,file=trim(adjustl(filename)))
+
+IF (CFprof==1) WRITE (6,"(5X,'c:',12X,'w/cm:',6X,'w/pc:',14X,'rho.cm^3/g:',4X,'rho.cm^3/H2:',15X,'mu.cm/g:',5X,'mu.pc/MSun:')")
+
+IF (CFschP==0) THEN                                      ! [IF] p=1, [THEN]
+  coeff=twopi*CFrho0*CFw0**2
+  CFzet2LO=0.                                            !   set CFzet2LO to zero
+  CFrho=CFrho0
+  DO CFc=1,CFcTOT                                        !   start loop over cells
+    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
+    CFmu(CFc)=coeff*0.5d0*(CFzet2HI - CFzet2LO) !     compute CFm
+    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
+    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
+    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
+  ENDDO                                                  !   end loop over cells
+
+  CFmuTOT=coeff*CFzet2HI*0.5d0                            !   compute total line-density
+  CFsig=2.*CFrho0*CFw(CFcTOT)                             !   compute surface-density through spine
+ENDIF
+
+                                                         ! [] CASE p=1
+IF (CFschP==1) THEN                                      ! [IF] p=1, [THEN]
+  coeff=twopi*CFrho0*CFw0**2
+  CFzet2LO=0.                                            !   set CFzet2LO to zero
+  DO CFc=1,CFcTOT                                        !   start loop over cells
+    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
+    CFrho(CFc)=2.*CFrho0*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
+    CFmu(CFc)=coeff*(SQRT(1.+CFzet2HI)-SQRT(1.+CFzet2LO)) !     compute CFmu
+    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
+    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
+    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
+  ENDDO                                                  !   end loop over cells
+  CFmuTOT=coeff*(SQRT(1.+CFzet2HI)-1.)                    !   compute total line-density
+  CFsig=2.*CFrho0*CFw0*LOG((CFw(CFcTOT)/CFw0)+SQRT(1.+CFzet2HI))!   compute surface-density through spine
+ENDIF                                                    ! [ENDIF]
+                                                         ! [] CASE p=2
+IF (CFschP==2) THEN                                      ! [IF] p=2, [THEN]
+  coeff= pi*CFrho0*CFw0**2
+  CFzet2LO=0.                                            !   set CFzet2LO to zero
+  DO CFc=1,CFcTOT                                        !   start loop over cells
+    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
+    CFrho(CFc)=CFrho0*LOG((1.+CFzet2HI)/(1.+CFzet2LO))/(CFzet2HI-CFzet2LO)
+    CFmu(CFc)=coeff*LOG((1.+CFzet2HI)/(1.+CFzet2LO))      !     compute CFmu
+    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
+    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
+    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
+  ENDDO                                                  !   end loop over cells
+  CFmuTOT=coeff*LOG(1.+CFzet2HI)                          !   compute total line-density
+  CFsig=2.*CFrho0*CFw0*ATAN(CFw(CFcTOT)/CFw0)            !   compute surface-density through spine
+ENDIF                                                    ! [ENDIF]
+                                                         ! [] CASE p=3
+IF (CFschP==3) THEN                                      ! [IF] p=3, [THEN]
+  coeff= twopi*CFrho0*CFw0**2
+  CFzet2LO=0.                                            !   set CFzet2LO to zero
+  DO CFc=1,CFcTOT                                        !   start loop over cells
+    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
+    CFrho(CFc)=2.*CFrho0*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))/(CFzet2HI-CFzet2LO)
+    CFmu(CFc)=coeff*((1./SQRT(1.+CFzet2LO))-(1./SQRT(1.+CFzet2HI)))
+    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
+    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
+    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
+  ENDDO                                                  !   end loop over cells
+  CFmuTOT=coeff*(1.-(1./SQRT(1.+CFzet2HI))) !   compute total line-density
+  CFsig=2.*CFrho0*CFw(CFcTOT)/SQRT(1.+CFzet2HI)          !   compute surface-density through spine
+ENDIF                                                    ! [ENDIF]
+                                                         ! [] CASE p=4
+IF (CFschP==4) THEN                                      ! [IF] p=3, [THEN]
+  coeff=pi*CFrho0*CFw0**2
+  CFzet2LO=0.                                            !   set CFzet2LO to zero
+  DO CFc=1,CFcTOT                                        !   start loop over cells
+    CFzet2HI=(CFw(CFc)/CFw0)**2                          !     compute CFzet2HI (zeta^2)
+    CFrho(CFc)=CFrho0*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))/(CFzet2HI-CFzet2LO)
+    CFmu(CFc)=coeff*((CFzet2HI/(1.+CFzet2HI))-(CFzet2LO/(1.+CFzet2LO)))
+    CFzet2LO=CFzet2HI                                    !     update CFzet2LO
+    ! PGx(CFc)=(0.324078E-18)*CFw(CFc)                     !     rescale w to pc for PGPLOT
+    ! PGy(CFc)=(0.210775E+24)*CFrho(CFc)                   !     rescale rho to nH2/cm^3
+    IF ((CFprof==1).AND.(MOD(CFc,INT(DBLE(CFcTOT)/30.))==0))& ! print out .............
+    &WRITE (6,"(I7,7X,E11.3,X,E16.5,15X,E11.3,6X,E11.3,13X,E11.3,6X,E16.5)")&          ! ... selected points ...
+    &CFc,CFw(CFc),CFrho(CFc),CFmu(CFc),(0.155129E-15)*CFmu(CFc) ! ............ on profile
+  ENDDO                                                  !   end loop over cells
+  CFmuTOT=coeff*CFzet2HI/(1.+CFzet2HI)                     !   compute total line-density
+  CFsig=CFrho0*CFw0*(ATAN(CFw(CFcTOT)/CFw0)+(CFw(CFcTOT)/(CFw0*(1.+CFzet2HI)))) ! surface-density through spine
+ENDIF                                                    ! [ENDIF]
+
+IF((CFschP .lt. 0).or.(CFschP.gt. 4)) THEN
+  print*,"[@RT_SchusterDensities:] WARNING! FATAL! Density profiles only defined for&
+  & 0<= CFschP <= 4! Program will ABORT!"
+  STOP
+ENDIF
+
+write(1,"(4(A3,1x))") (/"rho","pos","shp","rh0"/)
+do CFc=1,CFcTOT
+  if (CFC ==1 ) THEN
+    write(1,"(ES18.5,1x,ES18.5,1x,ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc),dble(CFschP),CFrho0/)
+  else
+    write(1,"(ES18.5,1x,ES18.5,1x)") (/CFrho(CFc),dble(CFc)/)
+  endif
+enddo
+
+close(1)
+                                                         ! [] DIAGNOSTICS
+! IF (CFprof==1) THEN                                      ! [IF] diagnostics sanctioned, [THEN]
+  ! WRITE (6,"(/,3X,'TOTAL LINE-DENSITY:',16X,E10.3,' g/cm',7X,F10.3,' MSun/pc')") CFmuTOT,(0.155129E-15)*CFmuTOT
+  ! WRITE (6,"(3X,'CENTRAL SURFACE-DENSITY:',9X,E10.3,' g/cm^2',7X,E10.3,' H2/cm^2',/)") CFsig,(0.210775E+24)*CFsig
+  ! CALL PGBEG(0,'/XWINDOW',1,1)                           !   open PGPLOT to display on screen
+  ! !CALL PGBEG(0,'/PS',1,2)                                !   open PGPLOT to produce postscript
+  ! PGxMAX=1.1*PGx(CFcTOT)                                 !   compute maximum abscissa
+  ! PGyMAX=1.1*PGy(1)                                      !   compute maximum ordinate
+  ! CALL PGENV(0.0,PGxMAX,0.0,PGyMAX,0,0)                  !   construct frame
+  ! CALL PGLAB('\fiw\fn/pc','         \fin\fn\dH\d2\u\u/cm\u-3\d','SCHUSTER DENSITY PROFILE')
+  ! CALL PGLINE(CFcTOT,PGx,PGy)                            !   plot profile
+  ! DO CFc=1,40                                            !   start loop over sample points
+    ! PGx(CFc)=0.025*DBLE(CFc)*PGx(CFcTOT)                 !     compute abscissa of sample point
+    ! PGy(CFc)=(0.210775E+24)*CFrho0/((1.+((0.308568E+19) &!     compute ordinate ...
+              ! &*PGx(CFc)/CFw0)**2)**(DBLE(0.5*CFschP)))  !     .... of sample point
+  ! ENDDO                                                  !   end loop over sample points
+  ! CALL PGPT(40,PGx,PGy,0)                                !   plot sample points
+  ! CALL PGEND                                             !   close PGPLOT
+! ENDIF                                                    ! [ENDIF] plots made
+
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+END SUBROUTINE RT_Cyl1D_SchusterDensities
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

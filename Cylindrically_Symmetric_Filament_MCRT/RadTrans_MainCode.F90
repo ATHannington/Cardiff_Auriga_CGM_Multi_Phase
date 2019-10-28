@@ -236,23 +236,11 @@ do i=1,WLlTOT,1
   endif
 enddo
 
-! print*,"chibar/CFrho0",chibar/CFrho0
-! CFrho0 = CFrho0 * TAUconst/chiBar
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
-CFrho0 = CFrho0 * (TAUconst/(chiBar*CFsig))
+CFrho0 = (CFrho0*TAUconst)/(CFsig*WLchi(LPlFixed)*(1.d0-WLalb(LPlFixed)))
 
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
-! CFrhoTOT = 0.d0
-! do i=1,CFcTOT
-!   CFrhoTOT = CFrhoTOT + CFrho(i)
-! enddo
-! print*,"CFrhoTOT",CFrhoTOT
-! print*,"CFmuTOT",CFmuTOT
-! print*,"CFsig",CFsig
-! CFrho = (CFrho/CFrhoTOT)*RHOconst*(TAUconst/chiBar)
-! CFmu=(CFmu/CFmuTOT)*MUconst*(TAUconst/chiBar)
-! CFsig = SIGConst*(TAUconst/chiBar)
 
 !------------------------------------------------------------------------------!
 

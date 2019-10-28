@@ -145,6 +145,13 @@ def test_rt_cyl1d_injectisotropic():
     lptau_lpe(lptau,lpe)
 
     return
+
+
+
+def test_radii():
+    #Set up linearly spaced shells and squares of these values
+    TESTRADII = np.linspace(0.,f90const.cfwb,f90const.cfctot+1)
+    return TESTRADII
 #------------------------------------------------------------------------------#
 
 #------------------------------------------------------------------------------#
@@ -154,8 +161,8 @@ def test_rt_cyl1d_linearshellspacing():
 
     cfw,cfw2 = f90Sub.rt_cyl1d_linearshellspacing()
 
-    #Set up linearly spaced shells and squares of these values
-    RADIUSTEST = np.linspace(0.,f90const.cfwb,f90const.cfctot+1)
+    RADIUSTEST = test_radii()
+
     RADISUSSQUAREDTEST = np.array([r**2 for r in RADIUSTEST])
 
     #Check Radial boundaries
@@ -224,5 +231,69 @@ def test_rt_lumpack():
     wtldmlo=WAVELENGTHLOW,wtldmup=WAVELENGTHHIGH)
 
     rt_lumpack(wllem)
+
+    return
+
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+#       Tests on the Schuster Density Profiles Subroutine
+#           Here we check the physicallity of the returned values and
+#           check that the returned values for total line density and
+#           surface density are what we expect.
+#           We alsp check for that the density matches what is expected for
+#           the selected Schuster p value.
+#
+#      Note: ideally this test ought to be re-run for every value of 0 <= p <= 4
+#           which are varied upon compile time of the FORTRAN90 version using
+#           f2py. i.e. vary p, compile with f2py, run again. repeat.
+#------------------------------------------------------------------------------#
+def test_rt_cyl1d_schusterdensities():
+
+    RADIUSTEST = test_radii()
+
+    cfrho,cfmu,cfmutot,cfsig = f90Sub.rt_cyl1d_schusterdensities(cfw=RADIUSTEST)
+
+    #### Perform sanity checks
+        # Density returned is physical
+    assert np.any(np.isinf(cfrho)) == False,"Density is infinite error"
+    assert np.any(np.isnan(cfrho)) == False,"Density is NaN error"
+
+        # Line Density returned is physical
+    assert np.any(np.isinf(cfmu)) == False,"Line Density is infinite error"
+    assert np.any(np.isnan(cfmu)) == False,"Line Density is NaN error"
+
+        # Line Density Total returned is physical
+    assert math.isinf(cfmutot) == False,"Line Density TOTAL is infinite error"
+    assert math.isnan(cfmutot) == False,"Line Density TOTAL is NaN error"
+
+        # Surface Density Total returned is physical
+    assert math.isinf(cfsig) == False,"Surface Density TOTAL is infinite error"
+    assert math.isnan(cfsig) == False,"Surface Density TOTAL is NaN error"
+
+
+    ## Create Test list of density from definition of Schuster Profile
+    TESTDENSITY = np.array([f90const.cfrho0*(1.+((x/f90const.cfw0)**2))**(-1.*(float(f90const.cfschp))/2.) \
+    for x in RADIUSTEST[1:]])
+
+    ## Check Density generated meets expected density
+    assert np.all(np.where(cfrho == pytest.approx(TESTDENSITY,rel=1e-3), True, False)) == True,"Density does not meet expected function"
+
+    #Create a temporary table of: rho * 2 pi  * w for line density integrand
+    #       Note: The changes in indices are to account for the density being defined
+    #           within a region, and so having 1 less element
+    tmp_integrand_mu = np.array([cfrho[i-1]*2.0*math.pi*RADIUSTEST[i] for i in range(1,len(RADIUSTEST))])
+
+    #Numerically integrate for line density accounting for first boundary
+    testmu = integrate.simps(y=tmp_integrand_mu,x=RADIUSTEST[1:])
+    #Test equality to 1% tolerance
+    assert cfmutot == pytest.approx(testmu,rel=1e-2),"Line Density total does not meet tolerance: +/-1%"
+    del tmp_integrand_mu
+
+    #Numerically integrate for surface density accounting for first boundary
+    testsigma = 2.0 * integrate.simps(y=cfrho,x=RADIUSTEST[1:])
+    #Test equality to 5% tolerance --- not sure why this one has to be so much higher...
+    assert cfsig == pytest.approx(testsigma,rel=5e-2),"Surface Density total does not meet tolerance: +/-5%"
+
 
     return
