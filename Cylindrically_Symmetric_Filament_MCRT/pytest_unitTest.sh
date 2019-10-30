@@ -1,1 +1,1 @@
-pytest unitTest.py -v --tb=long
+pytest unitTest.py -v --tb=long --exitfirst

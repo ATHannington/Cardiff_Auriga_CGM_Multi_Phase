@@ -248,6 +248,14 @@ def test_rt_lumpack():
 #           which are varied upon compile time of the FORTRAN90 version using
 #           f2py. i.e. vary p, compile with f2py, run again. repeat.
 #------------------------------------------------------------------------------#
+def test_schuster_p_check():
+    p = int(f90const.cfschp)
+    if ((p<0) or (p>4)):
+        assert p >= 0,"Schuster p Failure! 0<=p<=4"
+        assert p <= 4,"Schuster p Failure! 0<=p<=4" 
+
+    return
+
 def test_rt_cyl1d_schusterdensities():
 
     RADIUSTEST = set_radii()
@@ -272,6 +280,8 @@ def test_rt_cyl1d_schusterdensities():
     assert math.isnan(cfsig) == False,"Surface Density TOTAL is NaN error"
 
 
+    ###### Test Density profiles #####
+
     ## Create Test list of density from definition of Schuster Profile
     TESTDENSITY = np.array([f90const.cfrho0*(1.+((x/f90const.cfw0)**2))**(-1.*(float(f90const.cfschp))/2.) \
     for x in RADIUSTEST[:len(RADIUSTEST)-1]])
@@ -284,6 +294,11 @@ def test_rt_cyl1d_schusterdensities():
     #           within a region, and so having 1 less element
     tmp_integrand_mu = np.array([TESTDENSITY[i]*2.0*math.pi*RADIUSTEST[i] for i in range(0,len(RADIUSTEST)-1)])
 
+
+
+
+    ###### Test that line and surface density from  Python integrals match F90 result #####
+
     #Numerically integrate for line density accounting for first boundary
     testmu = integrate.simps(y=tmp_integrand_mu,x=RADIUSTEST[:len(RADIUSTEST)-1])
     #Test equality to 0.1% tolerance
@@ -295,5 +310,29 @@ def test_rt_cyl1d_schusterdensities():
     #Test equality to 0.1% tolerance
     assert cfsig == pytest.approx(testsigma,rel=1e-3),"Surface Density total does not meet tolerance: +/-0.1%"
 
+
+
+
+    ##### Check F90 against analytic results #####
+
+    zeta = float((f90const.cfwb)/(f90const.cfw0))
+    p = int(f90const.cfschp)
+    MUCONST = 2.*math.pi*(f90const.cfrho0)*((f90const.cfw0)**2)
+    SIGCONST = 2.*(f90const.cfrho0)*(f90const.cfw0)
+    if (p == 0):
+        assert cfmutot == pytest.approx((MUCONST*(zeta**2)*0.5)),f"Analytic Check: Schuster P={p:.0f} cfmutot does not equal analytic within 0.1% tolerance"
+        assert cfsig == pytest.approx(SIGCONST*zeta),f"Analytic Check: Schuster P={p:.0f} cfsig does not equal analytic within 0.1% tolerance"
+    elif (p == 1):
+        assert cfmutot == pytest.approx( (MUCONST*(((1.+ zeta**2)**(0.5))-1.)) ),f"Analytic Check: Schuster P={p:.0f} cfmutot does not equal analytic within 0.1% tolerance"
+        assert cfsig == pytest.approx((SIGCONST*(math.log( zeta+((1.+ zeta**2)**(0.5)) )))),f"Analytic Check: Schuster P={p:.0f} cfsig does not equal analytic within 0.1% tolerance"
+    elif (p == 2):
+        assert cfmutot == pytest.approx((MUCONST*((math.log(1.+ zeta**2))*0.5))),f"Analytic Check: Schuster P={p:.0f} cfmutot does not equal analytic within 0.1% tolerance"
+        assert cfsig == pytest.approx(SIGCONST*(math.atan(zeta))),f"Analytic Check: Schuster P={p:.0f} cfsig does not equal analytic within 0.1% tolerance"
+    elif (p == 3):
+        assert cfmutot == pytest.approx( (MUCONST*(1.-((1.+ zeta**2)**(-0.5)))) ),f"Analytic Check: Schuster P={p:.0f} cfmutot does not equal analytic within 0.1% tolerance"
+        assert cfsig == pytest.approx(SIGCONST*(zeta/((1.+zeta**2)**(0.5)))),f"Analytic Check: Schuster P={p:.0f} cfsig does not equal analytic within 0.1% tolerance"
+    elif (p == 4):
+        assert cfmutot == pytest.approx((MUCONST*(0.5*(zeta**2)/(1.+zeta**2)))),f"Analytic Check: Schuster P={p:.0f} cfmutot does not equal analytic within 0.1% tolerance"
+        assert cfsig == pytest.approx(SIGCONST*0.5*(math.atan(zeta) + (zeta/((1.+zeta**2))))),f"Analytic Check: Schuster P={p:.0f} cfsig does not equal analytic within 0.1% tolerance"
 
     return
