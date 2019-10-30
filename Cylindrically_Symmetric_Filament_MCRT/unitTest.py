@@ -250,9 +250,9 @@ def test_rt_lumpack():
 #------------------------------------------------------------------------------#
 def test_schuster_p_check():
     p = int(f90const.cfschp)
-    if ((p<0) or (p>4)):
-        assert p >= 0,"Schuster p Failure! 0<=p<=4"
-        assert p <= 4,"Schuster p Failure! 0<=p<=4" 
+    
+    assert p >= 0,"Schuster p Failure! p<0! 0<=p<=4"
+    assert p <= 4,"Schuster p Failure! p>4! 0<=p<=4"
 
     return
 
