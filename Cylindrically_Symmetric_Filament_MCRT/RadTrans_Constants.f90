@@ -19,7 +19,7 @@ module CONSTANTS
     REAL(KIND=8),parameter            :: DGkapM=0.20000E+03                     ! volume opacity, only for pure scattering (1/cm)
 
                                                                                 ! WAVELENGTHS [WL]
-    REAL(KIND=8),parameter            :: WLdelta=1.0e-1                          ! logarithmic spacing of optical properties
+    REAL(KIND=8),parameter            :: WLdelta=1.0e-1                         ! logarithmic spacing of optical properties
     REAL(KIND=8),parameter            :: WLdcl=0.10                             ! weight of slope-change
               INTEGER,parameter                    :: WLprint=0                 ! flag to trigger printing of dust properties
               INTEGER,parameter                    :: WLplot=0                  ! flag to trigger plotting of dust properties
@@ -47,7 +47,7 @@ module CONSTANTS
 
 
 
-    Real(kind=8)                      :: TAUconst = 5.d2
+    Real(kind=8)                      :: TAUconst = 1.d0
     ! Real(kind=8)                      :: RHOconst = 1.d-18
     ! Real(kind=8)                      :: MUconst = 1.d+17
     ! Real(kind=8)                      :: SIGconst = 1.d-1

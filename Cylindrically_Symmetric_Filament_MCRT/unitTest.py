@@ -148,7 +148,7 @@ def test_rt_cyl1d_injectisotropic():
 
 
 
-def test_radii():
+def set_radii():
     #Set up linearly spaced shells and squares of these values
     TESTRADII = np.linspace(0.,f90const.cfwb,f90const.cfctot+1)
     return TESTRADII
@@ -161,7 +161,7 @@ def test_rt_cyl1d_linearshellspacing():
 
     cfw,cfw2 = f90Sub.rt_cyl1d_linearshellspacing()
 
-    RADIUSTEST = test_radii()
+    RADIUSTEST = set_radii()
 
     RADISUSSQUAREDTEST = np.array([r**2 for r in RADIUSTEST])
 
@@ -250,7 +250,7 @@ def test_rt_lumpack():
 #------------------------------------------------------------------------------#
 def test_rt_cyl1d_schusterdensities():
 
-    RADIUSTEST = test_radii()
+    RADIUSTEST = set_radii()
 
     cfrho,cfmu,cfmutot,cfsig = f90Sub.rt_cyl1d_schusterdensities(cfw=RADIUSTEST)
 
@@ -274,7 +274,7 @@ def test_rt_cyl1d_schusterdensities():
 
     ## Create Test list of density from definition of Schuster Profile
     TESTDENSITY = np.array([f90const.cfrho0*(1.+((x/f90const.cfw0)**2))**(-1.*(float(f90const.cfschp))/2.) \
-    for x in RADIUSTEST[1:]])
+    for x in RADIUSTEST[:len(RADIUSTEST)-1]])
 
     ## Check Density generated meets expected density
     assert np.all(np.where(cfrho == pytest.approx(TESTDENSITY,rel=1e-3), True, False)) == True,"Density does not meet expected function"
@@ -282,18 +282,18 @@ def test_rt_cyl1d_schusterdensities():
     #Create a temporary table of: rho * 2 pi  * w for line density integrand
     #       Note: The changes in indices are to account for the density being defined
     #           within a region, and so having 1 less element
-    tmp_integrand_mu = np.array([cfrho[i-1]*2.0*math.pi*RADIUSTEST[i] for i in range(1,len(RADIUSTEST))])
+    tmp_integrand_mu = np.array([TESTDENSITY[i]*2.0*math.pi*RADIUSTEST[i] for i in range(0,len(RADIUSTEST)-1)])
 
     #Numerically integrate for line density accounting for first boundary
-    testmu = integrate.simps(y=tmp_integrand_mu,x=RADIUSTEST[1:])
-    #Test equality to 1% tolerance
-    assert cfmutot == pytest.approx(testmu,rel=1e-2),"Line Density total does not meet tolerance: +/-1%"
+    testmu = integrate.simps(y=tmp_integrand_mu,x=RADIUSTEST[:len(RADIUSTEST)-1])
+    #Test equality to 0.1% tolerance
+    assert cfmutot == pytest.approx(testmu,rel=1e-3),"Line Density total does not meet tolerance: +/-0.1%"
     del tmp_integrand_mu
 
     #Numerically integrate for surface density accounting for first boundary
-    testsigma = 2.0 * integrate.simps(y=cfrho,x=RADIUSTEST[1:])
-    #Test equality to 5% tolerance --- not sure why this one has to be so much higher...
-    assert cfsig == pytest.approx(testsigma,rel=5e-2),"Surface Density total does not meet tolerance: +/-5%"
+    testsigma = 2.0 * integrate.simps(y=TESTDENSITY,x=RADIUSTEST[:len(RADIUSTEST)-1])
+    #Test equality to 0.1% tolerance
+    assert cfsig == pytest.approx(testsigma,rel=1e-3),"Surface Density total does not meet tolerance: +/-0.1%"
 
 
     return
