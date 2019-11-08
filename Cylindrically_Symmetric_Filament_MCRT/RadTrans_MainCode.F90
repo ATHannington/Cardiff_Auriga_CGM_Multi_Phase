@@ -238,7 +238,7 @@ enddo
 
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
-CFrho0 = (CFrho0*TAUconst)/(CFsig*WLchi(LPlFixed)*(1.d0-WLalb(LPlFixed)))
+CFrho0 = (CFrho0*TAUconst)/(CFsig*chiBar*(1.d0-WLalb(LPlFixed)))
 
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
