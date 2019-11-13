@@ -21,13 +21,12 @@ fig = plt.figure(figsize=(8, 8))
 
 # Pre-set maximum for colorscales
 VMAX = {}
-VMAX[1] = 10.
-VMAX[30] = 100.
-VMAX[100] = 2000.
-VMAX[300] = 2000.
-
+VMAX[100] = np.nanpercentile(image.val[:, :, np.argmin(np.abs(100 - image.wav))],99.)
+VMAX[300] = np.nanpercentile(image.val[:, :, np.argmin(np.abs(300 - image.wav))],99.)
+VMAX[400] = np.nanpercentile(image.val[:, :, np.argmin(np.abs(400 - image.wav))],99.)
+VMAX[500] = np.nanpercentile(image.val[:, :, np.argmin(np.abs(500 - image.wav))],99.)
 # We will now show four sub-plots, each one for a different wavelength
-for i, wav in enumerate([1, 30, 100, 300]):
+for i, wav in enumerate([100, 300, 400, 500]):
 
     ax = fig.add_subplot(2, 2, i + 1)
 
