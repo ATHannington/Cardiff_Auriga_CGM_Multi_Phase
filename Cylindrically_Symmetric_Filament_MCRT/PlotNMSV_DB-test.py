@@ -1,3 +1,21 @@
+"""
+Title:              PlotNMSV_DB-test.py
+Created by:         Andrew T. Hannington
+Use with:           RadTrans_*.f90
+                        Created by: A. P. Whitworth et al.
+
+Date Created:       05/04/2019
+
+Usage Notes:
+            Plots Number of absorptions against cell mass
+            Plots Number of Lucy Interactions against Cell Volume
+            These *should* be linear relations.
+
+Known bugs:
+			These plots are not linear in some cases...
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd

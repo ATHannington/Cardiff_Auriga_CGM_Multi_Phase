@@ -1,3 +1,35 @@
+!
+! Title:              RadTrans_Subroutines.f90
+! Created by:         A. P. Whitworth
+!                     A. T. Hannington
+!
+! Use with:           RadTrans_*.f90
+!
+! Date Created:       2018
+!
+! Usage Notes:
+!            To run directly:
+!                  gfortran -o3 -o run RadTrans_MainCode.f90
+!                  RadTrans_Subroutines.f90 RadTrans_Constants.f90
+!
+!           Recommended running is through the associated Makefile:
+!              To make and run:
+!                  make clean
+!                  make
+!                  ./run
+!             To debug:
+!                  make clean
+!                  make debug
+!                  ./run
+!
+! Known Bugs:
+!            Constant optical depth system producing number of interactions not
+!            consistent with optical depth set.
+!            I believe this to be an issue with the average chi value. Analytic
+!            forms of the equations to find this value have been given, but
+!            not implemented.
+!
+
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE RT_DustPropertiesFromDraine(WLlTOT,WLlam,WLdlam,WLchi,WLalb)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -899,22 +931,9 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   CFc=CFcTOT                                             !   set shell ID to n_TOT (outermost shell)
   DO WHILE (CFc<=CFcTOT)                                 !   keep going until packet exits filament
     CFcc=CFc                                             !     record ID of shell being entered
-    LPe1122=LPe(1)**2+LPe(2)**2                          !     compute e_x^2+e_y^2
-    alpha=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122      !     compute 'outwardness' (r_x*e_x)+(r_y*e_y)
-    IF (alpha>0.) THEN                                   !     [IF] travelling outward, [THEN]
-      LPs=-alpha+                                       &!       compute .......
-      &SQRT(alpha**2+((CFw2(CFc)-CFw2(CFc-1))/LPe1122))  !       ... path-length
-      CFc=CFc+1                                          !       increase shell ID
-    ELSE                                                 !     [ELSE] travelling inward, so
-      beta=alpha**2-((CFw2(CFc)-CFw2(CFc-1))/LPe1122)    !       compute beta, and
-      IF (beta>0.) THEN                                  !       [IF] beta>0, [THEN] hits inner shell
-        LPs=-alpha-SQRT(beta)                            !         compute path
-        CFc=CFc-1                                        !         decrease shell ID
-      ELSE                                               !       [ELSE] traverses shell, so
-        LPs=-2.*alpha                                    !         compute path
-        CFc=CFc+1                                        !         increase shell ID
-      ENDIF                                              !       [ENDIF] inward cases done
-    ENDIF                                                !     [ENDIF] all cases done
+    CALL RT_Cyl1D_RayTrace_CellSelect(LPr,LPe,LPr1122, &
+    &CFW2,CFcc,CFc,LPs)                                  ! Calculate new cell for photon packet based on current location
+                                                          !and trajectory. Return new cell ID and LP distance to travel LPs
     LPr(1:2)=LPr(1:2)+(LPs*LPe(1:2))                     !     advance position of packet
     LPr1122=(LPr(1)**2)+(LPr(2)**2)                      !     compute squared distance from spine
     RFj(CFcc)=RFj(CFcc)+LPs                              !     increment mean intensity
@@ -1013,23 +1032,9 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
   DO WHILE (CFc<=CFcTOT)                                 !   keep going until packet exits filament
     CFcc=CFc                                             !     record ID of shell being entered
-    LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
-    alpha=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122      !     compute 'outwardness'
-    IF (alpha>0.) THEN                                   !     [IF] travelling outward, [THEN]
-      LPs=-alpha+                                       &!       compute .......
-      &SQRT(alpha**2+((CFw2(CFc)-LPr1122)/LPe1122))      !       ... path length
-      CFc=CFc+1                                          !       increase shell ID
-    ELSE                                                 !     [ELSE] travelling inward, so
-      beta=alpha**2+((CFw2(CFc-1)-LPr1122)/LPe1122)      !       compute beta, and
-      IF (beta>0.) THEN                                  !       [IF] beta>0, [THEN] hits inner shell
-        LPs=-alpha-SQRT(beta)                            !         compute path
-        CFc=CFc-1                                        !         decrease shell ID
-      ELSE                                               !       [ELSE] traverses shell, so
-        LPs=-alpha+                                     &!         compute .......
-        &SQRT(alpha**2+(CFw2(CFc)-LPr1122)/LPe1122)      !         ... path length
-        CFc=CFc+1                                        !         increase shell ID
-      ENDIF                                              !       [ENDIF] inward cases done
-    ENDIF                                                !     [ENDIF] all cases done
+    CALL RT_Cyl1D_RayTrace_CellSelect(LPr,LPe,LPr1122, &
+    &CFW2,CFcc,CFc,LPs)                                  ! Calculate new cell for photon packet based on current location
+                                                          !and trajectory. Return new cell ID and LP distance to travel LPs
     IF (LPsTAU<LPs) THEN                                 !     [IF] range of packet too small
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
       RFj(CFcc)=RFj(CFcc)+LPsTAU                         !     increment sum on intercept lengths
@@ -1167,23 +1172,9 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
   DO WHILE (CFc<=CFcTOT)                                 !   keep going until packet exits filament
     LPsTAU=LPtau/(CFrho(CFc)*DGkapM)                     !     convert optical depth to distance
     CFcc=CFc                                             !     record ID of shell being entered
-    LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
-    alpha=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122      !     compute 'outwardness'
-    IF (alpha>0.) THEN                                   !     [IF] travelling outward, [THEN]
-      LPs=-alpha+                                       &!       compute .......
-      &SQRT(alpha**2+((CFw2(CFc)-LPr1122)/LPe1122))      !       ... path length
-      CFc=CFc+1                                          !       increase shell ID
-    ELSE                                                 !     [ELSE] travelling inward, so
-      beta=alpha**2+((CFw2(CFc-1)-LPr1122)/LPe1122)      !       compute beta, and
-      IF (beta>0.) THEN                                  !       [IF] beta>0, [THEN] hits inner shell
-        LPs=-alpha-SQRT(beta)                            !         compute path
-        CFc=CFc-1                                        !         decrease shell ID
-      ELSE                                               !       [ELSE] traverses shell, so
-        LPs=-alpha+                                     &!         compute .......
-        &SQRT(alpha**2+(CFw2(CFc)-LPr1122)/LPe1122)      !         ... path length
-        CFc=CFc+1                                        !         increase shell ID
-      ENDIF                                              !       [ENDIF] inward cases done
-    ENDIF                                                !     [ENDIF] all cases done
+    CALL RT_Cyl1D_RayTrace_CellSelect(LPr,LPe,LPr1122, &
+    &CFW2,CFcc,CFc,LPs)                                  ! Calculate new cell for photon packet based on current location
+                                                          !and trajectory. Return new cell ID and LP distance to travel LPs
     IF (LPsTAU<LPs) THEN                                 !     [IF] range of packet too small
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
       RFj(CFcc)=RFj(CFcc)+LPsTAU                         !     increment sum on intercept lengths
@@ -1341,12 +1332,10 @@ INTEGER,DIMENSION(0:CFcTOT)                 :: CFk       ! ID of temperature jus
 REAL(KIND=8),DIMENSION(1:CFcTOT)            :: cfLgo     ! cell luminosity above which temperature is updated
 REAL(KIND=8)                                :: CFw2B     ! squared boundary radius (pc^2)
 REAL(KIND=8)                                :: LPalb     ! albedo of luminosity packet
-REAL(KIND=8)                                :: LPalfa    ! 'outwardness' of packet (pc)
-REAL(KIND=8)                                :: LPbeta    ! squared tangent-distance (pc^2)
 REAL(KIND=8)                                :: LPchi     ! extinction opacity of luminosity packet
 REAL(KIND=8)                                :: LPdeltaL    ! line-luminosity of a luminosity packet
 REAL(KIND=8),DIMENSION(1:3)                 :: LPe       ! direction of luminosity packet (unit vector)
-REAL(KIND=8)                                :: LPe1122   ! e_x^2+e_y^2
+! REAL(KIND=8)                                :: LPe1122   ! e_x^2+e_y^2
 INTEGER                                     :: LPl       ! wavelength-ID of luminosity packet
 INTEGER                                     :: LPp       ! dummy ID of luminosity packet
 REAL(KIND=8),DIMENSION(1:3)                 :: LPr       ! position of luninosity packet
@@ -1383,8 +1372,7 @@ Real(kind=8)                                :: LmRatio
 
 character(len=40)                           :: tmpFilename = "db_N-a_S-i_M-c_V-c_T-e_P-t_W-f.csv"
 Real(kind=8)                                :: CFv
-integer(kind=4)                             :: LPlFixed     !Fixed wavelength index at roughly below wavelength value
-Real(kind=8)                                :: WLfixed = 300.d0 !Fixed 300 microns wavelength
+integer(kind=4)                             :: LPlFixed     !Fixed wavelength index of wavelength for peak of BB
 
 
 Real(kind=8),DIMENSION(1:CFcTOT)            :: errLucy,errStnd
@@ -1409,31 +1397,21 @@ cfLgo(1:CFcTOT)=CFmu(1:CFcTOT)*teLMmb(BGkGO)
 LPnScatter = 0
 LPnAbsorb = 0
 LucyInter = 0
-
-
-!Diagnostics print statements
-!print*," "
-!print*,"teT(BGkBB)",teT(BGkBB)
-!print*,"teT(BGkGO) cfLgo temp = ", teT(BGkGO), " K"
-!print*,"cell initialised temp cfT(1)",cfT(1)," K"
-!print*," "
-!print*,"cfLgo(1)",cfLgo(1)
-!print*,"LPdeltaL",LPdeltaL
-!print*," "
+LPnScaTOT=0;LPnAbsTOT=0; LPnInterTOT=0; LucyInterTOT=0;
 
 !Sanity Check: If this condition isn't met we will overshoot
 ! cfLgo when increasing temperature, and temperature errors will occur!!
 IF(cfLgo(1).lt.LPdeltaL) then
-print*,"WARNING[@Detailed-Balance]: Luminosity condition FALSE!!! CFlGO < LPdeltaL! Please Adjust BGkGO!"
+  !Error warning
+  print*,"WARNING[@Detailed-Balance]: Luminosity condition FALSE!!! CFlGO < LPdeltaL! Please Adjust BGkGO!"
 ENDIF
-! NMeIN=0;   MUeIN=0.;   SDeIN=0.                          ! *****
-! NMeSC=0;   MUeSC=0.;   SDeSC=0.                          ! *****
-! NMtau=0;   MUtau=0.;   SDtau=0.                          ! *****
+
+
+!-------------------------------------------------------------------------------
+!     BEGIN MCRT!
+!-------------------------------------------------------------------------------
 DO LPp=1,LPpTOT                                          ! start loop over luminosity packets
-  CALL RT_Cyl1D_InjectIsotropic                         &!   generate and inject ...
-  &                  (LPr,LPr1122,LPe,LPtau)        !   ... a luminosity packet
-  ! NMeIN=NMeIN+1;   MUeIN(1:3)=MUeIN(1:3)+ABS(LPe(1:3));   SDeIN(1:3)=SDeIN(1:3)+(LPe(1:3)**2) ! *****
-  ! NMtau=NMtau+1;   MUtau=MUtau+LPtau;                     SDtau=SDtau+(LPtau**2)              ! *****
+  CALL RT_Cyl1D_InjectIsotropic(LPr,LPr1122,LPe,LPtau)   ! generate and inject a luminosity packet
 
   CFc=CFcTOT                                             !   set shell ID to CFcTOT (outermost shell)
 
@@ -1446,26 +1424,10 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
     LPsTAU=LPtau/(CFrho(CFc)*LPchi)                      !     convert optical depth to distance
     CFcc=CFc                                             !     record ID of shell being entered
-    LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
-    LPalfa=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122     !     compute 'outwardness'
-    IF (LPalfa>0.) THEN                                  !     [IF] travelling outward, [THEN]
-      LPs=-LPalfa+                                      &!       compute .......
-      &SQRT(LPalfa**2+((CFw2(CFc)-LPr1122)/LPe1122))     !       ... path length
-      CFc=CFc+1                                          !       increase shell ID
 
-    ELSE                                                 !     [ELSE] travelling inward, so
-      LPbeta=LPalfa**2+((CFw2(CFc-1)-LPr1122)/LPe1122)   !       compute beta, and
-      IF (LPbeta>0.) THEN                                !       [IF] LPbeta>0, [THEN] hits inner shell
-        LPs=-LPalfa-SQRT(LPbeta)                         !         compute path
-        CFc=CFc-1                                        !         decrease shell ID
-
-      ELSE                                               !       [ELSE] traverses shell, so
-        LPs=-LPalfa+                                    &!         compute .......
-        &SQRT(LPalfa**2+(CFw2(CFc)-LPr1122)/LPe1122)     !         ... path length
-        CFc=CFc+1                                        !         increase shell ID
-
-      ENDIF                                              !       [ENDIF] inward cases done
-    ENDIF                                                !     [ENDIF] all cases done
+    CALL RT_Cyl1D_RayTrace_CellSelect(LPr,LPe,LPr1122, &
+    &CFW2,CFcc,CFc,LPs)                                  ! Calculate new cell for photon packet based on current location
+                                                          !and trajectory. Return new cell ID and LP distance to travel LPs.
 
     IF (LPsTAU<LPs) THEN                                 !     [IF] range of packet too small
       LPr(1:2)=LPr(1:2)+LPsTAU*LPe(1:2)                  !       advance position
@@ -1473,7 +1435,9 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
 
       LPnScatter(CFcc) = LPnScatter(CFcc) + 1
+      LPnScaTOT = LPnScaTOT + 1
       LucyInter(CFc) = LucyInter(CFc) + 1
+      LucyInterTOT = LucyInterTOT + 1
 
       RFjLAM(LPl,CFc)=RFjLAM(LPl,CFc)+LPsTAU             !     increment sum on intercept lengths
 
@@ -1485,6 +1449,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       IF (LRD>LPalb) THEN
 
         LPnAbsorb(CFc) = LPnAbsorb(CFc) + 1
+        LPnAbsTOT = LPnAbsTOT + 1
 
         cfL(CFc)=cfL(CFc)+LPdeltaL
         IF (cfL(CFc)<cfLgo(CFc)) THEN
@@ -1527,6 +1492,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
       LPr(1:2)=LPr(1:2)+LPs*LPe(1:2)                     !       advance position to shell boundary
       RFjLAM(LPl,CFcc)=RFjLAM(LPl,CFcc)+LPs              !       increment sum of intercept lengths => This can be used for Lucy 1999 method of mean intensity tracking
       LucyInter(CFcc) = LucyInter(CFcc) + 1
+      LucyInterTOT = LucyInterTOT + 1
       LPtau=LPtau-LPs*CFrho(CFcc)*LPchi                  !       reduce remaining optical depth
     ENDIF
     LPr1122=LPr(1)**2+LPr(2)**2                          !     compute distance from spine
@@ -1539,15 +1505,7 @@ DO LPp=1,LPpTOT                                          ! start loop over lumin
 
 ENDDO                                                    ! end loop over luminosity packets
 
-
-
-LPnScaTOT=0;LPnAbsTOT=0; LPnInterTOT=0; LucyInterTOT=0;
-do CFc=1,CFcTOT,1
-    LPnScaTOT = LPnScaTOT + LPnScatter(CFc)
-    LPnAbsTOT = LPnAbsTOT + LPnScatter(CFc)
-    LucyInterTOT = LucyInterTOT + LucyInter(CFc)
-ENDDO
-
+! Total number of standard method interactions : sum of scatters and absorbs
 LPnInterTOT = LPnScaTOT + LPnAbsTOT
 
 !------------------------------------------------------------------------------
@@ -1568,116 +1526,211 @@ do CFc=1,CFcTOT,1
     errStnd(CFC) = cfT(CFc)*(1.d0/(SQRT(dble(LPnAbsorb(CFc)))))
 enddo
 
-!print*,
-!print*,"Lucy intercept added temp: rfTemp(LPl,CFc):"
-!do CFc=1,CFcTOT,1
-!   IF(rfTemp(CFc).ne.0.d0) THEN
-!       print*,"CFc",CFc
-!       print*,"temp",rfTemp(CFc)
-!   ENDIF
-!enddo
-!print*," "
 
-lamMax = (0.288*(1.d4))/teT(BGkBB)
+! Get wavelength at peak of BB at temp BGkBB and corresponding chi
+call RT_BBPeak_AverageAbsCoeff(teT,BGkBB,WLlTOT,WLlam,WLchi,lamMax,chiBar,LPlFixed)
 
-do i=1,WLlTOT,1
-  If(WLlam(i) .ge. lamMax) THEN
-    LPlFixed = i
-    chiBar = WLchi(i)
-    EXIT
-  endif
+!Approximate average optical depth
+tauBar = (1.d0 - WLalb(LPlFixed))*chiBar*CFsig
+
+
+!-------------------------------------------------------------------------------
+!   Save debug data on Number of absorbs, Lucy intercepts, Mass per cell, volume
+!   per cell, equilibrium temperature, number of LP packets, Peak Wavelength
+!-------------------------------------------------------------------------------
+! open(1, file=adjustl(trim(tmpFilename)))
+!
+! print*, "Writing: "
+! print*, tmpFilename
+!
+! write(1,"(7(A3,1x))") (/"N-a","S-i","M-c","V-c","T-e","P-t","W-f"/)
+!
+! do i=1,CFcTOT
+!   CFv = pi *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
+!   CFv = CFv*((cmtopc)**2)
+!   if (i==1) THEN
+!     write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
+!     & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
+!   ELSE
+!     write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
+!     & ,CFv/)
+!   endif
+! enddo
+! close(1)
+! print*,"Written!"
+! print*,""
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+!       Save temperature data and associated errors
+!-------------------------------------------------------------------------------
+print*,"Saving Temperatures versus cells:"
+print*,"Filename = ", CellTempFilename
+OPEN(1,file=trim(adjustl(CellTempFilename)),&
+& iostat=readcheck)
+IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
+WRITE(1,"(8(A4,1x))") (/"cell","temp","lucy","ErrL","ErrS","EquT","PTOT"/)
+do i = 1, CFcTOT
+    IF (i.eq.1) then
+        WRITE(1,"(6(F18.10,1x),F10.0)") &
+        &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i),teT(BGkBB),dble(LPpTOT)/)
+    ELSE
+        WRITE(1,"(5(F18.10,1x))") &
+        &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i)/)
+    ENDIF
 enddo
+close(1)
 
-tauBar = chiBar*CFsig
-
-
+!-------------------------------------------------------------------------------
 
 If (DBTestFlag == 1) then
+  WRITE (6,"(/,3X,'TEST CASE 3: SCHUSTER OPACITY, DETAILED BALANCE TEST.')")
+  PRINT*,"RETURNS: Cell temperature data and associated errors"
+  PRINT*,"  "
   print*,"-+-+-+-+-"
-  !print*,"Ant's Diagnostics:"
-  !print*," "
-  !Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
-  !WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
-  !Print*,"TEkTOT,BGfBB,teT(BGkBB)"
-  !WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
-  !Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
-  !WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
-  !print*,"LPpTOT,LPpTOT"
-  !WRITE (*,*) LPpTOT,LPpTOT
+  print*,"Ant's Diagnostics:"
+  print*," "
+  Print*,"CFcTOT,CFwB,CFw(CFcTOT)"
+  WRITE (*,*) CFcTOT,CFwB,CFw(CFcTOT)
+  Print*,"TEkTOT,BGfBB,teT(BGkBB)"
+  WRITE (*,*) TEkTOT,BGfBB,teT(BGkBB)
+  Print*,"WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)"
+  WRITE (*,*) WLlTOT,WLlTOT/3,WLlam(WLlTOT/3),WLchi(WLlTOT/3),WLalb(WLlTOT/3)
+  print*,"LPpTOT,LPpTOT"
+  WRITE (*,*) LPpTOT,LPpTOT
 
   print*," "
   print*,"ATH diag:"
   print*," "
-  print*,"The temperature of each cell:"
+  print*,"The temperature of each of below cells:"
   print*,"cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)"
   print*,cfT(1),cfT(CFcTOT/2),cfT(CFcTOT)
   print*," "
+  print*,"lamMax [microns]",lamMax
+  print*," "
   print*,"LucyInterTOT",LucyInterTOT,"LPnInterTOT",LPnInterTOT
   print*,"LPnInterTOT/LPpTOT",dble(LPnInterTOT)/dble(LPpTOT)
-  print*,"lamMax",lamMax
   print*,"tauBar",tauBar
+  print*,
+  print*," "
   print*,"LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)"
   print*,LPnScatter(1), LPnScatter(CFcTOT/2), LPnScatter(CFcTOT)
   print*," "
   print*,"LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)"
   print*,LPnAbsorb(1), LPnAbsorb(CFcTOT/2), LPnAbsorb(CFcTOT)
   print*," "
-
-
-
-!-------------------------------------------------------------------------------
-  !Find WLl nearest to WLfixed wavelength
-  do i=1,WLlTOT
-    if (WLlam(i) .le. WLfixed) THEN
-        LPlFixed = i
-    ELSE
-        EXIT
-    ENDIF
-  enddo
-
-  open(1, file=adjustl(trim(tmpFilename)))
-
-  print*, "Writing: "
-  print*, tmpFilename
-
-  write(1,"(7(A3,1x))") (/"N-a","S-i","M-c","V-c","T-e","P-t","W-f"/)
-
-  do i=1,CFcTOT
-    CFv = pi *(CFw2B)*(((dble(i)**2) - (dble(i-1)**2))/dble(CFcTOT**2))
-    CFv = CFv*((cmtopc)**2)
-    if (i==1) THEN
-      write(1,"(7(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
-      & ,CFv,teT(BGkBB),dble(LPpTOT),dble(WLlam(LPlFixed))/)
-    ELSE
-      write(1,"(4(F20.8,1x))") (/dble(LPnAbsorb(i)),dble(RFjLAM(LPlFixed,i)),CFmu(i)*(gcmtomsolpc) &
-      & ,CFv/)
-    endif
-  enddo
-  close(1)
-  print*,"Written!"
-  print*,""
-!-------------------------------------------------------------------------------
-
-  print*,"Saving Temperatures versus cells:"
-  print*,"Filename = ", CellTempFilename
-  OPEN(1,file=trim(adjustl(CellTempFilename)),&
-  & iostat=readcheck)
-  IF (readcheck.ne.0) print*,"WARNING: [@detailed-balance Temp print] failed iostat check!"
-  WRITE(1,"(8(A4,1x))") (/"cell","temp","lucy","ErrL","ErrS","EquT","PTOT"/)
-  do i = 1, CFcTOT
-      IF (i.eq.1) then
-          WRITE(1,"(6(F18.10,1x),F10.0)") &
-          &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i),teT(BGkBB),dble(LPpTOT)/)
-      ELSE
-          WRITE(1,"(5(F18.10,1x))") &
-          &(/dble(i),cfT(i),rfTemp(i),errLucy(i),errStnd(i)/)
-      ENDIF
-  enddo
-  close(1)
 ENDIF
+
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END SUBROUTINE RT_Cyl1DSchuster_DetailedBalance
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBROUTINE RT_Cyl1D_RayTrace_CellSelect(LPr,LPe,LPr1122,CFW2,CFcIN,CFcOUT,LPs)
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!
+! Subroutine for calculating new cell location of a LP at location LPr, radius
+! LPr1122, moving in direction of LPe, currently in cell CFcIN
+!~~~~~~~
+! Takes:
+!~~~~~~~
+! LP Location:                                                LPr
+! LP Direction:                                               LPe
+! LP Radial distance from centre of filament:                 LPr1122
+! Squared Radial Cell Boundaries:                             CFW2
+! Current LP location Cell ID:                                CFcIN
+!
+!~~~~~~~~~
+! Returns:
+!~~~~~~~~~
+!
+! New LP location cell ID:                                    CFcOUT
+! LP physical distance to travel:                             LPs
+!
+  USE CONSTANTS
+  USE PHYSICAL_CONSTANTS
+  IMPLICIT NONE
+  REAL(KIND=8),INTENT(IN),DIMENSION(1:3)      :: LPr       ! position of luninosity packet
+  REAL(KIND=8),INTENT(IN),DIMENSION(1:3)      :: LPe       ! direction of luminosity packet (unit vector)
+  REAL(KIND=8),INTENT(IN)                     :: LPr1122   ! r_x^2+r_y^2
+  REAL(KIND=8),INTENT(IN),DIMENSION(0:CFcTOT) :: CFw2      ! squared boundary radii of shells (cm^2)
+  INTEGER,INTENT(IN)                          :: CFcIN     ! Dummy Cell ID IN
+  INTEGER,INTENT(OUT)                         :: CFcOUT    ! Dummy Cell ID OUT
+  REAL(KIND=8),INTENT(OUT)                    :: LPs       ! path-length of lum.pack. to shell boundary
+  REAL(KIND=8)                                :: LPe1122   ! e_x^2+e_y^2
+  REAL(KIND=8)                                :: LPalfa    ! 'outwardness' of packet (pc)
+  REAL(KIND=8)                                :: LPbeta    ! squared tangent-distance (pc^2)
+  INTEGER                                     :: CFc       ! Dummy Cell ID
+
+  CFc = CFcIN
+  LPe1122=(LPe(1)**2)+(LPe(2)**2)                      !     compute e_x^2+e_y^2
+  LPalfa=((LPr(1)*LPe(1))+(LPr(2)*LPe(2)))/LPe1122     !     compute 'outwardness'
+  IF (LPalfa>0.) THEN                                  !     [IF] travelling outward, [THEN]
+    LPs=-LPalfa+                                      &!       compute .......
+    &SQRT(LPalfa**2+((CFw2(CFc)-LPr1122)/LPe1122))     !       ... path length
+    CFc=CFc+1                                          !       increase shell ID
+
+  ELSE                                                 !     [ELSE] travelling inward, so
+    LPbeta=LPalfa**2+((CFw2(CFc-1)-LPr1122)/LPe1122)   !       compute beta, and
+    IF (LPbeta>0.) THEN                                !       [IF] LPbeta>0, [THEN] hits inner shell
+      LPs=-LPalfa-SQRT(LPbeta)                         !         compute path
+      CFc=CFc-1                                        !         decrease shell ID
+
+    ELSE                                               !       [ELSE] traverses shell, so
+      LPs=-LPalfa+                                    &!         compute .......
+      &SQRT(LPalfa**2+(CFw2(CFc)-LPr1122)/LPe1122)     !         ... path length
+      CFc=CFc+1                                        !         increase shell ID
+
+    ENDIF                                              !       [ENDIF] inward cases done
+  ENDIF                                                !     [ENDIF] all cases done
+
+  CFcOUT = CFc
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+END SUBROUTINE RT_Cyl1D_RayTrace_CellSelect
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBROUTINE RT_BBPeak_AverageAbsCoeff(teT,Tek,WLlTOT,WLlam,WLchi,lamMax,chiBar,LPlFixed)
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! Subroutine to identify the wavelength, and corresponding wavelength ID, at the
+! peak of the BB at temperature Tek.
+! Returns:    wavelength at peak of BB
+!             Chi (abs. coeff.) at this wavelength
+!             WAVELENGTH ID of the wavelength at this peak
+
+
+  USE CONSTANTS
+  USE PHYSICAL_CONSTANTS
+  implicit none
+
+
+  REAL(KIND=8),INTENT(IN),DIMENSION(0:TEkTOT) :: teT       ! discrete temperatures
+  INTEGER,INTENT(IN)                          :: Tek       !Temperature ID for Black Body Temperature
+  INTEGER,     INTENT(IN)                     :: WLlTOT    ! the number of discrete wavelengths
+  REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT) :: WLlam     ! the discrete wavelengths
+  REAL(KIND=8),INTENT(IN),DIMENSION(1:WLlTOT) :: WLchi     ! the corresponding extinction opacities
+  Real(kind=8),INTENT(OUT)                    :: lamMax    ! Wavelength of peak of BB of temperature Tek according
+                                                           !    Wein's approximation
+  Real(kind=8),INTENT(OUT)                    :: chiBar    ! Average chi ~~ chi at wavelength of peak of BB
+  Integer,INTENT(OUT)                         :: LPlFixed  ! Wavelength ID of wavelength corresponding to BB peak
+  INTEGER                                     :: i         ! Dummy
+
+  ! Wein's Approximation, in microns
+  lamMax = (0.288*(1.d4))/teT(BGkBB)
+
+  !get max temp ID corresponding to this wavelength (peak of BB of temp Tek)
+  !Evaluate chi at this wavelength and save as chiBar
+  do i=1,WLlTOT,1
+    If(WLlam(i) .ge. lamMax) THEN
+      LPlFixed = i
+      chiBar = WLchi(i)
+      EXIT
+    endif
+  enddo
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+END SUBROUTINE RT_BBPeak_AverageAbsCoeff
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 !==============================================================================!

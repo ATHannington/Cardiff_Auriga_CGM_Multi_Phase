@@ -1,64 +1,36 @@
+!
+! Title:              RadTrans_MainCode.f90
+! Created by:         A. P. Whitworth
+!                     A. T. Hannington
+!
+! Use with:           RadTrans_Subroutines.f90
+!                     RadTrans_Constants.f90
+!
+! Date Created:       2018
+!
+! Usage Notes:
+!            To run directly:
+!                  gfortran -o3 -o run RadTrans_MainCode.f90
+!                  RadTrans_Subroutines.f90 RadTrans_Constants.f90
+!
+!           Recommended running is through the associated Makefile:
+!              To make and run:
+!                  make clean
+!                  make
+!                  ./run
+!             To debug:
+!                  make clean
+!                  make debug
+!                  ./run
+!
+! Known Bugs:
+!            Constant optical depth system producing number of interactions not
+!            consistent with optical depth set.
+!            I believe this to be an issue with the average chi value. Analytic
+!            forms of the equations to find this value have been given, but
+!            not implemented.
+!
 
-! RadTrans_MainCode.F90
-! =====================
-
-! Last updated (Ant): 2019.Mar.13 (line 1879)
-! Desktop: gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/star/lib `pgplot_link`
-! Laptop:  gfortran -O3 -o RUN RadTrans_MainCode.F90 -L/opt/local/lib -lpgplot -lX11
-!          gfortran -O0 -fbounds-check -o RUN RadTrans_MainCode.F90 -L/opt/local/lib -lpgplot -lX11
-! Run with ./RUN
-
-!
-!To complie:            gfortran -o2 -o run RadTrans_MainCode.F90
-! or, for debugging:    gfortran -o2 -g -fbounds-check -fbacktrace -o run RadTrans_MainCode.F90
-!
-!To RUN:
-!   ./run
-
-! The value of pi is 3.14159274
-! 2^(-1/2) = 0.70710678
-! 2^(+1/2) = 1.4142136
-! (6/pi)^(1/3) = 1.2407007
-! pc = (0.308568E+19) cm
-! cm = (0.324078E-18) pc
-! M_Sun = (0.198910E+34) g
-! amu = (0.166054E-23) g
-! g/cm = (0.155129E-15) M_Sun/pc
-! M_Sun/pc = (0.644623E+15) g/cm
-! H2/g = (0.210775E+24)
-! g/H2 = (0.474444E-23)
-
-! SubRoutines:
-!   RT_DustPropertiesFromDraine
-!   RT_PlotDustProperties
-!   RT_Temperatures
-!   RT_EmProbs_DMBB
-!   RT_LumPack_BB
-!   RT_LumPack_MB
-!   RT_LumPack_DM
-!   RT_Cyl1D_LinearShellSpacing
-!   RT_Cyl1D_InjectIsotropic
-!   RT_ReDirectIsotropic
-!   RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity []
-!   RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity
-!   RT_SchusterDensities
-!   RT_Cyl1D_InjectIsotropicAndTrack_SchusterScatteringOpacity
-!   ++++++++++++++++
-!   RT_Cyl1D_GlobalParameters
-!
-! Timing:
-!   TBD
-!   TBD
-!
-!Notes:
-! RT_Cyl1DSchuster_DetailedBalance not working!!
-!
-! All data to be written for Python:
-!   Must allow for csv formatting and be SQUARE/RECTANGULAR
-!   Must be outputted in Fx.y style (e.g. F10.3). Python cannot handle Fortran
-!   Scientific notation
-!
-!
 !************************
 PROGRAM RadTrans_MainCode
 !************************
@@ -222,34 +194,27 @@ CALL RT_EmProbs_DMBB(teT,WLlTOT,WLlam,WLdlam,WLchi,WLalb,&
 
 CALL RT_Cyl1D_LinearShellSpacing(CFw,CFw2)
 
-
-
-
-!!! #### This Section of Code should set a constant tau regardless on temp ###!!
-lamMax = (0.288*(1.d4))/teT(BGkBB)
-
-do i=1,WLlTOT,1
-  If(WLlam(i) .ge. lamMax) THEN
-    LPlFixed = i
-    chiBar = WLchi(i)
-    EXIT
-  endif
-enddo
-
 CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
 
-CFrho0 = (CFrho0*TAUconst)/(CFsig*chiBar*(1.d0-WLalb(LPlFixed)))
 
-CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
+
+
+  !!! #### This Section of Code should set a constant tau regardless on temp ###!!
+IF (SetConstTau == 1) THEN
+  ! Get wavelength at peak of BB at temp BGkBB and corresponding chi
+  call RT_BBPeak_AverageAbsCoeff(teT,BGkBB,WLlTOT,WLlam,WLchi,lamMax,chiBar,LPlFixed)
+  CFrho0 = (CFrho0*TAUconst)/(CFsig*chiBar*(1.d0-WLalb(LPlFixed)))
+
+  CALL RT_Cyl1D_SchusterDensities(CFw,CFrho,CFmu,CFmuTOT,CFsig)
+ENDIF
+
 
 !------------------------------------------------------------------------------!
 
 
 
-
-
 !!!!!           TESTS:                  !!!!!!
-!
+
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_ZeroOpacity(CFw,CFw2)
 !
 ! CALL RT_Cyl1D_InjectIsotropicAndTrack_UniformScatteringOpacity(CFw,CFw2)

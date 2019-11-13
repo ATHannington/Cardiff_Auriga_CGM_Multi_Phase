@@ -1,3 +1,21 @@
+"""
+Title:              PlotDustProperties.py
+Created by:         Andrew T. Hannington
+Use with:           RadTrans_*.f90
+                        Created by: A. P. Whitworth et al.
+
+Date Created:       05/04/2019
+
+Usage Notes:
+            Plots Dust properties against wavelength
+			Plots Black Body, Modified Black body against wavelength
+
+Known bugs:
+			Blackbody plots need to be normalised!
+
+"""
+
+
 #===============================================================================#
 #-------------------------------------------------------------------------------#
 #		PlotDustProperties.py                                                   #
@@ -14,43 +32,6 @@ import os
 from astropy import units as u
 from astropy.modeling.blackbody import blackbody_lambda
 #from astropy.modeling.blackbody import blackbody_lambda
-
-
-now = datetime.datetime.now()
-
-print ()
-print ("Current date and time using str method of datetime object:")
-print (str(now))
-
-# print(np.__version__)
-
-# !!!
-author= "Andrew T. Hannington"
-email= "HanningtonAT@cardiff.ac.uk"
-affiliation= "Cardiff University, Wales, UK"
-
-adapted_from_author = "Prof. A.P. Whitworth"
-adapted_from_email = "anthony.whitworth@cardiff.ac.uk"
-adapted_from_affiliation = "Cardiff University, Wales, UK"
-
-date_created= "05/04/2019"
-
-#
-# Notes: Python program for plotting dust properties from
-# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric
-#		 Filamentary Molecular Clouds.
-#		 Equivalent subroutine in A.P.W's code:
-#		 # SUBROUTINE RT_PlotDustProperties(WLlTOT,WLlam,WLchi,WLalb)
-#
-##
-##
-date_last_edited= "12/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
-
-																				#Input directory into which to save plots here                                #
-savepath = "./media/sf_OneDrive_-_Cardiff_University/Documents/ATH_PhD/"+ \
-"_PhD_Output/Cylindrically_Symmetric_Filament_MCRT/Dust"
-																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
-																				#      using today's date at runtime.                                         #
 
 importstring = "DustProperties.csv"												#File for data to be imported for plotting.                                   #
 
@@ -83,31 +64,7 @@ kb = kb.cgs
 #                                                                               #
 #                                                                               #
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
-def func_datetime_savepath (input_savepath_string):
-	"""
-	Description: Function for generating a savepath string and creating
-				subsequent directory.
-				NOTE: this function will NOT create all intermediate level
-				directories in path name. To do this, please see Python
-				documentation on os.makedirs()
-	Inputs:		Var: input_savepath_string	Type:string 	Dtype: char
-	Outputs:	Var: savepath				Type: string	Dtype: char
-				------
-	Notes:		Created 09/04/2019 by ATH. Working as of 09/04/2019
-	"""
-
-	save_date = str(now.strftime("%Y-%m-%d"))#-%H-%M"))
-	savepath = input_savepath_string + "/" + save_date +"/"
-	print()
-	print("Savepath generated! Datetime used!")
-	os.mkdir(savepath)
-	print("Directory created at savepath!")
-	print("Your savepath directory path is:")
-	print(savepath)
-	print()
-	return savepath
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
 def func_BB_lam(lambda_arr,hc_kbt_arr):
 	"""
 	Description: Function for generating a 2D NumPy array of Black Body Spectral
@@ -135,33 +92,6 @@ def func_BB_lam(lambda_arr,hc_kbt_arr):
 	bb_data = 1./((lambda_arr**5)*(np.exp(hc_kbt_arr*(1./lambda_arr.value))-1.))
 	return bb_data
 
-
-#-------------------------------------------------------------------------------#
-#		Below is the beginning of the program which writes to screen the        #
-#		information about authors etc. above.                                   #
-#                                                                               #
-#                                                                               #
-print("*****")
-print()
-print("**Plot Dust Properties Program**")
-print()
-print(f"Author: {author}")
-print(f"Email: {email}")
-print(f"Affiliation: {affiliation}")
-print()
-print(f"Adapted from work by: {adapted_from_author}")
-print(f"Email: {adapted_from_email}")
-print(f"Affiliation: {adapted_from_affiliation}")
-print()
-print(f"Program first created: {date_created}")
-print(f"Program last edited: {date_last_edited}")
-print()
-print("*****")
-print()
-
-del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
-,adapted_from_email, date_created, date_last_edited								#Clear preamble variables from memory                                         #
-
 #-------------------------------------------------------------------------------#
 #		Begin Program by loading in data from RadTrans_MainCode.F90.            #
 #                                                                               #
@@ -188,17 +118,15 @@ print()
 print("Manipulating in data! [part 1/3]")
 
 																				#Create lists of Log10(Lambda),                                               #
-#print("Test! lam(0)=", read_data['lam'][0])
 
 																				#A rather involved process... We convert the values to Log10 values and then  #
 x_lamLog10 = np.log10(read_data['lam'])											#  check whether the return are inf or NaN. Replace with NaN if so as can be  #
-																				#    ignored through numpy's NaNmax and NaNmin routines, and otherwise aren't
+																				#    ignored through numpy's NaNmax and NaNmin routines, and so aren't
 																				#      plotted.
 x_lamLog10 = np.where(((np.isnan(x_lamLog10)==False)&\
 (np.isinf(x_lamLog10)==False)),x_lamLog10,float('NaN'))
 
 																				#    and of Log10(Chi).                                                       #
-#print("Test! chi(0)=", read_data['chi'][0])
 y_chiLog10 = np.log10(read_data['chi'])
 y_chiLog10 = np.where(((np.isnan(y_chiLog10)==False)&\
 (np.isinf(y_chiLog10)==False)),y_chiLog10,float('NaN'))
@@ -277,7 +205,6 @@ ax1.grid(which="both")
 plt.show()																		#Show figure!                                                                 #
 
 
-# datetimesavepath = func_datetime_savepath(savepath)								#Create dated subdirectory and savepath directory path.                       #
 fig.savefig("Log10-chi_10Albedo_versus" + \
 "_Log10-Wavelength.png")
 
@@ -316,61 +243,7 @@ x_lamLog10 = np.log10(lam_tmp)
 planck_arr_dimensionless = np.array([(((1./(h*(c**2)))*(4.*math.pi*(u.steradian))*\
 (blackbody_lambda(lam,temperatures[t]))).to(u.micron**(-5))).value \
 for t in range(len(temperatures))])
-# planck_arr_dimensionless = np.array([ for t in range(len(temperatures))])
 y_PlanckLog10 = np.log10(planck_arr_dimensionless)
-#
-#
-# lambda_arr = np.full((ntemps,nlambda),read_data['lam'])							#Temporary array of lambda data. Needed for black body function.              #
-# lambda_arr = lambda_arr*u.micron												#    Shape [temp,lambda]. Give units of microns.                              #
-# lambda_arr = lambda_arr.cgs														#        Convert microns to CGS.											  #
-# #-------------------------------------------------------------------------------#
-#
-# lambda_T = hc_kb/temperatures													#Calculate (h*c)/(kb*T). This will be shape [temp]. Needed for exponent#
-# 																				#    in Black Body function.											  #
-#
-# lambdaMin = (lambda_T.value)*0.03														#Lambda min and max set as in A. P. Whitworth's original code.				  #
-# lambdaMax = (lambda_T.value)*10.0
-#
-# hc_kbt_arr = (np.full((nlambda,ntemps),lambda_T)).T								#Make exponent data into Matrix form. Final shape [temp,lambda]. Needs to be  #
-# 																				#  input as [lambda,temp] and transposed to get obtain correct shape without  #
-# 																				#    chopping data or throwing errors.
-# planck_arr = func_BB_lam(lambda_arr,hc_kbt_arr)									#Put exponent and lambda data through un-normalised Black Body function.      #
-# planck_units = planck_arr.unit													#    Grab units of Planck data for re-assignment to data later.				  #
-# #print(planck_units)
-#
-# lam = lambda_arr[0]																#Lambda array no longer needed, so one copy of the lambda data taken as 1D    #
-# 																				#  array, and 2D array deleted.												  #
-# del lambda_arr																	#    ^^^.																	  #
-#
-# planck_masked = np.zeros((ntemps,nlambda))										#Setup blank array for masked planck data. Shape [temps,lambda].			  #
-# for index in range(0,ntemps,1):													#[FOR] indices up to number of temperatures [THEN]							  #
-# 																				#  assign to temp column of planck_masked array, the set of planck data that  #
-# 																				#    is bounded by Lambda>= Lambda_min & Lambda<=Lambda_max [ELSE]
-# 	planck_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
-# 	&(lam.value<=lambdaMax[index].value),planck_arr[index],None))				#      fill else entries with NaN.											  #
-# 																				#NOTE: "&" has to be used (not "and") to get "index wise" entries that works  #
-# 																				#  without throwing error. If not, an error about truthyness of multiple entry#
-# 																				#    arrays will be thrown. 												  #
-# planck_masked = planck_masked*planck_units										#Give the masked array correct units for debugging or future use.			  #
-
-# print("lambdaMin",lambdaMin,np.shape(lambdaMin))
-# print("planck_masked",planck_masked,planck_masked[0],\
-# np.shape(planck_masked),planck_masked.unit)
-#
-# y_PlanckLog10=np.log10(planck_masked.value)										#np.Log10 to take the Log10 of every entry in the array. ".value" must be     #
-# 																				#    used as the data technically still has units (contrary to definition of  #
-# 																				#      a logarithm.															  #
-# 																				#        We have taken the log to ???										  #
-#
-# yMax = (np.full((nlambda,ntemps),np.nanmax(y_PlanckLog10,axis=1))).T			#Find the maximum NON-NaN value of each temperature column of the Log10 planck#
-# 																				#  data. This is then copied into an array, with each temp column holding     #
-# 																				#    nlambda copies of this maximum. This is inefficient, but makes it easy to#
-																				#      subtract this maximum from the entire set of PlanckLog10 data.		  #
-# print("yMax",yMax,yMax[0],np.shape(yMax))
-#
-# y_PlanckLog10 = y_PlanckLog10 - yMax											#This subtraction effectively "normalises" the PlanckLog10 data.			  #
-#
-# del hc_kb, lambda_T, yMax
 
 #-------------------------------------------------------------------------------#
 																				#This section near entirely follows the section above's logic. Please see     #
@@ -384,38 +257,6 @@ chi = np.array(read_data['chi'])*((u.cm**2)/(u.g))
 modPlanck_arr = chi*(1.0 - albedo)*planck_arr
 modPlanck_arr_dimensionless = chi.value*(1.0 - albedo.value)*planck_arr_dimensionless
 z_modPlanckLog10 = np.log10(modPlanck_arr_dimensionless)
-#
-#
-# alb_squareArr = np.full((ntemps,nlambda),read_data['alb'])\
-# *u.dimensionless_unscaled														#[temps,lambda] shaped array of dimensionless albedo data.					  #
-#
-# chi_squareArr = (np.full((ntemps,nlambda),read_data['chi'])*((u.cm**2)/(u.g)))\
-# .cgs																			#[temps,lambda] shaped array of chi (extinction opacity) data with correct	  #
-# 																				#  units																	  #
-#
-# z_vol_emiss = planck_arr*chi_squareArr*(1.-alb_squareArr)						#Combine planck data with chi and albedo to obtain volume emissivity		  #
-# 																				#  units [1/(cm^3 g)]														  #
-# vol_emiss_units = z_vol_emiss.unit
-#
-# z_vol_emiss_masked = np.zeros((ntemps,nlambda))
-# for index in range(0,ntemps,1):
-# 	z_vol_emiss_masked[index] = (np.where((lam.value >= lambdaMin[index].value)\
-# 	&(lam.value<=lambdaMax[index].value),z_vol_emiss[index],None))
-#
-# z_vol_emiss_masked = z_vol_emiss_masked*vol_emiss_units
-#
-# #print("z_vol_emiss_masked",z_vol_emiss_masked,z_vol_emiss_masked[0],\
-# #np.shape(z_vol_emiss_masked),z_vol_emiss_masked.unit)
-#
-# z_VELog10=np.log10(z_vol_emiss_masked.value)
-#
-# zMax = (np.full((nlambda,ntemps),np.nanmax(z_VELog10,axis=1))).T
-#
-# #print("zMax",zMax,zMax[0],np.shape(zMax))
-#
-# z_VELog10 = z_VELog10 - zMax
-#
-# del alb_squareArr, chi_squareArr, z_vol_emiss, z_vol_emiss_masked, zmax			#Delete obselete data.														  #
 
 #-------------------------------------------------------------------------------#
 
@@ -457,7 +298,7 @@ ax.yaxis.set_minor_locator(AutoMinorLocator())
 plt.legend(loc='upper right')
 plt.show()
 
-fig.savefig("Log10-Volume-Emissivity_versus_Log10-Wavelength.png")
+fig.savefig("Log10-Mod-Planck_versus_Log10-Wavelength.png")
 
 
 print("END")																	#----  END OF PROGRAM !! ----                                                 #

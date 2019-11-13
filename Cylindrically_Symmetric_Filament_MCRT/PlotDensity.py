@@ -1,3 +1,20 @@
+"""
+Title:              PlotDensity.py
+Created by:         Andrew T. Hannington
+Use with:           RadTrans_*.f90
+                        Created by: A. P. Whitworth et al.
+
+Date Created:       2019
+
+Usage Notes:
+            Generates plots of Cell density versus cell number - Equivalent
+            to radius in the 1D cylinder case.
+            Gives central density and Schuster Exponent P value on plot.
+
+Known bugs: //
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd

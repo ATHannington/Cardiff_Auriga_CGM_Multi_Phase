@@ -1,14 +1,29 @@
+!
+! Title:              RadTrans_Constants.f90
+! Created by:         Andrew T. Hannington
+!
+! Use with:           RadTrans_*.f90
+!                         Created by: A. P. Whitworth et al.
+!
+! Date Created:       2019-11-13
+!
+! Usage Notes:
+!            Operational Constants for RadTrans are found in CONSTANTS.
+!            Flags and parameters etc.
+!            Physical Constants for RadTrans are found in PHYSICAL_CONSTANTS.
+!            Units are generally cgs, with some microns used where specified.
+
 module CONSTANTS
     IMPLICIT NONE
                                                                                 !  CONFIGURATION [CF]
     CHARACTER(LEN=20),parameter       :: CFgeom='Cylindrical1D'                 ! geometry of configuration
-    REAL(KIND=8)            :: CFrho0=0.1000E-18                      ! central density (g/cm^3)
+    REAL(KIND=8)                      :: CFrho0=0.1000E-18                      ! central density (g/cm^3)
     REAL(KIND=8),parameter            :: CFw0=0.1500E+18                        ! core radius (cm)
-    INTEGER,parameter                 :: CFschP=4                               ! radial density exponent forn Schuster profile
+    INTEGER,parameter                 :: CFschP=1                               ! radial density exponent forn Schuster profile
     REAL(KIND=8),parameter            :: CFwB=0.1500E+19                        ! boundary radius (cm)
     INTEGER,parameter                 :: CFcTOT=100                             ! number of (cylindrical) shells
-              INTEGER,parameter                    :: CFprof=0                  ! flag to sanction diagnostics for profile
-              INTEGER,parameter                    :: CFlist=0                  ! flag to sanction diagnostics for cells
+              INTEGER,parameter                    :: CFprof=1                  ! flag to sanction diagnostics for profile
+              INTEGER,parameter                    :: CFlist=1                  ! flag to sanction diagnostics for cells
 
                                                                                 ! DUST GRAINS [DG]
     CHARACTER(LEN=20),parameter       :: DGsource='Draine'                      ! source of dust properties (e.g. 'Draine')
@@ -21,19 +36,19 @@ module CONSTANTS
                                                                                 ! WAVELENGTHS [WL]
     REAL(KIND=8),parameter            :: WLdelta=1.0e-1                         ! logarithmic spacing of optical properties
     REAL(KIND=8),parameter            :: WLdcl=0.10                             ! weight of slope-change
-              INTEGER,parameter                    :: WLprint=0                 ! flag to trigger printing of dust properties
-              INTEGER,parameter                    :: WLplot=0                  ! flag to trigger plotting of dust properties
+              INTEGER,parameter                    :: WLprint=1                 ! flag to trigger printing of dust properties
+              INTEGER,parameter                    :: WLplot=1                  ! flag to trigger plotting of dust properties
 
                                                                                 ! TEMPERATURES [TE]
     INTEGER,parameter                 :: TEkTOT=100!100!1000                    ! number of discrete temperatures
     REAL(KIND=8),parameter            :: teTmin=2.725                           ! minimum discrete temperature
     REAL(KIND=8),parameter            :: teTmax=272.5!272.5!2725.0             ! maximum discrete temperature
-                INTEGER,parameter                  :: TElist=0                  ! flag to print out some temperatures
+                INTEGER,parameter                  :: TElist=1                  ! flag to print out some temperatures
 
                                                                                 ! REFERENCE PROBABILITIES [PR]
     INTEGER,parameter                 :: PRnTOT=1000                            ! number of reference probabilities
                 INTEGER,parameter                  :: WTpack=1000000            ! number of calls for plotting probabilities
-                INTEGER,parameter                  :: WTplot=0                  ! flag to sanction plotting probabilities
+                INTEGER,parameter                  :: WTplot=1                  ! flag to sanction plotting probabilities
 
                                                                                 ! BACKGROUND RADIATION FIELD [BG]
     INTEGER,parameter                 :: BGkBB=29!29!80!865                    ! temperature-ID of background BB radiation field
@@ -41,16 +56,14 @@ module CONSTANTS
     INTEGER,parameter                 :: BGkGO=23!23!70!696                    ! ID of temperature for cfLgo ---- ceiling(dble(BGkBB)*0.8d0)
 
                                                                                 ! LUMINOSITY PACKETS [LP]
-    INTEGER,parameter                 :: LPpTOT= int(1E7)                       ! number of luminosity packets
+    INTEGER,parameter                 :: LPpTOT= int(1E6)                       ! number of luminosity packets
 
               INTEGER(Kind=4),parameter            :: DBTestFlag= 1             !Diagnostic test flag for tests and print statements
 
+              Real(kind=8),parameter               :: TAUconst = 1.d0           ! Parameter to Set constant optical depth if below flag is selected
+              Integer,parameter                    :: SetConstTau = 0           ! 1 = Constant Tau ON |  | 0 = Constant Tau OFF
 
 
-    Real(kind=8)                      :: TAUconst = 1.d0
-    ! Real(kind=8)                      :: RHOconst = 1.d-18
-    ! Real(kind=8)                      :: MUconst = 1.d+17
-    ! Real(kind=8)                      :: SIGconst = 1.d-1
 end module CONSTANTS
 
 ! The value of pi is 3.14159274
@@ -65,7 +78,6 @@ end module CONSTANTS
 ! M_Sun/pc = (0.644623E+15) g/cm
 ! H2/g = (0.210775E+24)
 ! g/H2 = (0.474444E-23)
-
 
 module PHYSICAL_CONSTANTS
   IMPLICIT NONE

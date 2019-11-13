@@ -1,3 +1,20 @@
+"""
+Title:              PlotProbabilities.py
+Created by:         Andrew T. Hannington
+Use with:           RadTrans_*.f90
+                        Created by: A. P. Whitworth et al.
+
+Date Created:       18/04/2019
+
+Usage Notes:
+			Plots BlackBody (BB), ModifiedBB (MBB), DifferentialMBB (DMBB)
+			against wavelengths in log log space
+
+Known bugs: //
+
+
+"""
+
 #===============================================================================#
 #-------------------------------------------------------------------------------#
 #		PlotProbabilities.py                                                    #
@@ -12,22 +29,6 @@ import math
 import datetime
 import os
 from astropy import units as u
-
-now = datetime.datetime.now()
-
-print ()
-print ("Current date and time using str method of datetime object:")
-print (str(now))
-
-
-##
-date_last_edited= "18/04/2019"													#PLEASE KEEP THIS UP-TO-DATE!!                                                #
-
-																				#Input directory into which to save plots here                                #
-savepath = "C:/Users/C1838736/Documents/ATH_PhD/_PhD_Output/" + \
-"Cylindrically_Symmetric_Filament_MCRT/Probabilities/"
-																				#    Note: if func_datetime_savepath used, a subdirectory will be made here   #
-																				#      using today's date at runtime.                                         #
 
 #------------------------------------------------------------------------------#
 #Files for data to be imported for plotting.                                   #
@@ -50,93 +51,6 @@ DMmcrtPath 		= "DMMCRT.csv"
 
 #-------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------#
-
-# !!!
-author= "Andrew T. Hannington"
-email= "HanningtonAT@cardiff.ac.uk"
-affiliation= "Cardiff University, Wales, UK"
-
-adapted_from_author = "Prof. A.P. Whitworth"
-adapted_from_email = "anthony.whitworth@cardiff.ac.uk"
-adapted_from_affiliation = "Cardiff University, Wales, UK"
-
-date_created= "12/04/2019"
-
-#
-# Notes: Python program for plotting emission probabilities from
-# 		 Prof. A. P. Whitworth's RadTrans MCRT code for Radially Symmetric
-#		 Filamentary Molecular Clouds.
-#		 Equivalent subroutine in A.P.W's code:
-#		 # SUBROUTINE RT_EmProbs_DMBB(TEkTOT,teT,WLlTOT,WLlam,WLdlam,WLchi,\
-#			WLalb,PRnTOT,WTpack,WTplot,WTpBB,WTlBBlo,WTlBBup,WTpMB,WTlMBlo, \
-#			WTlMBup,teLMmb,WTpDM,WTlDMlo,WTlDMup,teLMTdm)
-#
-#-------------------------------------------------------------------------------#
-#-------------------------------------------------------------------------------#
-
-#-------------------------------------------------------------------------------#
-#		Below are functions etc. used by this program                           #
-#                                                                               #
-#                                                                               #
-
-
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -#
-def func_datetime_savepath (input_savepath_string):
-	"""
-	Description: Function for generating a savepath string and creating
-				subsequent directory.
-				NOTE: this function will NOT create all intermediate level
-				directories in path name. To do this, please see Python
-				documentation on os.makedirs()
-	Inputs:		Var: input_savepath_string	Type:string 	Dtype: char
-	Outputs:	Var: savepath				Type: string	Dtype: char
-				------
-	Notes:		Created 09/04/2019 by ATH. Working as of 09/04/2019
-	"""
-
-	save_date = str(now.strftime("%Y-%m-%d-%H-%M"))
-	savepath = input_savepath_string + "/" + save_date +"/"
-	print()
-	print("Savepath generated! Datetime used!")
-	os.mkdir(savepath)
-	print("Directory created at savepath!")
-	print("Your savepath directory path is:")
-	print(savepath)
-	print()
-	return savepath
-
-#-------------------------------------------------------------------------------#
-#		Below is the beginning of the program which writes to screen the        #
-#		information about authors etc. above.                                   #
-#                                                                               #
-#                                                                               #
-print("*****")
-print()
-print("**Plot Emission Probabilities Program**")
-print()
-print(f"Author: {author}")
-print(f"Email: {email}")
-print(f"Affiliation: {affiliation}")
-print()
-print(f"Adapted from work by: {adapted_from_author}")
-print(f"Email: {adapted_from_email}")
-print(f"Affiliation: {adapted_from_affiliation}")
-print()
-print(f"Program first created: {date_created}")
-print(f"Program last edited: {date_last_edited}")
-print()
-print("*****")
-print()
-
-del author, email, affiliation, adapted_from_affiliation, adapted_from_author \
-,adapted_from_email, date_created, date_last_edited								#Clear preamble variables from memory                                         #
-
-#-------------------------------------------------------------------------------#
-#		Begin Program by loading in data from RadTrans_MainCode.F90.            #
-#                                                                               #
-#                                                                               #
-
-datetimesavepath = ""#func_datetime_savepath(savepath)								#Generate savepath for plots												  #
 
 print()
 print("Loading in data!")
@@ -260,7 +174,7 @@ print("Beginning Plotting!")
 																				#  analytic data from each temperature. Each curve is labelled appropriately  #
 																				#    with temperature and data type (analytic vs MCRT) using f-strings.       #
 																				#     Xlims and Ylims set from above and in Fortran90 code. Plots are then    #
-																				#      titled, labelled, legend added, and saved in date-time directory.      #
+																				#      titled, labelled, legend added, and saved.      #
 
 
 fig, ax = plt.subplots()
@@ -280,8 +194,7 @@ ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
-fig.savefig(datetimesavepath+\
-'Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.png')
+fig.savefig('Log10(BB)_mcrt-vs-analytic_vs_Log10(wavelength)' + '.png')
 
 fig, ax= plt.subplots()
 for i in range(0, len(MBconstants['temp'])):
@@ -300,8 +213,7 @@ ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
-fig.savefig(datetimesavepath+\
-'Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
+fig.savefig('Log10(MB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
 
 fig, ax = plt.subplots()
 for i in range(0, len(DMconstants['temp'])):
@@ -320,8 +232,7 @@ ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
-fig.savefig(datetimesavepath+\
-'Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
+fig.savefig('Log10(DMBB)_mcrt-vs-analytic_vs_Log10(wavelength)'+'.png')
 
 finxMin = min([DMxMin, MBxMin])
 finxMax = max([DMxMax, MBxMax])
@@ -346,8 +257,7 @@ ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.yaxis.set_minor_locator(AutoMinorLocator())
 
 fig.legend(bbox_to_anchor=(.85,.85), loc="upper right", borderaxespad=0.)
-fig.savefig(datetimesavepath \
-+'Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.png')
+fig.savefig('Log10(MB)-analytic_Log10(DMBB)-analytic_vs_Log10(wavelength)' +'.png')
 
 plt.show()
 
