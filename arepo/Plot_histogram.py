@@ -62,25 +62,25 @@ class Snapper(object):
         self.LazyLoad = LazyLoad
 
         # load in the subfind group files
-        self.Snap_SubFind = load_subfind(self.SnapNum, dir=self.SimDirectory)
+        Snap_SubFind = load_subfind(self.SnapNum, dir=self.SimDirectory)
 
         # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-        self.Snap = gadget_readsnap(self.SnapNum, self.SimDirectory, hdf5=self.hdf5Bool \
+        Snap = gadget_readsnap(self.SnapNum, self.SimDirectory, hdf5=self.hdf5Bool \
         , loadonly=self.LoadOnly, loadonlytype = self.LoadType \
         , loadonlyhalo = self.LoadHalo, lazy_load=self.LazyLoad \
-        , subfind = self.Snap_SubFind)
+        , subfind = Snap_SubFind)
 
         haloid = 0 # look only at the central galaxy - index zero
-        self.ImgCent = self.Snap_SubFind.data['fpos'][self.LoadHalo,:] # subfind has calculated its centre of mass for you
-        self.Snap.data['pos'] = (self.Snap.data['pos'] - np.array(self.ImgCent))*1e3 # use the subfind COM to centre the coordinates on the galaxy [km]
+        ImgCent = Snap_SubFind.data['fpos'][self.LoadHalo,:] # subfind has calculated its centre of mass for you
+        Snap.data['pos'] = (Snap.data['pos'] - np.array(ImgCent))*1e3 # use the subfind COM to centre the coordinates on the galaxy [km]
 
-        return
+        return Snap
 
 #------------------------------------------------------------------------------#
 #           Plot 1x Histogram 2d
 #------------------------------------------------------------------------------#
 
-    def PlotHistogram(self, Nbins=1000,Axes=[0,1],Range = [[-50,50],[-50,50]],WeightsLabel='mass',Normed=False):
+    def PlotHistogram(self, Snap, Nbins=1000,Axes=[0,1],Range = [[-50,50],[-50,50]],WeightsLabel='mass',Normed=False):
         """
         Function for Histogram 2D plotting an individual SnapShot.
         Args:
@@ -97,18 +97,18 @@ class Snapper(object):
         self.Range = Range
         self.WeightsLabel = WeightsLabel
         if (WeightsLabel == 'mass'):
-            self.Weights = self.Snap.mass
+            self.Weights = Snap.mass
         else:
             print("Unknown Weights Flag! Setting to Default 'mass'!")
-            self.Weights = self.Snap.mass
+            self.Weights = Snap.mass
 
         self.Normed = Normed
 
-        self.hist,xedge,yedge=np.histogram2d(self.Snap.pos[:,self.Axes[0]],self.Snap.pos[:,self.Axes[1]] \
+        hist,xedge,yedge=np.histogram2d(Snap.pos[:,self.Axes[0]],Snap.pos[:,self.Axes[1]] \
         , bins=self.Nbins,range=self.Range,weights=self.Weights,normed=self.Normed)
 
-        img1 = plt.imshow(self.hist,cmap='nipy_spectral',vmin=np.nanmin(self.hist) \
-        ,vmax=np.nanmax(self.hist)\
+        img1 = plt.imshow(hist,cmap='nipy_spectral',vmin=np.nanmin(hist) \
+        ,vmax=np.nanmax(hist)\
         ,extent=[np.min(xedge),np.max(xedge),np.min(yedge),np.max(yedge)],origin='lower')
         ax1 = plt.gca()
         ax1.tick_params(labelsize=20.)
@@ -138,15 +138,16 @@ class Snapper(object):
             NSnaps              : Opt. Number of SnapShots      : Default = 127
             Start               : Opt. Start Snapshot           : Default = 10 . Below this Halo finder may fail
         """
-        import matplotlib.animation as manimation
+        # import matplotlib.animation as manimation
 
         self.SimDirectory = SimDirectory
 
         print("Let's make a Movie!")
-        for ii in range(Start,NSnaps):
+        snapper = Snapper()
+        for ii in range(Start,NSnaps+1):
             #Create child Snapper for each histogram. Caution, don't add to self
             # or data will stack up and bug out.
-            snapper = Snapper()
+
             #Load Snap and plot histogram with default options
             #
             ###
@@ -154,12 +155,11 @@ class Snapper(object):
             ###
             #
             #
-            snapper.LoadSnap(SimDirectory=self.SimDirectory,SnapNum=ii)
-            im1, ax1 = snapper.PlotHistogram()
+            snap = snapper.LoadSnap(SimDirectory=self.SimDirectory,SnapNum=ii)
+            snapper.PlotHistogram(Snap=snap)
             #Print percentage complete
             print((float(ii + 1 - Start)/float(NSnaps - Start))*100.0,"% complete")
             #Delete child snapper, to free up space and prevent data leakage
-            del snapper
 
 
 
@@ -172,10 +172,10 @@ class Snapper(object):
 #------------------------------------------------------------------------------#
 
 #Histogram:
-# Snapper1 = Snapper()
-# Snapper1.LoadSnap(simfile,snapnum)
-# Snapper1.PlotHistogram()
+Snapper1 = Snapper()
+snap = Snapper1.LoadSnap(SimDirectory=simfile,SnapNum=snapnum)
+Snapper1.PlotHistogram(Snap=snap)
 
 #Movie:
-Snapper2 = Snapper()
-Snapper2.HistogramMovieLoop(simfile,NSnaps=127,Start=10)
+# Snapper2 = Snapper()
+# Snapper2.HistogramMovieLoop(simfile,NSnaps=127,Start=10)
