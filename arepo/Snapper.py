@@ -165,7 +165,7 @@ class Snapper(object):
 #         Plot Projections and Slices
 #------------------------------------------------------------------------------#
 
-    def PlotProjections(self,Snap,SnapNum,Axes=[0,2],boxsize = 200.,boxlos = 50.,pixres = 1.,pixreslos = 0.1):
+    def PlotProjections(self,Snap,SnapNum,Axes=[0,2],boxsize = 200.,boxlos = 50.,pixres = 1.,pixreslos = 0.1, DPI = 500):
         AxesLabels = ['X','Y','Z']
         imgcent =[0.,0.,0.]
 
@@ -244,7 +244,7 @@ class Snapper(object):
         axes[1,1].set_aspect(1.0)
 
         opslaan = f'Shaded_Cell_{SnapNum}.png'
-        plt.savefig(opslaan, dpi = 500, transparent = True)
+        plt.savefig(opslaan, dpi = DPI, transparent = True)
         print(opslaan)
         plt.close()
 #------------------------------------------------------------------------------#
@@ -293,7 +293,7 @@ class Snapper(object):
             snap.pos *= 1e3 #[kpc]
             snap.vol *= 1e9 #[kpc^3]
 
-            snapper.PlotProjections(Snap=snap,SnapNum=ii)
+            snapper.PlotProjections(Snap=snap,SnapNum=ii,DPI=200)
 
             #Print percentage complete
             print(f"{(float(ii + 1 - Start)/float(NSnaps - Start))*100.0 : 0.03f}","% complete")
