@@ -164,13 +164,22 @@ class Snapper(object):
 #------------------------------------------------------------------------------#
 
     def PlotProjections(self,Snap,SnapNum,SnapDM=None,SnapStars=None,Axes=[0,1],boxsize = 200.,boxlos = 50.,pixres = 1.,pixreslos = 0.1, Nbins=500, DPI = 500,CMAP='inferno'):
+
         print("Projection!")
+
+        #Axes Labels to allow for adaptive axis selection
         AxesLabels = ['x','y','z']
+
+        #Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
         imgcent =[0.,0.,0.]
 
+        #--------------------------#
+        ##    Units Conversion    ##
+        #--------------------------#
+
+        #Density is rho/ <rho> where <rho> is average baryonic density
         rhocrit = 3. * (Snap.omega0 * (1+Snap.redshift)**3. + Snap.omegalambda) * (Snap.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
         rhomean = 3. * (Snap.omega0 * (1+Snap.redshift)**3.) * (Snap.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-
 
         meanweight = sum(Snap.gmet[:,0:9], axis = 1) / ( sum(Snap.gmet[:,0:9]/elements_mass[0:9], axis = 1) + Snap.ne*Snap.gmet[:,0] )
         Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
@@ -186,14 +195,13 @@ class Snapper(object):
         bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
         Snap.data['B'] = np.linalg.norm((Snap.data['bfld'] * bfactor), axis=1)
 
+        #--------------------------#
+        ## Slices and Projections ##
+        #--------------------------#
 
         # slice_nH    = Snap.get_Aslice("n_H", box = [boxsize,boxsize],\
         #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
         #  axes = Axes, proj = False, numthreads=16)
-
-        proj_nH     = Snap.get_Aslice("n_H", box = [boxsize,boxsize],\
-         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
-         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=16)
 
         # slice_T     = Snap.get_Aslice("T", box = [boxsize,boxsize],\
         #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
@@ -207,92 +215,101 @@ class Snapper(object):
         #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
         #  nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=16)
 
+        proj_nH     = Snap.get_Aslice("n_H", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=16)
+
         proj_B     = Snap.get_Aslice("B", box = [boxsize,boxsize],\
          center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
          nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=16)
 
+        #   DM mass stored separately as singular value and needs to be
+        #   converted into array for weighting of hist2D
+        massDM = np.array([snapDM.masses[1] for i in range(0,len(snapDM.pos))])
+        #snapStars.mass *= 1e10
+
         #PLOTTING TIME
 
+        #Set plot figure sizes
         xsize = 10.
         ysize = 10.
 
+        #Define halfsize for histogram ranges which are +/-
         halfbox = boxsize/2.
 
-        redshift = Snap.redshift
-        aConst = 1. / (1. + redshift)
+        #Halve Nbins for stars as they're hard to spot otherwise!
+        NbinsStars = float(Nbins)/2.0
+
+        #Redshift
+        redshift = Snap.redshift        #z
+        aConst = 1. / (1. + redshift)   #[/]
+
         #[0] to remove from numpy array for purposes of plot title
-        lookback = Snap.cosmology_get_lookback_time_from_a(np.array([aConst]))[0]
+        lookback = Snap.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
 
+        #DPI Controlled by user as lower res needed for videos #
+        fig, axes = plt.subplots(2, 2, figsize = (xsize,ysize), dpi = DPI)
+
+        #Add overall figure plot
         TITLE = r"$z=$" + f"{redshift:0.05e} " + " " + r"$t_{Lookback}=$" + f"{lookback:0.05e} Gyrs"
-
-        fig, axes = plt.subplots(2, 2, figsize = (xsize,ysize), dpi = 500)
         fig.suptitle(TITLE, fontsize=16)
         cmap = plt.get_cmap(CMAP)
+        cmap.set_bad(color="grey")
 
-        # hist,xedge,yedge=np.histogram2d(SnapDM.pos[:,Axes[0]],SnapDM.pos[:,Axes[1]] \
-        # , bins=Nbins,range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]],normed=False)
-
-        cmapDM = plt.get_cmap(CMAP)
-        # cmapDM.set_bad(color='gray')
+        #-----------#
+        # Plot DM Histogram 2D #
+        #-----------#
 
         pcm1 = axes[0,0].hist2d(SnapDM.pos[:,Axes[0]],SnapDM.pos[:,Axes[1]],bins=Nbins,range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]],
-        norm = matplotlib.colors.SymLogNorm(linthresh=0.1), cmap = cmapDM)
+        norm = matplotlib.colors.LogNorm(), weights=massDM , cmap = cmap)
 
-        # pcm1 = axes[0,0].imshow(hist,cmap=CMAP,\
-        #  norm = matplotlib.colors.LogNorm(vmin=np.nanmin(hist),vmax=np.nanmax(hist) \
-        # ,extent=[np.min(xedge),np.max(xedge),np.min(yedge),np.max(yedge)],origin='lower')
+        axes[0,0].set_title(f'Dark Matter Column Density - #Bins={Nbins:0.01f}')
+        fig.colorbar(pcm1[3], ax = axes[0,0], orientation = 'horizontal',label=r'$n_{DM}$ [$10^{10} M_{\odot}$ $pixel^{-2}$]')
 
-        axes[0,0].set_title(r'Dark Matter Column Density')
-
-        fig.colorbar(pcm1[3], ax = axes[0,0], orientation = 'horizontal',label=r'$n_{DM}$ [$\# pixel^{-2}$]')
-        # pcm1.colorbar(pcm1, ax = axes[0,0], orientation = 'horizontal',label=r'DM Column Density')
+        #-----------#
+        # Plot n_H Projection #
         #-----------#
 
         pcm2 = axes[0,1].pcolormesh(proj_nH['x'], proj_nH['y'], np.transpose(proj_nH['grid'])/int(boxlos/pixreslos),\
          norm = matplotlib.colors.LogNorm(vmin=1e-6,vmax=1e-1), cmap = cmap, rasterized = True)
         axes[0,1].set_title(r'Projection $n_H$')
         fig.colorbar(pcm2, ax = axes[0,1], orientation = 'horizontal',label=r'$n_H$ [$cm^{-3}$]')
-        #-----------#
-        pcm3 = axes[1,0].hist2d(SnapStars.pos[:,Axes[0]],SnapStars.pos[:,Axes[1]],bins=int(float(Nbins)/2.),\
-        range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]],norm = matplotlib.colors.SymLogNorm(linthresh=0.1), cmap = cmap)
-        # hist2,xedge2,yedge2=np.histogram2d(SnapStars.pos[:,Axes[0]],SnapStars.pos[:,Axes[1]] \
-        # , bins=Nbins,range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]],normed=False)
-        #
-        # pcm3 = axes[1,0].imshow(hist,cmap=CMAP,\
-        #  norm = matplotlib.colors.LogNorm(vmin=np.nanmin(hist2),vmax=np.nanmax(hist2) \
-        # ,extent=[np.min(xedge2),np.max(xedge2),np.min(yedge2),np.max(yedge2)],origin='lower')
 
-        axes[1,0].set_title(r'Stars Column Density')
-        fig.colorbar(pcm3[3], ax = axes[1,0], orientation = 'horizontal',label=r'$n_*$ [$\# pixel^{-2}$]')
         #-----------#
-                                                                                                                                                #),\
+        # Plot Stars Histogram 2D #
+        #-----------#
+
+        pcm3 = axes[1,0].hist2d(SnapStars.pos[:,Axes[0]],SnapStars.pos[:,Axes[1]],bins=NbinsStars,\
+        range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]], weights=snapStars.mass, norm = matplotlib.colors.LogNorm(), cmap = cmap)
+
+        axes[1,0].set_title(f'Stars Column Density - #Bins={NbinsStars:0.01f}')
+        fig.colorbar(pcm3[3], ax = axes[1,0], orientation = 'horizontal',label=r'$n_*$ [$10^{10} M_{\odot}$ $pixel^{-2}$]')
+
+        #-----------#
+        # Plot Magnetic Field Projection #
+        #-----------#
+
         pcm4 = axes[1,1].pcolormesh(proj_B['x'], proj_B['y'], np.transpose(proj_B['grid']),\
         norm = matplotlib.colors.SymLogNorm(linthresh=0.1),\
          cmap = cmap, rasterized = True)
+
         axes[1,1].set_title(r'Projection $B$')
         fig.colorbar(pcm4, ax = axes[1,1], orientation = 'horizontal',label=r'$B$ [$\mu G$]')
-        # fig.colorbar(pcm4, ax = axes[1,1], orientation = 'horizontal',label=r'$B$ [$\mu G$]')
 
-        # pcm3 = axes[1,0].pcolormesh(proj_nH['x'], proj_nH['y'], np.transpose(proj_nH['grid'])/int(boxlos/pixreslos), norm = matplotlib.colors.LogNorm(vmin=1e-5, vmax=1e-1), cmap = cmap, rasterized = True)
-        # axes[1,0].set_title(r'Projection $n_H$')
-        # fig.colorbar(pcm2, ax = axes[1,0], orientation = 'horizontal',label=r'$n_H$ [$cm^{-3}$]')
+        #-----------#
 
-        # pcm4 = axes[1,1].pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']), norm = matplotlib.colors.LogNorm(vmin=1e4, vmax=1e7), cmap = cmap, rasterized = True)
-        # axes[1,1].set_title(r'Projection $T$')
-        # fig.colorbar(pcm4, ax = axes[1,1], orientation = 'horizontal',label=r'$T$ [$K$]')
-
-
+        #Add Axes labels to each plot, adaptive to which axes are selected
         for ii in range(0,2):
             for jj in range(0,2):
                 axes[ii,jj].set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)')#, fontsize = 20.0)
                 axes[ii,jj].set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)')#, fontsize = 20.0)
-                # axes[ii,jj].tick_params(labelsize=20.)
 
         axes[0,0].set_aspect(1.0)
         axes[0,1].set_aspect(1.0)
         axes[1,0].set_aspect(1.0)
         axes[1,1].set_aspect(1.0)
 
+        #Pad snapnum with zeroes to enable easier video making
         SnapNum = str(SnapNum).zfill(3);
         opslaan = f'Shaded_Cell_{SnapNum}.png'
         plt.savefig(opslaan, dpi = DPI, transparent = True)
@@ -330,6 +347,8 @@ class Snapper(object):
             #
             #
 
+            # load in the subfind group files
+            snap_subfind = load_subfind(ii,dir=simfile)
 
             # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
             snapGas   = gadget_readsnap(ii, simfile,loadonlytype = [0],lazy_load=True)
@@ -354,7 +373,6 @@ class Snapper(object):
 
             #Print percentage complete
             print(f"{(float(ii + 1 - Start)/float(NSnaps - Start))*100.0 : 0.03f}","% complete")
-            #Delete child snapper, to free up space and prevent data leakage
 
         return
 #===============================================================================#
@@ -393,32 +411,32 @@ class Snapper(object):
 
 # Single FvdV Projection:
 # load in the subfind group files
-snap_subfind = load_subfind(snapnum,dir=simfile)
-
-# load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-snapGas   = gadget_readsnap(snapnum, simfile,loadonlytype = [0],lazy_load=True)
-snapDM    = gadget_readsnap(snapnum, simfile,loadonlytype = [1],lazy_load=True)
-snapStars = gadget_readsnap(snapnum, simfile,loadonlytype = [4],lazy_load=True)
-
-print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
-
-Snapper3 = Snapper()
-snapGas   = Snapper3.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
-snapDM    = Snapper3.SetCentre(Snap=snapDM,Snap_SubFind=snap_subfind,HaloID=0)
-snapStars = Snapper3.SetCentre(Snap=snapStars,Snap_SubFind=snap_subfind,HaloID=0)
-
-#Convert Units
-## Make this a seperate function at some point??
-snapGas.pos   *= 1e3 #[kpc]
-snapDM.pos    *= 1e3 #[kpc]
-snapStars.pos *= 1e3 #[kpc]
-
-snapGas.vol *= 1e9 #[kpc^3]
-
-Snapper3.PlotProjections(Snap=snapGas,SnapNum=snapnum,SnapDM=snapDM,SnapStars=snapStars)
+# snap_subfind = load_subfind(snapnum,dir=simfile)
+#
+# # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
+# snapGas   = gadget_readsnap(snapnum, simfile,loadonlytype = [0],lazy_load=True)
+# snapDM    = gadget_readsnap(snapnum, simfile,loadonlytype = [1],lazy_load=True)
+# snapStars = gadget_readsnap(snapnum, simfile,loadonlytype = [4],lazy_load=True)
+#
+# print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+#
+# Snapper3 = Snapper()
+# snapGas   = Snapper3.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
+# snapDM    = Snapper3.SetCentre(Snap=snapDM,Snap_SubFind=snap_subfind,HaloID=0)
+# snapStars = Snapper3.SetCentre(Snap=snapStars,Snap_SubFind=snap_subfind,HaloID=0)
+#
+# #Convert Units
+# ## Make this a seperate function at some point??
+# snapGas.pos   *= 1e3 #[kpc]
+# snapDM.pos    *= 1e3 #[kpc]
+# snapStars.pos *= 1e3 #[kpc]
+#
+# snapGas.vol *= 1e9 #[kpc^3]
+#
+# Snapper3.PlotProjections(Snap=snapGas,SnapNum=snapnum,SnapDM=snapDM,SnapStars=snapStars)
 
 #------------------------------------------------------------------------------#
 
-# # Histogram 2D Movie:
-# Snapper4 = Snapper()
-# Snapper4.ProjectionMovieLoop(SimDirectory=simfile,NSnaps=127,Start=10)
+# Histogram 2D Movie:
+Snapper4 = Snapper()
+Snapper4.ProjectionMovieLoop(SimDirectory=simfile,NSnaps=127,Start=10)
