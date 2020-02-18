@@ -225,7 +225,7 @@ class Snapper(object):
 
         #   DM mass stored separately as singular value and needs to be
         #   converted into array for weighting of hist2D
-        massDM = np.array([snapDM.masses[1] for i in range(0,len(snapDM.pos))])
+        massDM = np.array([SnapDM.masses[1] for i in range(0,len(SnapDM.pos))])
         #snapStars.mass *= 1e10
 
         #PLOTTING TIME
@@ -280,7 +280,7 @@ class Snapper(object):
         #-----------#
 
         pcm3 = axes[1,0].hist2d(SnapStars.pos[:,Axes[0]],SnapStars.pos[:,Axes[1]],bins=NbinsStars,\
-        range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]], weights=snapStars.mass, norm = matplotlib.colors.LogNorm(), cmap = cmap)
+        range=[[-1.*halfbox,halfbox],[-1.*halfbox,halfbox]], weights=SnapStars.mass, norm = matplotlib.colors.LogNorm(), cmap = cmap)
 
         axes[1,0].set_title(f'Stars Column Density - #Bins={NbinsStars:0.01f}')
         fig.colorbar(pcm3[3], ax = axes[1,0], orientation = 'horizontal',label=r'$n_*$ [$10^{10} M_{\odot}$ $pixel^{-2}$]')
