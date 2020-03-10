@@ -225,7 +225,8 @@ class Snapper(object):
 
         #   DM mass stored separately as singular value and needs to be
         #   converted into array for weighting of hist2D
-        massDM = np.array([SnapDM.masses[1] for i in range(0,len(SnapDM.pos))])
+        if (SnapDM is not None):
+            massDM = np.array([SnapDM.masses[1] for i in range(0,len(SnapDM.pos))])
         #snapStars.mass *= 1e10
 
         #PLOTTING TIME
@@ -437,6 +438,6 @@ class Snapper(object):
 
 #------------------------------------------------------------------------------#
 
-# Histogram 2D Movie:
-Snapper4 = Snapper()
-Snapper4.ProjectionMovieLoop(SimDirectory=simfile,NSnaps=127,Start=10)
+# # Histogram 2D Movie:
+# Snapper4 = Snapper()
+# Snapper4.ProjectionMovieLoop(SimDirectory=simfile,NSnaps=127,Start=10)
