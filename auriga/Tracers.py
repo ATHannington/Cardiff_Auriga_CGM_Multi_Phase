@@ -9,18 +9,30 @@ from gadget_subfind import *
 from Snapper import *
 
 
-simfile='/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
-snapnumMAX = 127
+saveKeys = ['Tmedian','TUP','TLO','Lookbackmedian']
 
-snapnum=127 # set snapshot to look at
-snapnumDelta =  2
 
-targetTLst= [4.,5.,6.] # [10^{target +- delta}]
-deltaT = 0.25
+TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
+usecols=[0,1],skipinitialspace=True, index_col=0, comment="#").to_dict()[1]
 
-Rinner = 25.0 #[kpc]
-Router = 75.0 #[kpc]
+for key, value in TRACERSPARAMS.items():
+    if ((key != 'targetTLst') & (key != 'simfile')):
+        TRACERSPARAMS.update({key:float(value)})
+    elif ((key == 'targetTLst') & (key != 'simfile')):
+        lst = value.split(",")
+        lst2 = [float(item) for item in lst]
+        TRACERSPARAMS.update({key:lst2})
+    elif ((key != 'targetTLst') & (key == 'simfile')):
+        TRACERSPARAMS.update({key:value})
 
+Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
+Tstr = '-'.join(Tlst)
+
+DataSavepath = f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
+    f"_{int(TRACERSPARAMS['Rinner'])}R{int(TRACERSPARAMS['Router'])}_targetT{Tstr}"+\
+    f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
+
+DataSavepathSuffix = f".csv"
 
 def GetTracersFromCells(snapGas, snapTracers,Cond):
     print("GetTracersFromCells")
@@ -104,6 +116,18 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     # print(CellIDs)
     # print(np.shape(CellIDs))
     return Cells, CellIDs
+#------------------------------------------------------------------------------#
+##  FvdV weighted percentile code:
+#------------------------------------------------------------------------------#
+def weightedperc(data, weights, perc):
+    perc /= 100.
+    ind_sorted = np.argsort(data)
+    sorted_data = np.array(data)[ind_sorted]
+    sorted_weights = np.array(weights)[ind_sorted]
+    cum = np.cumsum(sorted_weights)
+    whereperc, = np.where(cum/float(cum[-1]) >= perc)
+
+    return sorted_data[whereperc[0]]
 
 #==============================================================================#
 #element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
@@ -122,10 +146,10 @@ fig = plt.figure()
 ax = plt.gca()
 
 kk = 0
-for targetT in targetTLst:
+for targetT in TRACERSPARAMS['targetTLst']:
 
 
-    NTemps = float(len(targetTLst))
+    NTemps = float(len(TRACERSPARAMS['targetTLst']))
     percentage = (float(kk)/NTemps)*100.0
 
     kk+=1
@@ -134,11 +158,11 @@ for targetT in targetTLst:
     print(f"{percentage:0.02f}%")
     print("Setting Condition!")
     # load in the subfind group files
-    snap_subfind = load_subfind(snapnum,dir=simfile)
+    snap_subfind = load_subfind(TRACERSPARAMS['snapnum'],dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(snapnum, simfile, hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
-    snapTracers = gadget_readsnap(snapnum, simfile, hdf5=True, loadonlytype = [6], lazy_load=True)
+    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
+    snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
     print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
@@ -160,10 +184,10 @@ for targetT in targetTLst:
     #--------------------------------------------------------------------------#
 
     snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
-    Cond = np.where((snapGas.data['T']>=1.*10**(targetT-deltaT)) & \
-                    (snapGas.data['T']<=1.*10**(targetT+deltaT)) & \
-                    (snapGas.data['R']>=Rinner) & \
-                    (snapGas.data['R']<=Router) &
+    Cond = np.where((snapGas.data['T']>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['T']<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['R']>=TRACERSPARAMS['Rinner']) & \
+                    (snapGas.data['R']<=TRACERSPARAMS['Router']) &
                     (snapGas.data['sfr']<=0)\
                    )
 
@@ -173,19 +197,19 @@ for targetT in targetTLst:
     dataDict = {}
     IDDict = {}
 
-    for ii in range(snapnum-snapnumDelta, min(snapnumMAX+1, snapnum+snapnumDelta+1)):
+    for ii in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
         print("")
         print(f"Starting Snap {ii}")
 
         # Single FvdV Projection:
         # load in the subfind group files
-        snap_subfind = load_subfind(ii,dir=simfile)
+        snap_subfind = load_subfind(ii,dir=TRACERSPARAMS['simfile'])
 
         # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-        snapGas     = gadget_readsnap(ii, simfile, hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
-        snapTracers = gadget_readsnap(ii, simfile, hdf5=True, loadonlytype = [6], lazy_load=True)
+        snapGas     = gadget_readsnap(ii, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
+        snapTracers = gadget_readsnap(ii, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
-        print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+        print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
         Snapper1 = Snapper()
         snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
@@ -230,40 +254,39 @@ for targetT in targetTLst:
 
     for ind, (key, value) in enumerate(dataDict.items()):
         for k, v in value.items():
-            if ind == 0:
-                plotData.update({f"{k}mean": np.mean(v)})
-                plotData.update({f"{k}std": np.std(v)})
+            if (k == 'T'):
+                if ind == 0:
+                    plotData.update({f"{k}median": \
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=50.)})
+                    plotData.update({f"{k}UP": \
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'])})
+                    plotData.update({f"{k}LO": \
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'])})
+                else:
+                    plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=50.))
+                    plotData[f"{k}UP"] = np.append(plotData[f"{k}UP"],\
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileUP']))
+                    plotData[f"{k}LO"] = np.append(plotData[f"{k}LO"],\
+                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileLO']))
+            elif (k=='Lookback'):
+                if ind == 0:
+                    plotData.update({f"{k}median": np.median(v)})
+                else:
+                    plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
+                     np.median(v))
             else:
-                plotData[f"{k}mean"] = np.append(plotData[f"{k}mean"],np.mean(v))
-                plotData[f"{k}std"] = np.append(plotData[f"{k}std"],np.std(v))
+                if ind == 0 :
+                    plotData.update({f"{k}": v})
+                else:
+                    plotData[f"{k}"] = np.append(plotData[f"{k}"], v)
 
+    tmpSave = DataSavepath + f"_T{int(targetT)}" + DataSavepathSuffix
+    print(tmpSave)
 
-    #Set style options
-    opacity = 0.25
+    tmpData = {}
+    for key in saveKeys:
+        tmpData.update({key : plotData[key]})
 
-    #Select a Temperature specific colour from colourmap
-    cmap = matplotlib.cm.get_cmap('viridis')
-    colour = cmap((float(kk)/NTemps)-0.05)
-
-    print(f"TMean = {plotData['Tmean']}")
-    print(f"Tstd = {plotData['Tstd']}")
-
-    print("")
-    print("Temperature Sub-Plot!")
-    ax.fill_between(plotData['Lookbackmean'], plotData['Tmean']+plotData['Tstd'], plotData['Tmean']-plotData['Tstd'],\
-     facecolor=colour,alpha=opacity,interpolate=True)
-    ax.plot(plotData['Lookbackmean'],plotData['Tmean'],label=r"$T = 10^{%05.02f} K$"%targetTLst[kk-1], color = colour)
-    # ax.set_yscale('log')
-    ax.set_xlabel(r"Lookback Time [$Gyrs$]")
-    ax.set_ylabel(r"Temperature [$K$]")
-    ax.set_title(f"Cells Containing Tracers selected by: " +\
-     "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(deltaT) +\
-     r" and $%05.2f \leq R \leq %05.2f kpc $"%(Rinner, Router))
-    plt.legend()
-
-
-
-opslaan = f'Tracers.png'
-plt.savefig(opslaan, dpi = 500, transparent = False)
-print(opslaan)
-plt.close()
+    df = pd.DataFrame.from_dict(tmpData, orient="index")
+    df.to_csv(tmpSave)
