@@ -58,7 +58,7 @@ for ii in range(len(Tlst)):
 
     #Select a Temperature specific colour from colourmap
     cmap = matplotlib.cm.get_cmap('viridis')
-    colour = cmap((float(ii)/NTemps)-0.05)
+    colour = cmap((float(ii)/(NTemps-1.0)))
 
     print("")
     print("Temperature Sub-Plot!")

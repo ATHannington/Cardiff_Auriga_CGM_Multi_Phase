@@ -3,10 +3,12 @@ import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 import const as c
-from gadget import *
-from gadget_subfind import *
-from Snapper import *
-from Tracers import *
+from gadget import gadget_readsnap
+from gadget_subfind import load_subfind, sum
+from Snapper import Snapper
+from Tracers_Subroutines import GetTracersFromCells, GetCellsFromTracers
+import pytest
+
 #==============================================================================#
 
 simfile='/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
@@ -63,14 +65,16 @@ Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<
 Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
 CellsCFT, CellIDsCFT = GetCellsFromTracers(snapGas, snapTracers,Tracers)
 
-CellIDMatch = np.all(np.isin(CellIDsTFC,CellIDsCFT))
+def test_CellIDs():
+    CellIDMatch = np.all(np.isin(CellIDsTFC,CellIDsCFT))
 
-if (CellIDMatch == True):
-    print("Cell ID Match! Cells from Tracers and Tracers from Cells")
-else:
-    print("WARNING: CellID Mismatch! Tracers from Cells and Cells from Tracers")
-    print("")
-    print("Cell IDs Tracers from Cells:", CellIDsTFC)
-    print("Shape:",np.shape(CellIDsTFC))
-    print("Cell IDs Cells from Tracers:", CellIDsCFT)
-    print("Shape:",np.shape(CellIDsCFT))
+    assert CellIDMatch == True,"[@CellIDMatch:] Cell IDs not equal! TFC and CFT! Check tracer selections!"
+
+def test_CellData():
+    truthyList = []
+    for ((k1,v1),(k2,v2)) in zip(CellsCFT.items(),CellsTFC.items()):
+        truthyList.append(np.all(np.isin(v1,v2)))
+
+    truthy = np.all(truthyList)
+
+    assert truthy == True,"[@Cells data:] Cell data not equal from TFC and CFT! Check tracer selections!"
