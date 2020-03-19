@@ -58,19 +58,19 @@ for ii in range(len(Tlst)):
 
     #Select a Temperature specific colour from colourmap
     cmap = matplotlib.cm.get_cmap('viridis')
-    colour = cmap((float(ii)/(NTemps-1.0)))
+    colour = cmap(((float(ii)+1.0)/(NTemps)))
 
     print("")
     print("Temperature Sub-Plot!")
 
-    ax.fill_between(plotData['Lookbackmedian'],plotData['TUP'],plotData['TLO'],\
+    ax.fill_between(plotData['Lookback'],plotData['RUP'],plotData['RLO'],\
     facecolor=colour,alpha=opacity,interpolate=True)
-    ax.plot(plotData['Lookbackmedian'],plotData['Tmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour)
-    ax.axvline(x=plotData['Lookbackmedian'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
+    ax.plot(plotData['Lookback'],plotData['Rmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour)
+    ax.axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
 
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
     ax.set_xlabel(r"Lookback Time [$Gyrs$]")
-    ax.set_ylabel(r"Temperature [$K$]")
+    ax.set_ylabel(r"Radius [$Kpc$]")
     ax.set_title(f"Cells Containing Tracers selected by: " +\
     "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
     r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\

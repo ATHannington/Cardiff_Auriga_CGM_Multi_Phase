@@ -9,7 +9,18 @@ from gadget_subfind import *
 from Snapper import *
 from Tracers_Subroutines import *
 
-saveKeys = ['Tmedian','TUP','TLO','Lookbackmedian']
+saveParams = ['T','R']
+saveEssentials =['Lookback','Ntracers']
+saveTypes= ['median','UP','LO']
+
+saveKeys =[]
+for param in saveParams:
+    for type in saveTypes:
+        saveKeys.append(param+type)
+
+for key in saveEssentials:
+    saveKeys.append(key)
+
 
 
 TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
@@ -83,12 +94,28 @@ for targetT in TRACERSPARAMS['targetTLst']:
     meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
     Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
     snapGas.data['T'] = snapGas.u / Tfac # K
+    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
+
+
+    ### Exclude values outside halo 0 ###
+
+    gaslengthGas = snap_subfind.data['slty'][0,0]
+    gaslengthTracers = snap_subfind.data['slty'][0,6]
+
+    for key, value in snapGas.data.items():
+        if(snapGas.data[key] != None):
+            snapGas.data[key] = snapGas.data[key][:gaslengthGas]
+
+    for key, value in snapTracers.data.items():
+        if(snapTracers.data[key] != None):
+            snapTracers.data[key] = snapTracers.data[key][:gaslengthTracers]
+
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
 
-    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
+
     Cond = np.where((snapGas.data['T']>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['T']<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['R']>=TRACERSPARAMS['Rinner']) & \
@@ -128,13 +155,30 @@ for targetT in TRACERSPARAMS['targetTLst']:
         meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
         Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
         snapGas.data['T'] = snapGas.u / Tfac # K
+        snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
 
+        ### Exclude values outside halo 0 ###
+
+        gaslengthGas = snap_subfind.data['slty'][0,0]
+        gaslengthTracers = snap_subfind.data['slty'][0,6]
+
+        for key, value in snapGas.data.items():
+            if(snapGas.data[key] is not None):
+                snapGas.data[key] = snapGas.data[key][:gaslengthGas]
+
+        for key, value in snapTracers.data.items():
+            if(snapTracers.data[key] is not None):
+                snapTracers.data[key] = snapTracers.data[key][:gaslengthTracers]
 
         ###
         ##  Selection   ##
         ###
 
         CellsCFT, CellIDsCFT = GetCellsFromTracers(snapGas, snapTracers,Tracers)
+
+        #Number of tracers
+        CellsCFT['Ntracers'] = [int(len(Tracers))]
+        print(f"Number of tracers = {CellsCFT['Ntracers']}")
 
         print("Lookback")
         #Redshift
@@ -159,7 +203,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     for ind, (key, value) in enumerate(dataDict.items()):
         for k, v in value.items():
-            if (k == 'T'):
+            if ((k != 'Lookback') & (k in saveParams)):
                 if ind == 0:
                     plotData.update({f"{k}median": \
                     weightedperc(data=v, weights=dataDict[key]['mass'],perc=50.)})
@@ -176,9 +220,9 @@ for targetT in TRACERSPARAMS['targetTLst']:
                     weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileLO']))
             elif (k=='Lookback'):
                 if ind == 0:
-                    plotData.update({f"{k}median": np.median(v)})
+                    plotData.update({f"{k}": np.median(v)})
                 else:
-                    plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
+                    plotData[f"{k}"] = np.append(plotData[f"{k}"],\
                      np.median(v))
             else:
                 if ind == 0 :
