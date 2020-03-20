@@ -9,7 +9,7 @@ from gadget_subfind import *
 from Snapper import *
 from Tracers_Subroutines import *
 
-saveParams = ['T','R']
+saveParams = ['T','R','n_H','B']
 saveEssentials =['Lookback','Ntracers']
 saveTypes= ['median','UP','LO']
 
@@ -91,25 +91,46 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     snapGas.vol *= 1e9 #[kpc^3]
 
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    print("Converting Units!")
+
+    #Density is rho/ <rho> where <rho> is average baryonic density
+    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+
     meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
     Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
+
+    gasdens = snapGas.rho / (c.parsec*1e6)**3. * c.msol * 1e10
+    gasX = snapGas.gmet[:,0]
+
     snapGas.data['T'] = snapGas.u / Tfac # K
+    snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
+    snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
+    snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
+
+    bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
+    snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
+
     snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
 
 
     ### Exclude values outside halo 0 ###
 
-    gaslengthGas = snap_subfind.data['slty'][0,0]
-    gaslengthTracers = snap_subfind.data['slty'][0,6]
+    print("Finding Halo 0 Only Data!")
+
+    gaslength = snap_subfind.data['slty'][0,0]
 
     for key, value in snapGas.data.items():
-        if(snapGas.data[key] != None):
-            snapGas.data[key] = snapGas.data[key][:gaslengthGas]
+        if (snapGas.data[key] is not None):
+            snapGas.data[key] = snapGas.data[key][:gaslength]
 
     for key, value in snapTracers.data.items():
-        if(snapTracers.data[key] != None):
-            snapTracers.data[key] = snapTracers.data[key][:gaslengthTracers]
-
+        if (snapTracers.data[key] is not None):
+            snapTracers.data[key] = snapTracers.data[key][:gaslength]
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
@@ -152,23 +173,44 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
         snapGas.vol *= 1e9 #[kpc^3]
 
+        #--------------------------#
+        ##    Units Conversion    ##
+        #--------------------------#
+
+        print("Converting Units!")
+
+        #Density is rho/ <rho> where <rho> is average baryonic density
+        rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+        rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+
         meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
         Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
+
+        gasdens = snapGas.rho / (c.parsec*1e6)**3. * c.msol * 1e10
+        gasX = snapGas.gmet[:,0]
+
         snapGas.data['T'] = snapGas.u / Tfac # K
+        snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
+        snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
+        snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
+
+        bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
+        snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
+
         snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
 
         ### Exclude values outside halo 0 ###
+        print("Finding Halo 0 Only Data!")
 
-        gaslengthGas = snap_subfind.data['slty'][0,0]
-        gaslengthTracers = snap_subfind.data['slty'][0,6]
+        gaslength = snap_subfind.data['slty'][0,0]
 
         for key, value in snapGas.data.items():
-            if(snapGas.data[key] is not None):
-                snapGas.data[key] = snapGas.data[key][:gaslengthGas]
+            if (snapGas.data[key] is not None):
+                snapGas.data[key] = snapGas.data[key][:gaslength]
 
         for key, value in snapTracers.data.items():
-            if(snapTracers.data[key] is not None):
-                snapTracers.data[key] = snapTracers.data[key][:gaslengthTracers]
+            if (snapTracers.data[key] is not None):
+                snapTracers.data[key] = snapTracers.data[key][:gaslength]
 
         ###
         ##  Selection   ##
