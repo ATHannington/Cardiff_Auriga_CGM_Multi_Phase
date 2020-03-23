@@ -1,3 +1,9 @@
+"""
+Author: A. T. Hannington
+Created: 12/03/2020
+Known Bugs:
+    None
+"""
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -12,48 +18,33 @@ from Snapper import *
 def GetTracersFromCells(snapGas, snapTracers,Cond):
     print("GetTracersFromCells")
 
-    # print("CellIDs initial from Cond")
-    #Select CellIDs for Cond
+    #Select Cell IDs for cells which meet condition
     CellIDs = snapGas.id[Cond]
-    # print(CellIDs)
-    # print(np.shape(CellIDs))
 
     #Select Parent IDs in Cond list
-    #   Selecting from cells with a tracer, which cell IDs are have cell IDs that meet Cond
-    # print("Parents")
+    #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
     Parents = np.isin(snapTracers.prid,CellIDs)
-    # print(Parents)
-    # print(np.shape(Parents))
 
-    #Select INDICES of the tracers who are in a cell which meets Cond
-    # print("ParentsIndices")
+    #Select Indices (positions in array) of these parent IDs
     ParentsIndices = np.where(Parents)
-    # print(ParentsIndices)
-    # print(np.shape(ParentsIndices))
 
-    # print("CellIDs final Containing Tracers Only")
-    CellsIndices = np.where(np.isin(snapGas.id,snapTracers.prid[ParentsIndices]))
+    #Find Index of Cell IDs. These Cell IDs now match cond AND contain tracers
+    CellsIndices = np.where(np.isin(snapGas.id,Parents))
+
+    #Find the updated Cell IDs - match cond AND contain tracers
     CellIDs = snapGas.id[CellsIndices]
-    # print(CellIDs)
-    # print(np.shape(CellIDs))
 
     #Select the data for Cells that meet Cond which contain tracers
-    #   Does this by making a new dictionary from old data
-    #       but only selects values where Parent ID is True
-    #           i.e. where Cond is met and Cell ID contains tracers
-    # print("Cells with tracers")
+    #   Does this by creating new dict from old data.
+    #       Only selects values at index where Cell meets cond and contains tracers
     Cells={}
     for key, value in snapGas.data.items():
         if value is not None:
                 Cells.update({key: value[CellsIndices]})
-    # print(Cells)
+
 
     #Finally, select TRACER IDs who are in cells that meet Cond
-    # print("Tracers")
     Tracers = snapTracers.trid[ParentsIndices]
-    # print(Tracers)
-    # print(np.shape(Tracers))
-
 
     return Tracers, Cells, CellIDs
 
@@ -61,45 +52,50 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
 def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     print("GetCellsFromTracers")
 
-    # print(Tracers)
-    # print(np.shape(Tracers))
-    # print("Tracers Indices")
+    #Select indices (positions in array) of Tracer IDs which are in the Tracers list
     TracersIndices = np.where(np.isin(snapTracers.trid,Tracers))
-    # print(TracersIndices)
-    # print(np.shape(TracersIndices))
 
-    # print("Parents")
+    #Select the matching parent cell IDs for tracers which are in Tracers list
     Parents = snapTracers.prid[TracersIndices]
-    # print(Parents)
-    # print(np.shape(Parents))
 
-    # print("CellsIndices")
-    CellsIndices = np.isin(snapGas.id,Parents)
-    # print(CellsIndices)
-    # print(np.shape(CellsIndices))
-    # print("Cells")
+    #Select Indices of cell IDs which are in the parents list, the list of cell IDs
+    #   which contain tracers in tracers list.
+    CellsIndices = np.where(np.isin(snapGas.id,Parents))
+
+    #Select data from cells which contain tracers
+    #   Does this by making a new dictionary from old data. Only selects values
+    #       At indices of Cells which contain tracers in tracers list.
     Cells={}
     for key, value in snapGas.data.items():
         if value is not None:
-                Cells.update({key: value[np.where(CellsIndices)]})
+                Cells.update({key: value[CellsIndices]})
 
-    # Cells = {key: value for ind, (key, value) in enumerate(snapGas.data.items()) if CellsIndices[ind] == True}
-    # print(Cells)
+    #Select IDs of Cells which contain tracers in tracers list.
+    CellIDs = snapGas.id[CellsIndices]
 
-    # print("CellIDs")
-    CellIDs = snapGas.id[np.where(CellsIndices)]
-    # print(CellIDs)
-    # print(np.shape(CellIDs))
     return Cells, CellIDs
+
 #------------------------------------------------------------------------------#
 ##  FvdV weighted percentile code:
 #------------------------------------------------------------------------------#
 def weightedperc(data, weights, perc):
+    #percentage to decimal
     perc /= 100.
-    ind_sorted = np.argsort(data)
-    sorted_data = np.array(data)[ind_sorted]
-    sorted_weights = np.array(weights)[ind_sorted]
-    cum = np.cumsum(sorted_weights)
-    whereperc, = np.where(cum/float(cum[-1]) >= perc)
 
+    #Indices of data array in sorted form
+    ind_sorted = np.argsort(data)
+
+    #Sort the data
+    sorted_data = np.array(data)[ind_sorted]
+
+    #Sort the weights by the sorted data sorting
+    sorted_weights = np.array(weights)[ind_sorted]
+
+    #Find the cumulative sum of the weights
+    cm = np.cumsum(sorted_weights)
+
+    #Find indices where cumulative some as a fraction of final cumulative sum value is greater than percentage
+    whereperc = np.where(cm/float(cm[-1]) >= perc)
+
+    #Reurn the first data value where above is true
     return sorted_data[whereperc[0]]

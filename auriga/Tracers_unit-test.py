@@ -1,3 +1,9 @@
+"""
+Author: A. T. Hannington
+Created: 19/03/2020
+Known Bugs:
+    None
+"""
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
@@ -54,6 +60,7 @@ snapGas.data['T'] = snapGas.u / Tfac # K
 ###
 target=5.
 delta = 0.25
+
 #Select INDICES of T = 10^5+-delta K
 Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<=1.*10**(target+delta)))
 
@@ -66,15 +73,23 @@ Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
 CellsCFT, CellIDsCFT = GetCellsFromTracers(snapGas, snapTracers,Tracers)
 
 def test_CellIDs():
+    """
+    Test that the Cell IDs selected from tracers match the CellIDs containing tracers when tracers are selected
+    """
     CellIDMatch = np.all(np.isin(CellIDsTFC,CellIDsCFT))
 
     assert CellIDMatch == True,"[@CellIDMatch:] Cell IDs not equal! TFC and CFT! Check tracer selections!"
 
 def test_CellData():
+    """
+    Check all values of data from Cells selected from tracers matches data selected from selecting the tracers.
+    """
     truthyList = []
     for ((k1,v1),(k2,v2)) in zip(CellsCFT.items(),CellsTFC.items()):
+        #Do all entries if CellsCFT values and CellsTFC values match?
         truthyList.append(np.all(np.isin(v1,v2)))
 
+    #Do the entries match for all keys?
     truthy = np.all(truthyList)
 
     assert truthy == True,"[@Cells data:] Cell data not equal from TFC and CFT! Check tracer selections!"
