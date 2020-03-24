@@ -86,14 +86,15 @@ for ii in range(len(Tlst)):
     print("")
     print("Sub-Plot!")
 
-    ax.fill_between(plotData['Lookback'],plotData['BUP'],plotData['BLO'],\
-    facecolor=colour,alpha=opacity,interpolate=True)
-    ax.plot(plotData['Lookback'],plotData['Bmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour)
-    ax.axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
+    # ax.fill_between(plotData['Lookback'],plotData['TUP'],plotData['TLO'],\
+    # facecolor=colour,alpha=opacity,interpolate=True)
+    ax.scatter(plotData['Tmedian'],plotData['Rmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour)
+    # ax.axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
 
     ax.set_yscale('log')
-    ax.set_xlabel(r"Lookback Time [$Gyrs$]")
-    ax.set_ylabel(r"|B| [$\mu G$]")
+    ax.set_xscale('log')
+    ax.set_xlabel(r"Median Temperature [$K$]")
+    ax.set_ylabel(r"Median Radius [$kpc$]")
     ax.set_title(f"Cells Containing Tracers selected by: " +\
     "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
     r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
@@ -104,7 +105,7 @@ for ii in range(len(Tlst)):
 
 
 
-opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}B.png"
+opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}Scatter.png"
 plt.savefig(opslaan, dpi = 500, transparent = False)
 print(opslaan)
 plt.close()

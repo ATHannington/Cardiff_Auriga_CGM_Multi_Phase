@@ -67,6 +67,8 @@ for ii in range(len(Tlst)):
         for key, value in tmpData[k].items():
              if k == 1 :
                  plotData.update({key: value})
+             else:
+                 plotData[key]= np.append(plotData[key], value)
 
     #Get number of temperatures
     NTemps = float(len(Tlst))
