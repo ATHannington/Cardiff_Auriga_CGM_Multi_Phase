@@ -14,6 +14,7 @@ from gadget import *
 from gadget_subfind import *
 from Snapper import *
 from Tracers_Subroutines import *
+import pickle
 
 #==============================================================================#
 #       USER DEFINED PARAMETERS
@@ -92,6 +93,12 @@ omegabaryon0 = 0.048
 #       MAIN PROGRAM
 #==============================================================================#
 
+
+#Set Blank Data dictionary ALL data is stored here!
+FullDict = {}
+
+
+
 kk = 0
 #Loop over target temperatures
 for targetT in TRACERSPARAMS['targetTLst']:
@@ -161,16 +168,18 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
     gaslength = snap_subfind.data['slty'][0,0]
-
+    # tracerlength = snap_subfind.data['slty'][6,0]
+    # print(tracerlength)
+    # print(foo)
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
         if (snapGas.data[key] is not None):
             snapGas.data[key] = snapGas.data[key][:gaslength]
 
-    #Take onlt tracers for above HaloID
-    for key, value in snapTracers.data.items():
-        if (snapTracers.data[key] is not None):
-            snapTracers.data[key] = snapTracers.data[key][:gaslength]
+    # #Take onlt tracers for above HaloID
+    # for key, value in snapTracers.data.items():
+    #     if (snapTracers.data[key] is not None):
+    #         snapTracers.data[key] = snapTracers.data[key][:gaslength]
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
@@ -187,24 +196,23 @@ for targetT in TRACERSPARAMS['targetTLst']:
     #Get Cell data and Cell IDs from tracers based on condition
     Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
 
-    #Set Blank Data dictionary for this temperature
+
     dataDict = {}
-    #Set Blank ID dictionary for this temperature
-    IDDict = {}
+
 
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
-    for ii in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
+    for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
         print("")
-        print(f"Starting Snap {ii}")
+        print(f"Starting Snap {snap}")
 
         # load in the subfind group files
-        snap_subfind = load_subfind(ii,dir=TRACERSPARAMS['simfile'])
+        snap_subfind = load_subfind(snap,dir=TRACERSPARAMS['simfile'])
 
         # load in the gas particles mass and position only for HaloID 0.
         #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-        snapGas     = gadget_readsnap(ii, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
+        snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
         # load tracers data
-        snapTracers = gadget_readsnap(ii, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
+        snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
         print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
@@ -246,24 +254,27 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
 
         #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
+
+        print("Finding Halo 0 Only Data!")
+
         gaslength = snap_subfind.data['slty'][0,0]
 
         #Take only data from above HaloID
         for key, value in snapGas.data.items():
             if (snapGas.data[key] is not None):
                 snapGas.data[key] = snapGas.data[key][:gaslength]
-
-        #Take onlt tracers for above HaloID
-        for key, value in snapTracers.data.items():
-            if (snapTracers.data[key] is not None):
-                snapTracers.data[key] = snapTracers.data[key][:gaslength]
+        #
+        # #Take onlt tracers for above HaloID
+        # for key, value in snapTracers.data.items():
+        #     if (snapTracers.data[key] is not None):
+        #         snapTracers.data[key] = snapTracers.data[key][:gaslength]
 
         ###
         ##  Selection   ##
         ###
 
         #Select Cells which have the tracers from the selection snap in them
-        CellsCFT, CellIDsCFT = GetCellsFromTracers(snapGas, snapTracers,Tracers)
+        CellsCFT, CellIDsCFT, Parents = GetCellsFromTracers(snapGas, snapTracers,Tracers)
 
         # Save number of tracers
         CellsCFT['Ntracers'] = [int(len(Tracers))]
@@ -277,15 +288,35 @@ for targetT in TRACERSPARAMS['targetTLst']:
         #Get lookback time in Gyrs
         #[0] to remove from numpy array for purposes of plot title
         lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
-        CellsCFT['Lookback']=[lookback for jj in range(0,len(CellsCFT['T']))]
+
+        CellsCFT['Lookback']= lookback# np.array([lookback for jj in range(0,len(CellsCFT['T']))])
+
+        #Save snap number
+        CellsCFT['Snap'] = snap# np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
+
+        dataDict.update({f"{int(snap)}": CellsCFT})
+
+
+
+        CellsCFT['Lookback']= np.array([lookback for jj in range(0,len(CellsCFT['T']))])
+
+        #Save snap number
+        CellsCFT['Snap'] = np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
+
+        #Save Tracer IDs
+        CellsCFT['trid'] = Tracers
+
+        #Save Parent Cell IDs
+        CellsCFT['prid'] = Parents
+
+        #Save Cell IDs
+        CellsCFT['id'] = CellIDsCFT
 
         #Add snap data to temperature specific dictionary
         print("Adding to Dict")
-        dataDict.update({f"{ii}":CellsCFT})
-        IDDict.update({f"ID{ii}":CellIDsCFT})
+        FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
 
-        # Delete unecessary
-        del CellsCFT, CellIDsCFT, snapGas, snapTracers, Snapper1, snap_subfind
+        del CellIDsCFT, snapGas, snapTracers, Snapper1, snap_subfind
 
 #==============================================================================#
 #       Prepare data and save
@@ -356,4 +387,10 @@ for targetT in TRACERSPARAMS['targetTLst']:
     #Save data as csv!
     df.to_csv(tmpSave)
 
-#End!
+
+
+save = DataSavepath + ".pickle"
+print(save)
+#Save CellsCFT as pickle compressed object
+with open(save,"wb") as f:
+    Cells = pickle.dump(FullDict,f)

@@ -73,7 +73,9 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     #Select IDs of Cells which contain tracers in tracers list.
     CellIDs = snapGas.id[CellsIndices]
 
-    return Cells, CellIDs
+    Parents = Parents[np.where(np.isin(Parents,snapGas.id[CellsIndices]))]
+
+    return Cells, CellIDs, Parents
 
 #------------------------------------------------------------------------------#
 ##  FvdV weighted percentile code:
@@ -98,4 +100,19 @@ def weightedperc(data, weights, perc):
     whereperc = np.where(cm/float(cm[-1]) >= perc)
 
     #Reurn the first data value where above is true
-    return sorted_data[whereperc[0]]
+    return sorted_data[whereperc[0][0]]
+
+#------------------------------------------------------------------------------#
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,TracerNumber):
+    # print("GetIndividualCellFromTracer")
+
+    CellIDNumber = Parents[TracerNumber]
+
+    CellIndex = np.array([])
+    for ID in CellIDNumber:
+        value = np.where(np.isin(CellIDs,ID))
+        CellIndex = np.append(CellIndex, value)
+
+    CellIndex = list(map(int, CellIndex))
+
+    return CellIndex
