@@ -1,6 +1,6 @@
 """
 Author: A. T. Hannington
-Created: 19/03/2020
+Created: 26/03/2020
 
 Known Bugs:
     pandas read_csv loading data as nested dict. . Have added flattening to fix
@@ -11,18 +11,19 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
 import const as c
 from gadget import *
 from gadget_subfind import *
 from Snapper import *
 import pickle
 from Tracers_Subroutines import GetIndividualCellFromTracer
+from random import sample
 
-
-subset = 1000
-
-TracerNumberSelect = np.array([ii for ii in range(0,subset)])
-
+subset = 2500
+xsize = 10.
+ysize = 12.
+DPI = 100
 
 # Read in Tracer Analysis setup data
 TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
@@ -66,16 +67,24 @@ with open(load,"rb") as f:
 
 # CellIndex = GetIndividualCellFromTracer(dataDict[('T4','127')]['trid'],dataDict[('T4','127')]['prid'],dataDict[('T4','127')]['id'],TracerNumber=TracerNumberSelect)
 
-
 print("Getting Tracer Data!")
 Tdata = {}
 
 for T in TRACERSPARAMS['targetTLst']:
     tmp = []
+
+    key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
+    rangeMin = 0
+    rangeMax = len(dataDict[key]['T'])
+    TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+    TracerNumberSelect = sample(TracerNumberSelect.tolist(),subset)
+
+    CellIndex = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
+
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
     for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
+
         key = (f"T{int(T)}",f"{int(snap)}")
-        CellIndex = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
         data = dataDict[key]['T'][CellIndex].reshape((-1,1))
 
         if (snap == int(TRACERSPARAMS['snapMin'])):
@@ -88,8 +97,7 @@ for T in TRACERSPARAMS['targetTLst']:
 
 print("Starting Sub-plots!")
 
-fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True)
-
+fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
 
 #Create a plot for each Temperature
 for ii in range(len(Tlst)):
@@ -126,7 +134,7 @@ for ii in range(len(Tlst)):
     temp = TRACERSPARAMS['targetTLst'][ii]
 
     #Set style options
-    opacity = 7.5/float(subset)
+    opacity = 10./float(subset)
     opacityPercentiles = 0.25
     lineStyleMedian = "solid"
     lineStylePercentiles = "-."
@@ -147,6 +155,10 @@ for ii in range(len(Tlst)):
     ax[ii].plot(LookbackMulti.T,Tdata[f"T{int(temp)}"].T, color = colourTracers, alpha = opacity )
     ax[ii].axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
 
+    ax[ii].xaxis.set_minor_locator(AutoMinorLocator())
+    ax[ii].yaxis.set_minor_locator(AutoMinorLocator())
+    ax[ii].tick_params(which='both')
+
     ax[ii].set_yscale('log')
     ax[ii].set_ylabel(r"Temperature [$K$]",fontsize=8)
     ax[ii].set_ylim(ymin=1e3, ymax=1e7)
@@ -162,7 +174,7 @@ for ii in range(len(Tlst)):
 ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(top=0.80, wspace = 0.005)
+plt.subplots_adjust(top=0.90, wspace = 0.005)
 opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}T_Individuals.png"
 plt.savefig(opslaan, dpi = 500, transparent = False)
 print(opslaan)
