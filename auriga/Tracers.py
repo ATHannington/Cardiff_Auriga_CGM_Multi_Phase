@@ -31,6 +31,13 @@ saveEssentials =['Lookback','Ntracers']
 #   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
 saveTypes= ['median','UP','LO']
 
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = 0
+
+#Input parameters path:
+TracersParamsPath = 'TracersParams.csv'
+
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -48,34 +55,9 @@ for key in saveEssentials:
 
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
-TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
-usecols=[0,1],skipinitialspace=True, index_col=0, comment="#").to_dict()[1]
-
-#Convert Dictionary items to (mostly) floats
-for key, value in TRACERSPARAMS.items():
-    if ((key != 'targetTLst') & (key != 'simfile')):
-        #Convert values to floats
-        TRACERSPARAMS.update({key:float(value)})
-    elif (key == 'targetTLst'):
-        #Convert targetTLst to list of floats
-        lst = value.split(",")
-        lst2 = [float(item) for item in lst]
-        TRACERSPARAMS.update({key:lst2})
-    elif (key == 'simfile'):
-        #Keep simfile as a string
-        TRACERSPARAMS.update({key:value})
-
-#Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
-Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
-Tstr = '-'.join(Tlst)
-
-#This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
-DataSavepath = f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
-    f"_{int(TRACERSPARAMS['Rinner'])}R{int(TRACERSPARAMS['Router'])}_targetT{Tstr}"+\
-    f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
-
-#Save as .csv
+    #Save as .csv
 DataSavepathSuffix = f".csv"
+TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 #==============================================================================#
 #       Chemical Properties
@@ -120,14 +102,14 @@ for targetT in TRACERSPARAMS['targetTLst']:
     snap_subfind = load_subfind(TRACERSPARAMS['snapnum'],dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
+    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=True, subfind = snap_subfind)
     snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
     print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     Snapper1 = Snapper()
-    snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
+    snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
 
     #Convert Units
     ## Make this a seperate function at some point??
@@ -141,45 +123,14 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     print("Converting Units!")
 
-    #Density is rho/ <rho> where <rho> is average baryonic density
-    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-
-    meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
-    Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
-
-    gasdens = snapGas.rho / (c.parsec*1e6)**3. * c.msol * 1e10
-    gasX = snapGas.gmet[:,0]
-
-    snapGas.data['T'] = snapGas.u / Tfac # K
-    snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
-    snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
-    snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
-
-    bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
-    snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
-
-    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
+    snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
 
     ### Exclude values outside halo 0 ###
 
     print("Finding Halo 0 Only Data!")
 
-    #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
-    gaslength = snap_subfind.data['slty'][0,0]
-    # tracerlength = snap_subfind.data['slty'][6,0]
-    # print(tracerlength)
-    # print(foo)
-    #Take only data from above HaloID
-    for key, value in snapGas.data.items():
-        if (snapGas.data[key] is not None):
-            snapGas.data[key] = snapGas.data[key][:gaslength]
-
-    # #Take onlt tracers for above HaloID
-    # for key, value in snapTracers.data.items():
-    #     if (snapTracers.data[key] is not None):
-    #         snapTracers.data[key] = snapTracers.data[key][:gaslength]
+    snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
@@ -196,10 +147,6 @@ for targetT in TRACERSPARAMS['targetTLst']:
     #Get Cell data and Cell IDs from tracers based on condition
     Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
 
-
-    dataDict = {}
-
-
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
     for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
         print("")
@@ -210,7 +157,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
         # load in the gas particles mass and position only for HaloID 0.
         #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-        snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
+        snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=True, subfind = snap_subfind)
         # load tracers data
         snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
@@ -218,7 +165,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
         #Set centre of simulation
         Snapper1 = Snapper()
-        snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
+        snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
 
         #Convert Units
         ## Make this a seperate function at some point??
@@ -232,42 +179,13 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
         print("Converting Units!")
 
-        #Density is rho/ <rho> where <rho> is average baryonic density
-        rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-        rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-
-        meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
-        Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
-
-        gasdens = snapGas.rho / (c.parsec*1e6)**3. * c.msol * 1e10
-        gasX = snapGas.gmet[:,0]
-
-        snapGas.data['T'] = snapGas.u / Tfac # K
-        snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
-        snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
-        snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
-
-        bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
-        snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
-
-        snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
-
+        snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
         #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
 
         print("Finding Halo 0 Only Data!")
 
-        gaslength = snap_subfind.data['slty'][0,0]
-
-        #Take only data from above HaloID
-        for key, value in snapGas.data.items():
-            if (snapGas.data[key] is not None):
-                snapGas.data[key] = snapGas.data[key][:gaslength]
-        #
-        # #Take onlt tracers for above HaloID
-        # for key, value in snapTracers.data.items():
-        #     if (snapTracers.data[key] is not None):
-        #         snapTracers.data[key] = snapTracers.data[key][:gaslength]
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
 
         ###
         ##  Selection   ##
@@ -289,15 +207,6 @@ for targetT in TRACERSPARAMS['targetTLst']:
         #[0] to remove from numpy array for purposes of plot title
         lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
 
-        CellsCFT['Lookback']= lookback# np.array([lookback for jj in range(0,len(CellsCFT['T']))])
-
-        #Save snap number
-        CellsCFT['Snap'] = snap# np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
-
-        dataDict.update({f"{int(snap)}": CellsCFT})
-
-
-
         CellsCFT['Lookback']= np.array([lookback for jj in range(0,len(CellsCFT['T']))])
 
         #Save snap number
@@ -316,7 +225,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
         print("Adding to Dict")
         FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
 
-        del CellIDsCFT, snapGas, snapTracers, Snapper1, snap_subfind
+        del snapGas, snapTracers, Snapper1, snap_subfind
 
 #==============================================================================#
 #       Prepare data and save
@@ -329,49 +238,50 @@ for targetT in TRACERSPARAMS['targetTLst']:
     plotData = {}
 
     # For every data key in the temperature specific dictionary, loop over index, key, and values
-    for ind, (key, value) in enumerate(dataDict.items()):
+    for key, value in FullDict.items():
+        Tkey = key[0]
         #For the nested dictionary for a given snap in the given temperature meta-dict, loop over key and values
-        for k, v in value.items():
-            if ((k != 'Lookback') & (k in saveParams)):
-                #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
-                #   combined keys in saveKeys.
-                #       We are saving the key (k) + median, UP, or LO in a new dict, plotData
-                #           This effectively flattens and processes the data dict in one go
-                #
-                #   We have separate statements for ind ==0 and else.
-                #       This is because if ind == 0 we want to create a new entry in plotData
-                #           else we want to append to it, not create a new entry or overwrite the old one
-                if ind == 0:
-                    plotData.update({f"{k}median": \
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=50.)})
-                    plotData.update({f"{k}UP": \
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'])})
-                    plotData.update({f"{k}LO": \
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'])})
+        if (Tkey == f"T{int(targetT)}"):
+            for k, v in value.items():
+                if ((k != 'Lookback') & (k in saveParams)):
+                    #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
+                    #   combined keys in saveKeys.
+                    #       We are saving the key (k) + median, UP, or LO in a new dict, plotData
+                    #           This effectively flattens and processes the data dict in one go
+                    #
+                    #   We have separate statements for ind ==0 and else.
+                    #       This is because if ind == 0 we want to create a new entry in plotData
+                    #           else we want to append to it, not create a new entry or overwrite the old one
+                    if ((f"{k}median" not in plotData.keys()) or (f"{k}UP" not in plotData.keys()) or (f"{k}LO" not in plotData.keys())):
+                        plotData.update({f"{k}median": \
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.)})
+                        plotData.update({f"{k}UP": \
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'])})
+                        plotData.update({f"{k}LO": \
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'])})
+                    else:
+                        plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.))
+                        plotData[f"{k}UP"] = np.append(plotData[f"{k}UP"],\
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP']))
+                        plotData[f"{k}LO"] = np.append(plotData[f"{k}LO"],\
+                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO']))
+                elif (k=='Lookback'):
+                    #Separate handling of lookback time so as to not take percentiles etc.
+                    if f"Lookback" not in plotData.keys():
+                        plotData.update({f"{k}": np.median(v)})
+                    else:
+                        plotData[f"{k}"] = np.append(plotData[f"{k}"],\
+                         np.median(v))
                 else:
-                    plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=50.))
-                    plotData[f"{k}UP"] = np.append(plotData[f"{k}UP"],\
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileUP']))
-                    plotData[f"{k}LO"] = np.append(plotData[f"{k}LO"],\
-                    weightedperc(data=v, weights=dataDict[key]['mass'],perc=TRACERSPARAMS['percentileLO']))
-            elif (k=='Lookback'):
-                #Separate handling of lookback time so as to not take percentiles etc.
-                if ind == 0:
-                    plotData.update({f"{k}": np.median(v)})
-                else:
-                    plotData[f"{k}"] = np.append(plotData[f"{k}"],\
-                     np.median(v))
-            else:
-                #
-                #
-                #   !!! NOT TESTED  !!!
-                #
-                #This takes the data not in saveParams and adds it to the dict anyway.
-                if ind == 0 :
-                    plotData.update({f"{k}": v})
-                else:
-                    plotData[f"{k}"] = np.append(plotData[f"{k}"], v)
+                    #
+                    #   !!! NOT TESTED  !!!
+                    #
+                    #This takes the data not in saveParams and adds it to the dict anyway.
+                    if f"{k}" not in plotData.keys():
+                        plotData.update({f"{k}": v})
+                    else:
+                        plotData[f"{k}"] = np.append(plotData[f"{k}"], v)
 
     #Generate our savepath
     tmpSave = DataSavepath + f"_T{int(targetT)}" + DataSavepathSuffix

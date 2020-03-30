@@ -16,9 +16,11 @@ from gadget import *
 from gadget_subfind import *
 from Snapper import *
 import pickle
-from Tracers_Subroutines import GetIndividualCellFromTracer
+from Tracers_Subroutines import *
 
-Nbins = 50.
+Nbins = 100.
+#Input parameters path:
+TracersParamsPath = 'TracersParams.csv'
 
 #Entered parameters to be saved from
 #   n_H, B, R, T
@@ -27,33 +29,8 @@ saveParams = ['T','R','n_H','B']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'$n_H$ [c$m^{-3}$]', 'B':r'|B| [$\mu G$]'}
 
-# Read in Tracer Analysis setup data
-TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
-usecols=[0,1],skipinitialspace=True, index_col=0, comment="#").to_dict()[1]
 
-#Update Dictionary value dtypes
-for key, value in TRACERSPARAMS.items():
-    #For nearly all entries convert to float
-    if ((key != 'targetTLst') & (key != 'simfile')):
-        TRACERSPARAMS.update({key:float(value)})
-    elif (key == 'targetTLst'):
-        #For targetTLst split str by "," and convert to list of floats
-        lst = value.split(",")
-        lst2 = [float(item) for item in lst]
-        TRACERSPARAMS.update({key:lst2})
-    elif (key == 'simfile'):
-        #Keep simfile directory path as string
-        TRACERSPARAMS.update({key:value})
-
-#Make a list of target Temperature strings
-Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
-#Convert these temperatures to a string of form e.g. "4-5-6" for savepath
-Tstr = '-'.join(Tlst)
-
-#Generate savepath string of same type as analysis data
-DataSavepath = f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
-    f"_{int(TRACERSPARAMS['Rinner'])}R{int(TRACERSPARAMS['Router'])}_targetT{Tstr}"+\
-    f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
+TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 DataSavepathSuffix = f".pickle"
 
@@ -124,7 +101,7 @@ for dataKey in saveParams:
             if (dataKey != 'R'):
                 plt.xscale('log')
 
-            plt.hist(data,bins=bins,density=True, weights=weights, color=colour)
+            plt.hist(data,bins=bins,normed=True, weights=weights, log=True,color=colour)
             plt.xlabel(xlabel[dataKey])
             plt.ylabel("Normalised Count")
             plt.title(f"PDF of Cells Containing Tracers selected by: " +\

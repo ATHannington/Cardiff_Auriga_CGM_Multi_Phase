@@ -17,41 +17,20 @@ from gadget import *
 from gadget_subfind import *
 from Snapper import *
 import pickle
-from Tracers_Subroutines import GetIndividualCellFromTracer
+from Tracers_Subroutines import *
 from random import sample
 
 subset = 2500
 xsize = 10.
 ysize = 12.
 DPI = 100
+#Input parameters path:
+TracersParamsPath = 'TracersParams.csv'
 
-# Read in Tracer Analysis setup data
-TRACERSPARAMS = pd.read_csv('TracersParams.csv', delimiter=" ", header=None, \
-usecols=[0,1],skipinitialspace=True, index_col=0, comment="#").to_dict()[1]
 
-#Update Dictionary value dtypes
-for key, value in TRACERSPARAMS.items():
-    #For nearly all entries convert to float
-    if ((key != 'targetTLst') & (key != 'simfile')):
-        TRACERSPARAMS.update({key:float(value)})
-    elif (key == 'targetTLst'):
-        #For targetTLst split str by "," and convert to list of floats
-        lst = value.split(",")
-        lst2 = [float(item) for item in lst]
-        TRACERSPARAMS.update({key:lst2})
-    elif (key == 'simfile'):
-        #Keep simfile directory path as string
-        TRACERSPARAMS.update({key:value})
+TracerNumberSelect = np.arange(0,subset)
 
-#Make a list of target Temperature strings
-Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
-#Convert these temperatures to a string of form e.g. "4-5-6" for savepath
-Tstr = '-'.join(Tlst)
-
-#Generate savepath string of same type as analysis data
-DataSavepath = f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
-    f"_{int(TRACERSPARAMS['Rinner'])}R{int(TRACERSPARAMS['Router'])}_targetT{Tstr}"+\
-    f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
+TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 DataSavepathSuffix = f".pickle"
 
@@ -78,13 +57,13 @@ for T in TRACERSPARAMS['targetTLst']:
     rangeMax = len(dataDict[key]['T'])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
     TracerNumberSelect = sample(TracerNumberSelect.tolist(),subset)
-
-    CellIndex = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
-
+    CellIndex, SelectedTracers1 = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
     for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
 
         key = (f"T{int(T)}",f"{int(snap)}")
+        CellIndex, _ = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect, SelectedTracers=SelectedTracers1)
+
         data = dataDict[key]['T'][CellIndex].reshape((-1,1))
 
         if (snap == int(TRACERSPARAMS['snapMin'])):
