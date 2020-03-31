@@ -145,87 +145,102 @@ for targetT in TRACERSPARAMS['targetTLst']:
                    )
 
     #Get Cell data and Cell IDs from tracers based on condition
-    Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
+    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
+
+    TracersOld = TracersTFC
+
+    #Make a list of snaps to analyse. We want two sets of ranges, both starting at the selection snap, snapnum, end ending at snapMin, and snapMax/snapnumMAX (whichever is smaller)
+    #   This should ensure that, as the selected tracers decrease, we are selecting all tracers at the selection snap, and a subset of those going outwards in time.
+    snapRangeMin = [zz for zz in range(int(TRACERSPARAMS['snapnum']),(int(TRACERSPARAMS['snapMin'])-1), -1)]
+    snapRangeMax = [zz for zz in range(int(TRACERSPARAMS['snapnum']),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
+    snapRange = [snapRangeMin,snapRangeMax]
 
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
-    for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
-        print("")
-        print(f"Starting Snap {snap}")
+    for snapSet in snapRange:
+        for snap in snapSet:
+            print("")
+            print(f"Starting Snap {snap}")
 
-        # load in the subfind group files
-        snap_subfind = load_subfind(snap,dir=TRACERSPARAMS['simfile'])
+            # load in the subfind group files
+            snap_subfind = load_subfind(snap,dir=TRACERSPARAMS['simfile'])
 
-        # load in the gas particles mass and position only for HaloID 0.
-        #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-        snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=True, subfind = snap_subfind)
-        # load tracers data
-        snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
+            # load in the gas particles mass and position only for HaloID 0.
+            #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+            snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = snap_subfind)
+            # load tracers data
+            snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
 
-        print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+            print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
-        #Set centre of simulation
-        Snapper1 = Snapper()
-        snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
+            #Set centre of simulation
+            Snapper1 = Snapper()
+            snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
 
-        #Convert Units
-        ## Make this a seperate function at some point??
-        snapGas.pos   *= 1e3 #[kpc]
+            #Convert Units
+            ## Make this a seperate function at some point??
+            snapGas.pos   *= 1e3 #[kpc]
 
-        snapGas.vol *= 1e9 #[kpc^3]
+            snapGas.vol *= 1e9 #[kpc^3]
 
-        #--------------------------#
-        ##    Units Conversion    ##
-        #--------------------------#
+            #--------------------------#
+            ##    Units Conversion    ##
+            #--------------------------#
 
-        print("Converting Units!")
+            print("Converting Units!")
 
-        snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+            snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
-        #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
+            #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
 
-        print("Finding Halo 0 Only Data!")
+            if (snap == int(TRACERSPARAMS['snapnum'])):
+                print("Finding Halo 0 Only Data!")
 
-        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
+                snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
 
-        ###
-        ##  Selection   ##
-        ###
+            ###
+            ##  Selection   ##
+            ###
 
-        #Select Cells which have the tracers from the selection snap in them
-        CellsCFT, CellIDsCFT, Parents = GetCellsFromTracers(snapGas, snapTracers,Tracers)
+            #Select Cells which have the tracers from the selection snap in them
+            #   Returns new tracers CFT as some of the tracers may no longer be associated
+            #       With Halo=HaloID. Thus, our list of tracers should diminish over time.
+            TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersOld)
 
-        # Save number of tracers
-        CellsCFT['Ntracers'] = [int(len(Tracers))]
-        print(f"Number of tracers = {CellsCFT['Ntracers']}")
+            #Update old tracers list to new, smaller subset associated with Halo=HaloID
+            TracersOld = TracersCFT
 
-        print("Lookback")
-        #Redshift
-        redshift = snapGas.redshift        #z
-        aConst = 1. / (1. + redshift)   #[/]
+            # Save number of tracers
+            CellsCFT['Ntracers'] = [int(len(TracersCFT))]
+            print(f"Number of tracers = {CellsCFT['Ntracers']}")
 
-        #Get lookback time in Gyrs
-        #[0] to remove from numpy array for purposes of plot title
-        lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+            print("Lookback")
+            #Redshift
+            redshift = snapGas.redshift        #z
+            aConst = 1. / (1. + redshift)   #[/]
 
-        CellsCFT['Lookback']= np.array([lookback for jj in range(0,len(CellsCFT['T']))])
+            #Get lookback time in Gyrs
+            #[0] to remove from numpy array for purposes of plot title
+            lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
 
-        #Save snap number
-        CellsCFT['Snap'] = np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
+            CellsCFT['Lookback']= np.array([lookback for jj in range(0,len(CellsCFT['T']))])
 
-        #Save Tracer IDs
-        CellsCFT['trid'] = Tracers
+            #Save snap number
+            CellsCFT['Snap'] = np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
 
-        #Save Parent Cell IDs
-        CellsCFT['prid'] = Parents
+            #Save Tracer IDs
+            CellsCFT['trid'] = TracersCFT
 
-        #Save Cell IDs
-        CellsCFT['id'] = CellIDsCFT
+            #Save Parent Cell IDs
+            CellsCFT['prid'] = ParentsCFT
 
-        #Add snap data to temperature specific dictionary
-        print("Adding to Dict")
-        FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+            #Save Cell IDs
+            CellsCFT['id'] = CellIDsCFT
 
-        del snapGas, snapTracers, Snapper1, snap_subfind
+            #Add snap data to temperature specific dictionary
+            print("Adding to Dict")
+            FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+
+            del snapGas, snapTracers, Snapper1, snap_subfind
 
 #==============================================================================#
 #       Prepare data and save

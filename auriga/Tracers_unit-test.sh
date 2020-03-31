@@ -1,1 +1,1 @@
-pytest Tracers_unit-test.py -v --tb=long --exitfirst
+pytest Tracers_unit-test.py -v --tb=long 

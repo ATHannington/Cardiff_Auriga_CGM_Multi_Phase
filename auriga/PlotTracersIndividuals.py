@@ -23,7 +23,7 @@ from random import sample
 subset = 2500
 xsize = 10.
 ysize = 12.
-DPI = 100
+DPI = 250
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -48,31 +48,66 @@ with open(load,"rb") as f:
 
 print("Getting Tracer Data!")
 Tdata = {}
-
+Xdata = {}
 for T in TRACERSPARAMS['targetTLst']:
-    tmp = []
 
     key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
     rangeMin = 0
     rangeMax = len(dataDict[key]['T'])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
     TracerNumberSelect = sample(TracerNumberSelect.tolist(),subset)
-    CellIndex, SelectedTracers1 = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
-    #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
-    for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
+    CellIndex, SelectedTracersOld = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
 
-        key = (f"T{int(T)}",f"{int(snap)}")
-        CellIndex, _ = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect, SelectedTracers=SelectedTracers1)
+    #Make a list of snaps to analyse. We want two sets of ranges, both starting at the selection snap, snapnum, end ending at snapMin, and snapMax/snapnumMAX (whichever is smaller)
+    #   This should ensure that, as the selected tracers decrease, we are selecting all tracers at the selection snap, and a subset of those going outwards in time.
+    snapRangeMin = [zz for zz in range(int(TRACERSPARAMS['snapnum']),(int(TRACERSPARAMS['snapMin'])+1), -1)]
+    snapRangeMax = [zz for zz in range(int(TRACERSPARAMS['snapnum']),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
+    snapRange = [snapRangeMin,snapRangeMax]
 
-        data = dataDict[key]['T'][CellIndex].reshape((-1,1))
+    TracersList = []
+    #Loop over snaps and find a list of which tracers are selected
+    for snapSet in snapRange:
+        for snap in snapSet:
+            key = (f"T{int(T)}",f"{int(snap)}")
+            CellIndex, SelectedTracersNew = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect, SelectedTracers=SelectedTracersOld)
 
-        if (snap == int(TRACERSPARAMS['snapMin'])):
-            tmp = data
-        else:
-            tmp = np.concatenate((tmp,data),axis=1)
+            TracersList.append(SelectedTracersNew)
+            SelectedTracersOld = SelectedTracersNew
 
-    Tdata.update({f"T{int(T)}" : tmp})
+    #The end points of the ranges in snapRange will have the minimum number of tracers from the initial snapnum set.
+    #   Thus, if we want a set of tracers that maps over all time we need to find the set of tracers that these two end-points have in common.
+    #       zeroPoint is the snapMin tracers, because of how iterating through the ranges works this is not at TracersList[0].
+    zeroPoint = int(int(TRACERSPARAMS['snapnum']) - (int(TRACERSPARAMS['snapMin'])+1))
+    FinalTracers = TracersList[zeroPoint][np.where(np.isin(TracersList[zeroPoint],TracersList[-1]))]
 
+
+    snapRangeMin = [zz for zz in range(int(TRACERSPARAMS['snapMin']),(int(TRACERSPARAMS['snapnum'])+1), 1)]
+    #Plus one to stop adding two snapnum data entries
+    snapRangeMax = [zz for zz in range(int(TRACERSPARAMS['snapnum']+1),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
+    snapRange = [snapRangeMin,snapRangeMax]
+
+    #Loop over snaps from and gather data for the FinalTracers.
+    #   This should be the same tracers for all time points due to the above selection, and thus data and tmp should always have the same shape.
+    tmpTdata = []
+    tmpXdata = []
+    ll = 0
+    for snapSet in snapRange:
+        for snap in snapSet:
+            key = (f"T{int(T)}",f"{int(snap)}")
+            CellIndex, _ = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=None, SelectedTracers=FinalTracers)
+
+            data = dataDict[key]['T'][CellIndex].reshape((-1,1))
+            xdata = dataDict[key]['Lookback'][CellIndex].reshape((-1,1))
+
+            if (len(tmpTdata)==0):
+                tmpTdata = data
+                tmpXdata = xdata
+            else:
+                tmpTdata = np.concatenate((tmpTdata,data),axis=1)
+                tmpXdata = np.concatenate((tmpXdata,data),axis=1)
+
+    Tdata.update({f"T{int(T)}" : tmpTdata})
+    Xdata.update({f"T{int(T)}" : tmpXdata})
 
 print("Starting Sub-plots!")
 
@@ -131,7 +166,7 @@ for ii in range(len(Tlst)):
     ax[ii].fill_between(plotData['Lookback'],plotData['TUP'],plotData['TLO'],\
     facecolor=colour,alpha=opacityPercentiles,interpolate=True)
     ax[ii].plot(plotData['Lookback'],plotData['Tmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-    ax[ii].plot(LookbackMulti.T,Tdata[f"T{int(temp)}"].T, color = colourTracers, alpha = opacity )
+    ax[ii].plot(Xdata[f"T{int(temp)}"].T,Tdata[f"T{int(temp)}"].T, color = colourTracers, alpha = opacity )
     ax[ii].axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
 
     ax[ii].xaxis.set_minor_locator(AutoMinorLocator())
@@ -146,7 +181,7 @@ for ii in range(len(Tlst)):
     r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
     "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
     f" weighted by mass" +\
-    "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" )
+    "\n" + f"Subset of Individual Tracers at each Temperature Plotted" )
     ax[ii].legend(loc='upper right')
 
 
@@ -155,6 +190,6 @@ ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=8)
 plt.tight_layout()
 plt.subplots_adjust(top=0.90, wspace = 0.005)
 opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}T_Individuals.png"
-plt.savefig(opslaan, dpi = 500, transparent = False)
+plt.savefig(opslaan, dpi = DPI, transparent = False)
 print(opslaan)
 plt.close()

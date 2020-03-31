@@ -23,15 +23,14 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
 
     #Select Parent IDs in Cond list
     #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
-    Parents = np.isin(snapTracers.prid,CellIDs)
+    ParentsIndices = np.where(np.isin(snapTracers.prid,CellIDs))
 
-    #Select Indices (positions in array) of these parent IDs
-    ParentsIndices = np.where(Parents)
+    #Select Tracers and Parent IDs from cells that meet condition and contain tracers
+    Tracers = snapTracers.trid[ParentsIndices]
+    Parents = snapTracers.prid[ParentsIndices]
 
-    #Find Index of Cell IDs. These Cell IDs now match cond AND contain tracers
-    CellsIndices = np.where(np.isin(snapGas.id,snapTracers.prid[ParentsIndices]))
-
-    #Find the updated Cell IDs - match cond AND contain tracers
+    #Get CellIDs for cells which meet condition AND contain tracers
+    CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
     #Select the data for Cells that meet Cond which contain tracers
@@ -42,11 +41,7 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
         if value is not None:
                 Cells.update({key: value[CellsIndices]})
 
-
-    #Finally, select TRACER IDs who are in cells that meet Cond
-    Tracers = snapTracers.trid[ParentsIndices]
-
-    return Tracers, Cells, CellIDs
+    return Tracers, Cells, CellIDs, Parents
 
 #------------------------------------------------------------------------------#
 def GetCellsFromTracers(snapGas, snapTracers,Tracers):
@@ -58,9 +53,20 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     #Select the matching parent cell IDs for tracers which are in Tracers list
     Parents = snapTracers.prid[TracersIndices]
 
-    #Select Indices of cell IDs which are in the parents list, the list of cell IDs
-    #   which contain tracers in tracers list.
+    #Select Tracers which are in the original tracers list (thus their original cells met condition and contained tracers)
+    TracersCFT = snapTracers.trid[TracersIndices]
+
+    #Select Cell IDs which are in Parents
+    #   NOTE:   This selection causes trouble. Selecting only Halo=HaloID means some Parents now aren't associated with Halo
+    #           This means some parents and tracers need to be dropped as they are no longer in desired halo.
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
+    CellIDs = snapGas.id[CellsIndices]
+
+    #So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
+    ParentsIndices = np.where(np.isin(Parents,snapGas.id))
+    Parents = Parents[ParentsIndices]
+    TracersCFT = TracersCFT[ParentsIndices]
+
 
     #Select data from cells which contain tracers
     #   Does this by making a new dictionary from old data. Only selects values
@@ -70,10 +76,7 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
         if value is not None:
                 Cells.update({key: value[CellsIndices]})
 
-    #Select IDs of Cells which contain tracers in tracers list.
-    CellIDs = snapGas.id[CellsIndices]
-
-    return Cells, CellIDs, Parents
+    return TracersCFT, Cells, CellIDs, Parents
 
 #------------------------------------------------------------------------------#
 ##  FvdV weighted percentile code:
@@ -102,7 +105,6 @@ def weightedperc(data, weights, perc):
 
 #------------------------------------------------------------------------------#
 def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,TracerNumber,SelectedTracers=None):
-    # print("GetIndividualCellFromTracer")
 
     if SelectedTracers is None:
         SelectedTracers = Tracers[TracerNumber]
@@ -110,6 +112,9 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,TracerNumber,SelectedTra
     else:
         Selection = np.where(np.isin(Tracers,SelectedTracers))
         CellIDNumber = Parents[Selection]
+
+        TracersIndices = np.where(np.isin(SelectedTracers,Tracers))
+        SelectedTracers = SelectedTracers[TracersIndices]
 
     CellIndex = np.array([])
     for ID in CellIDNumber:

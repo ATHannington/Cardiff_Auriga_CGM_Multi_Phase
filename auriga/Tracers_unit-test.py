@@ -69,9 +69,9 @@ Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<
 
 
 
-Tracers, CellsTFC, CellIDsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
+TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
 
-CellsCFTinit, CellIDsCFTinit, Parents = GetCellsFromTracers(snapGas, snapTracers,Tracers)
+TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
 
 # Single FvdV Projection:
 # load in the subfind group files
@@ -105,14 +105,15 @@ delta = 0.25
 #Select INDICES of T = 10^5+-delta K
 Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<=1.*10**(target+delta)))
 
-CellsCFT, CellIDsCFT, Parents = GetCellsFromTracers(snapGas, snapTracers,Tracers)
+TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
+
 #==============================================================================#
 #
 #                                  TESTING
 #
 #==============================================================================#
 
-def test_CellIDs():
+def test_SameSnapCellIDs():
     """
     Test that the Cell IDs selected from tracers match the CellIDs containing tracers when tracers are selected
     """
@@ -120,7 +121,7 @@ def test_CellIDs():
 
     assert CellIDMatch == True,"[@CellIDMatch:] Cell IDs not equal! TFC and CFT! Check tracer selections!"
 
-def test_CellData():
+def test_SameSnapCellData():
     """
     Check all values of data from Cells selected from tracers matches data selected from selecting the tracers.
     """
@@ -134,6 +135,47 @@ def test_CellData():
 
     assert truthy == True,"[@Cells data:] Cell data not equal from TFC and CFT! Check tracer selections!"
 
+def test_ParentsTracers():
+    assert np.shape(ParentsTFC) == np.shape(TracersTFC)
+    assert np.shape(ParentsCFTinit) == np.shape(TracersCFTinit)
+    assert np.shape(ParentsCFT) == np.shape(TracersCFT)
+    assert np.shape(TracersCFT)[0] <= np.shape(TracersTFC)[0]
+    assert np.shape(ParentsCFT)[0] <= np.shape(ParentsTFC)[0]
+
+def test_ParentsCellIDs():
+    truthy = np.all(np.isin(ParentsTFC,CellIDsTFC))
+    assert truthy == True
+
+    truthy = np.all(np.isin(ParentsCFTinit,CellIDsCFTinit))
+    assert truthy == True
+
+    truthy = np.all(np.isin(ParentsCFT,CellIDsCFT))
+    assert truthy == True
+
+def test_CellsCellIDs():
+
+    truthyList =[]
+    for key, values in CellsTFC.items():
+        truthyList.append(np.shape(values)[0] == np.shape(CellIDsTFC)[0])
+
+    truthy = np.all(truthyList)
+    assert truthy == True
+
+    truthyList =[]
+    for key, values in CellsCFTinit.items():
+        truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFTinit)[0])
+
+    truthy = np.all(truthyList)
+    assert truthy == True
+
+    truthyList =[]
+    for key, values in CellsCFT.items():
+        truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFT)[0])
+
+    truthy = np.all(truthyList)
+    assert truthy == True
+
+
 def test_IndividualTracer():
     """
     Test the correct number of Data points are selected by GetIndividualCellFromTracer.
@@ -141,28 +183,14 @@ def test_IndividualTracer():
     total = 1000
     TracerNumber = np.arange(start=0,stop=total)
 
-    CellIndex, SelectedTracers1 = GetIndividualCellFromTracer(Tracers,Parents,CellIDsCFT,TracerNumber)
+    CellIndex, SelectedTracers1 = GetIndividualCellFromTracer(TracersTFC,ParentsCFT,CellIDsCFT,TracerNumber)
 
     assert len(SelectedTracers1) == len(TracerNumber),"[@Individual Tracer:] Selected Tracers not same length as TracerNumber - Initial Selection"
 
-    CellIndexPost, _ = GetIndividualCellFromTracer(Tracers,Parents,CellIDsCFT,TracerNumber,SelectedTracers=SelectedTracers1)
+    CellIndexPost, _ = GetIndividualCellFromTracer(TracersTFC,ParentsCFT,CellIDsCFT,TracerNumber,SelectedTracers=SelectedTracers1)
 
     assert len(CellIndex) == len(CellIndexPost),"[@Individual Tracer:] CellIDs on Pre not same as CellIDs on Post- Selected from SelectedTracers"
 
     data = CellsCFT['T'][CellIndexPost]
 
     assert len(data) == len(CellIndexPost),"[@Individual Tracer:] Cells selected not equal to indended size of subset!"
-
-def test_ParentsTracers():
-    """
-    Test that parents has the same shape as tracers
-    """
-    assert np.shape(Parents) == np.shape(Tracers),"[@Parents Tracers:] Parents not same shape as tracers. Check GetTracersFromCells and GetCellsFromTracers!"
-
-def test_ParentsCellIDs():
-    """
-    Test that all parents are contained within CellIDsCFT
-    """
-    truthy = np.all(np.isin(CellIDsCFT,Parents))
-
-    assert truthy == True,"[@ParentsCellIDs:] Not all Parents are contained in CellIDsCFT!"
