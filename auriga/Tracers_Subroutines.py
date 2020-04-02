@@ -104,17 +104,12 @@ def weightedperc(data, weights, perc):
     return sorted_data[whereperc[0][0]]
 
 #------------------------------------------------------------------------------#
-def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,TracerNumber,SelectedTracers=None):
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers):
 
-    if SelectedTracers is None:
-        SelectedTracers = Tracers[TracerNumber]
-        CellIDNumber = Parents[TracerNumber]
-    else:
-        Selection = np.where(np.isin(Tracers,SelectedTracers))
-        CellIDNumber = Parents[Selection]
 
-        TracersIndices = np.where(np.isin(SelectedTracers,Tracers))
-        SelectedTracers = SelectedTracers[TracersIndices]
+    Selection = np.where(np.isin(Tracers,SelectedTracers))
+    CellIDNumber = Parents[Selection]
+    SubsetSelectedTracers = Tracers[Selection]
 
     CellIndex = np.array([])
     for ID in CellIDNumber:
@@ -123,7 +118,7 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,TracerNumber,SelectedTra
 
     CellIndex = list(map(int, CellIndex))
 
-    return CellIndex, SelectedTracers
+    return CellIndex, SubsetSelectedTracers
 #------------------------------------------------------------------------------#
 def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
     #Density is rho/ <rho> where <rho> is average baryonic density

@@ -49,6 +49,7 @@ with open(load,"rb") as f:
 print("Getting Tracer Data!")
 Tdata = {}
 Xdata = {}
+Massdata ={}
 for T in TRACERSPARAMS['targetTLst']:
 
     key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
@@ -56,58 +57,52 @@ for T in TRACERSPARAMS['targetTLst']:
     rangeMax = len(dataDict[key]['T'])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
     TracerNumberSelect = sample(TracerNumberSelect.tolist(),subset)
-    CellIndex, SelectedTracersOld = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect)
 
-    #Make a list of snaps to analyse. We want two sets of ranges, both starting at the selection snap, snapnum, end ending at snapMin, and snapMax/snapnumMAX (whichever is smaller)
-    #   This should ensure that, as the selected tracers decrease, we are selecting all tracers at the selection snap, and a subset of those going outwards in time.
-    snapRangeMin = [zz for zz in range(int(TRACERSPARAMS['snapnum']),(int(TRACERSPARAMS['snapMin'])+1), -1)]
-    snapRangeMax = [zz for zz in range(int(TRACERSPARAMS['snapnum']),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
-    snapRange = [snapRangeMin,snapRangeMax]
-
-    TracersList = []
-    #Loop over snaps and find a list of which tracers are selected
-    for snapSet in snapRange:
-        for snap in snapSet:
-            key = (f"T{int(T)}",f"{int(snap)}")
-            CellIndex, SelectedTracersNew = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=TracerNumberSelect, SelectedTracers=SelectedTracersOld)
-
-            TracersList.append(SelectedTracersNew)
-            SelectedTracersOld = SelectedTracersNew
-
-    #The end points of the ranges in snapRange will have the minimum number of tracers from the initial snapnum set.
-    #   Thus, if we want a set of tracers that maps over all time we need to find the set of tracers that these two end-points have in common.
-    #       zeroPoint is the snapMin tracers, because of how iterating through the ranges works this is not at TracersList[0].
-    zeroPoint = int(int(TRACERSPARAMS['snapnum']) - (int(TRACERSPARAMS['snapMin'])+1))
-    FinalTracers = TracersList[zeroPoint][np.where(np.isin(TracersList[zeroPoint],TracersList[-1]))]
-
-
-    snapRangeMin = [zz for zz in range(int(TRACERSPARAMS['snapMin']),(int(TRACERSPARAMS['snapnum'])+1), 1)]
-    #Plus one to stop adding two snapnum data entries
-    snapRangeMax = [zz for zz in range(int(TRACERSPARAMS['snapnum']+1),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
-    snapRange = [snapRangeMin,snapRangeMax]
+    SelectedTracers = dataDict[key]['trid'][TracerNumberSelect]
 
     #Loop over snaps from and gather data for the FinalTracers.
     #   This should be the same tracers for all time points due to the above selection, and thus data and tmp should always have the same shape.
     tmpTdata = []
     tmpXdata = []
-    ll = 0
-    for snapSet in snapRange:
-        for snap in snapSet:
-            key = (f"T{int(T)}",f"{int(snap)}")
-            CellIndex, _ = GetIndividualCellFromTracer(dataDict[key]['trid'],dataDict[key]['prid'],dataDict[key]['id'],TracerNumber=None, SelectedTracers=FinalTracers)
+    tmpMassdata =[]
+    for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['snapnumMAX']+1))):
+        key = (f"T{int(T)}",f"{int(snap)}")
 
-            data = dataDict[key]['T'][CellIndex].reshape((-1,1))
-            xdata = dataDict[key]['Lookback'][CellIndex].reshape((-1,1))
-
-            if (len(tmpTdata)==0):
-                tmpTdata = data
-                tmpXdata = xdata
+        TracersTruthy = np.isin(SelectedTracers,dataDict[key]['trid'])
+        TracersIndices = []
+        for ind, tracer in enumerate(SelectedTracers):
+            truthy = np.isin(dataDict[key]['trid'],tracer)
+            if np.any(truthy) == True:
+                TracersIndices.append(np.where(truthy)[0])
             else:
-                tmpTdata = np.concatenate((tmpTdata,data),axis=1)
-                tmpXdata = np.concatenate((tmpXdata,data),axis=1)
+                # print(f"No Tracer {key} {tracer} {ind}")
+                TracersIndices.append([np.nan])
 
-    Tdata.update({f"T{int(T)}" : tmpTdata})
-    Xdata.update({f"T{int(T)}" : tmpXdata})
+        data = []
+        massData = []
+        for (ind, element) in zip(TracersIndices,TracersTruthy):
+            if element == True:
+                parent = dataDict[key]['prid'][ind]
+                dataIndex = np.where(np.isin(dataDict[key]['id'],parent))
+                data.append(dataDict[key]['T'][dataIndex].tolist())
+                massData.append(dataDict[key]['mass'][dataIndex].tolist())
+            else:
+                data.append([np.nan])
+                massData.append([np.nan])
+
+        tmpXdata.append(dataDict[key]['Lookback'][0])
+        tmpTdata.append(data)
+        tmpMassdata.append(massData)
+            # if (len(tmpTdata)==0):
+            #     tmpTdata = data
+            #     tmpXdata = xval
+            # else:
+            #     tmpTdata = np.concatenate((tmpTdata,data),axis=1)
+            #     tmpXdata = np.concatenate((tmpXdata,xval),axis=1)
+
+    Tdata.update({f"T{int(T)}" : np.array(tmpTdata)})
+    Xdata.update({f"T{int(T)}" : np.array(tmpXdata)})
+    Massdata.update({f"T{int(T)}" : np.array(tmpMassdata)})
 
 print("Starting Sub-plots!")
 
@@ -115,7 +110,6 @@ fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,y
 
 #Create a plot for each Temperature
 for ii in range(len(Tlst)):
-
 
     #Temperature specific load path
     load = DataSavepath + f"_T{Tlst[ii]}" + ".csv"
@@ -129,23 +123,28 @@ for ii in range(len(Tlst)):
     plotData = {}
     for k, v in tmpData.items():
         for key, value in tmpData[k].items():
+             if ((type(value) == list) or (type(value) == numpy.ndarray)):
+                value = [value[int(zz)] for zz in flatRangeIndices]
              if k == 1 :
                  plotData.update({key: value})
              else:
                  plotData[key]= np.append(plotData[key], value)
 
-
-    LookbackMulti = []
-    for tracer in TracerNumberSelect:
-        LookbackMulti.append(plotData['Lookback'].tolist())
-
-    LookbackMulti = np.array(LookbackMulti)
+    vline = plotData['Lookback'][0]
+    #Sort data by smallest Lookback time
+    ind_sorted = np.argsort(plotData['Lookback'])
+    for key, value in plotData.items():
+        #Sort the data
+        sorted_data = np.array(value)[ind_sorted]
+        plotData.update({key: sorted_data})
 
     #Get number of temperatures
     NTemps = float(len(Tlst))
 
     #Get temperature
     temp = TRACERSPARAMS['targetTLst'][ii]
+
+    plotTdata = Tdata[f"T{int(temp)}"][:,:,0]
 
     #Set style options
     opacity = 10./float(subset)
@@ -166,8 +165,8 @@ for ii in range(len(Tlst)):
     ax[ii].fill_between(plotData['Lookback'],plotData['TUP'],plotData['TLO'],\
     facecolor=colour,alpha=opacityPercentiles,interpolate=True)
     ax[ii].plot(plotData['Lookback'],plotData['Tmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-    ax[ii].plot(Xdata[f"T{int(temp)}"].T,Tdata[f"T{int(temp)}"].T, color = colourTracers, alpha = opacity )
-    ax[ii].axvline(x=plotData['Lookback'][int(TRACERSPARAMS['snapnum']-TRACERSPARAMS['snapMin'])], c='red')
+    ax[ii].plot(Xdata[f"T{int(temp)}"],plotTdata, color = colourTracers, alpha = opacity )
+    ax[ii].axvline(x=vline, c='red')
 
     ax[ii].xaxis.set_minor_locator(AutoMinorLocator())
     ax[ii].yaxis.set_minor_locator(AutoMinorLocator())
@@ -181,7 +180,7 @@ for ii in range(len(Tlst)):
     r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
     "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
     f" weighted by mass" +\
-    "\n" + f"Subset of Individual Tracers at each Temperature Plotted" )
+    "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" )
     ax[ii].legend(loc='upper right')
 
 

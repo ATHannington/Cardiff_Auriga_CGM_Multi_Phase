@@ -18,7 +18,7 @@ from Snapper import *
 import pickle
 from Tracers_Subroutines import *
 
-Nbins = 100.
+Nbins = 100
 xsize = 12.
 ysize = 10.
 DPI = 100
@@ -102,9 +102,10 @@ for dataKey in saveParams:
             if (dataKey != 'R'):
                 ax[0].set_xscale('log')
                 ax[1].set_xscale('log')
-
-            ax[0].hist(data,bins=bins,normed=True, weights=weights,color=colour)
-            ax[1].hist(data,bins=bins,normed=True, cumulative=True, weights=weights,color=colour)
+            ax[0].hist(np.log10(data), bins = Nbins, range = [3.5,7.], weights = weights, density = True, color=colour)
+            ax[1].hist(np.log10(data), bins = Nbins, range = [3.5,7.], cumulative=True, weights = weights, density = True, color=colour)
+            # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
+            # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)
             ax[0].set_xlabel(xlabel[dataKey],fontsize=8)
             ax[1].set_xlabel(xlabel[dataKey],fontsize=8)
             ax[0].set_ylabel("Normalised Count",fontsize=8)

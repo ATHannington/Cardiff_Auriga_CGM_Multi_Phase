@@ -157,6 +157,8 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
     for snapSet in snapRange:
+        TracersOld = TracersTFC
+
         for snap in snapSet:
             print("")
             print(f"Starting Snap {snap}")
@@ -213,7 +215,6 @@ for targetT in TRACERSPARAMS['targetTLst']:
             CellsCFT['Ntracers'] = [int(len(TracersCFT))]
             print(f"Number of tracers = {CellsCFT['Ntracers']}")
 
-            print("Lookback")
             #Redshift
             redshift = snapGas.redshift        #z
             aConst = 1. / (1. + redshift)   #[/]
@@ -237,7 +238,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
             CellsCFT['id'] = CellIDsCFT
 
             #Add snap data to temperature specific dictionary
-            print("Adding to Dict")
+            print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
             FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
 
             del snapGas, snapTracers, Snapper1, snap_subfind
