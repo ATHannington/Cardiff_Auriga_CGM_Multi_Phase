@@ -77,7 +77,7 @@ for dataKey in saveParams:
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
         for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
 
-            fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
             dictkey = (f"T{int(T)}",f"{int(snap)}")
 
@@ -86,10 +86,10 @@ for dataKey in saveParams:
 
             xmin = np.min(np.log10(data))
             xmax = np.max(np.log10(data))
-
-            step = (xmax-xmin)/Nbins
-
-            bins = 10**(np.arange(start=xmin,stop=xmax,step=step))
+            #
+            # step = (xmax-xmin)/Nbins
+            #
+            # bins = 10**(np.arange(start=xmin,stop=xmax,step=step))
 
             #Select a Temperature specific colour from colourmap
             cmap = matplotlib.cm.get_cmap('viridis')
@@ -100,16 +100,16 @@ for dataKey in saveParams:
             print(f"Snap{snap} T{T} Type{dataKey}")
 
             if (dataKey != 'R'):
-                ax[0].set_xscale('log')
-                ax[1].set_xscale('log')
-            ax[0].hist(np.log10(data), bins = Nbins, range = [3.5,7.], weights = weights, density = True, color=colour)
-            ax[1].hist(np.log10(data), bins = Nbins, range = [3.5,7.], cumulative=True, weights = weights, density = True, color=colour)
+                ax.set_xscale('log')
+                # ax[1].set_xscale('log')
+            ax.hist(np.log10(data), bins = Nbins, range = [xmin,xmax], weights = weights, density = True, color=colour)
+            # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
             # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
             # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)
-            ax[0].set_xlabel(xlabel[dataKey],fontsize=8)
-            ax[1].set_xlabel(xlabel[dataKey],fontsize=8)
-            ax[0].set_ylabel("Normalised Count",fontsize=8)
-            ax[1].set_ylabel("Cumulative Normalised Count",fontsize=8)
+            ax.set_xlabel(xlabel[dataKey],fontsize=8)
+            # ax[1].set_xlabel(xlabel[dataKey],fontsize=8)
+            ax.set_ylabel("Normalised Count",fontsize=8)
+            # ax[1].set_ylabel("Cumulative Normalised Count",fontsize=8)
             fig.suptitle(f"PDF of Cells Containing Tracers selected by: " +\
             "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
             r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\

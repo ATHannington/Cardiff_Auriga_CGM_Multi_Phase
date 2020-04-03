@@ -192,7 +192,9 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
             snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
-            #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
+            #Find Halo=HaloID data for only selection snapshot. This ensures the
+            #selected tracers are originally in the Halo, but allows for tracers
+            #to leave (outflow) or move inwards (inflow) from Halo.
 
             if (snap == int(TRACERSPARAMS['snapnum'])):
                 print("Finding Halo 0 Only Data!")
@@ -204,11 +206,10 @@ for targetT in TRACERSPARAMS['targetTLst']:
             ###
 
             #Select Cells which have the tracers from the selection snap in them
-            #   Returns new tracers CFT as some of the tracers may no longer be associated
-            #       With Halo=HaloID. Thus, our list of tracers should diminish over time.
+            #   Returns new tracers CFT as some of the tracers may no longer be in gas phase.
             TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersOld)
 
-            #Update old tracers list to new, smaller subset associated with Halo=HaloID
+            #Update old tracers list to new, smaller subset as some tracers may now be trapped in stars or BHs
             TracersOld = TracersCFT
 
             # Save number of tracers

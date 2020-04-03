@@ -27,9 +27,13 @@ DPI = 250
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
+saveParams = 'T'
 
-TracerNumberSelect = np.arange(0,subset)
+ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'$n_H$ [c$m^{-3}$]', 'B':r'|B| [$\mu G$]'}
 
+#==============================================================================#
+
+#Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 DataSavepathSuffix = f".pickle"
@@ -41,66 +45,53 @@ dataDict = {}
 
 load = DataSavepath + DataSavepathSuffix
 
+#Load analysis big data pickle object
 with open(load,"rb") as f:
     dataDict = pickle.load(f)
 
-# CellIndex = GetIndividualCellFromTracer(dataDict[('T4','127')]['trid'],dataDict[('T4','127')]['prid'],dataDict[('T4','127')]['id'],TracerNumber=TracerNumberSelect)
 
 print("Getting Tracer Data!")
-Tdata = {}
+Ydata = {}
 Xdata = {}
 Massdata ={}
+
+#Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
 for T in TRACERSPARAMS['targetTLst']:
+
+    #Select tracers from those present at data selection snapshot, snapnum
 
     key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
     rangeMin = 0
-    rangeMax = len(dataDict[key]['T'])
+    rangeMax = len(dataDict[key][saveParams])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-    TracerNumberSelect = sample(TracerNumberSelect.tolist(),subset)
 
-    SelectedTracers = dataDict[key]['trid'][TracerNumberSelect]
+    #Take Random sample of Tracers size min(subset, len(data))
+    TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+    SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
 
-    #Loop over snaps from and gather data for the FinalTracers.
-    #   This should be the same tracers for all time points due to the above selection, and thus data and tmp should always have the same shape.
-    tmpTdata = []
+    #Loop over snaps from and gather data for the SelectedTracers1.
+    #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
+    tmpYdata = []
     tmpXdata = []
     tmpMassdata =[]
     for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['snapnumMAX']+1))):
         key = (f"T{int(T)}",f"{int(snap)}")
 
-        TracersTruthy = np.isin(SelectedTracers,dataDict[key]['trid'])
-        TracersIndices = []
-        for ind, tracer in enumerate(SelectedTracers):
-            truthy = np.isin(dataDict[key]['trid'],tracer)
-            if np.any(truthy) == True:
-                TracersIndices.append(np.where(truthy)[0])
-            else:
-                # print(f"No Tracer {key} {tracer} {ind}")
-                TracersIndices.append([np.nan])
+        #Get Individual Cell Data from selected Tracers.
+        #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
+        #   This allows for plotting of all tracers for all snaps they exist.
+        #   Grab data for SaveParams and mass.
+        data, massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
+            Data=dataDict[key][saveParams],mass=dataDict[key]['mass'])
 
-        data = []
-        massData = []
-        for (ind, element) in zip(TracersIndices,TracersTruthy):
-            if element == True:
-                parent = dataDict[key]['prid'][ind]
-                dataIndex = np.where(np.isin(dataDict[key]['id'],parent))
-                data.append(dataDict[key]['T'][dataIndex].tolist())
-                massData.append(dataDict[key]['mass'][dataIndex].tolist())
-            else:
-                data.append([np.nan])
-                massData.append([np.nan])
-
+        #Append the data from this snapshot to a temporary list
         tmpXdata.append(dataDict[key]['Lookback'][0])
-        tmpTdata.append(data)
+        tmpYdata.append(data)
         tmpMassdata.append(massData)
-            # if (len(tmpTdata)==0):
-            #     tmpTdata = data
-            #     tmpXdata = xval
-            # else:
-            #     tmpTdata = np.concatenate((tmpTdata,data),axis=1)
-            #     tmpXdata = np.concatenate((tmpXdata,xval),axis=1)
 
-    Tdata.update({f"T{int(T)}" : np.array(tmpTdata)})
+    #Add the full list of snaps data to temperature dependent dictionary.
+    Ydata.update({f"T{int(T)}" : np.array(tmpYdata)})
     Xdata.update({f"T{int(T)}" : np.array(tmpXdata)})
     Massdata.update({f"T{int(T)}" : np.array(tmpMassdata)})
 
@@ -144,10 +135,10 @@ for ii in range(len(Tlst)):
     #Get temperature
     temp = TRACERSPARAMS['targetTLst'][ii]
 
-    plotTdata = Tdata[f"T{int(temp)}"][:,:,0]
+    plotYdata = Ydata[f"T{int(temp)}"][:,:,0]
 
     #Set style options
-    opacity = 10./float(subset)
+    opacity = 0.005
     opacityPercentiles = 0.25
     lineStyleMedian = "solid"
     lineStylePercentiles = "-."
@@ -161,20 +152,23 @@ for ii in range(len(Tlst)):
 
     print("")
     print("Sub-Plot!")
-
-    ax[ii].fill_between(plotData['Lookback'],plotData['TUP'],plotData['TLO'],\
+    LO = saveParams + 'LO'
+    UP = saveParams + 'UP'
+    median = saveParams +'median'
+    ax[ii].fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
     facecolor=colour,alpha=opacityPercentiles,interpolate=True)
-    ax[ii].plot(plotData['Lookback'],plotData['Tmedian'],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-    ax[ii].plot(Xdata[f"T{int(temp)}"],plotTdata, color = colourTracers, alpha = opacity )
+    ax[ii].plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+    ax[ii].plot(Xdata[f"T{int(temp)}"],plotYdata, color = colourTracers, alpha = opacity )
     ax[ii].axvline(x=vline, c='red')
 
     ax[ii].xaxis.set_minor_locator(AutoMinorLocator())
     ax[ii].yaxis.set_minor_locator(AutoMinorLocator())
     ax[ii].tick_params(which='both')
-
-    ax[ii].set_yscale('log')
-    ax[ii].set_ylabel(r"Temperature [$K$]",fontsize=8)
-    ax[ii].set_ylim(ymin=1e3, ymax=1e7)
+    if (saveParams != 'R'):
+        ax[ii].set_yscale('log')
+    ax[ii].set_ylabel(ylabel[saveParams],fontsize=8)
+    if (saveParams == 'T'):
+        ax[ii].set_ylim(ymin=1e3, ymax=1e7)
     fig.suptitle(f"Cells Containing Tracers selected by: " +\
     "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
     r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
@@ -184,11 +178,12 @@ for ii in range(len(Tlst)):
     ax[ii].legend(loc='upper right')
 
 
+#Only give 1 x-axis a label, as they sharex 
 ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=8)
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.90, wspace = 0.005)
-opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}T_Individuals.png"
+opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}"+saveParams+f"_Individuals.png"
 plt.savefig(opslaan, dpi = DPI, transparent = False)
 print(opslaan)
 plt.close()

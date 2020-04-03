@@ -104,22 +104,6 @@ def weightedperc(data, weights, perc):
     return sorted_data[whereperc[0][0]]
 
 #------------------------------------------------------------------------------#
-def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers):
-
-
-    Selection = np.where(np.isin(Tracers,SelectedTracers))
-    CellIDNumber = Parents[Selection]
-    SubsetSelectedTracers = Tracers[Selection]
-
-    CellIndex = np.array([])
-    for ID in CellIDNumber:
-        value = np.where(np.isin(CellIDs,ID))
-        CellIndex = np.append(CellIndex, value)
-
-    CellIndex = list(map(int, CellIndex))
-
-    return CellIndex, SubsetSelectedTracers
-#------------------------------------------------------------------------------#
 def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
     #Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
@@ -146,9 +130,7 @@ def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar
 def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
     #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
     gaslength = snap_subfind.data['slty'][Halo,0]
-    # tracerlength = snap_subfind.data['slty'][6,0]
-    # print(tracerlength)
-    # print(foo)
+
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
         if (snapGas.data[key] is not None):
@@ -185,3 +167,38 @@ def LoadTracersParameters(TracersParamsPath):
         f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
 
     return TRACERSPARAMS, DataSavepath, Tlst
+
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass):
+
+    #Select which of the SelectedTracers are in Tracers from this snap
+    TracersTruthy = np.isin(SelectedTracers,Tracers)
+
+    #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
+    #   Also add list of Tracer IDs trids to list for debugging purposes
+    TracersIndices = []
+    TracersReturned = []
+    for ind, tracer in enumerate(SelectedTracers):
+        truthy = np.isin(Tracers,tracer)
+        if np.any(truthy) == True:
+            TracersIndices.append(np.where(truthy)[0])
+            TracersReturned.append(Tracers[np.where(truthy)])
+        else:
+            TracersIndices.append([np.nan])
+
+    #If the tracer from SelectedTracers is in tracers, use the above indices to select its
+    #   parent, and from there its cell, then grab data.
+    #   If the tracer from SelectedTracers is not in tracers, put a nan value.
+    #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+    saveData = []
+    massData = []
+    for (ind, element) in zip(TracersIndices,TracersTruthy):
+        if element == True:
+            parent = Parents[ind]
+            dataIndex = np.where(np.isin(CellIDs,parent))
+            saveData.append(Data[dataIndex].tolist())
+            massData.append(mass[dataIndex].tolist())
+        else:
+            saveData.append([np.nan])
+            massData.append([np.nan])
+
+    return saveData, massData, TracersReturned
