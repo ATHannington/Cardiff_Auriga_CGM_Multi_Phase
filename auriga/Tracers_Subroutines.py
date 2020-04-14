@@ -112,7 +112,7 @@ def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar
     meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
     Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
 
-    gasdens = snapGas.rho / (c.parsec*1e6)**3. * c.msol * 1e10
+    gasdens = (snapGas.rho / (c.parsec*1e6)**3.) * c.msol * 1e10 #[g cm^-3]
     gasX = snapGas.gmet[:,0]
 
     snapGas.data['T'] = snapGas.u / Tfac # K
@@ -123,8 +123,9 @@ def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar
     bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
     snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
 
-    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1)
+    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1) #[Kpc]
 
+    snapGas.data['tcool'] = snapGas.data['u'] * 1e10 * gasdens / (snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[s]
     return snapGas
 #------------------------------------------------------------------------------#
 def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):

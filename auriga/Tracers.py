@@ -38,6 +38,8 @@ HaloID = 0
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
+#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
+lazyLoadBool = True
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -102,8 +104,8 @@ for targetT in TRACERSPARAMS['targetTLst']:
     snap_subfind = load_subfind(TRACERSPARAMS['snapnum'],dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=True, subfind = snap_subfind)
-    snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
+    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
     print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
@@ -124,7 +126,6 @@ for targetT in TRACERSPARAMS['targetTLst']:
     print("Converting Units!")
 
     snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
-
 
     ### Exclude values outside halo 0 ###
 
@@ -168,9 +169,9 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
             # load in the gas particles mass and position only for HaloID 0.
             #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-            snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = snap_subfind)
+            snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=lazyLoadBool, subfind = snap_subfind)
             # load tracers data
-            snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=True)
+            snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
             print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 

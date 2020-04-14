@@ -207,6 +207,142 @@ def test_CellsShapes():
     assert truthy == True,"[@Cells Shapes:] values of Cells CFT not consistent shape to CellIDsCFT! Some data may be missing!"
 
 
+def test_IndividualTracerFakeData():
+
+    startTrid = 200
+    lenTrid = 10
+    trid = np.arange(start=startTrid, stop=startTrid+lenTrid, step=1)
+
+    startID = 0
+    lenID = 5
+    id = np.arange(start=startID, stop=startID + lenID, step=1)
+
+    lenPrid = lenTrid
+    prid = np.array([])
+    while(len(prid)<=lenPrid):
+        prid = np.append(prid,id)
+        prid.flatten()
+        if (len(prid)>=lenPrid):
+            break
+    prid = np.array(list(map(int, prid)))
+
+    #Ignore mass, but give value
+    mass1 = id
+
+    tempData = np.array([float(ii)*0.1 for ii in id])
+
+    subset = 5
+
+    rangeMin = 0
+    rangeMax = len(trid)
+    TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+    randomSample = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+
+    assert len(randomSample) == min(subset,rangeMax),"[@IndividualTracerFakeData:], Random Sample not correct shape!"
+    assert np.all(np.isin(randomSample,TracerNumberSelect)) == True,"[@IndividualTracerFakeData:], Random Sample comtains non-TracerNumberSelect entries!"
+
+
+
+    """
+        Full set of Tracers Tests!
+    """
+    SelectedTracers1 = trid[TracerNumberSelect]
+
+    assert len(SelectedTracers1) == rangeMax,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 not correct shape!"
+    assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 contains non-trid entries!"
+
+    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
+    Data=tempData,mass=mass1)
+
+    assert np.shape(data)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned data not size == rangeMax! Some data/NaNs may be missing!"
+    assert np.shape(massData)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned mass data not size == rangeMax! Some data/NaNs may be missing!"
+
+    assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    assert np.shape(TracersReturned)[0] <= rangeMax,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not of size <= rangeMax! There may be too many Returned Tracers!"
+
+    assert np.all(np.isin(TracersReturned,trid)) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned not subset of trid! Selection error!"
+
+
+    truthyList =[]
+    for ind, value in enumerate(data):
+        truthyList.append(np.isin(value,tempData))
+
+    truthy = np.all(truthyList)
+
+    assert truthy == True,"[@IndividualTracerFakeData Full Set:] Data has incorrect values! Selection error!"
+
+
+    """
+        Subset of Tracers Selected Tests!
+    """
+    SelectedTracers1 = trid[randomSample]
+
+    assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 not correct shape!"
+    assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 contains non-trid entries!"
+
+    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
+    Data=tempData,mass=mass1)
+
+    assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
+    assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
+
+    assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
+
+    assert np.all(np.isin(TracersReturned,trid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned not subset of trid! Selection error!"
+
+
+    truthyList =[]
+    for ind, value in enumerate(data):
+        if (np.isnan(value) == False):
+            truthyList.append(np.isin(value,tempData))
+        else:
+            truthyList.append(np.isnan(value))
+
+    truthy = np.all(truthyList)
+
+    assert truthy == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Data has incorrect values! Selection error!"
+
+
+    """
+        Subset of Tracers Selected are present in Tracers, tests!
+    """
+
+    SelectedTracers1 = trid[randomSample]
+
+    startTrid2 = startTrid - int(float(lenTrid)/2.0)
+    lenTrid2 = 10
+    trid2 = np.arange(start=startTrid2, stop=startTrid2+lenTrid2, step=1)
+
+    assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 not correct shape!"
+    assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 contains non-trid2 entries!"
+
+    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid2,\
+    Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
+    Data=tempData,mass=mass1)
+
+    assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
+    assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
+
+    assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
+
+    assert np.all(np.isin(TracersReturned,trid2)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned not subset of trid2! Selection error!"
+
+
+    truthyList =[]
+    for ind, value in enumerate(data):
+        if (np.isnan(value) == False):
+            truthyList.append(np.isin(value,tempData))
+        else:
+            truthyList.append(np.isnan(value))
+
+    truthy = np.all(truthyList)
+
+    assert truthy == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Data has incorrect values! Selection error!"
+
 def test_IndividualTracer():
     """
     Test that the returned tracers from GetIndividualCellFromTracer are a subset of the SelectedTracers. Also that the data
