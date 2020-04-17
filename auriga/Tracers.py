@@ -12,9 +12,8 @@ import matplotlib.pyplot as plt
 import const as c
 from gadget import *
 from gadget_subfind import *
-from Snapper import *
 from Tracers_Subroutines import *
-import pickle
+import h5py
 
 #==============================================================================#
 #       USER DEFINED PARAMETERS
@@ -38,6 +37,12 @@ HaloID = 0
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
+#File types for data save.
+#   Mini: small median and percentiles data
+#   Full: full FullDict data
+MiniDataPathSuffix = f".csv"
+FullDataPathSuffix = f".h5"
+
 #Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
 lazyLoadBool = True
 #==============================================================================#
@@ -58,7 +63,6 @@ for key in saveEssentials:
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
     #Save as .csv
-DataSavepathSuffix = f".csv"
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 #==============================================================================#
@@ -104,20 +108,15 @@ for targetT in TRACERSPARAMS['targetTLst']:
     snap_subfind = load_subfind(TRACERSPARAMS['snapnum'],dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
-    print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    whereGas = np.where(snapGas.type==0)
+
+    print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
-    Snapper1 = Snapper()
-    snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
-
-    #Convert Units
-    ## Make this a seperate function at some point??
-    snapGas.pos   *= 1e3 #[kpc]
-
-    snapGas.vol *= 1e9 #[kpc^3]
+    snapGas  = SetCentre(snap=snapGas,whereGas = whereGas,snap_subfind=snap_subfind,HaloID=HaloID)
 
     #--------------------------#
     ##    Units Conversion    ##
@@ -125,7 +124,18 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     print("Converting Units!")
 
-    snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+
+    Gyr = 365.25*24.*60.*60.*1e9
+    MpcTokm = 1e6*c.parsec*1e-5
+    snapGas.vel *= (MpcTokm)/Gyr #[km s^-1]
+
+    snapGas.vol *= 1e9 #[kpc^3]
+
+    snapGas = ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+
 
     ### Exclude values outside halo 0 ###
 
@@ -136,6 +146,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
+    print("Setting Selection Condition!")
 
     #Set condition for Tracer selection
     Cond = np.where((snapGas.data['T']>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
@@ -169,21 +180,16 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
             # load in the gas particles mass and position only for HaloID 0.
             #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-            snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=lazyLoadBool, subfind = snap_subfind)
+            snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
             # load tracers data
             snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
+            whereGas = np.where(snapGas.type==0)
+
             print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
-            #Set centre of simulation
-            Snapper1 = Snapper()
-            snapGas  = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=HaloID)
-
-            #Convert Units
-            ## Make this a seperate function at some point??
-            snapGas.pos   *= 1e3 #[kpc]
-
-            snapGas.vol *= 1e9 #[kpc^3]
+            #Centre the simulation on HaloID 0
+            snapGas  = SetCentre(snap=snapGas,whereGas = whereGas,snap_subfind=snap_subfind,HaloID=HaloID)
 
             #--------------------------#
             ##    Units Conversion    ##
@@ -191,7 +197,17 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
             print("Converting Units!")
 
-            snapGas = ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+            #Convert Units
+            ## Make this a seperate function at some point??
+            snapGas.pos *= 1e3 #[kpc]
+
+            Gyr = 365.25*24.*60.*60.*1e9
+            MpcTokm = 1e6*c.parsec*1e-5
+            snapGas.vel *= (MpcTokm)/Gyr #[km s^-1]
+
+            snapGas.vol *= 1e9 #[kpc^3]
+
+            snapGas = ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
             #Find Halo=HaloID data for only selection snapshot. This ensures the
             #selected tracers are originally in the Halo, but allows for tracers
@@ -243,8 +259,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
             print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
             FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
 
-            del snapGas, snapTracers, Snapper1, snap_subfind
-
+            del snapGas, snapTracers, snap_subfind
 #==============================================================================#
 #       Prepare data and save
 #==============================================================================#
@@ -302,7 +317,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
                         plotData[f"{k}"] = np.append(plotData[f"{k}"], v)
 
     #Generate our savepath
-    tmpSave = DataSavepath + f"_T{int(targetT)}" + DataSavepathSuffix
+    tmpSave = DataSavepath + f"_T{int(targetT)}" + MiniDataPathSuffix
     print(tmpSave)
 
     #Take only the data we selected to save from plotData and save to a new temporary dict for saving
@@ -317,8 +332,8 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
 
 
-save = DataSavepath + ".pickle"
-print(save)
-#Save CellsCFT as pickle compressed object
-with open(save,"wb") as f:
-    Cells = pickle.dump(FullDict,f)
+savePath = DataSavepath + FullDataPathSuffix
+
+print(savePath)
+
+hdf5_save(savePath,FullDict)

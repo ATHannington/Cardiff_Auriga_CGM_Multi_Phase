@@ -20,11 +20,11 @@ import pickle
 from Tracers_Subroutines import *
 from random import sample
 
-subset = 1000
+subset = 10
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.01
+opacity = 0.5#0.01
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -37,18 +37,16 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'$n_H$ [c$m^{-
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-DataSavepathSuffix = f".pickle"
+DataSavepathSuffix = f".h5"
 
 
 print("Loading data!")
 
 dataDict = {}
 
-load = DataSavepath + DataSavepathSuffix
+loadPath = DataSavepath + DataSavepathSuffix
 
-#Load analysis big data pickle object
-with open(load,"rb") as f:
-    dataDict = pickle.load(f)
+dataDict = hdf5_load(loadPath)
 
 
 print("Getting Tracer Data!")
@@ -187,7 +185,7 @@ for analysisParam in saveParams:
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace = 0.005)
-    opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}"+analysisParam+str(int(subset))+f"_Individuals.png"
+    opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}"+analysisParam+str(int(subset))+f"_Individuals.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
     plt.close()

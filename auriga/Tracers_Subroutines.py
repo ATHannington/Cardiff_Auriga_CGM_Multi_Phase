@@ -13,6 +13,7 @@ import const as c
 from gadget import *
 from gadget_subfind import *
 from Snapper import *
+import h5py
 
 
 def GetTracersFromCells(snapGas, snapTracers,Cond):
@@ -33,13 +34,25 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
+    NGas = len(snapGas.type[whereGas])
+    NStars = len(snapGas.type[whereStars])
+
+    CellsIndicesGasOnly = np.where(np.isin(snapGas.id[whereGas],Parents))
+    CellsIndicesStarsOnly = np.where(np.isin(snapGas.id[whereStars],Parents))
     #Select the data for Cells that meet Cond which contain tracers
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
     Cells={}
     for key, value in snapGas.data.items():
-        if value is not None:
-                Cells.update({key: value[CellsIndices]})
+        if (value is not None):
+            tmpList = []
+            for ind, entry in enumerate(value):
+                if ((snapGas.type[ind]==0)&(ind in CellsIndicesGasOnly)):
+                    tmpList.append(entry)
+                elif((snapGas.type[ind]==4)&(ind in CellsIndicesStarsOnly)):
+                    tmpList.append(entry)
+            Cells.update({key: np.array(tmpLst)})
+
 
     return Tracers, Cells, CellIDs, Parents
 
@@ -62,6 +75,11 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
+    whereGas = np.where(snapGas.type==0)
+    whereStars = np.where(snapGas.type==4)
+
+    CellsIndicesGasOnly = np.where(np.isin(snapGas.id[whereGas],Parents))
+    CellsIndicesStarsOnly = np.where(np.isin(snapGas.id[whereStars],Parents))
     #So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
     ParentsIndices = np.where(np.isin(Parents,snapGas.id))
     Parents = Parents[ParentsIndices]
@@ -73,8 +91,14 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     #       At indices of Cells which contain tracers in tracers list.
     Cells={}
     for key, value in snapGas.data.items():
-        if value is not None:
-                Cells.update({key: value[CellsIndices]})
+        if (value is not None):
+            tmpList = []
+            for ind, entry in enumerate(value):
+                if ((snapGas.type[ind]==0)&(ind in CellsIndicesGasOnly)):
+                    tmpList.append(entry)
+                elif((snapGas.type[ind]==4)&(ind in CellsIndicesStarsOnly)):
+                    tmpList.append(entry)
+            Cells.update({key: np.array(tmpLst)})
 
     return TracersCFT, Cells, CellIDs, Parents
 
@@ -103,17 +127,32 @@ def weightedperc(data, weights, perc):
     #Reurn the first data value where above is true
     return sorted_data[whereperc[0][0]]
 
+
+def SetCentre(snap,whereGas,snap_subfind,HaloID):
+    print('Centering!')
+
+    # subfind has calculated its centre of mass for you
+    HaloCentre = snap_subfind.data['fpos'][HaloID,:]
+    # use the subfind COM to centre the coordinates on the galaxy
+    snap.data['pos'] = (snap.data['pos'] - np.array(HaloCentre))
+
+    snap.data['R'] =  (np.linalg.norm(snap.data['pos'], axis=1))
+
+    #Adjust to galaxy centred velocity
+    wheredisc, = np.where((snap.data['R'][whereGas] < 20.) & (snap.data['sfr'] > 0.))
+    snap.vel = snap.vel - np.median(snap.vel[wheredisc], axis = 0)
+    return snap
 #------------------------------------------------------------------------------#
-def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
+def ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
     #Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
     rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
 
-    meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
+    meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
     Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
 
     gasdens = (snapGas.rho / (c.parsec*1e6)**3.) * c.msol * 1e10 #[g cm^-3]
-    gasX = snapGas.gmet[:,0]
+    gasX = snapGas.gmet[whereGas,0][0]
 
     snapGas.data['T'] = snapGas.u / Tfac # K
     snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
@@ -121,11 +160,41 @@ def ConvertUnits(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar
     snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
 
     bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
+
+    #Magnitude of Magnetic Field [micro Guass]
     snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
 
-    snapGas.data['R'] =  np.linalg.norm(snapGas.data['pos'], axis=1) #[Kpc]
+    #Radius [kpc]
+    snapGas.data['R'] =  (np.linalg.norm(snapGas.data['pos'], axis=1)) #[Kpc]
 
+    #Radial Velocity [km s^-1]
+    snapGas.data['vrad'] = (snapGas.pos*snapGas.vel).sum(axis=1)
+    snapGas.data['vrad'] /= snapGas.data['R']
+
+    #Cooling time [s]
     snapGas.data['tcool'] = snapGas.data['u'] * 1e10 * gasdens / (snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[s]
+
+    #Load in metallicity
+    tmp = snapGas.data['gz']
+    #Load in Metals
+    tmp = snapGas.data['gmet']
+
+    #Specific Angular Momentum [kpc km s^-1]
+    snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
+
+    snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
+
+    #Thermal Pressure : P = n Kb T
+    snapGas.data['P_thermal'] = snapGas.ndens * c.KB *snapGas.T
+
+    #Magnetic Pressure [microGauss ^ 2]
+    snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi)
+
+    #Kinetic "Pressure" [10^10 Msol km^2 ^s^-2]
+    snapGas.data['P_kinetic'] = snapGas.rho * (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
+
+    del tmp
+
     return snapGas
 #------------------------------------------------------------------------------#
 def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
@@ -134,8 +203,15 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
 
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
-        if (snapGas.data[key] is not None):
-            snapGas.data[key] = snapGas.data[key][:gaslength]
+        if (value is not None):
+            tmpList = []
+            for ind, entry in enumerate(value):
+                if ((snapGas.type[ind]==0)&(ind<=gaslength)):
+                    tmpList.append(entry)
+                elif((snapGas.type[ind]==4)):
+                    tmpList.append(entry)
+
+            snapGas.data[key] = np.array(tmpList)
 
     return snapGas
 #------------------------------------------------------------------------------#
@@ -203,3 +279,32 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
             massData.append([np.nan])
 
     return saveData, massData, TracersReturned
+
+def hdf5_save(path,data):
+
+    with h5py.File(path,"w") as f:
+        for key, value in data.items():
+            saveKey = None
+            for entry in key:
+                if saveKey is None:
+                    saveKey = entry
+                else:
+                    saveKey = saveKey + "_"  + str(entry)
+            grp = f.create_group(saveKey)
+            for k, v in value.items():
+                grp.create_dataset(k, data=v, compression='gzip')
+
+    return
+
+def hdf5_load(path):
+    loaded = h5py.File(path,'r')
+
+    dataDict={}
+    for key,value in loaded.items():
+        saveKey = tuple(key.split("_"))
+        tmpDict = {}
+        for k,v in value.items():
+            tmpDict.update({k:v[:]})
+        dataDict.update({saveKey:tmpDict})
+
+    return dataDict

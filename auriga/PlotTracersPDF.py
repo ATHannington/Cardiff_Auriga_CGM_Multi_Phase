@@ -28,24 +28,22 @@ TracersParamsPath = 'TracersParams.csv'
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T']#,'R','n_H','B']
+saveParams = ['T','R','n_H','B']
 
-xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'$n_H$ [c$m^{-3}$]', 'B':r'|B| [$\mu G$]'}
+xlabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'Log10 $n_H$ [c$m^{-3}$]', 'B':r'Log10 |B| [$\mu G$]'}
 
 
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-DataSavepathSuffix = f".pickle"
-
+DataSavepathSuffix = f".h5"
 
 print("Loading data!")
 
 dataDict = {}
 
-load = DataSavepath + DataSavepathSuffix
+loadPath = DataSavepath + DataSavepathSuffix
 
-with open(load,"rb") as f:
-    dataDict = pickle.load(f)
+dataDict = hdf5_load(loadPath)
 
 for dataKey in saveParams:
     #Create a plot for each Temperature
@@ -69,10 +67,21 @@ for dataKey in saveParams:
         plotData = {}
         for k, v in tmpData.items():
             for key, value in tmpData[k].items():
+                 if ((type(value) == list) or (type(value) == numpy.ndarray)):
+                    value = [value[int(zz)] for zz in flatRangeIndices]
                  if k == 1 :
                      plotData.update({key: value})
                  else:
                      plotData[key]= np.append(plotData[key], value)
+
+        median = dataKey + "median"
+        vline = np.log10(plotData[median][0])
+        #Sort data by smallest Lookback time
+        ind_sorted = np.argsort(plotData['Lookback'])
+        for key, value in plotData.items():
+            #Sort the data
+            sorted_data = np.array(value)[ind_sorted]
+            plotData.update({key: sorted_data})
 
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
         for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
@@ -80,6 +89,16 @@ for dataKey in saveParams:
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
             dictkey = (f"T{int(T)}",f"{int(snap)}")
+
+            whereGas = np.where(dataDict[dictkey]['type'] == 0)
+            whereStars = np.where(dataDict[dictkey]['type'] == 4)
+
+            NGas = len(dataDict[dictkey]['type'][whereGas])
+            NStars = len(dataDict[dictkey]['type'][whereStars])
+            Ntot = NGas + NStars
+
+            #Percentage in stars
+            percentage = (float(NStars)/(float(Ntot)))*100.
 
             data = dataDict[dictkey][dataKey]
             weights = dataDict[dictkey]['mass']
@@ -99,27 +118,26 @@ for dataKey in saveParams:
 
             print(f"Snap{snap} T{T} Type{dataKey}")
 
-            if (dataKey != 'R'):
-                ax.set_xscale('log')
-                # ax[1].set_xscale('log')
-            ax.hist(np.log10(data), bins = Nbins, range = [xmin,xmax], weights = weights, density = True, color=colour)
+            ax.hist(np.log10(data), bins = Nbins, range = [xmin,xmax], weights = weights, normed = True, color=colour)
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
             # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
             # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)
-            ax.set_xlabel(xlabel[dataKey],fontsize=8)
+            ax.set_xlabel(xlabel[dataKey],fontsize=15)
             # ax[1].set_xlabel(xlabel[dataKey],fontsize=8)
-            ax.set_ylabel("Normalised Count",fontsize=8)
+            ax.set_ylabel("Normalised Count",fontsize=15)
             # ax[1].set_ylabel("Cumulative Normalised Count",fontsize=8)
             fig.suptitle(f"PDF of Cells Containing Tracers selected by: " +\
             "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
             r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
             "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
-            f" weighted by mass")
+            f" weighted by mass"+\
+            "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=15)
+            ax.axvline(x=vline, c='red')
 
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, hspace = 0.005)
 
-            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_T{int(T)}_{dataKey}_PDF.png"
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_T{int(T)}_{dataKey}_PDF.pdf"
             plt.savefig(opslaan, dpi = DPI, transparent = False)
             print(opslaan)
             plt.close()
