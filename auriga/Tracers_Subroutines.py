@@ -34,25 +34,13 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
-    NGas = len(snapGas.type[whereGas])
-    NStars = len(snapGas.type[whereStars])
-
-    CellsIndicesGasOnly = np.where(np.isin(snapGas.id[whereGas],Parents))
-    CellsIndicesStarsOnly = np.where(np.isin(snapGas.id[whereStars],Parents))
     #Select the data for Cells that meet Cond which contain tracers
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
     Cells={}
     for key, value in snapGas.data.items():
         if (value is not None):
-            tmpList = []
-            for ind, entry in enumerate(value):
-                if ((snapGas.type[ind]==0)&(ind in CellsIndicesGasOnly)):
-                    tmpList.append(entry)
-                elif((snapGas.type[ind]==4)&(ind in CellsIndicesStarsOnly)):
-                    tmpList.append(entry)
-            Cells.update({key: np.array(tmpLst)})
-
+            Cells.update({key: value[CellsIndices]})
 
     return Tracers, Cells, CellIDs, Parents
 
@@ -75,11 +63,6 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
-    whereGas = np.where(snapGas.type==0)
-    whereStars = np.where(snapGas.type==4)
-
-    CellsIndicesGasOnly = np.where(np.isin(snapGas.id[whereGas],Parents))
-    CellsIndicesStarsOnly = np.where(np.isin(snapGas.id[whereStars],Parents))
     #So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
     ParentsIndices = np.where(np.isin(Parents,snapGas.id))
     Parents = Parents[ParentsIndices]
@@ -92,13 +75,8 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     Cells={}
     for key, value in snapGas.data.items():
         if (value is not None):
-            tmpList = []
-            for ind, entry in enumerate(value):
-                if ((snapGas.type[ind]==0)&(ind in CellsIndicesGasOnly)):
-                    tmpList.append(entry)
-                elif((snapGas.type[ind]==4)&(ind in CellsIndicesStarsOnly)):
-                    tmpList.append(entry)
-            Cells.update({key: np.array(tmpLst)})
+            Cells.update({key: value[CellsIndices]})
+
 
     return TracersCFT, Cells, CellIDs, Parents
 
@@ -128,7 +106,7 @@ def weightedperc(data, weights, perc):
     return sorted_data[whereperc[0][0]]
 
 
-def SetCentre(snap,whereGas,snap_subfind,HaloID):
+def SetCentre(snap,snap_subfind,HaloID):
     print('Centering!')
 
     # subfind has calculated its centre of mass for you
@@ -138,12 +116,14 @@ def SetCentre(snap,whereGas,snap_subfind,HaloID):
 
     snap.data['R'] =  (np.linalg.norm(snap.data['pos'], axis=1))
 
+    whereGas = np.where(snap.type==0)
     #Adjust to galaxy centred velocity
     wheredisc, = np.where((snap.data['R'][whereGas] < 20.) & (snap.data['sfr'] > 0.))
     snap.vel = snap.vel - np.median(snap.vel[wheredisc], axis = 0)
     return snap
 #------------------------------------------------------------------------------#
-def ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
+def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
+    whereGas = np.where(snapGas.type==0)
     #Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
     rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
@@ -178,6 +158,8 @@ def ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_sol
     tmp = snapGas.data['gz']
     #Load in Metals
     tmp = snapGas.data['gmet']
+    #Load in Star Formation Rate
+    tmp = snapGas.data['sfr']
 
     #Specific Angular Momentum [kpc km s^-1]
     snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
@@ -201,17 +183,20 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
     #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
     gaslength = snap_subfind.data['slty'][Halo,0]
 
+    whereGas = np.where(snapGas.type==0)[0]
+    whereStars = np.where(snapGas.type==4)[0]
+    NGas = len(snapGas.type[whereGas])
+    NStars = len(snapGas.type[whereStars])
+
+    selectGas = [ii for ii in range(0,gaslength)]
+    selectStars = [ii for ii in range(0,NStars)]
+
+    selected = selectGas + selectStars
+
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
         if (value is not None):
-            tmpList = []
-            for ind, entry in enumerate(value):
-                if ((snapGas.type[ind]==0)&(ind<=gaslength)):
-                    tmpList.append(entry)
-                elif((snapGas.type[ind]==4)):
-                    tmpList.append(entry)
-
-            snapGas.data[key] = np.array(tmpList)
+            snapGas.data[key] = value[selected]
 
     return snapGas
 #------------------------------------------------------------------------------#
@@ -281,15 +266,26 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
     return saveData, massData, TracersReturned
 
 def hdf5_save(path,data):
-
+    """
+        Save nested dictionary as hdf5 file.
+        Dictionary must have form:
+            {(Meta-Key1 , Meta-Key2):{key1:... , key2: ...}}
+        and will be saved in the form:
+            {Meta-key1_Meta-key2:{key1:... , key2: ...}}
+    """
     with h5py.File(path,"w") as f:
         for key, value in data.items():
             saveKey = None
+            #Loop over Metakeys in tuple key of met-dictionary
+            # Save this new metakey as one string, separated by '_'
             for entry in key:
                 if saveKey is None:
                     saveKey = entry
                 else:
                     saveKey = saveKey + "_"  + str(entry)
+            #Create meta-dictionary entry with above saveKey
+            #   Add to this dictionary entry a dictionary with keys from sub-dict
+            #   and values from sub dict. Gzip for memory saving.
             grp = f.create_group(saveKey)
             for k, v in value.items():
                 grp.create_dataset(k, data=v, compression='gzip')
@@ -297,14 +293,72 @@ def hdf5_save(path,data):
     return
 
 def hdf5_load(path):
+    """
+        Load nested dictionary from hdf5 file.
+        Dictionary will be saved in the form:
+            {Meta-key1_Meta-key2:{key1:... , key2: ...}}
+        and output in the following form:
+            {(Meta-Key1 , Meta-Key2):{key1:... , key2: ...}}
+
+    """
     loaded = h5py.File(path,'r')
 
     dataDict={}
     for key,value in loaded.items():
+        #Split the meta-key back into a tuple format
         saveKey = tuple(key.split("_"))
+        #Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k,v in value.items():
             tmpDict.update({k:v[:]})
+        #Add the sub-dictionary to the meta-dictionary
         dataDict.update({saveKey:tmpDict})
 
     return dataDict
+
+def PadNonEntries(snapGas):
+    """
+        Subroutine to pad all stars and gas entries in snapGas to have same first dimension size.
+        So stars only data -> stars data + NGas x None
+        So Gas only data -> Gas data + Nstars x None
+        So all data first dimension == NTot
+
+        Sanity checks and error messages in place.
+    """
+
+    print("Padding None Entries!")
+
+    NGas =   len(snapGas.type[np.where(snapGas.type==0)])
+    NStars = len(snapGas.type[np.where(snapGas.type==4)])
+    NTot =   len(snapGas.type)
+
+    GasNone = [None for ii in range(0,NGas)]
+    StarsNone = [None for ii in range(0,NStars)]
+
+    for key,value in snapGas.data.items():
+        if (value is not None):
+            if (np.shape(value)[0] == NGas):
+                listValues = value.tolist()
+                paddedList = listValues + StarsNone
+                if (len(paddedList) != NTot):
+                    print("[@ GAS @PadNonEntries:] Padded List not of length NTot. Data Does not have non-entries for STARS!")
+                paddedValues = np.array(paddedList)
+                snapGas.data[key] = paddedValues
+
+                del listValues,paddedList,paddedValues
+
+            elif(np.shape(value)[0] == NStars):
+                listValues = value.tolist()
+                paddedList = listValues + GasNone
+                if (len(paddedList) != NTot):
+                    print("[@ STARS @PadNonEntries:] Padded List not of length NTot. Data Does not have non-entries for GAS!")
+                paddedValues = np.array(paddedList)
+                snapGas.data[key] = paddedValues
+
+                del listValues,paddedList,paddedValues
+
+            elif(np.shape(value)[0] != (NStars+NGas)):
+                print("[@ ELSE @PadNonEntries:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!")
+                print(f"Key: {key}")
+
+    return snapGas

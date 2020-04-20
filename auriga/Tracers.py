@@ -102,7 +102,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
 
     print("")
     print(f"{percentage:0.02f}%")
-    print("Setting Condition!")
+    print(f"Starting T = {targetT} Analysis!")
 
     # load in the subfind group files
     snap_subfind = load_subfind(TRACERSPARAMS['snapnum'],dir=TRACERSPARAMS['simfile'])
@@ -111,31 +111,39 @@ for targetT in TRACERSPARAMS['targetTLst']:
     snapGas     = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapTracers = gadget_readsnap(TRACERSPARAMS['snapnum'], TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
-    whereGas = np.where(snapGas.type==0)
+    #Load Cell IDs - avoids having to turn lazy_load off...
+    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+    #   Be in memory so taking the subset would be skipped.
+    tmp = snapGas.data['id']
+    del tmp
 
     print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
-    snapGas  = SetCentre(snap=snapGas,whereGas = whereGas,snap_subfind=snap_subfind,HaloID=HaloID)
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
 
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
 
-    print("Converting Units!")
+    print("Calculating Tracked Parameters!")
 
     #Convert Units
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
 
-    Gyr = 365.25*24.*60.*60.*1e9
+    GyrToSeconds = 365.25*24.*60.*60.*1e9
     MpcTokm = 1e6*c.parsec*1e-5
-    snapGas.vel *= (MpcTokm)/Gyr #[km s^-1]
+    snapGas.vel *= (MpcTokm)/GyrToSeconds #[km s^-1]
 
     snapGas.vol *= 1e9 #[kpc^3]
 
-    snapGas = ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+    #Calculate New Parameters and Load into memory others we want to track
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
+    #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
+    snapGas = PadNonEntries(snapGas)
 
     ### Exclude values outside halo 0 ###
 
@@ -149,12 +157,21 @@ for targetT in TRACERSPARAMS['targetTLst']:
     print("Setting Selection Condition!")
 
     #Set condition for Tracer selection
-    Cond = np.where((snapGas.data['T']>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
-                    (snapGas.data['T']<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
-                    (snapGas.data['R']>=TRACERSPARAMS['Rinner']) & \
-                    (snapGas.data['R']<=TRACERSPARAMS['Router']) &
-                    (snapGas.data['sfr']<=0)\
-                   )
+    whereGas = np.where(snapGas.type==0)
+    whereStars = np.where(snapGas.type==4)
+    NGas = len(snapGas.type[whereGas])
+
+    StarsSelect = np.where((snapGas.data['R']>=TRACERSPARAMS['Rinner']) & \
+                        (snapGas.data['R']<=TRACERSPARAMS['Router']) &\
+                        (snapGas.type == 4) )
+
+    GasSelect = np.where((snapGas.data['T'][whereGas]>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['T'][whereGas]<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['R'][whereGas]>=TRACERSPARAMS['Rinner']) & \
+                    (snapGas.data['R'][whereGas]<=TRACERSPARAMS['Router']) &\
+                    (snapGas.data['sfr'][whereGas]<=0))
+
+    Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
 
     #Get Cell data and Cell IDs from tracers based on condition
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
@@ -184,31 +201,39 @@ for targetT in TRACERSPARAMS['targetTLst']:
             # load tracers data
             snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
-            whereGas = np.where(snapGas.type==0)
+            #Load Cell IDs - avoids having to turn lazy_load off...
+            # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+            #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+            #   Be in memory so taking the subset would be skipped.
+            tmp = snapGas.data['id']
+            del tmp
 
             print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
             #Centre the simulation on HaloID 0
-            snapGas  = SetCentre(snap=snapGas,whereGas = whereGas,snap_subfind=snap_subfind,HaloID=HaloID)
+            snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
 
             #--------------------------#
             ##    Units Conversion    ##
             #--------------------------#
 
-            print("Converting Units!")
+            print("Calculating Tracked Parameters!")
 
             #Convert Units
             ## Make this a seperate function at some point??
             snapGas.pos *= 1e3 #[kpc]
 
-            Gyr = 365.25*24.*60.*60.*1e9
+            GyrToSeconds = 365.25*24.*60.*60.*1e9
             MpcTokm = 1e6*c.parsec*1e-5
-            snapGas.vel *= (MpcTokm)/Gyr #[km s^-1]
+            snapGas.vel *= (MpcTokm)/GyrToSeconds #[km s^-1]
 
             snapGas.vol *= 1e9 #[kpc^3]
 
-            snapGas = ConvertUnits(snapGas,whereGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+            #Calculate New Parameters and Load into memory others we want to track
+            snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
 
+            #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
+            snapGas = PadNonEntries(snapGas)
             #Find Halo=HaloID data for only selection snapshot. This ensures the
             #selected tracers are originally in the Halo, but allows for tracers
             #to leave (outflow) or move inwards (inflow) from Halo.
@@ -259,7 +284,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
             print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
             FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
 
-            del snapGas, snapTracers, snap_subfind
+            del snapGas, snapTracers, snap_subfind, CellsCFT
 #==============================================================================#
 #       Prepare data and save
 #==============================================================================#
@@ -285,20 +310,21 @@ for targetT in TRACERSPARAMS['targetTLst']:
                     #   We have separate statements for ind ==0 and else.
                     #       This is because if ind == 0 we want to create a new entry in plotData
                     #           else we want to append to it, not create a new entry or overwrite the old one
+                    whereGas = np.where(FullDict[key]['type'] == 0)
                     if ((f"{k}median" not in plotData.keys()) or (f"{k}UP" not in plotData.keys()) or (f"{k}LO" not in plotData.keys())):
                         plotData.update({f"{k}median": \
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.)})
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=50.)})
                         plotData.update({f"{k}UP": \
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'])})
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=TRACERSPARAMS['percentileUP'])})
                         plotData.update({f"{k}LO": \
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'])})
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=TRACERSPARAMS['percentileLO'])})
                     else:
                         plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.))
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=50.))
                         plotData[f"{k}UP"] = np.append(plotData[f"{k}UP"],\
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP']))
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=TRACERSPARAMS['percentileUP']))
                         plotData[f"{k}LO"] = np.append(plotData[f"{k}LO"],\
-                        weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO']))
+                        weightedperc(data=v[whereGas], weights=FullDict[key]['mass'][whereGas],perc=TRACERSPARAMS['percentileLO']))
                 elif (k=='Lookback'):
                     #Separate handling of lookback time so as to not take percentiles etc.
                     if f"Lookback" not in plotData.keys():
