@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import const as c
 from gadget import *
 from gadget_subfind import *
-from Snapper import *
 import h5py
 
 
@@ -207,24 +206,24 @@ def LoadTracersParameters(TracersParamsPath):
 
     #Convert Dictionary items to (mostly) floats
     for key, value in TRACERSPARAMS.items():
-        if ((key != 'targetTLst') & (key != 'simfile')):
-            #Convert values to floats
-            TRACERSPARAMS.update({key:float(value)})
-        elif (key == 'targetTLst'):
+        if (key == 'targetTLst'):
             #Convert targetTLst to list of floats
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
             TRACERSPARAMS.update({key:lst2})
-        elif (key == 'simfile'):
+        elif ((key == 'simfile') or (key == 'savepath')):
             #Keep simfile as a string
             TRACERSPARAMS.update({key:value})
+        else:
+            #Convert values to floats
+            TRACERSPARAMS.update({key:float(value)})
 
     #Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
     Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
     Tstr = '-'.join(Tlst)
 
     #This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
-    DataSavepath = f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
+    DataSavepath = TRACERSPARAMS['savepath'] + f"Data_snap{int(TRACERSPARAMS['snapnum'])}_min{int(TRACERSPARAMS['snapMin'])}_max{int(TRACERSPARAMS['snapMax'])}" +\
         f"_{int(TRACERSPARAMS['Rinner'])}R{int(TRACERSPARAMS['Router'])}_targetT{Tstr}"+\
         f"_deltaT{int(TRACERSPARAMS['deltaT'])}"
 
@@ -332,11 +331,19 @@ def PadNonEntries(snapGas):
     NStars = len(snapGas.type[np.where(snapGas.type==4)])
     NTot =   len(snapGas.type)
 
-    GasNone = [None for ii in range(0,NGas)]
-    StarsNone = [None for ii in range(0,NStars)]
-
     for key,value in snapGas.data.items():
         if (value is not None):
+
+            if (np.shape(np.shape(value))[0] == 1):
+                entrySize = 1
+                entry = np.nan
+            else:
+                entrySize = np.shape(value)[1]
+                entry = [np.nan for ii in range(0,entrySize)]
+
+            GasNone = [entry for ii in range(0,NGas)]
+            StarsNone = [entry for ii in range(0,NStars)]
+
             if (np.shape(value)[0] == NGas):
                 listValues = value.tolist()
                 paddedList = listValues + StarsNone
