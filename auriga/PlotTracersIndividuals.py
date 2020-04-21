@@ -15,8 +15,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLoca
 import const as c
 from gadget import *
 from gadget_subfind import *
-from Snapper import *
-import pickle
+import h5py
 from Tracers_Subroutines import *
 from random import sample
 
@@ -28,9 +27,16 @@ opacity = 0.5#0.01
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T', 'R', 'n_H', 'B']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
 
-ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'$n_H$ [c$m^{-3}$]', 'B':r'|B| [$\mu G$]'}
+ylabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]',\
+ 'n_H':r'Log10 $n_H$ [$cm^{-3}$]', 'B':r'Log10 |B| [$\mu G$]',\
+ 'vrad':r'Log10 Radial Velocity [$km$ $s^{-1}$]',\
+ 'gz':r'Log10 Average Metallicity', 'L':r'Log10 Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
+ 'P_thermal':r'Log10 Thermal Pressure [$erg$ $cm^{-2}]',\
+ 'P_magnetic':r'Log10 Magnetic Pressure [$\mu G$ $sr^{-1}]',\
+ 'P_kinetic': r'Log10 Kinetic Pressure [$kg$ $km^2$ $s^-2$]'\
+ }
 
 #==============================================================================#
 
@@ -65,9 +71,8 @@ for analysisParam in saveParams:
 
         key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
         rangeMin = 0
-        rangeMax = len(dataDict[key][analysisParam])
+        rangeMax = len(dataDict[key]['trid'])
         TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-
         #Take Random sample of Tracers size min(subset, len(data))
         TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
         SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
@@ -79,14 +84,14 @@ for analysisParam in saveParams:
         tmpMassdata =[]
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['snapnumMAX']+1))):
             key = (f"T{int(T)}",f"{int(snap)}")
-
+            whereGas = np.where(dataDict[key]['type']==0)[0]
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
             data, massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key][analysisParam],mass=dataDict[key]['mass'])
+                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+                Data=dataDict[key][analysisParam][whereGas],mass=dataDict[key]['mass'][whereGas])
 
             #Append the data from this snapshot to a temporary list
             tmpXdata.append(dataDict[key]['Lookback'][0])
@@ -138,7 +143,7 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotYdata = Ydata[f"T{int(temp)}"][:,:,0]
+        plotYdata = Ydata[f"T{int(temp)}"]
 
         #Set style options
         opacityPercentiles = 0.25
@@ -168,7 +173,7 @@ for analysisParam in saveParams:
         ax[ii].tick_params(which='both')
         if (analysisParam != 'R'):
             ax[ii].set_yscale('log')
-        ax[ii].set_ylabel(ylabel[analysisParam],fontsize=8)
+        ax[ii].set_ylabel(ylabel[analysisParam],fontsize=15)
         if (analysisParam == 'T'):
             ax[ii].set_ylim(ymin=1e3, ymax=1e7)
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
@@ -176,16 +181,17 @@ for analysisParam in saveParams:
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
         f" weighted by mass" +\
-        "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" )
+        "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
+        , fontsize=12)
         ax[ii].legend(loc='upper right')
 
 
     #Only give 1 x-axis a label, as they sharex
-    ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=8)
+    ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=15)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace = 0.005)
-    opslaan = f"Tracers{int(TRACERSPARAMS['snapnum'])}"+analysisParam+str(int(subset))+f"_Individuals.pdf"
+    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_"+analysisParam+"_"+str(int(subset))+f"_Individuals.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
     plt.close()

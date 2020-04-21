@@ -147,6 +147,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['R'] =  (np.linalg.norm(snapGas.data['pos'], axis=1)) #[Kpc]
 
     #Radial Velocity [km s^-1]
+    KpcTokm = 1e3*c.parsec*1e-5
     snapGas.data['vrad'] = (snapGas.pos*snapGas.vel).sum(axis=1)
     snapGas.data['vrad'] /= snapGas.data['R']
 
@@ -160,19 +161,19 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Load in Star Formation Rate
     tmp = snapGas.data['sfr']
 
-    #Specific Angular Momentum [kpc km s^-1]
-    snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
+    #Specific Angular Momentum [km^2 s^-1]
+    snapGas.data['L'] = sqrt((cross(snapGas.data['pos']*KpcTokm, snapGas.data['vel'])**2.).sum(axis=1))
 
     snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
 
     #Thermal Pressure : P = n Kb T
     snapGas.data['P_thermal'] = snapGas.ndens * c.KB *snapGas.T
 
-    #Magnetic Pressure [microGauss ^ 2]
+    #Magnetic Pressure [microGauss ^ 2 sr^-1]
     snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi)
 
-    #Kinetic "Pressure" [10^10 Msol km^2 ^s^-2]
-    snapGas.data['P_kinetic'] = snapGas.rho * (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
+    #Kinetic "Pressure" [Kg km^2 ^s^-2]
+    snapGas.data['P_kinetic'] = snapGas.rho *1e10 *c.msol *1e-3* (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
 
     del tmp
 
@@ -256,8 +257,21 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
         if element == True:
             parent = Parents[ind]
             dataIndex = np.where(np.isin(CellIDs,parent))
-            saveData.append(Data[dataIndex].tolist())
-            massData.append(mass[dataIndex].tolist())
+
+            dataEntry = Data[dataIndex].tolist()
+            if (np.shape(dataEntry)[0] == 0):
+                dataEntry =np.nan
+            else:
+                dataEntry = dataEntry[0]
+
+            massEntry = mass[dataIndex].tolist()
+            if (np.shape(massEntry)[0] == 0):
+                massEntry =np.nan
+            else:
+                massEntry = massEntry[0]
+
+            saveData.append(dataEntry)
+            massData.append(massEntry)
         else:
             saveData.append([np.nan])
             massData.append([np.nan])
@@ -356,7 +370,8 @@ def PadNonEntries(snapGas):
 
             elif(np.shape(value)[0] == NStars):
                 listValues = value.tolist()
-                paddedList = listValues + GasNone
+                #Opposite addition order to maintain sensible ordering.
+                paddedList = GasNone + listValues
                 if (len(paddedList) != NTot):
                     print("[@ STARS @PadNonEntries:] Padded List not of length NTot. Data Does not have non-entries for GAS!")
                 paddedValues = np.array(paddedList)

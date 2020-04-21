@@ -14,8 +14,7 @@ import matplotlib.pyplot as plt
 import const as c
 from gadget import *
 from gadget_subfind import *
-from Snapper import *
-import pickle
+import h5py
 from Tracers_Subroutines import *
 
 Nbins = 100
@@ -28,9 +27,16 @@ TracersParamsPath = 'TracersParams.csv'
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B']
-
-xlabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]', 'n_H':r'Log10 $n_H$ [c$m^{-3}$]', 'B':r'Log10 |B| [$\mu G$]'}
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+selectedSnaps = [112,119,127]
+xlabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]',\
+ 'n_H':r'Log10 $n_H$ [$cm^{-3}$]', 'B':r'Log10 |B| [$\mu G$]',\
+ 'vrad':r'Log10 Radial Velocity [$km$ $s^{-1}$]',\
+ 'gz':r'Log10 Average Metallicity', 'L':r'Log10 Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
+ 'P_thermal':r'Log10 Thermal Pressure [$erg$ $cm^{-2}]',\
+ 'P_magnetic':r'Log10 Magnetic Pressure [$\mu G$ $sr^{-1}]',\
+ 'P_kinetic': r'Log10 Kinetic Pressure [$kg$ $km^2$ $s^-2$]'\
+ }
 
 
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
@@ -84,14 +90,18 @@ for dataKey in saveParams:
             plotData.update({key: sorted_data})
 
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
-        for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
+        for snap in selectedSnaps:#range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
             dictkey = (f"T{int(T)}",f"{int(snap)}")
 
             whereGas = np.where(dataDict[dictkey]['type'] == 0)
-            whereStars = np.where(dataDict[dictkey]['type'] == 4)
+
+            dataDict[dictkey]['age'][np.where(np.isnan(dataDict[dictkey]['age']) == True)] = 0.
+
+            whereStars = np.where((dataDict[dictkey]['type'] == 4)&\
+                                  (dataDict[dictkey]['age'] >= 0.))
 
             NGas = len(dataDict[dictkey]['type'][whereGas])
             NStars = len(dataDict[dictkey]['type'][whereStars])
@@ -103,8 +113,8 @@ for dataKey in saveParams:
             data = dataDict[dictkey][dataKey]
             weights = dataDict[dictkey]['mass']
 
-            xmin = np.min(np.log10(data))
-            xmax = np.max(np.log10(data))
+            xmin = np.nanmin(np.log10(data))
+            xmax = np.nanmax(np.log10(data))
             #
             # step = (xmax-xmin)/Nbins
             #
@@ -131,7 +141,7 @@ for dataKey in saveParams:
             r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
             "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
             f" weighted by mass"+\
-            "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=15)
+            "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=12)
             ax.axvline(x=vline, c='red')
 
             plt.tight_layout()

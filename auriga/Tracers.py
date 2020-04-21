@@ -21,7 +21,8 @@ import h5py
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+
 
 #Essential Save Parameters, that will NOT be combined with savetypes
 saveEssentials =['Lookback','Ntracers']
@@ -116,6 +117,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
     tmp = snapGas.data['id']
+    tmp = snapGas.data['age']
     del tmp
 
     print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
@@ -206,6 +208,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
             #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
             #   Be in memory so taking the subset would be skipped.
             tmp = snapGas.data['id']
+            tmp = snapGas.data['age']
             del tmp
 
             print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
