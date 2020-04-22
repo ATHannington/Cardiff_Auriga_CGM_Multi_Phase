@@ -153,8 +153,9 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['R'][np.where(snapGas.data['R']==0.)] = epsilon
     snapGas.data['vrad'] /= snapGas.data['R']
 
-    #Cooling time [s]
-    snapGas.data['tcool'] = snapGas.data['u'] * 1e10 * gasdens / (snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[s]
+    #Cooling time [Gyrs]
+    GyrToSeconds = 365.25*24.*60.*60.*1e9
+    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[s]
 
     #Load in metallicity
     tmp = snapGas.data['gz']
@@ -168,7 +169,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
 
-    #Thermal Pressure : P = n Kb T
+    #Thermal Pressure : P = n Kb T [$erg$ $cm^{-2}$]
     snapGas.data['P_thermal'] = snapGas.ndens * c.KB *snapGas.T
 
     #Magnetic Pressure [microGauss ^ 2 sr^-1]

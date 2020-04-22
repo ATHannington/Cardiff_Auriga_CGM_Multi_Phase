@@ -19,17 +19,17 @@ import h5py
 from Tracers_Subroutines import *
 from random import sample
 
-subset = 10
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.01
+opacity = 0.01#0.5#0.01
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
-logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -37,7 +37,8 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'gz':r'Average Metallicity', 'L':r'Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
  'P_thermal':r'Thermal Pressure [$erg$ $cm^{-2}$]',\
  'P_magnetic':r'Magnetic Pressure [$\mu G$ $sr^{-1}$]',\
- 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]'\
+ 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]',\
+ 'tcool': r'Cooling Time [$Gyr$]'\
  }
 
 for entry in logParameters:
@@ -134,7 +135,7 @@ for analysisParam in saveParams:
                  else:
                      plotData[key]= np.append(plotData[key], float(value))
 
-        vline = plotData['Lookback']
+        vline = plotData['Lookback'][0]
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
         for key, value in plotData.items():

@@ -24,14 +24,14 @@ DPI = 100
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-selectedSnaps = [127]
+selectedSnaps = [112,119,127]
 
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
-logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -39,7 +39,8 @@ xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'gz':r'Average Metallicity', 'L':r'Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
  'P_thermal':r'Thermal Pressure [$erg$ $cm^{-2}$]',\
  'P_magnetic':r'Magnetic Pressure [$\mu G$ $sr^{-1}$]',\
- 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]'\
+ 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]',\
+ 'tcool': r'Cooling Time [$Gyr$]'\
  }
 
 for entry in logParameters:
@@ -87,10 +88,10 @@ for dataKey in saveParams:
                      plotData[key]= np.append(plotData[key], float(value))
 
         median = dataKey + "median"
-        vline = plotData[median]
+        vline = plotData[median][0]
         if dataKey in logParameters:
             vline = np.log10(vline)
-            
+
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
         for key, value in plotData.items():
