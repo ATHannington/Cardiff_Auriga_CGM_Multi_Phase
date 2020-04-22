@@ -148,7 +148,9 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     #Radial Velocity [km s^-1]
     KpcTokm = 1e3*c.parsec*1e-5
+    epsilon = 1e-10
     snapGas.data['vrad'] = (snapGas.pos*snapGas.vel).sum(axis=1)
+    snapGas.data['R'][np.where(snapGas.data['R']==0.)] = epsilon
     snapGas.data['vrad'] /= snapGas.data['R']
 
     #Cooling time [s]
@@ -162,7 +164,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     tmp = snapGas.data['sfr']
 
     #Specific Angular Momentum [km^2 s^-1]
-    snapGas.data['L'] = sqrt((cross(snapGas.data['pos']*KpcTokm, snapGas.data['vel'])**2.).sum(axis=1))
+    snapGas.data['L'] = KpcTokm*sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
 
     snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
 
@@ -172,8 +174,8 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Magnetic Pressure [microGauss ^ 2 sr^-1]
     snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi)
 
-    #Kinetic "Pressure" [Kg km^2 ^s^-2]
-    snapGas.data['P_kinetic'] = snapGas.rho *1e10 *c.msol *1e-3* (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
+    #Kinetic "Pressure" [Msol km^2 ^s^-2]
+    snapGas.data['P_kinetic'] = snapGas.rho *1e10 * (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
 
     del tmp
 

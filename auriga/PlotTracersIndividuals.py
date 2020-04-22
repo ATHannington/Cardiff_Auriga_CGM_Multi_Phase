@@ -29,14 +29,19 @@ TracersParamsPath = 'TracersParams.csv'
 
 saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
 
-ylabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]',\
- 'n_H':r'Log10 $n_H$ [$cm^{-3}$]', 'B':r'Log10 |B| [$\mu G$]',\
- 'vrad':r'Log10 Radial Velocity [$km$ $s^{-1}$]',\
- 'gz':r'Log10 Average Metallicity', 'L':r'Log10 Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
- 'P_thermal':r'Log10 Thermal Pressure [$erg$ $cm^{-2}]',\
- 'P_magnetic':r'Log10 Magnetic Pressure [$\mu G$ $sr^{-1}]',\
- 'P_kinetic': r'Log10 Kinetic Pressure [$kg$ $km^2$ $s^-2$]'\
+logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+
+ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
+ 'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
+ 'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
+ 'gz':r'Average Metallicity', 'L':r'Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
+ 'P_thermal':r'Thermal Pressure [$erg$ $cm^{-2}$]',\
+ 'P_magnetic':r'Magnetic Pressure [$\mu G$ $sr^{-1}$]',\
+ 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]'\
  }
+
+for entry in logParameters:
+    ylabel[entry] = r'Log10 '+ ylabel[entry]
 
 #==============================================================================#
 
@@ -125,16 +130,20 @@ for analysisParam in saveParams:
                  if ((type(value) == list) or (type(value) == numpy.ndarray)):
                     value = [value[int(zz)] for zz in flatRangeIndices]
                  if k == 1 :
-                     plotData.update({key: value})
+                     plotData.update({key: float(value)})
                  else:
-                     plotData[key]= np.append(plotData[key], value)
+                     plotData[key]= np.append(plotData[key], float(value))
 
-        vline = plotData['Lookback'][0]
+        vline = plotData['Lookback']
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
         for key, value in plotData.items():
             #Sort the data
-            sorted_data = np.array(value)[ind_sorted]
+            if isinstance(value,float)==True:
+                entry = [value]
+            else:
+                entry = value
+            sorted_data = np.array(entry)[ind_sorted]
             plotData.update({key: sorted_data})
 
         #Get number of temperatures
@@ -156,26 +165,44 @@ for analysisParam in saveParams:
 
         colourTracers = "tab:gray"
 
-
-        print("")
-        print("Sub-Plot!")
         LO = analysisParam + 'LO'
         UP = analysisParam + 'UP'
         median = analysisParam +'median'
-        ax[ii].fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
-        facecolor=colour,alpha=opacityPercentiles,interpolate=True)
-        ax[ii].plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-        ax[ii].plot(Xdata[f"T{int(temp)}"],plotYdata, color = colourTracers, alpha = opacity )
-        ax[ii].axvline(x=vline, c='red')
 
-        ax[ii].xaxis.set_minor_locator(AutoMinorLocator())
-        ax[ii].yaxis.set_minor_locator(AutoMinorLocator())
-        ax[ii].tick_params(which='both')
-        if (analysisParam != 'R'):
-            ax[ii].set_yscale('log')
-        ax[ii].set_ylabel(ylabel[analysisParam],fontsize=15)
-        if (analysisParam == 'T'):
-            ax[ii].set_ylim(ymin=1e3, ymax=1e7)
+        datamin = np.nanmin(plotYdata)
+        datamax = np.nanmax(plotYdata)
+
+        if (analysisParam in logParameters):
+            plotYdata = np.log10(abs(plotYdata))
+            for key in [LO, UP, median]:
+                plotData[key] = np.log10(abs(plotData[key]))
+
+            datamin = min(np.nanmin(plotYdata),np.nanmin(plotData[LO]))
+            datamax = max(np.nanmax(plotYdata),np.nanmax(plotData[UP]))
+
+        print("")
+        print("Sub-Plot!")
+
+
+        if (len(Tlst)==1):
+            currentAx = ax
+        else:
+            currentAx = ax[ii]
+
+
+        currentAx.fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
+        facecolor=colour,alpha=opacityPercentiles,interpolate=True)
+        currentAx.plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        currentAx.plot(Xdata[f"T{int(temp)}"],plotYdata, color = colourTracers, alpha = opacity )
+        currentAx.axvline(x=vline, c='red')
+
+        currentAx.xaxis.set_minor_locator(AutoMinorLocator())
+        currentAx.yaxis.set_minor_locator(AutoMinorLocator())
+        currentAx.tick_params(which='both')
+
+        currentAx.set_ylabel(ylabel[analysisParam],fontsize=15)
+        currentAx.set_ylim(ymin=datamin, ymax=datamax)
+
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
         "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
@@ -183,11 +210,16 @@ for analysisParam in saveParams:
         f" weighted by mass" +\
         "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
         , fontsize=12)
-        ax[ii].legend(loc='upper right')
+        currentAx.legend(loc='upper right')
 
 
     #Only give 1 x-axis a label, as they sharex
-    ax[len(Tlst)-1].set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=15)
+    if (len(Tlst)==1):
+        axis0 = ax
+    else:
+        axis0 = ax[len(Tlst)-1]
+
+    axis0.set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=15)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace = 0.005)

@@ -24,20 +24,26 @@ DPI = 100
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
+selectedSnaps = [127]
+
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
 saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
-selectedSnaps = [112,119,127]
-xlabel={'T': r'Log10 Temperature [$K$]', 'R': r'Radius [$kpc$]',\
- 'n_H':r'Log10 $n_H$ [$cm^{-3}$]', 'B':r'Log10 |B| [$\mu G$]',\
- 'vrad':r'Log10 Radial Velocity [$km$ $s^{-1}$]',\
- 'gz':r'Log10 Average Metallicity', 'L':r'Log10 Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
- 'P_thermal':r'Log10 Thermal Pressure [$erg$ $cm^{-2}]',\
- 'P_magnetic':r'Log10 Magnetic Pressure [$\mu G$ $sr^{-1}]',\
- 'P_kinetic': r'Log10 Kinetic Pressure [$kg$ $km^2$ $s^-2$]'\
+
+logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
+
+xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
+ 'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
+ 'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
+ 'gz':r'Average Metallicity', 'L':r'Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
+ 'P_thermal':r'Thermal Pressure [$erg$ $cm^{-2}$]',\
+ 'P_magnetic':r'Magnetic Pressure [$\mu G$ $sr^{-1}$]',\
+ 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]'\
  }
 
+for entry in logParameters:
+    xlabel[entry] = r'Log10 '+ xlabel[entry]
 
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
@@ -76,17 +82,24 @@ for dataKey in saveParams:
                  if ((type(value) == list) or (type(value) == numpy.ndarray)):
                     value = [value[int(zz)] for zz in flatRangeIndices]
                  if k == 1 :
-                     plotData.update({key: value})
+                     plotData.update({key: float(value)})
                  else:
-                     plotData[key]= np.append(plotData[key], value)
+                     plotData[key]= np.append(plotData[key], float(value))
 
         median = dataKey + "median"
-        vline = np.log10(plotData[median][0])
+        vline = plotData[median]
+        if dataKey in logParameters:
+            vline = np.log10(vline)
+            
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
         for key, value in plotData.items():
             #Sort the data
-            sorted_data = np.array(value)[ind_sorted]
+            if isinstance(value,float)==True:
+                entry = [value]
+            else:
+                entry = value
+            sorted_data = np.array(entry)[ind_sorted]
             plotData.update({key: sorted_data})
 
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
@@ -113,8 +126,11 @@ for dataKey in saveParams:
             data = dataDict[dictkey][dataKey]
             weights = dataDict[dictkey]['mass']
 
-            xmin = np.nanmin(np.log10(data))
-            xmax = np.nanmax(np.log10(data))
+            if dataKey in logParameters:
+                data = np.log10(data)
+
+            xmin = np.nanmin(data)
+            xmax = np.nanmax(data)
             #
             # step = (xmax-xmin)/Nbins
             #
@@ -128,7 +144,7 @@ for dataKey in saveParams:
 
             print(f"Snap{snap} T{T} Type{dataKey}")
 
-            ax.hist(np.log10(data), bins = Nbins, range = [xmin,xmax], weights = weights, normed = True, color=colour)
+            ax.hist(data, bins = Nbins, range = [xmin,xmax], weights = weights, normed = True, color=colour)
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
             # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
             # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)

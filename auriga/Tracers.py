@@ -23,6 +23,9 @@ import h5py
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
 saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic']
 
+print("")
+print("Saved Parameters in this Analysis:")
+print(saveParams)
 
 #Essential Save Parameters, that will NOT be combined with savetypes
 saveEssentials =['Lookback','Ntracers']
@@ -258,7 +261,7 @@ for targetT in TRACERSPARAMS['targetTLst']:
             TracersOld = TracersCFT
 
             # Save number of tracers
-            CellsCFT['Ntracers'] = [int(len(TracersCFT))]
+            CellsCFT['Ntracers'] = int(len(TracersCFT))
             print(f"Number of tracers = {CellsCFT['Ntracers']}")
 
             #Redshift
