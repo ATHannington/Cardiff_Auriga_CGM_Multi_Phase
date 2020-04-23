@@ -18,18 +18,22 @@ from gadget_subfind import *
 import h5py
 from Tracers_Subroutines import *
 from random import sample
+import math
 
-subset = 1000#10#1000
+subset = 10#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.01#0.5#0.01
+opacity = 0.5#0.5#0.01
+
+n_Hcrit = 1e-1 
+
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
 saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
-logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic']
 
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -44,6 +48,10 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
 for entry in logParameters:
     ylabel[entry] = r'Log10 '+ ylabel[entry]
 
+if (subset<=10):
+    ColourIndividuals = True
+else:
+    ColourIndividuals = False
 #==============================================================================#
 
 #Load Analysis Setup Data
@@ -66,28 +74,38 @@ Ydata = {}
 Xdata = {}
 Massdata ={}
 
-for analysisParam in saveParams:
-    print("")
-    print(f"Starting {analysisParam} analysis")
+
 
     #Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
-    for T in TRACERSPARAMS['targetTLst']:
+for T in TRACERSPARAMS['targetTLst']:
+    print("")
+    print(f"Starting T{T} analysis")
+    #Select tracers from those present at data selection snapshot, snapnum
 
-        #Select tracers from those present at data selection snapshot, snapnum
+    key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
+    rangeMin = 0
+    rangeMax = len(dataDict[key]['trid'])
+    TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+    #Take Random sample of Tracers size min(subset, len(data))
+    # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+    selectMin = min(subset,rangeMax)
+    select = math.ceil(float(rangeMax)/float(subset))
 
-        key = (f"T{int(T)}",f"{int(TRACERSPARAMS['snapnum'])}")
-        rangeMin = 0
-        rangeMax = len(dataDict[key]['trid'])
-        TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-        #Take Random sample of Tracers size min(subset, len(data))
-        TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
-        SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
+    TracerNumberSelect = TracerNumberSelect[::select]
+    SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
+
+    XSubDict = {}
+    YSubDict = {}
+    MassSubDict = {}
+    for analysisParam in saveParams:
+        print("")
+        print(f"Starting {analysisParam} analysis")
 
         #Loop over snaps from and gather data for the SelectedTracers1.
         #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
-        tmpYdata = []
         tmpXdata = []
-        tmpMassdata =[]
+        tmpYdata = []
+        tmpMassdata = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['snapnumMAX']+1))):
             key = (f"T{int(T)}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
@@ -103,13 +121,72 @@ for analysisParam in saveParams:
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
             tmpMassdata.append(massData)
+        #Append the data from this parameters to a sub dictionary
+        XSubDict.update({analysisParam: np.array(tmpXdata)})
+        YSubDict.update({analysisParam:  np.array(tmpYdata)})
+        MassSubDict.update({analysisParam: np.array(tmpMassdata)})
+    #Add the full list of snaps data to temperature dependent dictionary.
+    Xdata.update({f"T{int(T)}" : XSubDict})
+    Ydata.update({f"T{int(T)}" : YSubDict})
+    Massdata.update({f"T{int(T)}" : MassSubDict})
+#==============================================================================#
+#           Check n_H!!
+#==============================================================================#
+truthyListFinal =[]
+IntoStarList = []
+IntoWindList = []
+for T in TRACERSPARAMS['targetTLst']:
+    key = f"T{int(T)}"
 
-        #Add the full list of snaps data to temperature dependent dictionary.
-        Ydata.update({f"T{int(T)}" : np.array(tmpYdata)})
-        Xdata.update({f"T{int(T)}" : np.array(tmpXdata)})
-        Massdata.update({f"T{int(T)}" : np.array(tmpMassdata)})
+    whereListNew = np.array([])
+    Nsnaps = np.shape(Ydata[key]['n_H'])[0]
+    flipped = np.flip(Ydata[key]['n_H'],axis=0)
+    for ind, entry in enumerate(flipped):
+        whereListOld = whereListNew
 
-    print("Starting Sub-plots!")
+        whereNan = np.where(np.isnan(entry)==True)[0]
+        whereListNew = whereNan
+        for value in whereListOld:
+            #Last time entry
+            if (value not in whereListNew):
+                if (ind<=Nsnaps):
+                    # print(f"After [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
+                    # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
+                    data = entry[value]
+                    IntoWindList.append(data)
+                    truthy = data>=n_Hcrit
+                    truthyListFinal.append(truthy)
+
+        if(np.shape(whereNan)[0]>0):
+            for value in whereNan:
+                #First time entry
+                if value not in whereListOld.flatten():
+                    if (ind>0):
+                        # print(f"Before [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
+                        # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
+                        data = flipped[ind-1][value]
+                        IntoStarList.append(data)
+                        truthy = data>=n_Hcrit
+                        truthyListFinal.append(truthy)
+
+truthy = np.all(truthyListFinal)
+IntoStarMedian = np.median(IntoStarList)
+IntoWindMedian = np.median(IntoWindList)
+
+print("")
+print("***")
+print(f"All Tracer Path Breaks meet n_H>={n_Hcrit:0.02e} Criterion: {truthy}")
+print(f"Median n_H before going Into Star: {IntoStarMedian:0.02e}")
+print(f"Median n_H before going Into Wind: {IntoWindMedian:0.02e}")
+print("***")
+print("")
+
+#==============================================================================#
+#           PLOT!!
+#==============================================================================#
+for analysisParam in saveParams:
+    print("")
+    print(f"Starting {analysisParam} Sub-plots!")
 
     fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
 
@@ -153,30 +230,34 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotYdata = Ydata[f"T{int(temp)}"]
-
+        plotYdata = Ydata[f"T{int(temp)}"][analysisParam]
+        plotXdata = Xdata[f"T{int(temp)}"][analysisParam]
         #Set style options
         opacityPercentiles = 0.25
         lineStyleMedian = "solid"
         lineStylePercentiles = "-."
 
         #Select a Temperature specific colour from colourmap
-        cmap = matplotlib.cm.get_cmap('viridis')
-        colour = cmap(((float(ii)+1.0)/(NTemps)))
+        cmap = matplotlib.cm.get_cmap('spectral')
 
-        colourTracers = "tab:gray"
+        if (ColourIndividuals == True):
+            colour = "tab:gray"
+            colourTracers = [cmap(float(jj)/float(subset)) for jj in range(0,subset)]
+        else:
+            colour = cmap(float(ii+1)/float(len(TLst)))
+            colourTracers = "tab:gray"
 
         LO = analysisParam + 'LO'
         UP = analysisParam + 'UP'
         median = analysisParam +'median'
 
-        datamin = np.nanmin(plotYdata)
-        datamax = np.nanmax(plotYdata)
+        datamin = min(np.nanmin(plotYdata),np.nanmin(plotData[LO]))
+        datamax = max(np.nanmax(plotYdata),np.nanmax(plotData[UP]))
 
         if (analysisParam in logParameters):
-            plotYdata = np.log10(abs(plotYdata))
+            plotYdata = np.log10(plotYdata)
             for key in [LO, UP, median]:
-                plotData[key] = np.log10(abs(plotData[key]))
+                plotData[key] = np.log10(plotData[key])
 
             datamin = min(np.nanmin(plotYdata),np.nanmin(plotData[LO]))
             datamax = max(np.nanmax(plotYdata),np.nanmax(plotData[UP]))
@@ -194,14 +275,15 @@ for analysisParam in saveParams:
         currentAx.fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
         facecolor=colour,alpha=opacityPercentiles,interpolate=True)
         currentAx.plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-        currentAx.plot(Xdata[f"T{int(temp)}"],plotYdata, color = colourTracers, alpha = opacity )
+        for jj in range(0,subset):
+            currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
         currentAx.axvline(x=vline, c='red')
 
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
         currentAx.yaxis.set_minor_locator(AutoMinorLocator())
         currentAx.tick_params(which='both')
 
-        currentAx.set_ylabel(ylabel[analysisParam],fontsize=15)
+        currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
         currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
@@ -220,7 +302,7 @@ for analysisParam in saveParams:
     else:
         axis0 = ax[len(Tlst)-1]
 
-    axis0.set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=15)
+    axis0.set_xlabel(r"Lookback Time [$Gyrs$]",fontsize=10)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace = 0.005)

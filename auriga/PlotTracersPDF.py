@@ -31,7 +31,7 @@ selectedSnaps = [112,119,127]
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
 saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
 
-logParameters = ['T','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -143,7 +143,7 @@ for dataKey in saveParams:
 
             print("Sub-plot!")
 
-            print(f"Snap{snap} T{T} Type{dataKey}")
+            print(f"Snap{snap} T{T} Type {dataKey}")
 
             ax.hist(data, bins = Nbins, range = [xmin,xmax], weights = weights, normed = True, color=colour)
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)

@@ -69,6 +69,12 @@ for key in saveEssentials:
     #Save as .csv
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
+print("")
+print("Loaded Analysis Parameters:")
+for key,value in TRACERSPARAMS.items():
+    print(f"{key}: {value}")
+
+print("")
 #==============================================================================#
 #       Chemical Properties
 #==============================================================================#
