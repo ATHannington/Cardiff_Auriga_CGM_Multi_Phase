@@ -26,7 +26,7 @@ ysize = 12.
 DPI = 250
 opacity = 0.5#0.5#0.01
 
-n_Hcrit = 1e-1 
+n_Hcrit = 1e-1
 
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
@@ -38,10 +38,10 @@ logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic']
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
  'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
- 'gz':r'Average Metallicity', 'L':r'Specific Angular Momentum[$km^{2}$ $s^{-2}$]',\
- 'P_thermal':r'Thermal Pressure [$erg$ $cm^{-2}$]',\
- 'P_magnetic':r'Magnetic Pressure [$\mu G$ $sr^{-1}$]',\
- 'P_kinetic': r'Kinetic Pressure [$M_{\odot}$ $km^2$ $s^-2$]',\
+ 'gz':r'Average Metallicity [\]', 'L':r'Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]',\
+ 'P_thermal': r'$P_Thermal\k_B [K cm^{-3}]$',\
+ 'P_magnetic':r'$P_Magnetic\k_B [K cm^{-3}]$',\
+ 'P_kinetic': r'$P_Kinetic\k_B [K cm^{-3}]$',\
  'tcool': r'Cooling Time [$Gyr$]'\
  }
 

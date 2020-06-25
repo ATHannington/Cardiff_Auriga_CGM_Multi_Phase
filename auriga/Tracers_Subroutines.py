@@ -120,19 +120,24 @@ def SetCentre(snap,snap_subfind,HaloID):
     wheredisc, = np.where((snap.data['R'][whereGas] < 20.) & (snap.data['sfr'] > 0.))
     snap.vel = snap.vel - np.median(snap.vel[wheredisc], axis = 0)
     return snap
+
 #------------------------------------------------------------------------------#
 def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
     whereGas = np.where(snapGas.type==0)
     #Density is rho/ <rho> where <rho> is average baryonic density
-    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
 
+    #Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
-    Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
+
+    #3./2. R == 2./3. NA KB
+    Tfac = ((3./2.) * c.KB *1e10 * c.msol) / (meanweight * c.amu *1.989e53)
 
     gasdens = (snapGas.rho / (c.parsec*1e6)**3.) * c.msol * 1e10 #[g cm^-3]
     gasX = snapGas.gmet[whereGas,0][0]
 
+    #Temperature = U / (3/2 * NA KB) [K]
     snapGas.data['T'] = snapGas.u / Tfac # K
     snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
     snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
@@ -148,39 +153,43 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     #Radial Velocity [km s^-1]
     KpcTokm = 1e3*c.parsec*1e-5
-    epsilon = 1e-10
-    snapGas.data['vrad'] = (snapGas.pos*snapGas.vel).sum(axis=1)
-    snapGas.data['R'][np.where(snapGas.data['R']==0.)] = epsilon
-    snapGas.data['vrad'] /= snapGas.data['R']
+    snapGas.data['vrad'] = (snapGas.pos*KpcTokm*snapGas.vel).sum(axis=1)
+    snapGas.data['vrad'] /= snapGas.data['R']*KpcTokm
 
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
     snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[s]
 
     #Load in metallicity
-    tmp = snapGas.data['gz']
+    snapGas.data['gz'] = snapGas.data['gz']/Zsolar
     #Load in Metals
     tmp = snapGas.data['gmet']
     #Load in Star Formation Rate
     tmp = snapGas.data['sfr']
 
-    #Specific Angular Momentum [km^2 s^-1]
-    snapGas.data['L'] = KpcTokm*sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
+    #Specific Angular Momentum [kpc km s^-1]
+    snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
 
     snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
 
-    #Thermal Pressure : P = n Kb T [$erg$ $cm^{-2}$]
-    snapGas.data['P_thermal'] = snapGas.ndens * c.KB *snapGas.T
+    #Thermal Pressure : P/k_B = n T [$ # cm^-3 K]
+    snapGas.data['P_thermal'] = snapGas.ndens *snapGas.T
 
-    #Magnetic Pressure [microGauss ^ 2 sr^-1]
-    snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi)
+    #Magnetic Pressure [P/k_B K cm^-3]
+    snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi * c.KB)
 
-    #Kinetic "Pressure" [Msol km^2 ^s^-2]
-    snapGas.data['P_kinetic'] = snapGas.rho *1e10 * (np.linalg.norm(snapGas.data['vel'][whereGas], axis=1))**2
+    #Kinetic "Pressure" [P/k_B K cm^-3]
+    snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3.) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
 
+    #Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = cm s^-1]
+    snapGas.data['csound'] = sqrt(((5./3.)*c.KB * snapGas.data['T'])/(meanweight*c.amu))
+
+    # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
+    snapGas.data['tsound'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
     del tmp
 
     return snapGas
+#------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
     #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
@@ -348,18 +357,22 @@ def PadNonEntries(snapGas):
     NStars = len(snapGas.type[np.where(snapGas.type==4)])
     NTot =   len(snapGas.type)
 
+
+    GasNone_nx1 = [np.nan for ii in range(0,NGas)]
+    StarsNone_nx1 = [np.nan for ii in range(0,NStars)]
+
+    entryx3 = [np.nan for ii in range(0,3)]
+    GasNone_nx3 = [entryx3 for ii in range(0,NGas)]
+    StarsNone_nx3 = [entryx3 for ii in range(0,NStars)]
+
     for key,value in snapGas.data.items():
         if (value is not None):
-
             if (np.shape(np.shape(value))[0] == 1):
-                entrySize = 1
-                entry = np.nan
+                GasNone = GasNone_nx1
+                StarsNone = StarsNone_nx1
             else:
-                entrySize = np.shape(value)[1]
-                entry = [np.nan for ii in range(0,entrySize)]
-
-            GasNone = [entry for ii in range(0,NGas)]
-            StarsNone = [entry for ii in range(0,NStars)]
+                GasNone = GasNone_nx3
+                StarsNone = StarsNone_nx3
 
             if (np.shape(value)[0] == NGas):
                 listValues = value.tolist()
