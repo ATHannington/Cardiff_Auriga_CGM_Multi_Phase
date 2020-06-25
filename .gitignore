@@ -9,6 +9,7 @@
 ###Output Images###
 *.png
 *.jpg
+*.pdf
 
 ###Compiled Files###
 *.o
