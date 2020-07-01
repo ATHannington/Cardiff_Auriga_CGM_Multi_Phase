@@ -21,12 +21,14 @@ Axes=[0,1] #[i,j] where i & j range from 0 - 2, for x,y,z axes
 boxsize=400. #split between either side of x&y=0.[kpc]
 boxlos=20 #split either side of z = 0 will be boxlos/2 in size [kpc]
 pixres= 0.2
-pixreslos= float(pixres)*(float(boxsize)/float(boxlos))
+pixreslos= 1
 
-Nbins=500
-DPI=200
-CMAP="inferno"
+Nbins=0
+DPI=100
+CMAP="ATH"
+ColourBins = 256
 
+#==============================================================================#
 posAxes= [0,1,2]
 
 zAxis = [x for x in posAxes if x not in Axes]
@@ -55,7 +57,32 @@ Zsolar = 0.0127
 
 omegabaryon0 = 0.048
 
+def ATH_ColourMap(ColourBins=256):
+    """
+        Creates a diverging colourmap with dark colours in middle
+        Input: int Number of colour Bins
+        Output: Colormap
+    """
+    from matplotlib.colors import ListedColormap
 
+    print("Defining ATH Custom Colourmap!")
+
+    color1 = plt.get_cmap("Purples",ColourBins)
+    color2 = plt.get_cmap("hot",ColourBins)
+
+    c1_list = color1(np.linspace(0,1,ColourBins))
+    c2_list = color2(np.linspace(0,1,ColourBins))
+
+    full_list = np.concatenate((c1_list,c2_list))
+
+    ATH_cmap = ListedColormap(full_list)
+
+    return ATH_cmap
+
+if ((CMAP=="ATH") or (CMAP=="ath")):
+    CMAP = ATH_ColourMap(ColourBins)
+else:
+    CMAP = plt.get_cmap(CMAP,ColourBins)
 #------------------------------------------------------------------------------#
 #          Set Centre to [0,0,0] centering on COM of Halo number HaloID
 #                   Where HaloID=0 is the biggest halo.
@@ -165,7 +192,12 @@ def HistogramMovieLoop(SimDirectory,NSnaps=127,Start=10):
 #         Plot Projections and Slices
 #------------------------------------------------------------------------------#
 
-def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=[2],boxsize = 400.,boxlos = 50.,pixres = 1.,pixreslos = 0.1, Nbins=500, DPI = 500,CMAP='inferno'):
+def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=[2],boxsize = 400.,boxlos = 50.,pixres = 1.,pixreslos = 0.1, Nbins=500, DPI = 500,CMAP=None):
+
+    if(CMAP == None):
+        cmap = plt.get_cmap("inferno")
+    else:
+        cmap=CMAP
 
     print("Quad Plot...")
     print("Calculating Tracked Parameters!")
@@ -253,7 +285,6 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     #     massDM = np.array([snapDM.masses[1] for i in range(0,len(DMwithinLoSVol))])
 
     #PLOTTING TIME
-
     #Set plot figure sizes
     xsize = 10.
     ysize = 10.
@@ -280,10 +311,11 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), dpi = DPI, sharex="col", sharey="row")
 
     #Add overall figure plot
-    TITLE = r"$z=$" + f"{redshift:0.03e} " + " " + r"$t_{Lookback}=$" + f"{lookback:0.03e} Gyrs" +\
-    "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<="+f"{AxesLabels[zAxis[0]]}"+r"<="+f"{float(boxlos)/2.} kpc"
+    TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Lookback}=$" + f"{lookback:0.03f} Gyrs" +\
+    "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<"+f"{AxesLabels[zAxis[0]]}-axis"+r"<"+f"{float(boxlos)/2.} kpc"
     fig.suptitle(TITLE, fontsize=fontsizeTitle)
-    cmap = plt.get_cmap(CMAP)
+
+    # cmap = plt.get_cmap(CMAP)
     cmap.set_bad(color="grey")
 
     #-----------#
@@ -298,16 +330,19 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
 
     ax1.set_title(f'Temperature Projection',fontsize=fontsize)
     cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
-    fig.colorbar(pcm1, cax = cax1, orientation = 'vertical',label=r'$T$ [$K$]')
+    fig.colorbar(pcm1, cax = cax1, orientation = 'vertical').set_label(label=r'$T$ [$K$]',size=fontsize, weight="bold")
     cax1.yaxis.set_ticks_position("left")
     cax1.yaxis.set_label_position("left")
     cax1.yaxis.label.set_color("white")
-    cax1.tick_params(axis="y", colors="white")
+    cax1.tick_params(axis="y", colors="white",labelsize=fontsize)
 
     ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
     # ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
     ax1.set_aspect(aspect)
 
+    #Fudge the tick labels...
+    plt.sca(ax1)
+    plt.yticks([-150, -100, -50, 0, 50, 100, 150, 200])
     #-----------#
     # Plot n_H Projection #
     #-----------#
@@ -321,11 +356,11 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     ax2.set_title(r'Hydrogen Number Density Projection', fontsize=fontsize)
 
     cax2 = inset_axes(ax2,width="5%",height="95%",loc='right')
-    fig.colorbar(pcm2, cax=cax2, orientation = 'vertical',label=r'$n_H$ [$cm^{-3}$]')
+    fig.colorbar(pcm2, cax=cax2, orientation = 'vertical').set_label(label=r'$n_H$ [$cm^{-3}$]',size=fontsize, weight="bold")
     cax2.yaxis.set_ticks_position("left")
     cax2.yaxis.set_label_position("left")
     cax2.yaxis.label.set_color("white")
-    cax2.tick_params(axis="y", colors="white")
+    cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
     # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
     ax2.set_aspect(aspect)
@@ -337,17 +372,17 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     ax3 = axes[1,0]
 
     pcm3 = ax3.pcolormesh(proj_gz['x'], proj_gz['y'], np.transpose(proj_gz['grid'])/int(boxlos/pixreslos),\
-    vmin=1e-3,vmax=1e1,\
+    vmin=1e-2,vmax=1e1,\
     norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
 
     ax3.set_title(f'Metallicity Projection', y=-0.2, fontsize=fontsize)
 
     cax3 = inset_axes(ax3,width="5%",height="95%",loc='right')
-    fig.colorbar(pcm3, cax = cax3, orientation = 'vertical',label=r'$Z/Z \odot$ [\]')
+    fig.colorbar(pcm3, cax = cax3, orientation = 'vertical').set_label(label=r'$Z/Z_{\odot}$',size=fontsize, weight="bold")
     cax3.yaxis.set_ticks_position("left")
     cax3.yaxis.set_label_position("left")
     cax3.yaxis.label.set_color("white")
-    cax3.tick_params(axis="y", colors="white")
+    cax3.tick_params(axis="y", colors="white",labelsize=fontsize)
 
     ax3.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     ax3.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
@@ -361,22 +396,25 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     ax4 = axes[1,1]
 
     pcm4 = ax4.pcolormesh(proj_B['x'], proj_B['y'], np.transpose(proj_B['grid'])/int(boxlos/pixreslos),\
-    vmin=1e-4,vmax=1e1,\
+    vmin=1e-3,vmax=1e1,\
     norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
 
     ax4.set_title(r'Magnetic Field Strength Projection', y=-0.2, fontsize=fontsize)
 
     cax4 = inset_axes(ax4,width="5%",height="95%",loc='right')
-    fig.colorbar(pcm4, cax = cax4, orientation = 'vertical',label=r'$B$ [$\mu G$]')
+    fig.colorbar(pcm4, cax = cax4, orientation = 'vertical').set_label(label=r'$B$ [$\mu G$]',size=fontsize, weight="bold")
     cax4.yaxis.set_ticks_position("left")
     cax4.yaxis.set_label_position("left")
     cax4.yaxis.label.set_color("white")
-    cax4.tick_params(axis="y", colors="white")
+    cax4.tick_params(axis="y", colors="white",labelsize=fontsize)
 
     # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     ax4.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
     ax4.set_aspect(aspect)
 
+    #Fudge the tick labels...
+    plt.sca(ax4)
+    plt.xticks([-150, -100, -50, 0, 50, 100, 150, 200])
 
     # print("snapnum")
     #Pad snapnum with zeroes to enable easier video making
@@ -472,10 +510,10 @@ def ProjectionMovieLoop(SimDirectory,Start,End,n_processes,Axes,zAxis,boxsize,bo
 # Histogram 2D Movie:
 # HistogramMovieLoop(simfile,Nsnaps=127,Start=10)
 
-#------------------------------------------------------------------------------#
-#
-# # Single FvdV Projection:
-# # load in the subfind group files
+# #------------------------------------------------------------------------------#
+# #
+# # # # Single FvdV Projection:
+# # # # load in the subfind group files
 # snap_subfind = load_subfind(snapnum,dir=simfile)
 #
 # # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
@@ -502,7 +540,7 @@ def ProjectionMovieLoop(SimDirectory,Start,End,n_processes,Axes,zAxis,boxsize,bo
 # Nbins=Nbins,DPI=DPI,CMAP=CMAP)
 #------------------------------------------------------------------------------#
 
-# # Histogram 2D Movie:
+# Histogram 2D Movie:
 ProjectionMovieLoop(SimDirectory=simfile,Start=snap_start,End=snap_end,n_processes=n_processes,\
 Axes=Axes,zAxis=zAxis,boxsize=boxsize,boxlos=boxlos,pixres=pixres,pixreslos=pixreslos,\
 Nbins=Nbins,DPI=DPI,CMAP=CMAP)
