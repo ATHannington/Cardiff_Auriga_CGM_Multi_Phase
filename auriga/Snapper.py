@@ -16,16 +16,16 @@ snap_start = 2500
 snap_end = 2999
 n_processes = 6
 
-Axes=[0,1] #[i,j] where i & j range from 0 - 2, for x,y,z axes
+Axes=[0,2] #[i,j] where i & j range from 0 - 2, for x,y,z axes
 
 boxsize=400. #split between either side of x&y=0.[kpc]
 boxlos=20 #split either side of z = 0 will be boxlos/2 in size [kpc]
 pixres= 0.2
-pixreslos= 1
+pixreslos= 4
 
 Nbins=0
-DPI=100
-CMAP="ATH"
+DPI=200
+CMAP="inferno"
 ColourBins = 256
 
 #==============================================================================#
@@ -57,7 +57,7 @@ Zsolar = 0.0127
 
 omegabaryon0 = 0.048
 
-def ATH_ColourMap(ColourBins=256):
+def ColourMap(ColourBins=256):
     """
         Creates a diverging colourmap with dark colours in middle
         Input: int Number of colour Bins
@@ -424,7 +424,7 @@ def PlotProjections(snapGas,snapnum,snapDM=None,snapStars=None,Axes=[0,1],zAxis=
     snapnum = str(snapnum).zfill(3);
     opslaan = f'Shaded_Cell_{snapnum}.png'
     print(f"Save {opslaan}")
-    plt.savefig(opslaan, dpi = DPI, transparent = True)
+    plt.savefig(opslaan, dpi = DPI, transparent = False)
     plt.close()
 
     print("...done!")
@@ -512,8 +512,8 @@ def ProjectionMovieLoop(SimDirectory,Start,End,n_processes,Axes,zAxis,boxsize,bo
 
 # #------------------------------------------------------------------------------#
 # #
-# # # # Single FvdV Projection:
-# # # # load in the subfind group files
+# # # Single FvdV Projection:
+# # # load in the subfind group files
 # snap_subfind = load_subfind(snapnum,dir=simfile)
 #
 # # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
