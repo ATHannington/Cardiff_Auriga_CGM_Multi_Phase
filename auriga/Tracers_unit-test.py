@@ -11,12 +11,37 @@ import matplotlib.pyplot as plt
 import const as c
 from gadget import gadget_readsnap
 from gadget_subfind import load_subfind, sum
-from Snapper import Snapper
-from Tracers_Subroutines import GetTracersFromCells, GetCellsFromTracers, GetIndividualCellFromTracer
+from Tracers_Subroutines import *
 from random import sample
 
 import pytest
 
+SUBSET = None
+
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = 0
+
+#Input parameters path:
+TracersParamsPath = 'TracersParams_unit-test.csv'
+
+#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
+lazyLoadBool = True
+
+#==============================================================================#
+#       Prepare for analysis
+#==============================================================================#
+# Load in parameters from csv. This ensures reproducability!
+#   We save as a DataFrame, then convert to a dictionary, and take out nesting...
+    #Save as .csv
+TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+
+print("")
+print("Loaded Analysis Parameters:")
+for key,value in TRACERSPARAMS.items():
+    print(f"{key}: {value}")
+
+print("")
 #==============================================================================#
 
 simfile='/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
@@ -32,81 +57,27 @@ Zsolar = 0.0127
 
 omegabaryon0 = 0.048
 #==============================================================================#
+#                                                                              #
+#                       PREPARE SAMPLE DATA                                    #
+#                                                                              #
+#==============================================================================#
+FullDict = {}
 
+if (len(TRACERSPARAMS['targetTLst'])>1):
+    print(f"[@TRACERSPARAMS @Tracers_unit-test.py :] len(targetTLst) > 1 ! Only 1 first temperature is utilised in unit-test.")
 
-# Single FvdV Projection:
-# load in the subfind group files
-snap_subfind = load_subfind(snapnum,dir=simfile)
+targetT = TRACERSPARAMS['targetTLst'][0]
 
-# load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-snapGas     = gadget_readsnap(snapnum, simfile, hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
-snapTracers = gadget_readsnap(snapnum, simfile, hdf5=True, loadonlytype = [6], lazy_load=True)
-
-print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
-
-Snapper1 = Snapper()
-snapGas     = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
-
-#Convert Units
-## Make this a seperate function at some point??
-snapGas.pos   *= 1e3 #[kpc]
-
-snapGas.vol *= 1e9 #[kpc^3]
-
-meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
-Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
-snapGas.data['T'] = snapGas.u / Tfac # K
-
-###
-##  Selection   ##
-###
-target=5.
-delta = 0.25
-
-#Select INDICES of T = 10^5+-delta K
-Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<=1.*10**(target+delta)))
-
-
-#------------------------------------------------------------------------------#
-
-
-TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
+TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers = \
+tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,elements,\
+elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool,SUBSET=SUBSET)
 
 TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
 
-# Single FvdV Projection:
-# load in the subfind group files
-snap_subfind = load_subfind(snapnum-1,dir=simfile)
+out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = \
+snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
 
-# load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-snapGas     = gadget_readsnap(snapnum-1, simfile, hdf5=True, loadonlytype = [0], loadonlyhalo = 0, lazy_load=True, subfind = snap_subfind)
-snapTracers = gadget_readsnap(snapnum-1, simfile, hdf5=True, loadonlytype = [6], lazy_load=True)
-
-print(f" SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
-
-Snapper1 = Snapper()
-snapGas     = Snapper1.SetCentre(Snap=snapGas,Snap_SubFind=snap_subfind,HaloID=0)
-
-#Convert Units
-## Make this a seperate function at some point??
-snapGas.pos   *= 1e3 #[kpc]
-
-snapGas.vol *= 1e9 #[kpc^3]
-
-meanweight = sum(snapGas.gmet[:,0:9], axis = 1) / ( sum(snapGas.gmet[:,0:9]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[:,0] )
-Tfac = 1. / meanweight * (1.0 / (5./3.-1.)) * c.KB / c.amu * 1e10 * c.msol / 1.989e53
-snapGas.data['T'] = snapGas.u / Tfac # K
-
-###
-##  Selection   ##
-###
-target=5.
-delta = 0.25
-
-#Select INDICES of T = 10^5+-delta K
-Cond = np.where((snapGas.data['T']>=1.*10**(target-delta)) & (snapGas.data['T']<=1.*10**(target+delta)))
-
-TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
+FullDict.update(out)
 
 #==============================================================================#
 #
@@ -130,7 +101,9 @@ def test_SameSnapCellData():
     truthyList = []
     for ((k1,v1),(k2,v2)) in zip(CellsCFTinit.items(),CellsTFC.items()):
         #Do all entries if CellsCFT values and CellsTFC values match?
-        truthyList.append(np.all(np.isin(v1,v2)))
+        v1_notnan = np.where(np.isnan(v1)==False)
+        v2_notnan = np.where(np.isnan(v2)==False)
+        truthyList.append(np.all(np.isin(v1[v1_notnan],v2[v2_notnan])))
 
     #Do the entries match for all keys?
     truthy = np.all(truthyList)
@@ -201,7 +174,14 @@ def test_CellsShapes():
 
     truthyList =[]
     for key, values in CellsCFT.items():
-        truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFT)[0])
+        if (key == "Ntracers"):
+            truthyList.append(np.shape(values)[0] == 1)
+        elif (key == 'trid'):
+            truthyList.append(np.shape(values)[0] == np.shape(TracersCFT)[0])
+        elif (key=='prid'):
+            truthyList.append(np.shape(values)[0] == np.shape(ParentsCFT)[0])
+        else:
+            truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFT)[0])
 
     truthy = np.all(truthyList)
     assert truthy == True,"[@Cells Shapes:] values of Cells CFT not consistent shape to CellIDsCFT! Some data may be missing!"

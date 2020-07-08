@@ -132,54 +132,54 @@ for T in TRACERSPARAMS['targetTLst']:
 #==============================================================================#
 #           Check n_H!!
 #==============================================================================#
-truthyListFinal =[]
-IntoStarList = []
-IntoWindList = []
-for T in TRACERSPARAMS['targetTLst']:
-    key = f"T{int(T)}"
-
-    whereListNew = np.array([])
-    Nsnaps = np.shape(Ydata[key]['n_H'])[0]
-    flipped = np.flip(Ydata[key]['n_H'],axis=0)
-    for ind, entry in enumerate(flipped):
-        whereListOld = whereListNew
-
-        whereNan = np.where(np.isnan(entry)==True)[0]
-        whereListNew = whereNan
-        for value in whereListOld:
-            #Last time entry
-            if (value not in whereListNew):
-                if (ind<=Nsnaps):
-                    # print(f"After [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
-                    # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
-                    data = entry[value]
-                    IntoWindList.append(data)
-                    truthy = data>=n_Hcrit
-                    truthyListFinal.append(truthy)
-
-        if(np.shape(whereNan)[0]>0):
-            for value in whereNan:
-                #First time entry
-                if value not in whereListOld.flatten():
-                    if (ind>0):
-                        # print(f"Before [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
-                        # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
-                        data = flipped[ind-1][value]
-                        IntoStarList.append(data)
-                        truthy = data>=n_Hcrit
-                        truthyListFinal.append(truthy)
-
-truthy = np.all(truthyListFinal)
-IntoStarMedian = np.median(IntoStarList)
-IntoWindMedian = np.median(IntoWindList)
-
-print("")
-print("***")
-print(f"All Tracer Path Breaks meet n_H>={n_Hcrit:0.02e} Criterion: {truthy}")
-print(f"Median n_H before going Into Star: {IntoStarMedian:0.02e}")
-print(f"Median n_H before going Into Wind: {IntoWindMedian:0.02e}")
-print("***")
-print("")
+# truthyListFinal =[]
+# IntoStarList = []
+# IntoWindList = []
+# for T in TRACERSPARAMS['targetTLst']:
+#     key = f"T{int(T)}"
+#
+#     whereListNew = np.array([])
+#     Nsnaps = np.shape(Ydata[key]['n_H'])[0]
+#     flipped = np.flip(Ydata[key]['n_H'],axis=0)
+#     for ind, entry in enumerate(flipped):
+#         whereListOld = whereListNew
+# 
+#         whereNan = np.where(np.isnan(entry)==True)[0]
+#         whereListNew = whereNan
+#         for value in whereListOld:
+#             #Last time entry
+#             if (value not in whereListNew):
+#                 if (ind<=Nsnaps):
+#                     # print(f"After [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
+#                     # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
+#                     data = entry[value]
+#                     IntoWindList.append(data)
+#                     truthy = data>=n_Hcrit
+#                     truthyListFinal.append(truthy)
+#
+#         if(np.shape(whereNan)[0]>0):
+#             for value in whereNan:
+#                 #First time entry
+#                 if value not in whereListOld.flatten():
+#                     if (ind>0):
+#                         # print(f"Before [{key}] [{ind}] [{value}] = {Ydata[key]['n_H'][ind-1][value]:0.02e}")
+#                         # print(f"t_lookback = {Xdata[key]['n_H'][ind]} Gyr")
+#                         data = flipped[ind-1][value]
+#                         IntoStarList.append(data)
+#                         truthy = data>=n_Hcrit
+#                         truthyListFinal.append(truthy)
+#
+# truthy = np.all(truthyListFinal)
+# IntoStarMedian = np.median(IntoStarList)
+# IntoWindMedian = np.median(IntoWindList)
+#
+# print("")
+# print("***")
+# print(f"All Tracer Path Breaks meet n_H>={n_Hcrit:0.02e} Criterion: {truthy}")
+# print(f"Median n_H before going Into Star: {IntoStarMedian:0.02e}")
+# print(f"Median n_H before going Into Wind: {IntoWindMedian:0.02e}")
+# print("***")
+# print("")
 
 #==============================================================================#
 #           PLOT!!
