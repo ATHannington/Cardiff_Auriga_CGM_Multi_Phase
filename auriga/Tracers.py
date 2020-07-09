@@ -52,7 +52,7 @@ FullDataPathSuffix = f".h5"
 lazyLoadBool = True
 
 #Number of cores to run on:
-n_processes = 6
+n_processes = 4
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -60,8 +60,8 @@ n_processes = 6
 #Combine saveParams and saveTypes to form each combination for saving data types
 saveKeys =[]
 for param in saveParams:
-    for type in saveTypes:
-        saveKeys.append(param+type)
+    for TYPE in saveTypes:
+        saveKeys.append(param+TYPE)
 
 #Add saveEssentials to saveKeys so as to save these without the median and quartiles
 #   being taken.

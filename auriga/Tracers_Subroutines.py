@@ -538,12 +538,13 @@ def PadNonEntries(snapGas):
     GasNone_nx1 = np.full((NGas),np.nan).tolist() #[np.nan for ii in range(0,NGas)]
     StarsNone_nx1 = np.full((NStars),np.nan).tolist() #[np.nan for ii in range(0,NStars)]
 
-    entryx3 = [np.nan for ii in range(0,3)]
-    GasNone_nx3 =  np.full((NGas),entryx3).tolist() #[entryx3 for ii in range(0,NGas)]
-    StarsNone_nx3 = np.full((NStars),entryx3).tolist() #[entryx3 for ii in range(0,NStars)]
+    GasNone_nx3 =  np.full((NGas,3),np.nan).tolist() #[entryx3 for ii in range(0,NGas)]
+    StarsNone_nx3 = np.full((NStars,3),np.nan).tolist() #[entryx3 for ii in range(0,NStars)]
 
     for key,value in snapGas.data.items():
         if (value is not None):
+            #If shape indicates 1D give 1D lists nx1
+            #Else list will be 2D so give lists nx3
             if (np.shape(np.shape(value))[0] == 1):
                 GasNone = GasNone_nx1
                 StarsNone = StarsNone_nx1
