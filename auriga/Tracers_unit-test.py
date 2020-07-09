@@ -74,8 +74,10 @@ elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool,SUBSET=
 
 TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
 
-out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = \
-snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
+output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,\
+HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
+
+out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = output_dict["out"], output_dict["TracersCFT"], output_dict["CellsCFT"], output_dict["CellIDsCFT"], output_dict["ParentsCFT"]
 
 FullDict.update(out)
 
@@ -235,6 +237,25 @@ def test_IndividualTracerFakeData():
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData,mass=mass1)
 
+    data_flat = []
+    for val in data:
+         if isinstance(val,list):
+             data_flat.append(val[0])
+         else:
+             data_flat.append(val)
+
+    data = data_flat
+
+    massData_flat = []
+    for val in massData:
+         if isinstance(val,list):
+             massData_flat.append(val[0])
+         else:
+             massData_flat.append(val)
+
+    massData = massData_flat
+
+
     assert np.shape(data)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned data not size == rangeMax! Some data/NaNs may be missing!"
     assert np.shape(massData)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned mass data not size == rangeMax! Some data/NaNs may be missing!"
 
@@ -264,6 +285,24 @@ def test_IndividualTracerFakeData():
     data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData,mass=mass1)
+
+    data_flat = []
+    for val in data:
+         if isinstance(val,list):
+             data_flat.append(val[0])
+         else:
+             data_flat.append(val)
+
+    data = data_flat
+
+    massData_flat = []
+    for val in massData:
+         if isinstance(val,list):
+             massData_flat.append(val[0])
+         else:
+             massData_flat.append(val)
+
+    massData = massData_flat
 
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
     assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
@@ -303,6 +342,24 @@ def test_IndividualTracerFakeData():
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData,mass=mass1)
 
+    data_flat = []
+    for val in data:
+         if isinstance(val,list):
+             data_flat.append(val[0])
+         else:
+             data_flat.append(val)
+
+    data = data_flat
+
+    massData_flat = []
+    for val in massData:
+         if isinstance(val,list):
+             massData_flat.append(val[0])
+         else:
+             massData_flat.append(val)
+
+    massData = massData_flat
+
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
     assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
 
@@ -340,6 +397,24 @@ def test_IndividualTracer():
     data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=snapTracers.data['trid'],\
     Parents=snapTracers.data['prid'],CellIDs=snapGas.data['id'],SelectedTracers=SelectedTracers1,\
     Data=snapGas.data['T'],mass=snapGas.data['mass'])
+
+    data_flat = []
+    for val in data:
+         if isinstance(val,list):
+             data_flat.append(val[0])
+         else:
+             data_flat.append(val)
+
+    data = data_flat
+
+    massData_flat = []
+    for val in massData:
+         if isinstance(val,list):
+             massData_flat.append(val[0])
+         else:
+             massData_flat.append(val)
+
+    massData = massData_flat
 
     assert np.shape(data)[0] == subset,"[@Individual Tracer:] returned data not size == subset! Some data/NaNs may be missing!"
     assert np.shape(massData)[0] == subset,"[@Individual Tracer:] returned mass data not size == subset! Some data/NaNs may be missing!"

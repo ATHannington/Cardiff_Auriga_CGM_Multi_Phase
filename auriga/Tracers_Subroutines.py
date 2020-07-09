@@ -106,7 +106,7 @@ def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements
     # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
     # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
     out = {(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT}
-    return out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT
+    return {"out":out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT }
 #==============================================================================#
 #       PRE-MAIN ANALYSIS CODE
 #==============================================================================#
@@ -462,8 +462,8 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
             saveData.append(dataEntry)
             massData.append(massEntry)
         else:
-            saveData.append(np.nan)
-            massData.append(np.nan)
+            saveData.append([np.nan])
+            massData.append([np.nan])
 
     return saveData, massData, TracersReturned
 
@@ -535,12 +535,12 @@ def PadNonEntries(snapGas):
     NTot =   len(snapGas.type)
 
 
-    GasNone_nx1 = [np.nan for ii in range(0,NGas)]
-    StarsNone_nx1 = [np.nan for ii in range(0,NStars)]
+    GasNone_nx1 = np.full((NGas),np.nan).tolist() #[np.nan for ii in range(0,NGas)]
+    StarsNone_nx1 = np.full((NStars),np.nan).tolist() #[np.nan for ii in range(0,NStars)]
 
     entryx3 = [np.nan for ii in range(0,3)]
-    GasNone_nx3 = [entryx3 for ii in range(0,NGas)]
-    StarsNone_nx3 = [entryx3 for ii in range(0,NStars)]
+    GasNone_nx3 =  np.full((NGas),entryx3).tolist() #[entryx3 for ii in range(0,NGas)]
+    StarsNone_nx3 = np.full((NStars),entryx3).tolist() #[entryx3 for ii in range(0,NStars)]
 
     for key,value in snapGas.data.items():
         if (value is not None):

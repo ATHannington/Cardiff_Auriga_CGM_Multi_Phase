@@ -139,11 +139,8 @@ if __name__=="__main__":
         print("\n" + f"Opening {n_processes} core Pool!")
         pool = mp.Pool(processes=n_processes)
 
-        output_list = []
-        #Compute Snap analysis!
-        for args in args_list:
-            out, _, _, _, _ = pool.apply_async(snap_analysis,args=args)
-            output_list.append(out)
+        #Compute Snap analysis
+        output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
 
         pool.close()
         pool.join()
@@ -154,8 +151,9 @@ if __name__=="__main__":
         print(f"Adding to FullDict...")
         for output in output_list:
             output_dict = output.get()
+            data_dict = output_dict["out"]
             #Add snap data to temperature specific dictionary
-            FullDict.update(output_dict)
+            FullDict.update(data_dict)
         print("...done!")
     #==============================================================================#
     #       Prepare data and save
