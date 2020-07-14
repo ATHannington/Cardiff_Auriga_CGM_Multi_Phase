@@ -29,18 +29,20 @@ selectedSnaps = [112,119,127]
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
 
-logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
  'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
- 'gz':r'Average Metallicity [\]', 'L':r'Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]',\
- 'P_thermal': r'$Pressure_Thermal \k_B [K cm^{-3}]$',\
- 'P_magnetic':r'$Pressure_Magnetic \k_B [K cm^{-3}]$',\
- 'P_kinetic': r'$Pressure_Kinetic \k_B [K cm^{-3}]$',\
- 'tcool': r'Cooling Time [$Gyr$]'\
+ 'gz':r'Average Metallicity $Z/Z_{\odot}$', 'L':r'Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]',\
+ 'P_thermal': r'$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'tcool': r'Cooling Time [$Gyr$]',\
+ 'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
+ 'tff': r'Free Fall Time [$Gyr$]'\
  }
 
 for entry in logParameters:

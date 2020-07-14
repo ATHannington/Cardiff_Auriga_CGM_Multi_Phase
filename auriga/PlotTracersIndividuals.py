@@ -20,29 +20,31 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 10#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.5#0.01
+opacity = 0.01#0.5#0.01
 
 n_Hcrit = 1e-1
 
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
 
-logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
 
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
  'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
- 'gz':r'Average Metallicity [\]', 'L':r'Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]',\
- 'P_thermal': r'$P_Thermal\k_B [K cm^{-3}]$',\
- 'P_magnetic':r'$P_Magnetic\k_B [K cm^{-3}]$',\
- 'P_kinetic': r'$P_Kinetic\k_B [K cm^{-3}]$',\
- 'tcool': r'Cooling Time [$Gyr$]'\
+ 'gz':r'Average Metallicity $Z/Z_{\odot}$', 'L':r'Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]',\
+ 'P_thermal': r'$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'tcool': r'Cooling Time [$Gyr$]',\
+ 'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
+ 'tff': r'Free Fall Time [$Gyr$]'\
  }
 
 for entry in logParameters:
@@ -89,7 +91,7 @@ for T in TRACERSPARAMS['targetTLst']:
     #Take Random sample of Tracers size min(subset, len(data))
     # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
     selectMin = min(subset,rangeMax)
-    select = math.ceil(float(rangeMax)/float(subset))
+    select = math.floor(float(rangeMax)/float(subset))
 
     TracerNumberSelect = TracerNumberSelect[::select]
     SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
@@ -143,7 +145,7 @@ for T in TRACERSPARAMS['targetTLst']:
 #     flipped = np.flip(Ydata[key]['n_H'],axis=0)
 #     for ind, entry in enumerate(flipped):
 #         whereListOld = whereListNew
-# 
+#
 #         whereNan = np.where(np.isnan(entry)==True)[0]
 #         whereListNew = whereNan
 #         for value in whereListOld:
@@ -212,7 +214,10 @@ for analysisParam in saveParams:
                  else:
                      plotData[key]= np.append(plotData[key], float(value))
 
-        vline = plotData['Lookback'][0]
+        snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), int(TRACERSPARAMS['snapMax']),1)])
+        selectionSnap = np.where(snapsRange==int(TRACERSPARAMS['snapnum']))
+        vline = plotData['Lookback'][selectionSnap]
+
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
         for key, value in plotData.items():
@@ -244,7 +249,7 @@ for analysisParam in saveParams:
             colour = "tab:gray"
             colourTracers = [cmap(float(jj)/float(subset)) for jj in range(0,subset)]
         else:
-            colour = cmap(float(ii+1)/float(len(TLst)))
+            colour = cmap(float(ii+1)/float(len(Tlst)))
             colourTracers = "tab:gray"
 
         LO = analysisParam + 'LO'
@@ -275,10 +280,16 @@ for analysisParam in saveParams:
         currentAx.fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
         facecolor=colour,alpha=opacityPercentiles,interpolate=True)
         currentAx.plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-        for jj in range(0,subset):
-            currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
-        currentAx.axvline(x=vline, c='red')
 
+        if (ColourIndividuals == True):
+            for jj in range(0,subset):
+                currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
+        else:
+            for jj in range(0,subset):
+                currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
+
+
+        currentAx.axvline(x=vline, c='red')
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
         currentAx.yaxis.set_minor_locator(AutoMinorLocator())
         currentAx.tick_params(which='both')

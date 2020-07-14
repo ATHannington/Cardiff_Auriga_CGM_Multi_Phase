@@ -304,14 +304,14 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
 
-    #3./2. R == 2./3. NA KB
-    Tfac = ((3./2.) * c.KB *1e10 * c.msol) / (meanweight * c.amu *1.989e53)
+    #3./2. N KB
+    Tfac = ((3./2.) * c.KB) / (meanweight * c.amu)
 
     gasdens = (snapGas.rho / (c.parsec*1e6)**3.) * c.msol * 1e10 #[g cm^-3]
     gasX = snapGas.gmet[whereGas,0][0]
 
-    #Temperature = U / (3/2 * NA KB) [K]
-    snapGas.data['T'] = snapGas.u / Tfac # K
+    #Temperature = U / (3/2 * N KB) [K]
+    snapGas.data['T'] = (snapGas.u*1e10) / (Tfac) # K
     snapGas.data['n_H'] = gasdens / c.amu * gasX # cm^-3
     snapGas.data['dens'] = gasdens / (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
     snapGas.data['Tdens'] = snapGas.data['T'] *snapGas.data['dens']
@@ -333,6 +333,14 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     GyrToSeconds = 365.25*24.*60.*60.*1e9
     snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[Gyrs]
 
+    print(f"[@Tracers_Subroutines @CalculateTrackedParameters:] Setting heating gas to NaN!")
+
+    coolingGas = np.where(snapGas.data['tcool']<0.0)
+    heatingGas = np.where(snapGas.data['tcool']>=0.0)
+
+    snapGas.data['tcool'][coolingGas] = abs(snapGas.data['tcool'][coolingGas])
+    snapGas.data['tcool'][heatingGas] = np.nan
+
     #Load in metallicity
     snapGas.data['gz'] = snapGas.data['gz']/Zsolar
     #Load in Metals
@@ -343,13 +351,12 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Specific Angular Momentum [kpc km s^-1]
     snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
 
-    snapGas.data['ndens'] = snapGas.data['dens']/(meanweight*c.amu)
-
+    ndens = gasdens / (meanweight * c.amu)
     #Thermal Pressure : P/k_B = n T [$ # K cm^-3]
-    snapGas.data['P_thermal'] = snapGas.ndens *snapGas.T
+    snapGas.data['P_thermal'] = ndens*snapGas.T
 
     #Magnetic Pressure [P/k_B K cm^-3]
-    snapGas.data['P_magnetic'] = (snapGas.data['B'] **2)/( 8. * pi * c.KB)
+    snapGas.data['P_magnetic'] = ((snapGas.data['B']*1e-6) **2)/( 8. * pi * c.KB)
 
     #Kinetic "Pressure" [P/k_B K cm^-3]
     snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3.) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
@@ -361,7 +368,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
 
     #Free Fall time [Gyrs]
-    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * snapGas.data['dens']) ) * (1./GyrToSeconds)
+    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * gasdens) ) * (1./GyrToSeconds)
 
     del tmp
 
