@@ -18,18 +18,18 @@ import h5py
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 #==============================================================================#
-def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True):
+def snap_analysis(snapNumber,targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True):
     print("")
-    print(f"Starting Snap {snap}")
+    print(f"Starting Snap {snapNumber}")
 
     # load in the subfind group files
-    snap_subfind = load_subfind(snap,dir=TRACERSPARAMS['simfile'])
+    snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-    snapGas     = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
     # load tracers data
-    snapTracers = gadget_readsnap(snap, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
+    snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
@@ -39,7 +39,7 @@ def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements
     tmp = snapGas.data['age']
     del tmp
 
-    print(f"[@{snap}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{snapNumber}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
@@ -48,7 +48,7 @@ def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements
     ##    Units Conversion    ##
     #--------------------------#
 
-    print(f"[@{snap}]: Calculating Tracked Parameters!")
+    print(f"[@{snapNumber}]: Calculating Tracked Parameters!")
 
     #Convert Units
     ## Make this a seperate function at some point??
@@ -64,8 +64,8 @@ def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements
     #selected tracers are originally in the Halo, but allows for tracers
     #to leave (outflow) or move inwards (inflow) from Halo.
 
-    if (snap == int(TRACERSPARAMS['snapnum'])):
-        print(f"[@{snap}]:Finding Halo 0 Only Data!")
+    if (snapNumber == int(TRACERSPARAMS['snapnum'])):
+        print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
 
         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
 
@@ -74,43 +74,17 @@ def snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,elements,elements
     ###
 
     #Select Cells which have the tracers from the selection snap in them
-    TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
-
-    # Save number of tracers
-    CellsCFT['Ntracers'] = [int(len(TracersCFT))]
-    print(f"[@{snap}]: Number of tracers = {CellsCFT['Ntracers']}")
-
-    #Redshift
-    redshift = snapGas.redshift        #z
-    aConst = 1. / (1. + redshift)   #[/]
-
-    #Get lookback time in Gyrs
-    #[0] to remove from numpy array for purposes of plot title
-    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
-
-    CellsCFT['Lookback']= np.array([lookback for jj in range(0,len(CellsCFT['T']))])
-
-    #Save snap number
-    CellsCFT['Snap'] = np.array([int(snap) for jj in range(0,len(CellsCFT['T']))])
-
-    #Save Tracer IDs
-    CellsCFT['trid'] = TracersCFT
-
-    #Save Parent Cell IDs
-    CellsCFT['prid'] = ParentsCFT
-
-    #Save Cell IDs
-    CellsCFT['id'] = CellIDsCFT
+    TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber)
 
     # #Add snap data to temperature specific dictionary
     # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
     # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
-    out = {(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT}
+    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
     return {"out":out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT }
 #==============================================================================#
 #       PRE-MAIN ANALYSIS CODE
 #==============================================================================#
-def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True,SUBSET=None):
+def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True,SUBSET=None):
 
     print(f"Starting T = {targetT} Analysis!")
 
@@ -179,7 +153,7 @@ def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,elements,element
     Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
 
     #Get Cell data and Cell IDs from tracers based on condition
-    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond)
+    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['snapnum'])
 
     #SUBSET
     if (SUBSET is not None):
@@ -187,9 +161,11 @@ def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,elements,element
         TracersTFC = TracersTFC[:SUBSET]
 
     return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
+#------------------------------------------------------------------------------#
 
-def GetTracersFromCells(snapGas, snapTracers,Cond):
-    print("GetTracersFromCells")
+
+def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber):
+    print(f"[@{snapNumber}]: Get Tracers From Cells!")
 
     #Select Cell IDs for cells which meet condition
     CellIDs = snapGas.id[Cond]
@@ -206,19 +182,17 @@ def GetTracersFromCells(snapGas, snapTracers,Cond):
     CellsIndices = np.where(np.isin(snapGas.id,Parents))
     CellIDs = snapGas.id[CellsIndices]
 
-    #Select the data for Cells that meet Cond which contain tracers
-    #   Does this by creating new dict from old data.
-    #       Only selects values at index where Cell meets cond and contains tracers
-    Cells={}
-    for key, value in snapGas.data.items():
-        if (value is not None):
-            Cells.update({key: value[CellsIndices]})
+    # Save number of tracers
+    Ntracers = int(len(Tracers))
+    print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
+
+    Cells = saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
 
     return Tracers, Cells, CellIDs, Parents
 
 #------------------------------------------------------------------------------#
-def GetCellsFromTracers(snapGas, snapTracers,Tracers):
-    print("GetCellsFromTracers")
+def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,snapNumber):
+    print(f"[@{snapNumber}]: Get Cells From Tracers!")
 
     #Select indices (positions in array) of Tracer IDs which are in the Tracers list
     TracersIndices = np.where(np.isin(snapTracers.trid,Tracers))
@@ -240,22 +214,62 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers):
     Parents = Parents[ParentsIndices]
     TracersCFT = TracersCFT[ParentsIndices]
 
+    # Save number of tracers
+    Ntracers = int(len(TracersCFT))
+    print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-    #Select data from cells which contain tracers
-    #   Does this by making a new dictionary from old data. Only selects values
-    #       At indices of Cells which contain tracers in tracers list.
-    Cells={}
-    for key, value in snapGas.data.items():
-        if (value is not None):
-            Cells.update({key: value[CellsIndices]})
-
+    Cells = saveTracerData(snapGas,TracersCFT,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
 
     return TracersCFT, Cells, CellIDs, Parents
 
 #------------------------------------------------------------------------------#
+def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly):
+
+    print(f"[@{snapNumber}]: Saving Tracer Data!")
+
+    #Select the data for Cells that meet Cond which contain tracers
+    #   Does this by creating new dict from old data.
+    #       Only selects values at index where Cell meets cond and contains tracers
+    Cells={}
+    for key in saveParams:
+        Cells.update({key: snapGas.data[key][CellsIndices]})
+
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+    #Redshift
+    redshift = snapGas.redshift        #z
+    aConst = 1. / (1. + redshift)   #[/]
+
+    #Get lookback time in Gyrs
+    #[0] to remove from numpy array for purposes of plot title
+    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+
+    for TracerSaveParameter in saveTracersOnly:
+        if (TracerSaveParameter == 'Lookback'):
+            Cells.update({'Lookback' : np.array(lookback) })
+        elif (TracerSaveParameter == 'Ntracers'):
+            Cells.update({'Ntracers' : np.array(Ntracers)})
+        elif (TracerSaveParameter == 'Snap'):
+            Cells.update({'Snap' : np.array(snapNumber)})
+        elif (TracerSaveParameter == 'trid'):
+            #Save Tracer IDs
+            Cells.update({'trid':Tracers})
+        elif (TracerSaveParameter == 'prid'):
+            #Save Parent Cell IDs
+            Cells.update({'prid':Parents})
+        elif (TracerSaveParameter == 'id'):
+            #Save Cell IDs
+            Cells.update({'id':CellIDs})
+        else:
+            Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
+
+    return Cells
+#------------------------------------------------------------------------------#
 ##  FvdV weighted percentile code:
 #------------------------------------------------------------------------------#
-def weightedperc(data, weights, perc):
+def weightedperc(data, weights, perc,key):
     #percentage to decimal
     perc /= 100.
 
@@ -268,15 +282,35 @@ def weightedperc(data, weights, perc):
     #Sort the weights by the sorted data sorting
     sorted_weights = np.array(weights)[ind_sorted]
 
-    #Find the cumulative sum of the weights
-    cm = np.cumsum(sorted_weights)
+    #Remove nan entries
+    whereDataIsNotNAN = np.where(np.isnan(sorted_data)==False)
 
-    #Find indices where cumulative some as a fraction of final cumulative sum value is greater than percentage
-    whereperc = np.where(cm/float(cm[-1]) >= perc)
+    sorted_data = sorted_data[whereDataIsNotNAN]
+    sorted_weights = sorted_weights[whereDataIsNotNAN]
 
-    #Reurn the first data value where above is true
-    return sorted_data[whereperc[0][0]]
+    whereWeightsIsNotNAN = np.where(np.isnan(sorted_weights)==False)
+    sorted_weights = sorted_weights[whereWeightsIsNotNAN]
 
+    nDataNotNan = len(sorted_data)
+    nWeightsNotNan = len(sorted_weights)
+
+    if (nDataNotNan>0):
+        #Find the cumulative sum of the weights
+        cm = np.cumsum(sorted_weights)
+
+        #Find indices where cumulative some as a fraction of final cumulative sum value is greater than percentage
+        whereperc = np.where(cm/float(cm[-1]) >= perc)
+
+        #Reurn the first data value where above is true
+        out = sorted_data[whereperc[0][0]]
+    else:
+        print(key)
+        print("[@WeightPercent:] Warning! Data all nan! Returning 0 value!")
+        out = np.array([0.])
+
+    return out
+
+#------------------------------------------------------------------------------#
 
 def SetCentre(snap,snap_subfind,HaloID):
     print('Centering!')
@@ -332,14 +366,21 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
     snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[Gyrs]
-
-    print(f"[@Tracers_Subroutines @CalculateTrackedParameters:] Setting heating gas to NaN!")
+    snapGas.data['theat'] = snapGas.data['tcool'].copy()
 
     coolingGas = np.where(snapGas.data['tcool']<0.0)
-    heatingGas = np.where(snapGas.data['tcool']>=0.0)
+    heatingGas = np.where(snapGas.data['tcool']>0.0)
+    zeroChangeGas = np.where(snapGas.data['tcool']==0.0)
 
     snapGas.data['tcool'][coolingGas] = abs(snapGas.data['tcool'][coolingGas])
     snapGas.data['tcool'][heatingGas] = np.nan
+    snapGas.data['tcool'][zeroChangeGas] = np.nan
+
+
+    snapGas.data['theat'][coolingGas] = np.nan
+    snapGas.data['theat'][heatingGas] = abs(snapGas.data['theat'][heatingGas])
+    snapGas.data['theat'][zeroChangeGas] = np.nan
+
 
     #Load in metallicity
     snapGas.data['gz'] = snapGas.data['gz']/Zsolar
@@ -497,7 +538,7 @@ def hdf5_save(path,data):
             #   and values from sub dict. Gzip for memory saving.
             grp = f.create_group(saveKey)
             for k, v in value.items():
-                grp.create_dataset(k, data=v, compression='gzip')
+                grp.create_dataset(k, data=v)
 
     return
 

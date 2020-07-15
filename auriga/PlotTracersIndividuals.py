@@ -119,8 +119,12 @@ for T in TRACERSPARAMS['targetTLst']:
                 Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key][analysisParam][whereGas],mass=dataDict[key]['mass'][whereGas])
 
+            #Covert Lookback time into universe age
+            t0 = np.nanmax(dataDict[key]['Lookback'][0])
+            time_age = abs(dataDict[key]['Lookback'][0] - t0)
+            
             #Append the data from this snapshot to a temporary list
-            tmpXdata.append(dataDict[key]['Lookback'][0])
+            tmpXdata.append(time_age)
             tmpYdata.append(data)
             tmpMassdata.append(massData)
         #Append the data from this parameters to a sub dictionary
@@ -216,7 +220,7 @@ for analysisParam in saveParams:
 
         snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), int(TRACERSPARAMS['snapMax']),1)])
         selectionSnap = np.where(snapsRange==int(TRACERSPARAMS['snapnum']))
-        vline = plotData['Lookback'][selectionSnap]
+
 
         #Sort data by smallest Lookback time
         ind_sorted = np.argsort(plotData['Lookback'])
@@ -228,6 +232,13 @@ for analysisParam in saveParams:
                 entry = value
             sorted_data = np.array(entry)[ind_sorted]
             plotData.update({key: sorted_data})
+
+        #Reverse Lookback time into universe age
+        t0 = np.max(plotData['Lookback'])
+        time_age = abs(plotData['Lookback'] - t0)
+        plotData.update({'tage': time_age})
+
+        vline = abs(plotData['Lookback'][selectionSnap] - t0)
 
         #Get number of temperatures
         NTemps = float(len(Tlst))
@@ -277,9 +288,9 @@ for analysisParam in saveParams:
             currentAx = ax[ii]
 
 
-        currentAx.fill_between(plotData['Lookback'],plotData[UP],plotData[LO],\
+        currentAx.fill_between(plotData['tage'],plotData[UP],plotData[LO],\
         facecolor=colour,alpha=opacityPercentiles,interpolate=True)
-        currentAx.plot(plotData['Lookback'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        currentAx.plot(plotData['tage'],plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
         if (ColourIndividuals == True):
             for jj in range(0,subset):

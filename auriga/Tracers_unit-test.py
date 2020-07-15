@@ -16,6 +16,37 @@ from random import sample
 
 import pytest
 
+#==============================================================================#
+#       USER DEFINED PARAMETERS
+#==============================================================================#
+#Entered parameters to be saved from
+#   n_H, B, R, T
+#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+
+print("")
+print("Saved Parameters in this Analysis:")
+print(saveParams)
+
+#Optional Tracer only (no stats in .csv) parameters to be saved
+#   Cannot guarantee that all Plotting and post-processing are independent of these
+#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
+saveTracersOnly = ['sfr','age']
+
+print("")
+print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
+print(saveTracersOnly)
+
+#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass']
+
+print("")
+print("ESSENTIAL Saved Parameters in this Analysis:")
+print(saveEssentials)
+
+saveTracersOnly = saveTracersOnly + saveEssentials
+
+
 SUBSET = None
 
 #Select Halo of interest:
@@ -69,12 +100,11 @@ if (len(TRACERSPARAMS['targetTLst'])>1):
 targetT = TRACERSPARAMS['targetTLst'][0]
 
 TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers = \
-tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,elements,\
+tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,elements,\
 elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool,SUBSET=SUBSET)
 
-TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC)
-
-output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,\
+TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['snapnum'])
+output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,saveParams,saveTracersOnly,\
 HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
 
 out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = output_dict["out"], output_dict["TracersCFT"], output_dict["CellsCFT"], output_dict["CellIDsCFT"], output_dict["ParentsCFT"]
