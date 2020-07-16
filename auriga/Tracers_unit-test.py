@@ -16,6 +16,25 @@ from random import sample
 
 import pytest
 
+
+SUBSET = None
+IndividualTracerSubset = 500
+
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = 0
+
+#Input parameters path:
+TracersParamsPath = 'TracersParams_unit-test.csv'
+
+#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
+lazyLoadBool = True
+
+#Parameters where shape should be (1,)
+singleValueParams = ['Lookback','Ntracers','Snap']
+
+#Params where shape should be >= shape('id')
+exceptionsParams = ['trid','prid']
 #==============================================================================#
 #       USER DEFINED PARAMETERS
 #==============================================================================#
@@ -45,19 +64,6 @@ print("ESSENTIAL Saved Parameters in this Analysis:")
 print(saveEssentials)
 
 saveTracersOnly = saveTracersOnly + saveEssentials
-
-
-SUBSET = None
-
-#Select Halo of interest:
-#   0 is the most massive:
-HaloID = 0
-
-#Input parameters path:
-TracersParamsPath = 'TracersParams_unit-test.csv'
-
-#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
-lazyLoadBool = True
 
 #==============================================================================#
 #       Prepare for analysis
@@ -192,26 +198,52 @@ def test_CellsShapes():
     """
     truthyList =[]
     for key, values in CellsTFC.items():
-        truthyList.append(np.shape(values)[0] == np.shape(CellIDsTFC)[0])
+        if (key in singleValueParams):
+            truthyList.append(np.shape(values)[0] == 1)
+        elif(key in exceptionsParams):
+            if(key == 'trid'):
+                truthyList.append(np.shape(values)[0] == np.shape(TracersTFC)[0])
+            elif(key == 'prid'):
+                truthyList.append(np.shape(values)[0] == np.shape(ParentsTFC)[0])
+            else:
+                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsTFC)[0])
+        else:
+            truthyList.append(np.shape(values)[0] == np.shape(CellIDsTFC)[0])
+
 
     truthy = np.all(truthyList)
     assert truthy == True,"[@Cells Shapes:] values of Cells TFC not consistent shape to CellIDsTFC! Some data may be missing!"
 
+
     truthyList =[]
     for key, values in CellsCFTinit.items():
-        truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFTinit)[0])
+        if (key in singleValueParams):
+            truthyList.append(np.shape(values)[0] == 1)
+        elif(key in exceptionsParams):
+            if(key == 'trid'):
+                truthyList.append(np.shape(values)[0] == np.shape(TracersCFTinit)[0])
+            elif(key == 'prid'):
+                truthyList.append(np.shape(values)[0] == np.shape(ParentsCFTinit)[0])
+            else:
+                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsCFTinit)[0])
+        else:
+            truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFTinit)[0])
+
 
     truthy = np.all(truthyList)
     assert truthy == True,"[@Cells Shapes:] values of Cells CFT init not consistent shape to CellIDsCFTinit! Some data may be missing!"
 
     truthyList =[]
     for key, values in CellsCFT.items():
-        if (key == "Ntracers"):
+        if (key in singleValueParams):
             truthyList.append(np.shape(values)[0] == 1)
-        elif (key == 'trid'):
-            truthyList.append(np.shape(values)[0] == np.shape(TracersCFT)[0])
-        elif (key=='prid'):
-            truthyList.append(np.shape(values)[0] == np.shape(ParentsCFT)[0])
+        elif(key in exceptionsParams):
+            if(key == 'trid'):
+                truthyList.append(np.shape(values)[0] == np.shape(TracersCFT)[0])
+            elif(key == 'prid'):
+                truthyList.append(np.shape(values)[0] == np.shape(ParentsCFT)[0])
+            else:
+                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsCFT)[0])
         else:
             truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFT)[0])
 
@@ -415,12 +447,11 @@ def test_IndividualTracer():
     Test that the returned tracers from GetIndividualCellFromTracer are a subset of the SelectedTracers. Also that the data
     returned is of shape == subset. There are NaNs where the SelectedTracer is no longer present in the data.
     """
-    subset = 1000
 
     rangeMin = 0
     rangeMax = len(snapGas.data['T'])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-    TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+    TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(IndividualTracerSubset,rangeMax))
 
     SelectedTracers1 = snapTracers.data['trid'][TracerNumberSelect]
 
@@ -446,8 +477,8 @@ def test_IndividualTracer():
 
     massData = massData_flat
 
-    assert np.shape(data)[0] == subset,"[@Individual Tracer:] returned data not size == subset! Some data/NaNs may be missing!"
-    assert np.shape(massData)[0] == subset,"[@Individual Tracer:] returned mass data not size == subset! Some data/NaNs may be missing!"
+    assert np.shape(data)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
+    assert np.shape(massData)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned mass data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
 
-    assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@Individual Tracer:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
-    assert np.shape(TracersReturned)[0] <= subset,"[@Individual Tracer:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
+    assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@Individual Tracer:] Tracers Returned is not a IndividualTracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    assert np.shape(TracersReturned)[0] <= IndividualTracerSubset,"[@Individual Tracer:] Tracers Returned is not of size <= IndividualTracerSubset! There may be too many Returned Tracers!"

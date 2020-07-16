@@ -248,11 +248,11 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
 
     for TracerSaveParameter in saveTracersOnly:
         if (TracerSaveParameter == 'Lookback'):
-            Cells.update({'Lookback' : np.array(lookback) })
+            Cells.update({'Lookback' : np.array([lookback]) })
         elif (TracerSaveParameter == 'Ntracers'):
-            Cells.update({'Ntracers' : np.array(Ntracers)})
+            Cells.update({'Ntracers' : np.array([Ntracers])})
         elif (TracerSaveParameter == 'Snap'):
-            Cells.update({'Snap' : np.array(snapNumber)})
+            Cells.update({'Snap' : np.array([snapNumber])})
         elif (TracerSaveParameter == 'trid'):
             #Save Tracer IDs
             Cells.update({'trid':Tracers})
