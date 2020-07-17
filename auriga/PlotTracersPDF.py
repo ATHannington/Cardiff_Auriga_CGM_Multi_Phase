@@ -29,9 +29,9 @@ selectedSnaps = [112,119,127]
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff']
 
-logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','tcross','tff']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -41,6 +41,7 @@ xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
  'tcool': r'Cooling Time [$Gyr$]',\
+ 'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
  'tff': r'Free Fall Time [$Gyr$]'\
  }
@@ -94,16 +95,16 @@ for dataKey in saveParams:
         if dataKey in logParameters:
             vline = np.log10(vline)
 
-        #Sort data by smallest Lookback time
-        ind_sorted = np.argsort(plotData['Lookback'])
-        for key, value in plotData.items():
-            #Sort the data
-            if isinstance(value,float)==True:
-                entry = [value]
-            else:
-                entry = value
-            sorted_data = np.array(entry)[ind_sorted]
-            plotData.update({key: sorted_data})
+        # #Sort data by smallest Lookback time
+        # ind_sorted = np.argsort(plotData['Lookback'])
+        # for key, value in plotData.items():
+        #     #Sort the data
+        #     if isinstance(value,float)==True:
+        #         entry = [value]
+        #     else:
+        #         entry = value
+        #     sorted_data = np.array(entry)[ind_sorted]
+        #     plotData.update({key: sorted_data})
 
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
         for snap in selectedSnaps:#range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['snapnumMAX']+1, TRACERSPARAMS['snapMax']+1))):
@@ -134,6 +135,11 @@ for dataKey in saveParams:
 
             xmin = np.nanmin(data)
             xmax = np.nanmax(data)
+
+            if ((np.isnan(xmax)==True) or (np.isnan(xmin)==True)):
+                print("NaN xmin/xmax. Skipping Entry!")
+                continue
+
             #
             # step = (xmax-xmin)/Nbins
             #
