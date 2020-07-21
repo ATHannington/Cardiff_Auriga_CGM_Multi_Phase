@@ -28,6 +28,8 @@ opacity = 0.02#0.5#0.02
 
 n_Hcrit = 1e-1
 
+colourmap = "viridis"
+
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -51,7 +53,7 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
 for entry in logParameters:
     ylabel[entry] = r'Log10 '+ ylabel[entry]
 
-if (subset<=10):
+if (subset<=20):
     ColourIndividuals = True
 else:
     ColourIndividuals = False
@@ -265,12 +267,14 @@ for analysisParam in saveParams:
         lineStylePercentiles = "-."
 
         #Select a Temperature specific colour from colourmap
-        cmap = matplotlib.cm.get_cmap('spectral')
+        cmap = matplotlib.cm.get_cmap(colourmap)
 
         if (ColourIndividuals == True):
             colour = "tab:gray"
             colourTracers = [cmap(float(jj)/float(subset)) for jj in range(0,subset)]
         else:
+            #Get a colour for median and percentiles for a given temperature
+            #   Have fiddled to move colours away from extremes of the colormap
             colour = cmap(float(ii+1)/float(len(Tlst)))
             colourTracers = "tab:gray"
 
