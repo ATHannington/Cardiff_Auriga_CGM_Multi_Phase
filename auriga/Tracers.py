@@ -60,7 +60,7 @@ TracersParamsPath = 'TracersParams.csv'
 #File types for data save.
 #   Mini: small median and percentiles data
 #   Full: full FullDict data
-MiniDataPathSuffix = f".csv"
+MiniDataPathSuffix = f".h5"
 FullDataPathSuffix = f".h5"
 
 #Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
@@ -131,8 +131,10 @@ if __name__=="__main__":
         kk+=1
 
         TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = \
-        tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,elements,\
-        elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
+        tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
+        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool,SUBSET=None)
+
 
         snapRange = [zz for zz in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
 
@@ -141,9 +143,9 @@ if __name__=="__main__":
         #Setup arguments combinations for parallel processing pool
         print("\n" + f"Sorting multi-core arguments!")
 
-        args_default = [targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,TracersTFC,\
-            elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-            lazyLoadBool]
+        args_default = [targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool]
 
         args_list = [[snap]+args_default for snap in snapRange]
 
@@ -162,95 +164,3 @@ if __name__=="__main__":
         #Close multiprocesssing pool
         print(f"Closing core Pool!")
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-
-        print(f"Adding to FullDict...")
-        for output in output_list:
-            output_dict = output.get()
-            data_dict = output_dict["out"]
-            #Add snap data to temperature specific dictionary
-            FullDict.update(data_dict)
-        print("...done!")
-    #==============================================================================#
-    #       Prepare data and save
-    #==============================================================================#
-
-        #------------------------------------------------------------------------------#
-        #       Flatten dict and take subset
-        #------------------------------------------------------------------------------#
-        print("")
-        print("Analysing Statistics!")
-
-        plotData = {}
-
-        # For every data key in the temperature specific dictionary, loop over index, key, and values
-        for key, value in FullDict.items():
-            Tkey = key[0]
-            #For the nested dictionary for a given snap in the given temperature meta-dict, loop over key and values
-            if (Tkey == f"T{int(targetT)}"):
-                for k, v in value.items():
-                    if (k in saveParams):
-                        whereErrorKey = f"{Tkey} : {k}"
-                        #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
-                        #   combined keys in saveKeys.
-                        #       We are saving the key (k) + median, UP, or LO in a new dict, plotData
-                        #           This effectively flattens and processes the data dict in one go
-                        #
-                        #   We have separate statements key not in keys and else.
-                        #       This is because if key does not exist yet in plotData, we want to create a new entry in plotData
-                        #           else we want to append to it, not create a new entry or overwrite the old one
-                        # whereGas = np.where(FullDict[key]['type'] == 0)
-                        if ((f"{k}median" not in plotData.keys()) or (f"{k}UP" not in plotData.keys()) or (f"{k}LO" not in plotData.keys())):
-                            plotData.update({f"{k}median": \
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.,key=whereErrorKey)})
-                            plotData.update({f"{k}UP": \
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey)})
-                            plotData.update({f"{k}LO": \
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey)})
-                        else:
-                            plotData[f"{k}median"] = np.append(plotData[f"{k}median"],\
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=50.,key=whereErrorKey))
-                            plotData[f"{k}UP"] = np.append(plotData[f"{k}UP"],\
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey))
-                            plotData[f"{k}LO"] = np.append(plotData[f"{k}LO"],\
-                            weightedperc(data=v, weights=FullDict[key]['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey))
-                    # elif (k in saveEssentials):
-                    #     if f"{k}" not in plotData.keys():
-                    #         plotData.update({f"{k}": np.median(v)})
-                    #     else:
-                    #         plotData[f"{k}"] = np.append(plotData[f"{k}"],\
-                    #          np.median(v))
-
-        #------------------------------------------------------------------------------#
-        #       Save stats as .csv files for a given temperature
-        #------------------------------------------------------------------------------#
-
-
-        #Generate our savepath
-        tmpSave = DataSavepath + f"_T{int(targetT)}" + MiniDataPathSuffix
-        print("")
-        print("Saving Statistics as:")
-        print(tmpSave)
-
-        #Take only the data we selected to save from plotData and save to a new temporary dict for saving
-        tmpData = {}
-        for key in saveKeys:
-            tmpData.update({key : plotData[key]})
-
-        #Create a new DataFrame from the temporary saving dictionary
-        df = pd.DataFrame.from_dict(tmpData, orient="index")
-        #Save data as csv!
-        df.to_csv(tmpSave)
-
-
-    #==============================================================================#
-    #       FINAL PROGRAM STEPS:
-    #           Save the Full tracers data in FullDict
-    #               as HDF5 .h5 file.
-    #==============================================================================#
-
-    savePath = DataSavepath + FullDataPathSuffix
-
-    print("\n" + f"Saving Tracers data in FullDict as: ")
-    print(savePath)
-
-    hdf5_save(savePath,FullDict)

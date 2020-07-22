@@ -57,9 +57,7 @@ print("Loading data!")
 
 dataDict = {}
 
-loadPath = DataSavepath + DataSavepathSuffix
-
-dataDict = hdf5_load(loadPath)
+dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
 for dataKey in saveParams:
     #Create a plot for each Temperature
@@ -72,23 +70,7 @@ for dataKey in saveParams:
         T = TRACERSPARAMS['targetTLst'][ii]
 
         #Temperature specific load path
-        load = DataSavepath + f"_T{Tlst[ii]}" + ".csv"
-
-        #Load data as DataFrame and convert to dictionary
-        tmpData = pd.read_csv(load, delimiter=",", header=None, \
-         skipinitialspace=True, index_col=0, quotechar='"',comment="#").to_dict()
-
-        #Can't seem to get pandas to load data in without making two dataframes nested
-        #  this section flattens into one dictionary
-        plotData = {}
-        for k, v in tmpData.items():
-            for key, value in tmpData[k].items():
-                 if ((type(value) == list) or (type(value) == numpy.ndarray)):
-                    value = [value[int(zz)] for zz in flatRangeIndices]
-                 if k == 1 :
-                     plotData.update({key: float(value)})
-                 else:
-                     plotData[key]= np.append(plotData[key], float(value))
+        plotData = Statistics_hdf5_load(T,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
         median = dataKey + "median"
         vline = plotData[median][0]

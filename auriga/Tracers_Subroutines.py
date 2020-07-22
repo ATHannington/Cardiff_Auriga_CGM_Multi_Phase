@@ -18,7 +18,9 @@ import h5py
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 #==============================================================================#
-def snap_analysis(snapNumber,targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True):
+def snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
     print("")
     print(f"Starting Snap {snapNumber}")
 
@@ -80,11 +82,89 @@ def snap_analysis(snapNumber,targetT,TRACERSPARAMS,saveParams,saveTracersOnly,Ha
     # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
     # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
     out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
-    return {"out":out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT }
+
+    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}"+ FullDataPathSuffix
+
+    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Tracers data in as: "+ savePath)
+
+    hdf5_save(savePath,out)
+
+    save_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
+
+    return {"out": out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT}
+
+#==============================================================================#
+#       MAIN ANALYSIS CODE - IN SERIAL FOR PHASES PLOT
+#==============================================================================#
+def SERIAL_snap_analysis_PLUS_snapData(snapNumber,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
+    print("")
+    print(f"Starting Snap {snapNumber}")
+
+    # load in the subfind group files
+    snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
+
+    # load in the gas particles mass and position only for HaloID 0.
+    #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
+    # load tracers data
+    snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
+
+    #Load Cell IDs - avoids having to turn lazy_load off...
+    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+    #   Be in memory so taking the subset would be skipped.
+    tmp = snapGas.data['id']
+    tmp = snapGas.data['age']
+    del tmp
+
+    print(f"[@{snapNumber}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+
+    #Centre the simulation on HaloID 0
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
+
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    print(f"[@{snapNumber}]: Calculating Tracked Parameters!")
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
+
+    #Calculate New Parameters and Load into memory others we want to track
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+
+    #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
+    snapGas = PadNonEntries(snapGas)
+    #Find Halo=HaloID data for only selection snapshot. This ensures the
+    #selected tracers are originally in the Halo, but allows for tracers
+    #to leave (outflow) or move inwards (inflow) from Halo.
+
+    if (snapNumber == int(TRACERSPARAMS['snapnum'])):
+        print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
+
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
+
+    ###
+    ##  Selection   ##
+    ###
+
+    #Select Cells which have the tracers from the selection snap in them
+    TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber)
+
+    snapData = {(f"T{int(targetT)}",f"{int(snapNumber)}"): snapGas.data.copy()}
+    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
+    return out, snapData, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT
 #==============================================================================#
 #       PRE-MAIN ANALYSIS CODE
 #==============================================================================#
-def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool=True,SUBSET=None):
+def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True,SUBSET=None):
 
     print(f"Starting T = {targetT} Analysis!")
 
@@ -154,6 +234,17 @@ def tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersO
 
     #Get Cell data and Cell IDs from tracers based on condition
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['snapnum'])
+
+    # #Add snap data to temperature specific dictionary
+    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+    out = {(f"T{int(targetT)}",f"{int(TRACERSPARAMS['snapnum'])}"): {'trid': TracersTFC}}
+
+    savePath = DataSavepath + f"_T{int(targetT)}_{int(TRACERSPARAMS['snapnum'])}_Tracers"+ FullDataPathSuffix
+
+    print("\n" + f"[@{int(TRACERSPARAMS['snapnum'])} @T{int(targetT)}]: Saving Tracers ID ('trid') data as: "+ savePath)
+
+    hdf5_save(savePath,out)
 
     #SUBSET
     if (SUBSET is not None):
@@ -560,12 +651,43 @@ def hdf5_load(path):
         #Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k,v in value.items():
-            tmpDict.update({k:v[:]})
+            tmpDict.update({k:v.value})
         #Add the sub-dictionary to the meta-dictionary
         dataDict.update({saveKey:tmpDict})
 
     return dataDict
 
+def FullDict_hdf5_load(path,TRACERSPARAMS,FullDataPathSuffix):
+
+    FullDict = {}
+    for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1), int(TRACERSPARAMS['snapnumMAX']+1)),1):
+        for targetT in TRACERSPARAMS['targetTLst']:
+            loadPath = path + f"_T{int(targetT)}_{int(snap)}"+ FullDataPathSuffix
+            data = hdf5_load(loadPath)
+            FullDict.update(data)
+
+    return FullDict
+
+def Statistics_hdf5_load(targetT,path,TRACERSPARAMS,MiniDataPathSuffix):
+
+    #Load data in {(T#, snap#):{k:v}} form
+    nested = {}
+    for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1), int(TRACERSPARAMS['snapnumMAX']+1)),1):
+            #Temperature specific load path
+            loadPath = path + f"_T{int(targetT)}_{int(snap)}_Statistics" + MiniDataPathSuffix
+            data = hdf5_load(loadPath)
+            nested.update(data)
+
+    #flatten data to {k:[v1,v2,v3...]} form
+    plotData = {}
+    for key, value in nested.items():
+        for k, v in value.items():
+            if k not in plotData.keys():
+                plotData.update({k : v})
+            else:
+                plotData[k] = np.append(plotData[k], v)
+
+    return plotData
 def PadNonEntries(snapGas):
     """
         Subroutine to pad all stars and gas entries in snapGas to have same first dimension size.
@@ -626,3 +748,55 @@ def PadNonEntries(snapGas):
                 print(f"Key: {key}")
 
     return snapGas
+
+def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath,MiniDataPathSuffix=".csv"):
+
+    #------------------------------------------------------------------------------#
+    #       Flatten dict and take subset
+    #------------------------------------------------------------------------------#
+    print("")
+    print(f"[@{snapNumber} @T{int(targetT)}]: Analysing Statistics!")
+
+    statsData = {}
+
+    for k, v in Cells.items():
+        if (k in saveParams):
+            whereErrorKey = f"{k}"
+            weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey)
+            #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
+            #   combined keys in saveKeys.
+            #       We are saving the key (k) + median, UP, or LO in a new dict, statsData
+            #           This effectively flattens and processes the data dict in one go
+            #
+            #   We have separate statements key not in keys and else.
+            #       This is because if key does not exist yet in statsData, we want to create a new entry in statsData
+            #           else we want to append to it, not create a new entry or overwrite the old one
+            # whereGas = np.where(FullDict[key]['type'] == 0)
+            if ((f"{k}median" not in statsData.keys()) or (f"{k}UP" not in statsData.keys()) or (f"{k}LO" not in statsData.keys())):
+                statsData.update({f"{k}median": \
+                weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey)})
+                statsData.update({f"{k}UP": \
+                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey)})
+                statsData.update({f"{k}LO": \
+                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey)})
+            else:
+                statsData[f"{k}median"] = np.append(statsData[f"{k}median"],\
+                weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey))
+                statsData[f"{k}UP"] = np.append(statsData[f"{k}UP"],\
+                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey))
+                statsData[f"{k}LO"] = np.append(statsData[f"{k}LO"],\
+                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey))
+    #------------------------------------------------------------------------------#
+    #       Save stats as .csv files for a given temperature
+    #------------------------------------------------------------------------------#
+
+
+    #Generate our savepath
+    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Statistics" + MiniDataPathSuffix
+    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Statistics as: " + savePath)
+
+    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): statsData}
+
+    hdf5_save(savePath,out)
+
+    return
