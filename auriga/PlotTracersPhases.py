@@ -20,16 +20,14 @@ import h5py
 import multiprocessing as mp
 
 Nbins = 500
-xsize = 12.
+xsize = 20.
 ysize = 10.
 fontsize = 15
-DPI = 100
+DPI = 20
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
 colourmap="inferno_r"
-
-selectedSnaps = [112,119,127]
 
 #Paramters to weight the 2D hist by
 weightKeys = ['mass','tcool','gz']
@@ -39,58 +37,12 @@ labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
  'tcool': r'Log10 Cooling Time per pixel [$Gyr$]',\
  }
 
-#==============================================================================#
-#       USER DEFINED PARAMETERS
-#==============================================================================#
-#Entered parameters to be saved from
-#   n_H, B, R, T
-#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
-
-print("")
-print("Saved Parameters in this Analysis:")
-print(saveParams)
-
-#Optional Tracer only (no stats in .csv) parameters to be saved
-#   Cannot guarantee that all Plotting and post-processing are independent of these
-#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
-saveTracersOnly = ['sfr','age']
-
-print("")
-print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
-print(saveTracersOnly)
-
-#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass']
-
-print("")
-print("ESSENTIAL Saved Parameters in this Analysis:")
-print(saveEssentials)
-
-saveTracersOnly = saveTracersOnly + saveEssentials
-
-#Save types, which when combined with saveparams define what data is saved.
-#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
-saveTypes= ['median','UP','LO']
-
-#Select Halo of interest:
-#   0 is the most massive:
-HaloID = 0
-
-#Input parameters path:
-TracersParamsPath = 'TracersParams.csv'
-
 #File types for data save.
 #   Mini: small median and percentiles data
 #   Full: full FullDict data
 MiniDataPathSuffix = f".h5"
 FullDataPathSuffix = f".h5"
 
-#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
-lazyLoadBool = True
-
-#Number of cores to run on:
-n_processes = 4
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -135,161 +87,146 @@ omegabaryon0 = 0.048
 
 
 #Set Blank Data dictionary ALL data is stored here!
-FullDict = {}
-CellsFullDict = {}
+FullDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
+CellsFinalDict = snapData_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
 
-if __name__=="__main__":
-    kk = 0
-    #Loop over target temperatures
-    for targetT in TRACERSPARAMS['targetTLst']:
+print("Flatten Tracers Data (snapData).")
+TracersFinalDict = flatten_wrt_T(FullDict, selectedSnaps,TRACERSPARAMS)
 
-        #Store number of target temperatures
-        NTemps = float(len(TRACERSPARAMS['targetTLst']))
-        #Calculate percentage complete as a function of Temperatures
-        #   Aside: I did try to implement a total percentage complete, but combinatorix ='(
-        percentage = (float(kk)/NTemps)*100.0
-        print("")
-        print(f"{percentage:0.02f}%")
-        #Increment percentage complete counter
-        kk+=1
-
-        TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = \
-        tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
-        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool,SUBSET=None)
-
-
-        for snap in selectedSnaps:
-            out, snapData, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = SERIAL_snap_analysis_PLUS_snapData(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
-            elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-            saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
-            FullDict.update(out)
-            CellsFullDict.update(snapData)
 #------------------------------------------------------------------------------#
 #               PLOTTING
 #
 #------------------------------------------------------------------------------#
-    for snap in selectedSnaps:
-        for weightKey in weightKeys:
-            fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
+for snap in selectedSnaps: #TRACERSPARAMS['phasesSnaps']
+    print("\n"+f"Starting Snap {int(snap)}")
+    for weightKey in weightKeys:
+        print("\n"+f"Starting weightKey {weightKey}")
+        key = f"{int(snap)}"
 
-            tmpCellsFullDict = {}
-            tmpFullDict = {}
-            ii=0
-            for T in TRACERSPARAMS['targetTLst']:
-                dictkey = (f"T{int(T)}",f"{int(snap)}")
-                if (ii==0):
-                    tmpFullDict.update(FullDict[dictkey])
-                    tmpCellsFullDict.update(CellsFullDict[dictkey])
-                else:
-                    for key in tmpFullDict.keys():
-                        tmpFullDict[key] = np.append(tmpFullDict[key], FullDict[dictkey][key])
-                    for key in tmpCellsFullDict.keys():
-                        tmpCellsFullDict[key] = np.append(tmpCellsFullDict[key], CellsFullDict[dictkey][key])
-                ii+=1
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
 
-            whereCellsGas = np.where(tmpCellsFullDict['type'] == 0)
-            whereTracersGas = np.where(tmpFullDict['type'] == 0)
+        whereCellsGas = np.where(CellsFinalDict[key]['type'] == 0)
+        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
 
-            tmpCellsFullDict['age'][np.where(np.isnan(tmpCellsFullDict['age']) == True)] = 0.
-            tmpFullDict['age'][np.where(np.isnan(tmpFullDict['age']) == True)] = 0.
+        CellsFinalDict[key]['age'][np.where(np.isnan(CellsFinalDict[key]['age']) == True)] = 0.
+        TracersFinalDict[key]['age'][np.where(np.isnan(TracersFinalDict[key]['age']) == True)] = 0.
 
-            whereCellsStars = np.where((tmpCellsFullDict['type'] == 4)&\
-                                  (tmpCellsFullDict['age'] >= 0.))
+        whereCellsStars = np.where((CellsFinalDict[key]['type'] == 4)&\
+                              (CellsFinalDict[key]['age'] >= 0.))
 
-            whereTracersStars = np.where((tmpFullDict['type'] == 4)&\
-                      (tmpFullDict['age'] >= 0.))
+        whereTracersStars = np.where((TracersFinalDict[key]['type'] == 4)&\
+                  (TracersFinalDict[key]['age'] >= 0.))
 
-            NGasCells = len(tmpCellsFullDict['type'][whereCellsGas])
-            NStarsCells = len(tmpCellsFullDict['type'][whereCellsStars])
-            NtotCells = NGasCells + NStarsCells
+        whereCellsGas = np.where(CellsFinalDict[key]['type'] == 0)
 
-            #Percentage in stars
-            percentageCells = (float(NStarsCells)/(float(NtotCells)))*100.
+        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
 
-            NGasTracers = len(tmpFullDict['type'][whereTracersGas])
-            NStarsTracers = len(tmpFullDict['type'][whereTracersStars])
-            NtotTracers = NGasTracers + NStarsTracers
+        NGasCells = len(CellsFinalDict[key]['type'][whereCellsGas])
+        NStarsCells = len(CellsFinalDict[key]['type'][whereCellsStars])
+        NtotCells = NGasCells + NStarsCells
 
-            #Percentage in stars
-            percentageTracers = (float(NStarsTracers)/(float(NtotTracers)))*100.
+        #Percentage in stars
+        percentageCells = (float(NStarsCells)/(float(NtotCells)))*100.
+
+        NGasTracers = len(TracersFinalDict[key]['type'][whereTracersGas])
+        NStarsTracers = len(TracersFinalDict[key]['type'][whereTracersStars])
+        NtotTracers = NGasTracers + NStarsTracers
+
+        #Percentage in stars
+        percentageTracers = (float(NStarsTracers)/(float(NtotTracers)))*100.
 
 
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #   Figure 1: Full Cells Data
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+        print(f"snapData Plot!")
 
-            xdataCells = np.log10(tmpCellsFullDict['dens'])
-            ydataCells = np.log10(tmpCellsFullDict['T'])
+        xdataCells = np.log10(CellsFinalDict[key]['dens'][whereCellsGas])
+        ydataCells = np.log10(CellsFinalDict[key]['T'][whereCellsGas])
+        massCells = np.log10(CellsFinalDict[key]['mass'][whereCellsGas]*1e10) #10^10Msol -> Msol
+        weightDataCells = np.log10(CellsFinalDict[key][weightKey][whereCellsGas]) * massCells
 
-            massCells = np.log10(tmpCellsFullDict['mass']*1e10) #10^10Msol -> Msol
-            weightDataCells = np.log10(tmpCellsFullDict[weightKey]) * massCells
+        whereweightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))
 
-            mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells,normed=False)
-            histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells,normed=False)
+        xdataCells = xdataCells[whereweightDataCellsNotNaNorInf]
+        ydataCells = ydataCells[whereweightDataCellsNotNaNorInf]
+        massCells  = massCells[whereweightDataCellsNotNaNorInf]
+        weightDataCells = weightDataCells[whereweightDataCellsNotNaNorInf]
 
-            finalHistCells = histCells/mhistCells
+        mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells,normed=False)
+        histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells,normed=False)
 
-            img1 = plt.imshow(finalHistCells,cmap=colourmap,vmin=np.nanmin(finalHistCells),vmax=np.nanmax(finalHistCells),\
-            extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
-            ax[0] = plt.gca()
+        finalHistCells = histCells/mhistCells
 
-            ax[0].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
-            ax[0].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
+        finalHistCells = finalHistCells.T
 
-            cax1 = inset_axes(ax[0],width="5%",height="95%",loc='right')
-            fig.colorbar(img1, cax=cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize, weight="bold")
-            cax1.yaxis.set_ticks_position("left")
-            cax1.yaxis.set_label_position("left")
-            cax1.yaxis.label.set_color("black")
-            cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
+        img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=np.nanmin(finalHistCells),vmax=np.nanmax(finalHistCells) \
+        ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
-            ax[0].set_title(f"Full Simulation Data - {percentageCells:0.02f}% in Stars",fontsize=12)
+        ax[0].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
+        ax[0].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
 
+        cax1 = inset_axes(ax[0],width="5%",height="95%",loc='right')
+        fig.colorbar(img1, cax = cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize)
+        cax1.yaxis.set_ticks_position("left")
+        cax1.yaxis.set_label_position("left")
+        cax1.yaxis.label.set_color("black")
+        cax1.tick_params(axis="y", colors="black",labelsize=fontsize)
+
+        ax[0].set_title(f"Full Simulation Data",fontsize=fontsize)
+        ax[0].set_aspect("auto")
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #   Figure 2: Tracers Only  Data
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+        print(f"Tracers Plot!")
 
-            xdataTracers = np.log10(tmpFullDict['dens'])
-            ydataTracers = np.log10(tmpFullDict['T'])
 
-            massTracers = np.log10(tmpFullDict['mass']*1e10) #10^10Msol -> Msol
-            weightDataTracers = np.log10(tmpFullDict[weightKey]) * massTracers
+        xdataTracers = np.log10(TracersFinalDict[key]['dens'][whereTracersGas])
+        ydataTracers = np.log10(TracersFinalDict[key]['T'][whereTracersGas])
+        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas]*1e10) #10^10Msol -> Msol
+        weightDataTracers = np.log10(TracersFinalDict[key][weightKey][whereTracersGas]) * massTracers
 
-            mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers,normed=False)
-            histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers,normed=False)
+        whereweightDataTracersNotNaNorInf = np.where((np.isinf(weightDataTracers)==False) & (np.isnan(weightDataTracers)==False))
 
-            finalHistTracers = histTracers/mhistTracers
+        xdataTracers = xdataTracers[whereweightDataTracersNotNaNorInf]
+        ydataTracers = ydataTracers[whereweightDataTracersNotNaNorInf]
+        massTracers  = massTracers[whereweightDataTracersNotNaNorInf]
+        weightDataTracers = weightDataTracers[whereweightDataTracersNotNaNorInf]
 
-            img2 = plt.imshow(finalHistTracers,cmap=colourmap,vmin=np.nanmin(finalHistTracers),vmax=np.nanmax(finalHistTracers),\
-            extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
-            ax[1] = plt.gca()
+        mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers,normed=False)
+        histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers,normed=False)
 
-            ax[1].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
-            ax[1].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
+        finalHistTracers = histTracers/mhistTracers
 
-            cax2 = inset_axes(ax[1],width="5%",height="95%",loc='right')
-            fig.colorbar(img2, cax=cax2, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize, weight="bold")
-            cax2.yaxis.set_ticks_position("left")
-            cax2.yaxis.set_label_position("left")
-            cax2.yaxis.label.set_color("black")
-            cax2.tick_params(axis="y", colors="black", labelsize=fontsize)
+        finalHistTracers = finalHistTracers.T
 
-            ax[1].set_title(f"Selected Tracers Data - {percentageTracers :0.02f}% in Stars",fontsize=12)
+        img2 = ax[1].imshow(finalHistTracers,cmap=colourmap,vmin=np.nanmin(finalHistTracers),vmax=np.nanmax(finalHistTracers) \
+        ,extent=[np.min(xedgeTracers),np.max(xedgeTracers),np.min(yedgeTracers),np.max(yedgeTracers)],origin='lower')
+
+        ax[1].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
+        ax[1].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
+
+        cax2 = inset_axes(ax[1],width="5%",height="95%",loc='right')
+        fig.colorbar(img2, cax = cax2, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize)
+        cax2.yaxis.set_ticks_position("left")
+        cax2.yaxis.set_label_position("left")
+        cax2.yaxis.label.set_color("black")
+        cax2.tick_params(axis="y", colors="black",labelsize=fontsize)
+
+        ax[1].set_title(f"Selected Tracers Data" +\
+        r" - Selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
+        "\n"+ r" and temperatures " + r"$ 10^{n \pm %05.2f} K $"%(TRACERSPARAMS['deltaT']))
+        ax[1].set_aspect("auto")
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #   Full Figure: Finishing up
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-            fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey} for gas selected at" +\
-            "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
-            r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-            "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
-            f" weighted by mass",fontsize=12)
+        fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
+        f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}",fontsize=fontsize)
 
-            plt.tight_layout()
-            plt.subplots_adjust(top=0.90, hspace = 0.005)
+        plt.subplots_adjust(top=0.90, hspace = 0.005)
 
-            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
-            plt.savefig(opslaan, dpi = DPI, transparent = False)
-            print(opslaan)
-            plt.close()
+        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
+        plt.savefig(opslaan, dpi = DPI, transparent = False)
+        print(opslaan)
+        plt.close()

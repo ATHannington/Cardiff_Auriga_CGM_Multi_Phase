@@ -15,6 +15,8 @@ from gadget_subfind import *
 from Tracers_Subroutines import *
 import h5py
 import multiprocessing as mp
+import sys
+import logging
 
 #==============================================================================#
 #       USER DEFINED PARAMETERS
@@ -136,9 +138,9 @@ if __name__=="__main__":
         saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool,SUBSET=None)
 
 
-        snapRange = [zz for zz in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapnumMAX'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
+        snapRange = [zz for zz in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['finalSnap'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
 
-        #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
+        #Loop over snaps from snapMin to snapmax, taking the finalSnap (the final snap) as the endpoint if snapMax is greater
 
         #Setup arguments combinations for parallel processing pool
         print("\n" + f"Sorting multi-core arguments!")
@@ -154,6 +156,7 @@ if __name__=="__main__":
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
         #Open multiprocesssing pool
         print("\n" + f"Opening {n_processes} core Pool!")
+        mp.log_to_stderr(logging.DEBUG)
         pool = mp.Pool(processes=n_processes)
 
         #Compute Snap analysis

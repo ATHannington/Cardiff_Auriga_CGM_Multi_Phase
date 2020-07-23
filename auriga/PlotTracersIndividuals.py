@@ -20,16 +20,16 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 10#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.05#0.5#0.02
+opacity = 0.02#0.5#0.02
 
 n_Hcrit = 1e-1
 
-colourmap = "viridis"
-
+colourmapMain = "viridis"
+colourmapIndividuals = "plasma"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -249,14 +249,15 @@ for analysisParam in saveParams:
         lineStylePercentiles = "-."
 
         #Select a Temperature specific colour from colourmap
-        cmap = matplotlib.cm.get_cmap(colourmap)
 
         if (ColourIndividuals == True):
+            cmap = matplotlib.cm.get_cmap(colourmapIndividuals)
             colour = "tab:gray"
             colourTracers = [cmap(float(jj)/float(subset)) for jj in range(0,subset)]
         else:
             #Get a colour for median and percentiles for a given temperature
             #   Have fiddled to move colours away from extremes of the colormap
+            cmap = matplotlib.cm.get_cmap(colourmapMain)
             colour = cmap(float(ii+1)/float(len(Tlst)))
             colourTracers = "tab:gray"
 
