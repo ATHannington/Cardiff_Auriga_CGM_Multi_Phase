@@ -47,17 +47,6 @@ FullDataPathSuffix = f".h5"
 #       Prepare for analysis
 #==============================================================================#
 
-#Combine saveParams and saveTypes to form each combination for saving data types
-saveKeys =[]
-for param in saveParams:
-    for TYPE in saveTypes:
-        saveKeys.append(param+TYPE)
-
-# #Add saveEssentials to saveKeys so as to save these without the median and quartiles
-# #   being taken.
-# for key in saveEssentials:
-#     saveKeys.append(key)
-
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
     #Save as .csv
@@ -91,13 +80,13 @@ FullDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
 CellsFinalDict = snapData_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
 
 print("Flatten Tracers Data (snapData).")
-TracersFinalDict = flatten_wrt_T(FullDict, selectedSnaps,TRACERSPARAMS)
+TracersFinalDict = flatten_wrt_T(FullDict,TRACERSPARAMS)
 
 #------------------------------------------------------------------------------#
 #               PLOTTING
 #
 #------------------------------------------------------------------------------#
-for snap in selectedSnaps: #TRACERSPARAMS['phasesSnaps']
+for snap in TRACERSPARAMS['phasesSnaps']:
     print("\n"+f"Starting Snap {int(snap)}")
     for weightKey in weightKeys:
         print("\n"+f"Starting weightKey {weightKey}")

@@ -98,12 +98,12 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
         if (targetT == TRACERSPARAMS['targetTLst'][0]):
             savePath2 = DataSavepath + f"_{int(snapNumber)}_snapData"+ FullDataPathSuffix
 
-            print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving copy of SnapGas Data (snapData) as: "+ savePath)
-            snapData = {f"{int(snapNumber)}": snapGas.data.copy()}
+            print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving copy of SnapGas Data (snapData) as: "+ savePath2)
+            snapData = {f"{int(snapNumber)}": snapGas.data}
 
             print(f"[@{snapNumber} @T{int(targetT)}]: this may take a while...")
 
-            hdf5_save(savePath2,snapData)
+            snapData_hdf5_save(savePath2,snapData)
 
             print(f"[@{snapNumber} @T{int(targetT)}]: ...done!")
 
@@ -583,6 +583,24 @@ def hdf5_save(path,data):
 
     return
 
+def snapData_hdf5_save(path,data):
+    """
+        Save nested dictionary as hdf5 file.
+        Dictionary must have form:
+            {(Meta-Key1 , Meta-Key2):{key1:... , key2: ...}}
+        and will be saved in the form:
+            {Meta-key1_Meta-key2:{key1:... , key2: ...}}
+    """
+    with h5py.File(path,"w") as f:
+        for key, value in data.items():
+            #Create meta-dictionary entry with above saveKey
+            #   Add to this dictionary entry a dictionary with keys from sub-dict
+            #   and values from sub dict. Gzip for memory saving.
+            grp = f.create_group(key)
+            for k, v in value.items():
+                grp.create_dataset(k, data=v)
+    return
+
 def hdf5_load(path):
     """
         Load nested dictionary from hdf5 file.
@@ -643,12 +661,11 @@ def snapData_hdf5_load(path,TRACERSPARAMS,FullDataPathSuffix):
 
     FullDict = {}
     for snap in TRACERSPARAMS['phasesSnaps']:
-        loadPath = path + f"_{int(snapNumber)}_snapData"+ FullDataPathSuffix
+        loadPath = path + f"_{int(snap)}_snapData"+ FullDataPathSuffix
         data = hdf5_load(loadPath)
         FullDict.update(data)
 
     return FullDict
-
 
 def PadNonEntries(snapGas):
     """
@@ -763,9 +780,9 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
 
     return
 
-def flatten_wrt_T(dataDict, selectedSnaps, TRACERSPARAMS):
+def flatten_wrt_T(dataDict,TRACERSPARAMS):
     flattened_dict = {}
-    for snap in selectedSnaps:
+    for snap in TRACERSPARAMS['phasesSnaps']:
         tmp = {}
         for T in TRACERSPARAMS['targetTLst']:
             key = (f"T{int(T)}",f"{int(snap)}")
