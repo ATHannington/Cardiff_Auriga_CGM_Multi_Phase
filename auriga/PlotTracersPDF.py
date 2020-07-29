@@ -146,7 +146,7 @@ for dataKey in saveParams:
             fig.suptitle(f"PDF of Cells Containing Tracers selected by: " +\
             "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
             r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-            "\n" + f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}"+\
+            "\n" + f" and selected at snap {TRACERSPARAMS['selectSnap']:0.0f}"+\
             f" weighted by mass"+\
             "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=12)
             ax.axvline(x=vline, c='red')
@@ -154,7 +154,7 @@ for dataKey in saveParams:
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, hspace = 0.005)
 
-            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_T{int(T)}_{dataKey}_PDF.pdf"
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{int(T)}_{dataKey}_PDF.pdf"
             plt.savefig(opslaan, dpi = DPI, transparent = False)
             print(opslaan)
             plt.close()

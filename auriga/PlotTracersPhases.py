@@ -19,7 +19,7 @@ from Tracers_Subroutines import *
 import h5py
 import multiprocessing as mp
 
-Nbins = 500
+Nbins = 1000
 xsize = 20.
 ysize = 10.
 fontsize = 15
@@ -37,15 +37,69 @@ labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
  'tcool': r'Log10 Cooling Time per pixel [$Gyr$]',\
  }
 
+#Entered parameters to be saved from
+#   n_H, B, R, T
+#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
+saveParams = ['dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+
+print("")
+print("Saved Parameters in this Analysis:")
+print(saveParams)
+
+#Optional Tracer only (no stats in .csv) parameters to be saved
+#   Cannot guarantee that all Plotting and post-processing are independent of these
+#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
+saveTracersOnly = ['sfr','age']
+
+print("")
+print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
+print(saveTracersOnly)
+
+#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass']
+
+print("")
+print("ESSENTIAL Saved Parameters in this Analysis:")
+print(saveEssentials)
+
+saveTracersOnly = saveTracersOnly + saveEssentials
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
+saveTypes= ['median','UP','LO']
+
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = 0
+
+#Input parameters path:
+TracersParamsPath = 'TracersParams.csv'
+
 #File types for data save.
 #   Mini: small median and percentiles data
 #   Full: full FullDict data
 MiniDataPathSuffix = f".h5"
 FullDataPathSuffix = f".h5"
 
+#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
+lazyLoadBool = True
+
+#Number of cores to run on:
+n_processes = 4
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
+
+#Combine saveParams and saveTypes to form each combination for saving data types
+saveKeys =[]
+for param in saveParams:
+    for TYPE in saveTypes:
+        saveKeys.append(param+TYPE)
+
+# #Add saveEssentials to saveKeys so as to save these without the median and quartiles
+# #   being taken.
+# for key in saveEssentials:
+#     saveKeys.append(key)
 
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
@@ -75,10 +129,19 @@ omegabaryon0 = 0.048
 #==============================================================================#
 
 
-#Set Blank Data dictionary ALL data is stored here!
-FullDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
-CellsFinalDict = snapData_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
 
+snapGasFinalDict = {}
+
+for snap in TRACERSPARAMS['phasesSnaps']:
+    _, _, _, _, snapGas, _ = \
+    tracer_selection_snap_analysis(4.0,TRACERSPARAMS,HaloID,\
+    elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+    saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,\
+    lazyLoadBool,SUBSET=None,snapNumber=snap,saveTracers=False,loadonlyhalo=False)
+
+    snapGasFinalDict.update({f"{int(snap)}" : snapGas.data})
+
+FullDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,FullDataPathSuffix)
 print("Flatten Tracers Data (snapData).")
 TracersFinalDict = flatten_wrt_T(FullDict,TRACERSPARAMS)
 
@@ -94,24 +157,24 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
 
-        whereCellsGas = np.where(CellsFinalDict[key]['type'] == 0)
+        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)
         whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
 
-        CellsFinalDict[key]['age'][np.where(np.isnan(CellsFinalDict[key]['age']) == True)] = 0.
+        snapGasFinalDict[key]['age'][np.where(np.isnan(snapGasFinalDict[key]['age']) == True)] = 0.
         TracersFinalDict[key]['age'][np.where(np.isnan(TracersFinalDict[key]['age']) == True)] = 0.
 
-        whereCellsStars = np.where((CellsFinalDict[key]['type'] == 4)&\
-                              (CellsFinalDict[key]['age'] >= 0.))
+        whereCellsStars = np.where((snapGasFinalDict[key]['type'] == 4)&\
+                              (snapGasFinalDict[key]['age'] >= 0.))
 
         whereTracersStars = np.where((TracersFinalDict[key]['type'] == 4)&\
                   (TracersFinalDict[key]['age'] >= 0.))
 
-        whereCellsGas = np.where(CellsFinalDict[key]['type'] == 0)
+        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)
 
         whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
 
-        NGasCells = len(CellsFinalDict[key]['type'][whereCellsGas])
-        NStarsCells = len(CellsFinalDict[key]['type'][whereCellsStars])
+        NGasCells = len(snapGasFinalDict[key]['type'][whereCellsGas])
+        NStarsCells = len(snapGasFinalDict[key]['type'][whereCellsStars])
         NtotCells = NGasCells + NStarsCells
 
         #Percentage in stars
@@ -131,10 +194,10 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         print(f"snapData Plot!")
 
-        xdataCells = np.log10(CellsFinalDict[key]['dens'][whereCellsGas])
-        ydataCells = np.log10(CellsFinalDict[key]['T'][whereCellsGas])
-        massCells = np.log10(CellsFinalDict[key]['mass'][whereCellsGas]*1e10) #10^10Msol -> Msol
-        weightDataCells = np.log10(CellsFinalDict[key][weightKey][whereCellsGas]) * massCells
+        xdataCells = np.log10(snapGasFinalDict[key]['dens'][whereCellsGas])
+        ydataCells = np.log10(snapGasFinalDict[key]['T'][whereCellsGas])
+        massCells = np.log10(snapGasFinalDict[key]['mass'][whereCellsGas]*1e10) #10^10Msol -> Msol
+        weightDataCells = np.log10(snapGasFinalDict[key][weightKey][whereCellsGas]) * massCells
 
         whereweightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))
 
@@ -150,10 +213,15 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         finalHistCells = finalHistCells.T
 
-        img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=np.nanmin(finalHistCells),vmax=np.nanmax(finalHistCells) \
+        if (weightKey != 'gz'):
+            zmin = np.nanmin(finalHistCells)
+        else:
+            zmin = -2.0
+
+        img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=np.nanmax(finalHistCells) \
         ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
-        ax[0].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
+        ax[0].set_xlabel(r"Log10 Density [$\rho / \langle \rho \rangle $]",fontsize=fontsize)
         ax[0].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
 
         cax1 = inset_axes(ax[0],width="5%",height="95%",loc='right')
@@ -193,7 +261,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         img2 = ax[1].imshow(finalHistTracers,cmap=colourmap,vmin=np.nanmin(finalHistTracers),vmax=np.nanmax(finalHistTracers) \
         ,extent=[np.min(xedgeTracers),np.max(xedgeTracers),np.min(yedgeTracers),np.max(yedgeTracers)],origin='lower')
 
-        ax[1].set_xlabel(r"Log10 Density [$g$ $cm^{-3}$]",fontsize=fontsize)
+        ax[1].set_xlabel(r"Log10 Density [$\rho / \langle \rho \rangle $]",fontsize=fontsize)
         ax[1].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
 
         cax2 = inset_axes(ax[1],width="5%",height="95%",loc='right')
@@ -211,11 +279,11 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 #   Full Figure: Finishing up
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
-        f" and selected at snap {TRACERSPARAMS['snapnum']:0.0f}",fontsize=fontsize)
+        f" and selected at snap {TRACERSPARAMS['selectSnap']:0.0f}",fontsize=fontsize)
 
         plt.subplots_adjust(top=0.90, hspace = 0.005)
 
-        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['snapnum'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
+        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
         plt.savefig(opslaan, dpi = DPI, transparent = False)
         print(opslaan)
         plt.close()

@@ -24,12 +24,10 @@ subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.02#0.5#0.02
-
-n_Hcrit = 1e-1
+opacity = 0.03#0.5#0.02
 
 colourmapMain = "viridis"
-colourmapIndividuals = "plasma"
+colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -76,6 +74,7 @@ print("Getting Tracer Data!")
 Ydata = {}
 Xdata = {}
 Massdata ={}
+ViolinDict = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
@@ -110,6 +109,7 @@ for T in TRACERSPARAMS['targetTLst']:
     XSubDict = {}
     YSubDict = {}
     MassSubDict = {}
+    ViolinSubDict = {}
     for analysisParam in saveParams:
         print("")
         print(f"Starting {analysisParam} analysis")
@@ -119,6 +119,7 @@ for T in TRACERSPARAMS['targetTLst']:
         tmpXdata = []
         tmpYdata = []
         tmpMassdata = []
+        tmpViolinData =[]
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{int(T)}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
@@ -134,20 +135,38 @@ for T in TRACERSPARAMS['targetTLst']:
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
             tmpMassdata.append(massData)
+
+            #Violin Data
+            massMean = np.mean(dataDict[key]['mass'][whereGas])
+            weightedData = (dataDict[key][analysisParam] * dataDict[key]['mass'])/massMean
+            whereNOTnan = np.where(np.isnan(weightedData)==False)
+            weightedData=weightedData[whereNOTnan]
+            tmpViolinData.append(weightedData)
+
         #Append the data from this parameters to a sub dictionary
         XSubDict.update({analysisParam: np.array(tmpXdata)})
         YSubDict.update({analysisParam:  np.array(tmpYdata)})
         MassSubDict.update({analysisParam: np.array(tmpMassdata)})
+        ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
     #Add the full list of snaps data to temperature dependent dictionary.
     Xdata.update({f"T{int(T)}" : XSubDict})
     Ydata.update({f"T{int(T)}" : YSubDict})
     Massdata.update({f"T{int(T)}" : MassSubDict})
+    ViolinDict.update({f"T{int(T)}" : ViolinSubDict})
 
-
+#==============================================================================#
 
 #==============================================================================#
 #           PLOT!!
 #==============================================================================#
+def adjacent_values(vals, q1, q3):
+    upper_adjacent_value = q3 + (q3 - q1) * 1.5
+    upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
+
+    lower_adjacent_value = q1 - (q3 - q1) * 1.5
+    lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
+    return lower_adjacent_value, upper_adjacent_value
+
 for analysisParam in saveParams:
     print("")
     print(f"Starting {analysisParam} Sub-plots!")
@@ -163,23 +182,6 @@ for analysisParam in saveParams:
         snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
         selectionSnap = np.where(snapsRange==int(TRACERSPARAMS['selectSnap']))
 
-
-        # #Sort data by smallest Lookback time
-        # ind_sorted = np.argsort(plotData['Lookback'])
-        # for key, value in plotData.items():
-        #     #Sort the data
-        #     if isinstance(value,float)==True:
-        #         entry = [value]
-        #     else:
-        #         entry = value
-        #     sorted_data = np.array(entry)[ind_sorted]
-        #     plotData.update({key: sorted_data})
-        #
-        # #Reverse Lookback time into universe age
-        # t0 = np.max(plotData['Lookback'])
-        # time_age = abs(plotData['Lookback'] - t0)
-        # plotData.update({'tage': time_age})
-
         vline = tage[selectionSnap]
 
         #Get number of temperatures
@@ -190,6 +192,7 @@ for analysisParam in saveParams:
 
         plotYdata = Ydata[f"T{int(temp)}"][analysisParam]
         plotXdata = Xdata[f"T{int(temp)}"][analysisParam]
+        violinData = ViolinDict[f"T{int(temp)}"][analysisParam]
 
         #Convert lookback time to universe age
         t0 = np.nanmax(plotXdata)
@@ -225,6 +228,11 @@ for analysisParam in saveParams:
         datamax = max(np.nanmax(plotYdata[YDataisNOTinf]),np.nanmax(plotData[UP][UPisNOTinf]))
 
         if (analysisParam in logParameters):
+            for (ind, array) in enumerate(violinData):
+                tmpData = np.log10(array)
+                whereNOTnan = np.where(np.isnan(tmpData)==False)
+                violinData[ind] = tmpData[whereNOTnan]
+
             plotYdata = np.log10(plotYdata)
             for key in [LO, UP, median]:
                 plotData[key] = np.log10(plotData[key])
@@ -244,12 +252,21 @@ for analysisParam in saveParams:
             print("Inf datamin/datamax. Skipping Entry!")
             continue
 
-        LOisNOTinf = np.where(np.isinf(plotData[LO])==False)
-        UPisNOTinf = np.where(np.isinf(plotData[UP])==False)
-        YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
-        LOisNOTnan = np.where(np.isnan(plotData[LO])==False)
-        UPisNOTnan = np.where(np.isnan(plotData[UP])==False)
-        YDataisNOTnan = np.where(np.isnan(plotYdata)==False)
+        ##
+        #   If all entries of data are nan, and thus dataset len == 0
+        #   add a nan and zero array to omit violin but continue plotting
+        #   without errors.
+        ##
+        tmp = []
+        for dataset in violinData:
+            if (len(dataset)==0):
+                tmp.append(np.array([np.nan,0,np.nan]))
+            else:
+                tmp.append(dataset)
+
+        violinData = tmp
+
+
         print("")
         print("Sub-Plot!")
 
@@ -270,9 +287,41 @@ for analysisParam in saveParams:
         # plotData[LO][LOisINF] = np.array([0.])
         # print(f"after {median} {plotData[median][medianisINF] }")
 
-        currentAx.fill_between(tage,plotData[UP],plotData[LO],\
-        facecolor=colour,alpha=opacityPercentiles,interpolate=False)
-        currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+
+        # currentAx.fill_between(tage,plotData[UP],plotData[LO],\
+        # facecolor=colour,alpha=opacityPercentiles,interpolate=False)
+        # currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+
+        parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+
+        for pc in parts['bodies']:
+            pc.set_facecolor(colour)
+            pc.set_edgecolor('black')
+            pc.set_alpha(opacityPercentiles)
+
+        quartile1 = []
+        medians = []
+        quartile3 = []
+        for dataset in violinData:
+            q1,med,q3 = np.percentile(dataset, [int(TRACERSPARAMS['percentileLO']), 50, int(TRACERSPARAMS['percentileUP'])], axis=0)
+            quartile1.append(q1)
+            medians.append(med)
+            quartile3.append(q3)
+
+        sorted_violinData = []
+        for dataset in violinData:
+            ind_sorted = np.argsort(dataset)
+            dataset = dataset[ind_sorted]
+            sorted_violinData.append(dataset)
+
+        whiskers = np.array([
+            adjacent_values(sorted_array, q1, q3)
+            for sorted_array, q1, q3 in zip(sorted_violinData, quartile1, quartile3)])
+        whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
+
+        currentAx.scatter(plotXdata, medians, marker='o', color='white', s=30, zorder=3)
+        currentAx.vlines(plotXdata, quartile1, quartile3, color='k', linestyle='-', lw=3)
+        currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
         if (ColourIndividuals == True):
             for jj in range(0,subset):
@@ -296,6 +345,10 @@ for analysisParam in saveParams:
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
         currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
+        plot_patch = matplotlib.patches.Patch(color=colour)
+        plot_label = r"$T = 10^{%3.0f} K$"%(float(temp))
+        currentAx.legend(handles=[plot_patch], labels=[plot_label],loc='upper right')
+
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
         "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
@@ -303,7 +356,7 @@ for analysisParam in saveParams:
         f" weighted by mass" +\
         "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
         , fontsize=12)
-        currentAx.legend(loc='upper right')
+
 
 
     #Only give 1 x-axis a label, as they sharex
