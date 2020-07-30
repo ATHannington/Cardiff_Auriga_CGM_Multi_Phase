@@ -272,7 +272,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     print("Selected!")
     print("Entering save Cells...")
-    
+
     CellsCFT = t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly)
     # #Add snap data to temperature specific dictionary
     # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
@@ -635,7 +635,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
-    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * snapGas.data['dens']) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[Gyrs]
+    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[Gyrs]
     snapGas.data['theat'] = snapGas.data['tcool'].copy()
 
     coolingGas = np.where(snapGas.data['tcool']<0.0)
@@ -679,7 +679,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
 
     #Free Fall time [Gyrs]
-    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * snapGas.data['dens']) ) * (1./GyrToSeconds)
+    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * gasdens)) * (1./GyrToSeconds)
 
     del tmp
 
