@@ -24,7 +24,7 @@ subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.03#0.5#0.02
+opacity = 0.03#0.5#0.03
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"
@@ -369,7 +369,7 @@ for analysisParam in saveParams:
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace = 0.005)
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_Individuals.pdf"
+    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsViolins.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
     plt.close()

@@ -195,6 +195,202 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
 #------------------------------------------------------------------------------#
 
+#==============================================================================#
+#       t3000 MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
+#==============================================================================#
+def t3000_snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,CellIDsTFC,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
+    print("")
+    print(f"Starting Snap {snapNumber}")
+
+    # load in the subfind group files
+    snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
+
+    # load in the gas particles mass and position only for HaloID 0.
+    #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
+
+    #Load Cell IDs - avoids having to turn lazy_load off...
+    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+    #   Be in memory so taking the subset would be skipped.
+    tmp = snapGas.data['id']
+    tmp = snapGas.data['age']
+    del tmp
+
+    print(f"[@{snapNumber}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+
+    #Centre the simulation on HaloID 0
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
+
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    print(f"[@{snapNumber}]: Calculating Tracked Parameters!")
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
+
+    #Calculate New Parameters and Load into memory others we want to track
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+
+    #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
+    snapGas = PadNonEntries(snapGas)
+    #Find Halo=HaloID data for only selection snapshot. This ensures the
+    #selected tracers are originally in the Halo, but allows for tracers
+    #to leave (outflow) or move inwards (inflow) from Halo.
+
+    if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
+        print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
+
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
+
+    ###
+    ##  Selection   ##
+    ###
+
+    whereCellsSelected = np.where(np.isin(snapGas.data['id'],CellIDsTFC))
+
+    for key, value in snapGas.data.items():
+        if (value is not None):
+            snapGas.data[key] = value[whereCellsSelected]
+
+    Rcrit = 500.
+
+    print(f"Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
+    Cond = np.where(snapGas.data['R']<=Rcrit)
+
+    for key, value in snapGas.data.items():
+        if (value is not None):
+            snapGas.data[key] = value[Cond]
+
+    CellIDsCFT = snapGas.data['id']
+
+    print("Selected!")
+    print("Entering save Cells...")
+    
+    CellsCFT = t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly)
+    # #Add snap data to temperature specific dictionary
+    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
+
+    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}"+ FullDataPathSuffix
+
+    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Cells data as: "+ savePath)
+
+    hdf5_save(savePath,out)
+
+    save_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
+
+    sys.stdout.flush()
+    return {"out": out, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT}
+
+#==============================================================================#
+#       PRE-MAIN ANALYSIS CODE
+#==============================================================================#
+def t3000_cell_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,\
+lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
+
+    if snapNumber is None:
+        snapNumber = TRACERSPARAMS['selectSnap']
+
+    print(f"Starting T = {targetT} Analysis!")
+
+    # load in the subfind group files
+    snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
+
+    # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
+
+    #Load Cell IDs - avoids having to turn lazy_load off...
+    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+    #   Be in memory so taking the subset would be skipped.
+    tmp = snapGas.data['id']
+    tmp = snapGas.data['age']
+    del tmp
+
+    print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+
+    #Centre the simulation on HaloID 0
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
+
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+    print("Calculating Tracked Parameters!")
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
+
+    #Calculate New Parameters and Load into memory others we want to track
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+
+    #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
+    snapGas = PadNonEntries(snapGas)
+
+    ### Exclude values outside halo 0 ###
+    if (loadonlyhalo is True):
+        print(f"Finding Halo {int(HaloID)} Only Data!")
+
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
+
+    #--------------------------------------------------------------------------#
+    ####                    SELECTION                                        ###
+    #--------------------------------------------------------------------------#
+    print("Setting Selection Condition!")
+
+    #Set condition for Tracer selection
+    whereGas = np.where(snapGas.type==0)
+    whereStars = np.where(snapGas.type==4)
+    NGas = len(snapGas.type[whereGas])
+
+    StarsSelect = np.where((snapGas.data['R']>=TRACERSPARAMS['Rinner']) & \
+                        (snapGas.data['R']<=TRACERSPARAMS['Router']) &\
+                        (snapGas.type == 4) )
+
+    GasSelect = np.where((snapGas.data['T'][whereGas]>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['T'][whereGas]<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
+                    (snapGas.data['R'][whereGas]>=TRACERSPARAMS['Rinner']) & \
+                    (snapGas.data['R'][whereGas]<=TRACERSPARAMS['Router']) &\
+                    (snapGas.data['sfr'][whereGas]<=0))
+
+    Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
+
+    for key, value in snapGas.data.items():
+        if (value is not None):
+            snapGas.data[key] = value[Cond]
+
+    CellIDsTFC = snapGas.data['id']
+    # #Add snap data to temperature specific dictionary
+    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+    if (saveCells is True):
+        out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'id': CellIDsTFC}}
+
+        savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_CellIDs"+ FullDataPathSuffix
+
+        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Saving Cell ID ('id') data as: "+ savePath)
+
+        hdf5_save(savePath,out)
+
+    #SUBSET
+    if (SUBSET is not None):
+        print(f"*** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        TracersTFC = TracersTFC[:SUBSET]
+
+    return CellIDsTFC, snapGas
+
+#------------------------------------------------------------------------------#
 
 def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber):
     print(f"[@{snapNumber}]: Get Tracers From Cells!")
@@ -296,6 +492,48 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
             Cells.update({'id':CellIDs})
         else:
             Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
+
+    return Cells
+
+def t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly):
+
+    print(f"[@{snapNumber}]: Saving Cell Data!")
+
+    Ncells = len(snapGas.data['id'])
+
+    print(f"[@{snapNumber}]: Ncells = {int(Ncells)}")
+
+    #Select the data for Cells that meet Cond which contain tracers
+    #   Does this by creating new dict from old data.
+    #       Only selects values at index where Cell meets cond and contains tracers
+    Cells={}
+    for key in saveParams:
+        Cells.update({key: snapGas.data[key]})
+
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+    #Redshift
+    redshift = snapGas.redshift        #z
+    aConst = 1. / (1. + redshift)   #[/]
+
+    #Get lookback time in Gyrs
+    #[0] to remove from numpy array for purposes of plot title
+    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+
+    for TracerSaveParameter in saveTracersOnly:
+        if (TracerSaveParameter == 'Lookback'):
+            Cells.update({'Lookback' : np.array([lookback]) })
+        elif (TracerSaveParameter == 'Ncells'):
+            Cells.update({'Ncells' : np.array([Ncells])})
+        elif (TracerSaveParameter == 'Snap'):
+            Cells.update({'Snap' : np.array([snapNumber])})
+        elif (TracerSaveParameter == 'id'):
+            #Save Cell IDs
+            Cells.update({'id':snapGas.data['id']})
+        else:
+            Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter]})
 
     return Cells
 #------------------------------------------------------------------------------#
@@ -772,3 +1010,5 @@ def flatten_wrt_T(dataDict,TRACERSPARAMS):
         flattened_dict.update({f"{int(snap)}": tmp})
 
     return flattened_dict
+
+#------------------------------------------------------------------------------#
