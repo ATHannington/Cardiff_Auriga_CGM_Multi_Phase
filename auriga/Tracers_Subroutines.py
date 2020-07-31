@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import const as c
 from gadget import *
 from gadget_subfind import *
@@ -91,6 +92,11 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     hdf5_save(savePath,out)
 
     save_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
+
+    if (TRACERSPARAMS['TracerPlotBool'] == True) or (TRACERSPARAMS['QuadPlotBool'] == True):
+        PlotProjections(snapGas,out,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
+        FullDataPathSuffix, Axes=[0,2], zAxis=[1], QuadPlotBool=TRACERSPARAMS['QuadPlotBool'],\
+        TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=2)
 
     sys.stdout.flush()
     return {"out": out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT}
@@ -602,8 +608,8 @@ def SetCentre(snap,snap_subfind,HaloID):
 def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0):
     whereGas = np.where(snapGas.type==0)
     #Density is rho/ <rho> where <rho> is average baryonic density
-    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3. + snapGas.omegalambda) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
-    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3.) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2. / ( 8. * pi * c.G)
+    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3 + snapGas.omegalambda) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
+    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
 
     #Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
@@ -611,14 +617,14 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #3./2. N KB
     Tfac = ((3./2.) * c.KB) / (meanweight * c.amu)
 
-    gasdens= (snapGas.rho / (c.parsec*1e6)**3.) * c.msol * 1e10 #[g cm^-3]
+    snapGas.data['dens'] = (snapGas.rho / (c.parsec*1e6)**3) * c.msol * 1e10 #[g cm^-3]
     gasX = snapGas.gmet[whereGas,0][0]
 
     #Temperature = U / (3/2 * N KB) [K]
     snapGas.data['T'] = (snapGas.u*1e10) / (Tfac) # K
-    snapGas.data['n_H'] = gasdens/ c.amu * gasX # cm^-3
-    snapGas.data['dens']  = gasdens/ (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
-    snapGas.data['Tdens'] = snapGas.data['T'] * snapGas.data['dens']
+    snapGas.data['n_H'] = snapGas.data['dens']/ c.amu * gasX # cm^-3
+    snapGas.data['rho_rhomean']  = snapGas.data['dens']/ (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
+    snapGas.data['Tdens'] = snapGas.data['T'] * snapGas.data['rho_rhomean']
 
     bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
 
@@ -635,7 +641,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
-    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * gasdens) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2.) #[Gyrs]
+    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * snapGas.data['dens']) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2) #[Gyrs]
     snapGas.data['theat'] = snapGas.data['tcool'].copy()
 
     coolingGas = np.where(snapGas.data['tcool']<0.0)
@@ -662,7 +668,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Specific Angular Momentum [kpc km s^-1]
     snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
 
-    ndens = gasdens/ (meanweight * c.amu)
+    ndens = snapGas.data['dens']/ (meanweight * c.amu)
     #Thermal Pressure : P/k_B = n T [$ # K cm^-3]
     snapGas.data['P_thermal'] = ndens*snapGas.T
 
@@ -670,7 +676,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['P_magnetic'] = ((snapGas.data['B']*1e-6) **2)/( 8. * pi * c.KB)
 
     #Kinetic "Pressure" [P/k_B K cm^-3]
-    snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3.) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
+    snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
 
     #Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
     snapGas.data['csound'] = sqrt(((5./3.)*c.KB * snapGas.data['T'])/(meanweight*c.amu*1e5))
@@ -679,7 +685,10 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
 
     #Free Fall time [Gyrs]
-    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * gasdens)) * (1./GyrToSeconds)
+    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * snapGas.data['dens'])) * (1./GyrToSeconds)
+
+    #Cooling time over free fall time
+    snapGas.data['tcool_tff'] = snapGas.data['tcool']/snapGas.data['tff']
 
     del tmp
 
@@ -724,6 +733,16 @@ def LoadTracersParameters(TracersParamsPath):
         else:
             #Convert values to floats
             TRACERSPARAMS.update({key:float(value)})
+
+    if (TRACERSPARAMS['QuadPlotBool'] == 1.):
+        TRACERSPARAMS['QuadPlotBool'] = True
+    else:
+        TRACERSPARAMS['QuadPlotBool'] = False
+
+    if (TRACERSPARAMS['TracerPlotBool'] == 1.):
+        TRACERSPARAMS['TracerPlotBool'] = True
+    else:
+        TRACERSPARAMS['TracerPlotBool'] = False
 
     #Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
     Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
@@ -997,9 +1016,9 @@ def flatten_wrt_T(dataDict,TRACERSPARAMS):
     flattened_dict = {}
     for snap in TRACERSPARAMS['phasesSnaps']:
         tmp = {}
+        newkey = f"{int(snap)}"
         for T in TRACERSPARAMS['targetTLst']:
             key = (f"T{int(T)}",f"{int(snap)}")
-            newkey = f"{int(snap)}"
 
             for k, v in dataDict[key].items():
                 if (k in tmp.keys()):
@@ -1007,8 +1026,373 @@ def flatten_wrt_T(dataDict,TRACERSPARAMS):
                 else:
                     tmp.update({k : v})
 
-        flattened_dict.update({f"{int(snap)}": tmp})
+        flattened_dict.update({newkey: tmp})
 
     return flattened_dict
 
 #------------------------------------------------------------------------------#
+
+def PlotProjections(snapGas,Cells,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
+FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
+boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\
+CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
+
+    print(f"[@T{int(targetT)} @{int(snapNumber)}]: Starting Projections Video Plots!")
+
+    if(CMAP == None):
+        cmap = plt.get_cmap("inferno")
+    else:
+        cmap=CMAP
+
+    #Axes Labels to allow for adaptive axis selection
+    AxesLabels = ['x','y','z']
+
+    #Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
+    imgcent =[0.,0.,0.]
+
+    subset = int(TRACERSPARAMS['subset'])
+
+    #--------------------------#
+    ## Slices and Projections ##
+    #--------------------------#
+    print(f"[@T{int(targetT)} @{int(snapNumber)}]: Slices and Projections!")
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
+    #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+    #  axes = Axes, proj = False, numthreads=16)
+    #
+    # slice_B   = snap.get_Aslice("B", box = [boxsize,boxsize],\
+    #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+    #  axes = Axes, proj = False, numthreads=16)
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    if(QuadPlotBool is True):
+        nprojections = 5
+    else:
+        nprojections = 2
+
+    print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 1 of {nprojections}")
+
+    proj_T = snapGas.get_Aslice("Tdens", box = [boxsize,boxsize],\
+     center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+     nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+    print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 2 of {nprojections}")
+
+    proj_dens = snapGas.get_Aslice("rho_rhomean", box = [boxsize,boxsize],\
+     center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+     nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+    if(QuadPlotBool is True):
+
+        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 3 of {nprojections}")
+
+        proj_nH = snapGas.get_Aslice("n_H", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 4 of {nprojections}")
+
+        proj_B = snapGas.get_Aslice("B", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 5 of {nprojections}")
+
+        proj_gz = snapGas.get_Aslice("gz", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+
+#==============================================================================#
+#
+#           Grab positions of Tracer Subset
+#
+#==============================================================================#
+    if(TracerPlotBool is True):
+        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Selecting {int(subset)} subset of Tracers Positions...")
+        #Select new subset for first snap
+        #   Use old subset for all others
+        if (int(snapNumber) == int(TRACERSPARAMS['snapMin'])):
+            key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+            rangeMin = 0
+            rangeMax = len(Cells[key]['trid'])
+            TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+            #Take Random sample of Tracers size min(subset, len(data))
+            # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+            selectMin = min(subset,rangeMax)
+            select = math.floor(float(rangeMax)/float(subset))
+            TracerNumberSelect = TracerNumberSelect[::select]
+            SelectedTracers1 = Cells[key]['trid'][TracerNumberSelect]
+        else:
+            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+            oldData = hdf5_load(LoadPathTracers)
+            key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+            SelectedTracers1 = oldData[key]['trid']
+
+
+        whereGas = np.where(Cells[key]['type']==0)[0]
+
+        posData, _, _ = GetIndividualCellFromTracer(Tracers=Cells[key]['trid'],\
+            Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+            Data=Cells[key]['pos'][whereGas],mass=Cells[key]['mass'][whereGas])
+
+        TracersSaveData = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'trid': SelectedTracers1, 'pos' : posData}}
+
+        savePathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+
+        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Saving {int(subset)} Subset Tracers ID ('trid') data as: "+ savePathTracers)
+
+        hdf5_save(savePathTracers,TracersSaveData)
+
+
+#------------------------------------------------------------------------------#
+    #PLOTTING TIME
+    #Set plot figure sizes
+    xsize = 10.
+    ysize = 10.
+
+    #Define halfsize for histogram ranges which are +/-
+    halfbox = boxsize/2.
+
+    #Redshift
+    redshift = snapGas.redshift        #z
+    aConst = 1. / (1. + redshift)   #[/]
+
+    #[0] to remove from numpy array for purposes of plot title
+    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+
+    aspect = "equal"
+    fontsize = 12
+    fontsizeTitle = 20
+
+#==============================================================================#
+#
+#           Quad Plot for standard video
+#
+#==============================================================================#
+
+    if (QuadPlotBool is True):
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Quad Plot...")
+
+        #DPI Controlled by user as lower res needed for videos #
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), dpi = DPI, sharex="col", sharey="row")
+
+        #Add overall figure plot
+        TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Lookback}=$" + f"{lookback:0.03f} Gyrs" +\
+        "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<"+f"{AxesLabels[zAxis[0]]}-axis"+r"<"+f"{float(boxlos)/2.} kpc"
+        fig.suptitle(TITLE, fontsize=fontsizeTitle)
+
+        # cmap = plt.get_cmap(CMAP)
+        cmap.set_bad(color="grey")
+
+        #-----------#
+        # Plot Temperature #
+        #-----------#
+        # print("pcm1")
+        ax1 = axes[0,0]
+
+        pcm1 = ax1.pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']),\
+        vmin=1e4,vmax=1e7,\
+        norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+        ax1.set_title(f'Temperature Projection',fontsize=fontsize)
+        cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
+        fig.colorbar(pcm1, cax = cax1, orientation = 'vertical').set_label(label=r'$T$ [$K$]',size=fontsize, weight="bold")
+        cax1.yaxis.set_ticks_position("left")
+        cax1.yaxis.set_label_position("left")
+        cax1.yaxis.label.set_color("white")
+        cax1.tick_params(axis="y", colors="white",labelsize=fontsize)
+
+        ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
+        # ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
+        ax1.set_aspect(aspect)
+
+        #Fudge the tick labels...
+        plt.sca(ax1)
+        plt.yticks([-150, -100, -50, 0, 50, 100, 150, 200])
+        #-----------#
+        # Plot n_H Projection #
+        #-----------#
+        # print("pcm2")
+        ax2 = axes[0,1]
+
+        pcm2 = ax2.pcolormesh(proj_nH['x'], proj_nH['y'], np.transpose(proj_nH['grid'])/int(boxlos/pixreslos),\
+        vmin=1e-6,vmax=1e-1,\
+        norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+        ax2.set_title(r'Hydrogen Number Density Projection', fontsize=fontsize)
+
+        cax2 = inset_axes(ax2,width="5%",height="95%",loc='right')
+        fig.colorbar(pcm2, cax=cax2, orientation = 'vertical').set_label(label=r'$n_H$ [$cm^{-3}$]',size=fontsize, weight="bold")
+        cax2.yaxis.set_ticks_position("left")
+        cax2.yaxis.set_label_position("left")
+        cax2.yaxis.label.set_color("white")
+        cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
+        # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
+        # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
+        ax2.set_aspect(aspect)
+
+        #-----------#
+        # Plot Metallicity #
+        #-----------#
+        # print("pcm3")
+        ax3 = axes[1,0]
+
+        pcm3 = ax3.pcolormesh(proj_gz['x'], proj_gz['y'], np.transpose(proj_gz['grid'])/int(boxlos/pixreslos),\
+        vmin=1e-2,vmax=1e1,\
+        norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+        ax3.set_title(f'Metallicity Projection', y=-0.2, fontsize=fontsize)
+
+        cax3 = inset_axes(ax3,width="5%",height="95%",loc='right')
+        fig.colorbar(pcm3, cax = cax3, orientation = 'vertical').set_label(label=r'$Z/Z_{\odot}$',size=fontsize, weight="bold")
+        cax3.yaxis.set_ticks_position("left")
+        cax3.yaxis.set_label_position("left")
+        cax3.yaxis.label.set_color("white")
+        cax3.tick_params(axis="y", colors="white",labelsize=fontsize)
+
+        ax3.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
+        ax3.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
+
+        ax3.set_aspect(aspect)
+
+        #-----------#
+        # Plot Magnetic Field Projection #
+        #-----------#
+        # print("pcm4")
+        ax4 = axes[1,1]
+
+        pcm4 = ax4.pcolormesh(proj_B['x'], proj_B['y'], np.transpose(proj_B['grid'])/int(boxlos/pixreslos),\
+        vmin=1e-3,vmax=1e1,\
+        norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+        ax4.set_title(r'Magnetic Field Strength Projection', y=-0.2, fontsize=fontsize)
+
+        cax4 = inset_axes(ax4,width="5%",height="95%",loc='right')
+        fig.colorbar(pcm4, cax = cax4, orientation = 'vertical').set_label(label=r'$B$ [$\mu G$]',size=fontsize, weight="bold")
+        cax4.yaxis.set_ticks_position("left")
+        cax4.yaxis.set_label_position("left")
+        cax4.yaxis.label.set_color("white")
+        cax4.tick_params(axis="y", colors="white",labelsize=fontsize)
+
+        # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
+        ax4.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
+        ax4.set_aspect(aspect)
+
+        #Fudge the tick labels...
+        plt.sca(ax4)
+        plt.xticks([-150, -100, -50, 0, 50, 100, 150, 200])
+
+        # print("snapnum")
+        #Pad snapnum with zeroes to enable easier video making
+        fig.subplots_adjust(wspace=0.0,hspace=0.0)
+        # fig.tight_layout()
+
+        SaveSnapNumber = str(snapNumber).zfill(4);
+        savePath = DataSavepath + f"_T{int(targetT)}_Quad_Plot_{int(SaveSnapNumber)}.png"
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Save {savePath}")
+        plt.savefig(savePath, dpi = DPI, transparent = False)
+        plt.close()
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...done!")
+
+
+#==============================================================================#
+#
+#           Tracers overlayed on temperature for Tracer Subset Video
+#
+#==============================================================================#
+
+
+    if(TracerPlotBool is True):
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Tracer Plot...")
+
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer Subset Data")
+
+        nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
+
+        OldPosDict = {}
+        for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
+            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snap)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+            data = hdf5_load(LoadPathTracers)
+            OldPosDict.update(data)
+
+
+        #DPI Controlled by user as lower res needed for videos #
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
+
+        #Add overall figure plot
+        TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Lookback}=$" + f"{lookback:0.03f} Gyrs" +\
+        "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<"+f"{AxesLabels[zAxis[0]]}-axis"+r"<"+f"{float(boxlos)/2.} kpc" +\
+        "\n" + f"Subset of {int(subset)} Tracers selected at {int(TRACERSPARAMS['selectSnap'])} as being at " +\
+        r"$T = 10^{%5.2f \pm %5.2f} K$"%(targetT,TRACERSPARAMS['deltaT'])
+
+        fig.suptitle(TITLE, fontsize=fontsizeTitle)
+
+        # cmap = plt.get_cmap(CMAP)
+        cmap.set_bad(color="grey")
+
+        #-----------#
+        # Plot Temperature #
+        #-----------#
+        # print("pcm1")
+        ax1 = axes
+
+        pcm1 = ax1.pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']),\
+        vmin=1e4,vmax=1e7,\
+        norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+        sizeMultiply= 30
+        sizeConst = 10
+        sizeData = np.array([sizeMultiply*(xx+sizeConst+(float(boxlos)/2.))/float(boxlos) for xx in posData[zAxis[0]]])
+
+        ax1.scatter(posData[Axes[0]],posData[Axes[1]],s=sizeData,c='white',marker='o')
+
+        minSnap = int(snapNumber) - min(int(nOldSnaps),3)
+
+        for snap in range(int(minSnap+1),snapNumber+1):
+            key1 = (f"T{int(targetT)}",f"{int(snap-1)}")
+            key2 = (f"T{int(targetT)}",f"{int(snap)}")
+            if (snap != int(snapNumber)):
+                pos1 = OldPosDict[key1]['pos']
+                pos2 = OldPosDict[Key2]['pos']
+            else:
+                pos1 = OldPosDict[key1]['pos']
+                pos2 = posData
+
+            pathData = np.array([pos1,pos2])
+            alph = float(snap)/float(snapNumber)
+
+            ax1.plot(pathData[:,Axes[0]],pathData[:,Axes[1]],c='white',alpha=alph)
+
+        ax1.set_title(f'Temperature Projection',fontsize=fontsize)
+        cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
+        fig.colorbar(pcm1, cax = cax1, orientation = 'vertical').set_label(label=r'$T$ [$K$]',size=fontsize, weight="bold")
+        cax1.yaxis.set_ticks_position("left")
+        cax1.yaxis.set_label_position("left")
+        cax1.yaxis.label.set_color("white")
+        cax1.tick_params(axis="y", colors="white",labelsize=fontsize)
+
+        ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
+        ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
+        ax1.set_aspect(aspect)
+
+
+
+        #Pad snapnum with zeroes to enable easier video making
+        fig.subplots_adjust(wspace=0.0,hspace=0.0)
+        # fig.tight_layout()
+
+        SaveSnapNumber = str(snapNumber).zfill(4);
+        savePath = DataSavepath + f"_T{int(targetT)}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Save {savePath}")
+        plt.savefig(savePath, dpi = DPI, transparent = False)
+        plt.close()
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...done!")
+
+    return

@@ -24,7 +24,7 @@ import logging
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff','tcool_tff']
 
 print("")
 print("Saved Parameters in this Analysis:")
@@ -40,7 +40,7 @@ print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
 print(saveTracersOnly)
 
 #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['Lookback','Ncells','Snap','id','type','mass']
+saveEssentials = ['Lookback','Ncells','Snap','id','type','mass','pos']
 
 print("")
 print("ESSENTIAL Saved Parameters in this Analysis:")

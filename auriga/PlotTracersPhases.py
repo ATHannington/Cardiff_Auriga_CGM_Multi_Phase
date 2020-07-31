@@ -40,7 +40,7 @@ labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
 
 print("")
 print("Saved Parameters in this Analysis:")
@@ -194,7 +194,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         print(f"snapData Plot!")
 
-        xdataCells = np.log10(snapGasFinalDict[key]['dens'][whereCellsGas])
+        xdataCells = np.log10(snapGasFinalDict[key]['rho_rhomean'][whereCellsGas])
         ydataCells = np.log10(snapGasFinalDict[key]['T'][whereCellsGas])
         massCells = np.log10(snapGasFinalDict[key]['mass'][whereCellsGas]*1e10) #10^10Msol -> Msol
         weightDataCells = np.log10(snapGasFinalDict[key][weightKey][whereCellsGas]) * massCells
@@ -239,7 +239,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         print(f"Tracers Plot!")
 
 
-        xdataTracers = np.log10(TracersFinalDict[key]['dens'][whereTracersGas])
+        xdataTracers = np.log10(TracersFinalDict[key]['rho_rhomean'][whereTracersGas])
         ydataTracers = np.log10(TracersFinalDict[key]['T'][whereTracersGas])
         massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas]*1e10) #10^10Msol -> Msol
         weightDataTracers = np.log10(TracersFinalDict[key][weightKey][whereTracersGas]) * massTracers

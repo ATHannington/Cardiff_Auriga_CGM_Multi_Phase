@@ -24,7 +24,7 @@ import logging
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff','tcool_tff']
 
 print("")
 print("Saved Parameters in this Analysis:")
@@ -40,7 +40,7 @@ print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
 print(saveTracersOnly)
 
 #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass']
+saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
 
 print("")
 print("ESSENTIAL Saved Parameters in this Analysis:")
@@ -158,7 +158,7 @@ if __name__=="__main__":
         print("\n" + f"Opening {n_processes} core Pool!")
         mp.log_to_stderr(logging.DEBUG)
         pool = mp.Pool(processes=n_processes)
-
+        
         #Compute Snap analysis
         output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
 
@@ -166,4 +166,8 @@ if __name__=="__main__":
         pool.join()
         #Close multiprocesssing pool
         print(f"Closing core Pool!")
+        # for snap in snapRange:
+        #     out = snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+        #     elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+        #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#

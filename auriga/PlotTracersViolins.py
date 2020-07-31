@@ -31,9 +31,9 @@ colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
 
-logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff']
+logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
 
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -45,8 +45,8 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'tcool': r'Cooling Time [$Gyr$]',\
  'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
- 'tff': r'Free Fall Time [$Gyr$]'\
- }
+ 'tff': r'Free Fall Time [$Gyr$]',\
+ 'tcool_tff' : r'Cooling Time over Free Fall Time'}
 
 for entry in logParameters:
     ylabel[entry] = r'Log10 '+ ylabel[entry]
@@ -68,6 +68,13 @@ print("Loading data!")
 dataDict = {}
 
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
+
+if('tcool_tff' in saveParams):
+    for key, dict in dataDict.items():
+        tcool = dict['tcool']
+        tff = dict['tff']
+        tctf = tcool/tff
+        dataDict[key].update({'tcool_tff' : tctf})
 
 
 print("Getting Tracer Data!")
@@ -220,12 +227,11 @@ for analysisParam in saveParams:
         UP = analysisParam + 'UP'
         median = analysisParam +'median'
 
-        LOisNOTinf = np.where(np.isinf(plotData[LO])==False)
-        UPisNOTinf = np.where(np.isinf(plotData[UP])==False)
+
         YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
 
-        datamin = min(np.nanmin(plotYdata[YDataisNOTinf]),np.nanmin(plotData[LO][LOisNOTinf]))
-        datamax = max(np.nanmax(plotYdata[YDataisNOTinf]),np.nanmax(plotData[UP][UPisNOTinf]))
+        datamin = np.nanmin(plotYdata[YDataisNOTinf])
+        datamax = np.nanmax(plotYdata[YDataisNOTinf])
 
         if (analysisParam in logParameters):
             for (ind, array) in enumerate(violinData):
@@ -234,15 +240,11 @@ for analysisParam in saveParams:
                 violinData[ind] = tmpData[whereNOTnan]
 
             plotYdata = np.log10(plotYdata)
-            for key in [LO, UP, median]:
-                plotData[key] = np.log10(plotData[key])
 
-            LOisNOTinf = np.where(np.isinf(plotData[LO])==False)
-            UPisNOTinf = np.where(np.isinf(plotData[UP])==False)
             YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
 
-            datamin = min(np.nanmin(plotYdata[YDataisNOTinf]),np.nanmin(plotData[LO][LOisNOTinf]))
-            datamax = max(np.nanmax(plotYdata[YDataisNOTinf]),np.nanmax(plotData[UP][UPisNOTinf]))
+            datamin = np.nanmin(plotYdata[YDataisNOTinf])
+            datamax = np.nanmax(plotYdata[YDataisNOTinf])
 
         if ((np.isnan(datamax)==True) or (np.isnan(datamin)==True)):
             print("NaN datamin/datamax. Skipping Entry!")
