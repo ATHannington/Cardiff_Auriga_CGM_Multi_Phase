@@ -16,6 +16,7 @@ from gadget_subfind import *
 import h5py
 import sys
 import logging
+import math
 
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
@@ -756,7 +757,7 @@ def LoadTracersParameters(TracersParamsPath):
 
 #------------------------------------------------------------------------------#
 
-def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass):
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass,NullEntry=[np.nan]):
 
     #Select which of the SelectedTracers are in Tracers from this snap
     TracersTruthy = np.isin(SelectedTracers,Tracers)
@@ -786,21 +787,21 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
 
             dataEntry = Data[dataIndex].tolist()
             if (np.shape(dataEntry)[0] == 0):
-                dataEntry =np.nan
+                dataEntry = NullEntry
             else:
                 dataEntry = dataEntry[0]
 
             massEntry = mass[dataIndex].tolist()
             if (np.shape(massEntry)[0] == 0):
-                massEntry =np.nan
+                massEntry = NullEntry
             else:
                 massEntry = massEntry[0]
 
             saveData.append(dataEntry)
             massData.append(massEntry)
         else:
-            saveData.append([np.nan])
-            massData.append([np.nan])
+            saveData.append(NullEntry)
+            massData.append(NullEntry)
 
     return saveData, massData, TracersReturned
 
@@ -1125,17 +1126,22 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             TracerNumberSelect = TracerNumberSelect[::select]
             SelectedTracers1 = Cells[key]['trid'][TracerNumberSelect]
         else:
-            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             oldData = hdf5_load(LoadPathTracers)
-            key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+            key = (f"T{int(targetT)}",f"{int(snapNumber-1)}")
             SelectedTracers1 = oldData[key]['trid']
 
+        key = (f"T{int(targetT)}",f"{int(snapNumber)}")
 
         whereGas = np.where(Cells[key]['type']==0)[0]
 
+        nullEntry = [np.nan,np.nan,np.nan]
+
         posData, _, _ = GetIndividualCellFromTracer(Tracers=Cells[key]['trid'],\
             Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-            Data=Cells[key]['pos'][whereGas],mass=Cells[key]['mass'][whereGas])
+            Data=Cells[key]['pos'][whereGas],mass=Cells[key]['mass'][whereGas],NullEntry=nullEntry)
+
+        posData = np.array(posData)
 
         TracersSaveData = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'trid': SelectedTracers1, 'pos' : posData}}
 
@@ -1162,10 +1168,6 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
     #[0] to remove from numpy array for purposes of plot title
     lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
 
-    aspect = "equal"
-    fontsize = 12
-    fontsizeTitle = 20
-
 #==============================================================================#
 #
 #           Quad Plot for standard video
@@ -1174,6 +1176,10 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
     if (QuadPlotBool is True):
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: Quad Plot...")
+
+        aspect = "equal"
+        fontsize = 12
+        fontsizeTitle = 20
 
         #DPI Controlled by user as lower res needed for videos #
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), dpi = DPI, sharex="col", sharey="row")
@@ -1309,18 +1315,25 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
     if(TracerPlotBool is True):
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: Tracer Plot...")
 
+        aspect = "equal"
+        fontsize = 12
+        fontsizeTitle = 16
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer Subset Data")
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
 
         nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
 
         OldPosDict = {}
         for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
+            print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer T{int(targetT)} {int(snap)}")
+
             LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snap)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             data = hdf5_load(LoadPathTracers)
             OldPosDict.update(data)
 
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
 
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot...")
         #DPI Controlled by user as lower res needed for videos #
         fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
@@ -1345,28 +1358,34 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         vmin=1e4,vmax=1e7,\
         norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
 
-        sizeMultiply= 30
-        sizeConst = 10
-        sizeData = np.array([sizeMultiply*(xx+sizeConst+(float(boxlos)/2.))/float(boxlos) for xx in posData[zAxis[0]]])
+        sizeMultiply= 20
+        sizeConst = 5
+        sizeData = np.array([(sizeMultiply*(xx+(float(boxlos)/2.))/float(boxlos))+sizeConst  for xx in posData[:,zAxis[0]]])
 
-        ax1.scatter(posData[Axes[0]],posData[Axes[1]],s=sizeData,c='white',marker='o')
+        ax1.scatter(posData[:,Axes[0]],posData[:,Axes[1]],s=sizeData,c='white',marker='o')
 
         minSnap = int(snapNumber) - min(int(nOldSnaps),3)
 
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot Tails...")
+        jj=1
         for snap in range(int(minSnap+1),snapNumber+1):
             key1 = (f"T{int(targetT)}",f"{int(snap-1)}")
             key2 = (f"T{int(targetT)}",f"{int(snap)}")
             if (snap != int(snapNumber)):
                 pos1 = OldPosDict[key1]['pos']
-                pos2 = OldPosDict[Key2]['pos']
+                pos2 = OldPosDict[key2]['pos']
             else:
                 pos1 = OldPosDict[key1]['pos']
                 pos2 = posData
 
             pathData = np.array([pos1,pos2])
-            alph = float(snap)/float(snapNumber)
+            alph = float(jj)/float(max(1,min(int(nOldSnaps),3)))
+            jj +=1
 
-            ax1.plot(pathData[:,Axes[0]],pathData[:,Axes[1]],c='white',alpha=alph)
+            for ii in range(0,int(subset+1)):
+                ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c='white',alpha=alph)
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...sinished Plot Tails!")
 
         ax1.set_title(f'Temperature Projection',fontsize=fontsize)
         cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
@@ -1393,6 +1412,6 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         plt.savefig(savePath, dpi = DPI, transparent = False)
         plt.close()
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...done!")
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...Tracer Plot done!")
 
     return

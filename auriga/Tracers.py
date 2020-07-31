@@ -158,7 +158,7 @@ if __name__=="__main__":
         print("\n" + f"Opening {n_processes} core Pool!")
         mp.log_to_stderr(logging.DEBUG)
         pool = mp.Pool(processes=n_processes)
-        
+
         #Compute Snap analysis
         output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
 
