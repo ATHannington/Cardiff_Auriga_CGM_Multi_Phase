@@ -95,9 +95,21 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     save_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
 
     if (TRACERSPARAMS['TracerPlotBool'] == True) or (TRACERSPARAMS['QuadPlotBool'] == True):
+        #Maximise Threads in SERIAL
+        if (TRACERSPARAMS['TracerPlotBool'] == True) :
+            nThreads = 16
+        else:
+            nThreads = 2
+
+        #Only perform Quad plot for one temperature as is same for each temp
+        if(int(targetT) == int(TRACERSPARAMS['targetTLst'][0])):
+            quadBool = TRACERSPARAMS['QuadPlotBool']
+        else:
+            quadBool = False
+
         PlotProjections(snapGas,out,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
-        FullDataPathSuffix, Axes=[0,2], zAxis=[1], QuadPlotBool=TRACERSPARAMS['QuadPlotBool'],\
-        TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=2)
+        FullDataPathSuffix, Axes=[0,2], zAxis=[1], QuadPlotBool=quadBool,\
+        TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=nThreads)
 
     sys.stdout.flush()
     return {"out": out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT}
@@ -1116,15 +1128,21 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         #   Use old subset for all others
         if (int(snapNumber) == int(TRACERSPARAMS['snapMin'])):
             key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+
+            inRangeIDsIndices = np.where((Cells[key]['pos'][:,zAxis[0]]<=(float(boxlos)/2.))&(Cells[key]['pos'][:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+            inRangeIDs = Cells[key]['id'][inRangeIDsIndices]
+            inRangePridIndices = np.where(np.isin(Cells[key]['prid'],inRangeIDs))
+            inRangeTrids = Cells[key]['trid'][inRangePridIndices]
+
             rangeMin = 0
-            rangeMax = len(Cells[key]['trid'])
+            rangeMax = len(inRangeTrids)
             TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
             #Take Random sample of Tracers size min(subset, len(data))
             # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
             selectMin = min(subset,rangeMax)
             select = math.floor(float(rangeMax)/float(subset))
             TracerNumberSelect = TracerNumberSelect[::select]
-            SelectedTracers1 = Cells[key]['trid'][TracerNumberSelect]
+            SelectedTracers1 = inRangeTrids[TracerNumberSelect]
         else:
             LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             oldData = hdf5_load(LoadPathTracers)
@@ -1331,6 +1349,20 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             data = hdf5_load(LoadPathTracers)
             OldPosDict.update(data)
 
+        NullEntry= [np.nan,np.nan,np.nan]
+        tmpOldPosDict= {}
+        for key, dict in OldPosDict.items():
+            tmp = {}
+            for k, v in dict.items():
+                if (k=="pos"):
+                    vOutOfRange = np.where((v[:,zAxis[0]]>(float(boxlos)/2.))&(v[:,zAxis[0]]<(-1.*float(boxlos)/2.)))
+                    v[vOutOfRange]  =NullEntry
+
+                tmp.update({k : v})
+
+            tmpOldPosDict.update({key : tmp})
+
+        OldPosDict = tmpOldPosDict
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
 
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot...")
@@ -1351,20 +1383,47 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         #-----------#
         # Plot Temperature #
         #-----------#
-        # print("pcm1")
+
+        ###
+        #   Select 10% of subset to have a colour, the rest to be white
+        ###
+        # cmapTracers = matplotlib.cm.get_cmap("nipy_spectral")
+        colourTracers = []
+        cwhite = (1.,1.,1.,1.)
+        cblack = (0.,0.,0.,1.)
+        for ii in range(0,int(subset+1)):
+            if (ii % 5 == 0):
+                colour = cblack
+            else:
+                colour = cwhite
+            colourTracers.append(colour)
+
+        colourTracers = np.array(colourTracers)
+
         ax1 = axes
 
         pcm1 = ax1.pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']),\
         vmin=1e4,vmax=1e7,\
         norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
 
-        sizeMultiply= 20
-        sizeConst = 5
-        sizeData = np.array([(sizeMultiply*(xx+(float(boxlos)/2.))/float(boxlos))+sizeConst  for xx in posData[:,zAxis[0]]])
+        sizeMultiply= 25
+        sizeConst = 10
 
-        ax1.scatter(posData[:,Axes[0]],posData[:,Axes[1]],s=sizeData,c='white',marker='o')
+        whereInRange = np.where((posData[:,zAxis[0]]<=(float(boxlos)/2.))&(posData[:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+        posDataInRange = posData[whereInRange]
+        colourInRange = colourTracers[whereInRange]
+
+        colourTracers = colourTracers.tolist()
+        colourInRange = colourInRange.tolist()
+
+        sizeData = np.array([(sizeMultiply*(xx+(float(boxlos)/2.))/float(boxlos))+sizeConst  for xx in posDataInRange[:,zAxis[0]]])
+
+        ax1.scatter(posDataInRange[:,Axes[0]],posDataInRange[:,Axes[1]],s=sizeData,c='white',marker='o')#colourInRange,marker='o')
 
         minSnap = int(snapNumber) - min(int(nOldSnaps),3)
+
+
+
 
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot Tails...")
         jj=1
@@ -1379,13 +1438,22 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
                 pos2 = posData
 
             pathData = np.array([pos1,pos2])
-            alph = float(jj)/float(max(1,min(int(nOldSnaps),3)))
+            alph = float(jj)/float(max(1,min(int(nOldSnaps),3))+1.)
             jj +=1
 
             for ii in range(0,int(subset+1)):
-                ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c='white',alpha=alph)
+                ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c='white',alpha=alph)#colourTracers[ii],alpha=alph)
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...sinished Plot Tails!")
+
+        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...finished Plot Tails!")
+
+        xmin = np.nanmin(proj_T['x'])
+        xmax = np.nanmax(proj_T['x'])
+        ymin = np.nanmin(proj_T['y'])
+        ymax = np.nanmax(proj_T['y'])
+
+        ax1.set_ylim(ymin=ymin,ymax=ymax)
+        ax1.set_xlim(xmin=xmin,xmax=xmax)
 
         ax1.set_title(f'Temperature Projection',fontsize=fontsize)
         cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
