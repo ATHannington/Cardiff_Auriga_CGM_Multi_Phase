@@ -20,11 +20,11 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 1000#10#1000
+subset = 10#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.03#0.5#0.03
+opacity = 0.5#0.5#0.03
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"

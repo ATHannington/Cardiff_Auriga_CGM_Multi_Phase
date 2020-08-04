@@ -17,6 +17,7 @@ import h5py
 import sys
 import logging
 import math
+import random
 
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
@@ -769,7 +770,7 @@ def LoadTracersParameters(TracersParamsPath):
 
 #------------------------------------------------------------------------------#
 
-def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass,NullEntry=[np.nan]):
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass,NullEntry=np.nan):
 
     #Select which of the SelectedTracers are in Tracers from this snap
     TracersTruthy = np.isin(SelectedTracers,Tracers)
@@ -1134,15 +1135,8 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             inRangePridIndices = np.where(np.isin(Cells[key]['prid'],inRangeIDs))
             inRangeTrids = Cells[key]['trid'][inRangePridIndices]
 
-            rangeMin = 0
-            rangeMax = len(inRangeTrids)
-            TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-            #Take Random sample of Tracers size min(subset, len(data))
-            # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
-            selectMin = min(subset,rangeMax)
-            select = math.floor(float(rangeMax)/float(subset))
-            TracerNumberSelect = TracerNumberSelect[::select]
-            SelectedTracers1 = inRangeTrids[TracerNumberSelect]
+            SelectedTracers1 = random.sample(inRangeTrids.tolist(),subset)
+            SelectedTracers1 = np.array(SelectedTracers1)
         else:
             LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             oldData = hdf5_load(LoadPathTracers)
@@ -1441,7 +1435,7 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             alph = float(jj)/float(max(1,min(int(nOldSnaps),3))+1.)
             jj +=1
 
-            for ii in range(0,int(subset+1)):
+            for ii in range(0,int(subset)):
                 ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c='white',alpha=alph)#colourTracers[ii],alpha=alph)
 
 
