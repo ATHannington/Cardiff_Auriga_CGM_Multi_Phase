@@ -20,11 +20,11 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 10#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.5#0.02
+opacity = 0.02#0.5#0.02
 
 n_Hcrit = 1e-1
 

@@ -109,7 +109,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
             quadBool = False
 
         PlotProjections(snapGas,out,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
-        FullDataPathSuffix, Axes=[0,2], zAxis=[1], QuadPlotBool=quadBool,\
+        FullDataPathSuffix, Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'], QuadPlotBool=quadBool,\
         TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=nThreads)
 
     sys.stdout.flush()
@@ -736,7 +736,7 @@ def LoadTracersParameters(TracersParamsPath):
 
     #Convert Dictionary items to (mostly) floats
     for key, value in TRACERSPARAMS.items():
-        if ((key == 'targetTLst')or(key == 'phasesSnaps')):
+        if ((key == 'targetTLst')or(key == 'phasesSnaps')or(key == 'Axes')):
             #Convert targetTLst to list of floats
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
@@ -747,6 +747,13 @@ def LoadTracersParameters(TracersParamsPath):
         else:
             #Convert values to floats
             TRACERSPARAMS.update({key:float(value)})
+
+    TRACERSPARAMS['Axes'] = [int(axis) for axis in TRACERSPARAMS['Axes']]
+
+    possibleAxes = [0,1,2]
+    for axis in possibleAxes:
+        if axis not in TRACERSPARAMS['Axes']:
+            TRACERSPARAMS.update({'zAxis' : [axis]})
 
     if (TRACERSPARAMS['QuadPlotBool'] == 1.):
         TRACERSPARAMS['QuadPlotBool'] = True
@@ -925,48 +932,54 @@ def PadNonEntries(snapGas):
     NStars = len(snapGas.type[np.where(snapGas.type==4)])
     NTot =   len(snapGas.type)
 
-
-    GasNone_nx1 = np.full((NGas),np.nan).tolist() #[np.nan for ii in range(0,NGas)]
-    StarsNone_nx1 = np.full((NStars),np.nan).tolist() #[np.nan for ii in range(0,NStars)]
-
-    GasNone_nx3 =  np.full((NGas,3),np.nan).tolist() #[entryx3 for ii in range(0,NGas)]
-    StarsNone_nx3 = np.full((NStars,3),np.nan).tolist() #[entryx3 for ii in range(0,NStars)]
-
     for key,value in snapGas.data.items():
         if (value is not None):
             #If shape indicates 1D give 1D lists nx1
             #Else list will be 2D so give lists nx3
             if (np.shape(np.shape(value))[0] == 1):
-                GasNone = GasNone_nx1
-                StarsNone = StarsNone_nx1
+                if (np.shape(value)[0] == NGas):
+                    paddedValues = np.pad(value, (0,NStars), 'constant', constant_values=(np.nan) )
+                    snapGas.data[key] = paddedValues
+                    if (np.shape(paddedValues)[0] != NTot):
+                        print("[@ GAS @PadNonEntries 1D:] Padded List not of length NTot. Data Does not have non-entries for STARS!")
+                        print(f"Key: {key}")
+                        print(f"shape: {np.shape(paddedValues)}")
+
+                elif(np.shape(value)[0] == NStars):
+                    #Opposite addition order to maintain sensible ordering.
+                    paddedValues = np.pad(value, (NGas,0), 'constant', constant_values=(np.nan) )
+                    snapGas.data[key] = paddedValues
+                    if (np.shape(paddedValues)[0] != NTot):
+                        print("[@ STARS @PadNonEntries 1D:] Padded List not of length NTot. Data Does not have non-entries for GAS!")
+                        print(f"Key: {key}")
+                        print(f"shape: {np.shape(paddedValues)}")
+
+                elif(np.shape(value)[0] != (NTot)):
+                    print("[@ ELSE @PadNonEntries 1D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!")
+                    print(f"Key: {key}")
+                    print(f"shape: {np.shape(value)}")
             else:
-                GasNone = GasNone_nx3
-                StarsNone = StarsNone_nx3
+                if (np.shape(value)[0] == NGas):
+                    paddedValues = np.pad(value, ((0,NStars),(0,0)), 'constant', constant_values=(np.nan) )
+                    snapGas.data[key] = paddedValues
+                    if (np.shape(paddedValues)[0] != NTot):
+                        print("[@ GAS @PadNonEntries 2D:] Padded List not of length NTot. Data Does not have non-entries for STARS!")
+                        print(f"Key: {key}")
+                        print(f"shape: {np.shape(paddedValues)}")
 
-            if (np.shape(value)[0] == NGas):
-                listValues = value.tolist()
-                paddedList = listValues + StarsNone
-                if (len(paddedList) != NTot):
-                    print("[@ GAS @PadNonEntries:] Padded List not of length NTot. Data Does not have non-entries for STARS!")
-                paddedValues = np.array(paddedList)
-                snapGas.data[key] = paddedValues
+                elif(np.shape(value)[0] == NStars):
+                    #Opposite addition order to maintain sensible ordering.
+                    paddedValues = np.pad(value, ((NGas,0),(0,0)), 'constant', constant_values=(np.nan) )
+                    snapGas.data[key] = paddedValues
+                    if (np.shape(paddedValues)[0] != NTot):
+                        print("[@ STARS @PadNonEntries 2D:] Padded List not of length NTot. Data Does not have non-entries for GAS!")
+                        print(f"Key: {key}")
+                        print(f"shape: {np.shape(paddedValues)}")
 
-                del listValues,paddedList,paddedValues
-
-            elif(np.shape(value)[0] == NStars):
-                listValues = value.tolist()
-                #Opposite addition order to maintain sensible ordering.
-                paddedList = GasNone + listValues
-                if (len(paddedList) != NTot):
-                    print("[@ STARS @PadNonEntries:] Padded List not of length NTot. Data Does not have non-entries for GAS!")
-                paddedValues = np.array(paddedList)
-                snapGas.data[key] = paddedValues
-
-                del listValues,paddedList,paddedValues
-
-            elif(np.shape(value)[0] != (NStars+NGas)):
-                print("[@ ELSE @PadNonEntries:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!")
-                print(f"Key: {key}")
+                elif(np.shape(value)[0] != NTot ):
+                    print("[@ ELSE @PadNonEntries 2D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!")
+                    print(f"Key: {key}")
+                    print(f"shape: {np.shape(value)}")
 
     return snapGas
 
