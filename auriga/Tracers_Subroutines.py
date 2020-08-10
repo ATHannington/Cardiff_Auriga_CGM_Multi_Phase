@@ -70,6 +70,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #selected tracers are originally in the Halo, but allows for tracers
     #to leave (outflow) or move inwards (inflow) from Halo.
 
+    # snapGas = HaloIDfinder(snapGas,snap_subfind)
+
     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
         print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
 
@@ -109,8 +111,10 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
             quadBool = False
 
         PlotProjections(snapGas,out,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
-        FullDataPathSuffix, Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'], QuadPlotBool=quadBool,\
-        TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=nThreads)
+        FullDataPathSuffix, Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'],\
+        boxsize = TRACERSPARAMS['boxsize'], boxlos = TRACERSPARAMS['boxlos'],\
+        pixres = TRACERSPARAMS['pixres'], pixreslos = TRACERSPARAMS['pixreslos'],\
+        QuadPlotBool=quadBool, TracerPlotBool=TRACERSPARAMS['TracerPlotBool'], numThreads=nThreads)
 
     sys.stdout.flush()
     return {"out": out, "TracersCFT": TracersCFT, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT, "ParentsCFT" : ParentsCFT}
@@ -132,7 +136,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo=HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
     #Load Cell IDs - avoids having to turn lazy_load off...
@@ -163,6 +167,8 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas)
+
+    # snapGas = HaloIDfinder(snapGas,snap_subfind)
 
     ### Exclude values outside halo 0 ###
     if (loadonlyhalo is True):
@@ -718,7 +724,7 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
     NStars = len(snapGas.type[whereStars])
 
     selectGas = [ii for ii in range(0,gaslength)]
-    selectStars = [ii for ii in range(0,NStars)]
+    selectStars = [ii for ii in range(NGas,NStars)]
 
     selected = selectGas + selectStars
 
@@ -728,6 +734,38 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0):
             snapGas.data[key] = value[selected]
 
     return snapGas
+#------------------------------------------------------------------------------#
+# def HaloIDfinder(snapGas,snap_subfind):
+#
+#     types = [0,4]
+#
+#     for type in types:
+#         whereGasInSubHalo = np.where(snap_subfind.data['slty'][:,type]>0)
+#
+#         gasLengthsArray = snap_subfind.data['slty'][:,type][whereGasInSubHalo]
+#
+#         gasLengthsCumulative = np.cumsum(gasLengthsArray)
+#
+#         whereType = np.where(snapGas.data['type'] == type)
+#
+#         lenData = len(snapGas.data['type'][whereType])
+#
+#         assert gasLengthsCumulative[-1] == lenData, "[@HaloIDfinder]: WARNING! CRITICAL! Cumulative Gas lengths does NOT equal number of data entries found in snapGas!"
+#
+#         snapGas.data['HaloID'] = np.zeros(shape = lenData,dtype=np.int8)
+#
+#         for (HaloID, gaslength) in enumerate(gasLengthsCumulative):
+#             if (HaloID==0):
+#                 snapGas.data['HaloID'][whereType][0:gaslength] = HaloID
+#             else:
+#                 gaslengthOld = gasLengthsCumulative[HaloID - 1]
+#
+#                 snapGas.data['HaloID'][whereType][gaslengthOld:gaslength] = HaloID
+#
+#
+#     import pdb; pdb. set_trace()
+#
+#     return snapGas
 #------------------------------------------------------------------------------#
 def LoadTracersParameters(TracersParamsPath):
 
@@ -1143,12 +1181,13 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         if (int(snapNumber) == int(TRACERSPARAMS['snapMin'])):
             key = (f"T{int(targetT)}",f"{int(snapNumber)}")
 
-            inRangeIDsIndices = np.where((Cells[key]['pos'][:,zAxis[0]]<=(float(boxlos)/2.))&(Cells[key]['pos'][:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
-            inRangeIDs = Cells[key]['id'][inRangeIDsIndices]
-            inRangePridIndices = np.where(np.isin(Cells[key]['prid'],inRangeIDs))
-            inRangeTrids = Cells[key]['trid'][inRangePridIndices]
-
-            SelectedTracers1 = random.sample(inRangeTrids.tolist(),subset)
+            # inRangeIDsIndices = np.where((Cells[key]['pos'][:,zAxis[0]]<=(float(boxlos)/2.))&(Cells[key]['pos'][:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+            # inRangeIDs = Cells[key]['id'][inRangeIDsIndices]
+            # inRangePridIndices = np.where(np.isin(Cells[key]['prid'],inRangeIDs))
+            # inRangeTrids = Cells[key]['trid'][inRangePridIndices]
+            #
+            # SelectedTracers1 = random.sample(inRangeTrids.tolist(),subset)
+            SelectedTracers1 = random.sample(Cells[key]['trid'].tolist(), subset)
             SelectedTracers1 = np.array(SelectedTracers1)
         else:
             LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
@@ -1202,6 +1241,9 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
     if (QuadPlotBool is True):
         print(f"[@T{int(targetT)} @{int(snapNumber)}]: Quad Plot...")
 
+        fullTicks =  [xx for xx in np.linspace(-1.*halfbox,halfbox,9)]
+        fudgeTicks = fullTicks[1:]
+
         aspect = "equal"
         fontsize = 12
         fontsizeTitle = 20
@@ -1241,7 +1283,9 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
         #Fudge the tick labels...
         plt.sca(ax1)
-        plt.yticks([-150, -100, -50, 0, 50, 100, 150, 200])
+        plt.xticks(fullTicks)
+        plt.yticks(fudgeTicks)
+
         #-----------#
         # Plot n_H Projection #
         #-----------#
@@ -1263,6 +1307,11 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
         # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
         ax2.set_aspect(aspect)
+
+        #Fudge the tick labels...
+        plt.sca(ax2)
+        plt.xticks(fullTicks)
+        plt.yticks(fullTicks)
 
         #-----------#
         # Plot Metallicity #
@@ -1287,6 +1336,11 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         ax3.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
 
         ax3.set_aspect(aspect)
+
+        #Fudge the tick labels...
+        plt.sca(ax3)
+        plt.xticks(fullTicks)
+        plt.yticks(fullTicks)
 
         #-----------#
         # Plot Magnetic Field Projection #
@@ -1313,7 +1367,8 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
         #Fudge the tick labels...
         plt.sca(ax4)
-        plt.xticks([-150, -100, -50, 0, 50, 100, 150, 200])
+        plt.xticks(fudgeTicks)
+        plt.yticks(fullTicks)
 
         # print("snapnum")
         #Pad snapnum with zeroes to enable easier video making
