@@ -40,7 +40,7 @@ print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
 print(saveTracersOnly)
 
 #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['HaloID','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
+saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
 
 print("")
 print("ESSENTIAL Saved Parameters in this Analysis:")

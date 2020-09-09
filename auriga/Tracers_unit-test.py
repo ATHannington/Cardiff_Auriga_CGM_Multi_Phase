@@ -41,7 +41,7 @@ exceptionsParams = ['trid','prid']
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff']
+saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff','tcool_tff']
 
 print("")
 print("Saved Parameters in this Analysis:")
@@ -57,13 +57,27 @@ print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
 print(saveTracersOnly)
 
 #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass']
+saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
 
 print("")
 print("ESSENTIAL Saved Parameters in this Analysis:")
 print(saveEssentials)
 
 saveTracersOnly = saveTracersOnly + saveEssentials
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
+saveTypes= ['median','UP','LO']
+
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = 0
+
+#File types for data save.
+#   Mini: small median and percentiles data
+#   Full: full FullDict data
+MiniDataPathSuffix = f".h5"
+FullDataPathSuffix = f".h5"
 
 #==============================================================================#
 #       Prepare for analysis
@@ -106,12 +120,16 @@ if (len(TRACERSPARAMS['targetTLst'])>1):
 targetT = TRACERSPARAMS['targetTLst'][0]
 
 TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers = \
-tracer_selection_snap_analysis(targetT,TRACERSPARAMS,saveParams,saveTracersOnly,HaloID,elements,\
-elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool,SUBSET=SUBSET)
+tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,\
+lazyLoadBool=lazyLoadBool,SUBSET=None,snapNumber=TRACERSPARAMS['selectSnap'],saveTracers=False,loadonlyhalo=True)
 
-TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['snapnum'])
-output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,saveParams,saveTracersOnly,\
-HaloID,TracersTFC,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,lazyLoadBool)
+TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['selectSnap'])
+
+output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True)
 
 out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = output_dict["out"], output_dict["TracersCFT"], output_dict["CellsCFT"], output_dict["CellIDsCFT"], output_dict["ParentsCFT"]
 
