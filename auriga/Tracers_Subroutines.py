@@ -26,7 +26,7 @@ def snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
     print("")
-    print(f"Starting Snap {snapNumber}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting Snap {snapNumber}")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -43,9 +43,11 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #   Be in memory so taking the subset would be skipped.
     tmp = snapGas.data['id']
     tmp = snapGas.data['age']
+    tmp = snapGas.data['hrgm']
+    tmp = snapGas.data['mass']
     del tmp
 
-    print(f"[@{snapNumber}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
@@ -53,8 +55,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
-
-    print(f"[@{snapNumber}]: Calculating Tracked Parameters!")
 
     #Convert Units
     ## Make this a seperate function at some point??
@@ -78,7 +78,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
 
     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
-        print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
 
         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
 
@@ -135,7 +134,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     if snapNumber is None:
         snapNumber = TRACERSPARAMS['selectSnap']
 
-    print(f"Starting T = {targetT} Analysis!")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting T = {targetT} Analysis!")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -150,9 +149,11 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     #   Be in memory so taking the subset would be skipped.
     tmp = snapGas.data['id']
     tmp = snapGas.data['age']
+    tmp = snapGas.data['hrgm']
+    tmp = snapGas.data['mass']
     del tmp
 
-    print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
@@ -160,8 +161,6 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
-    print("Calculating Tracked Parameters!")
-
     #Convert Units
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
@@ -177,18 +176,17 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     snapGas = HighResOnlyGasSelect(snapGas,snapNumber)
 
     #Assign SubHaloID and FoFHaloIDs
-    snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
+    snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
 
     ### Exclude values outside halo 0 ###
     if (loadonlyhalo is True):
-        print(f"Finding Halo {int(HaloID)} Only Data!")
 
         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
-    print("Setting Selection Condition!")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
     whereGas = np.where(snapGas.type==0)
@@ -224,7 +222,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
 
     #SUBSET
     if (SUBSET is not None):
-        print(f"*** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        print(f"[@{int(snapNumber)} @T{int(targetT)}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
         TracersTFC = TracersTFC[:SUBSET]
 
     return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
@@ -237,7 +235,7 @@ def t3000_snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,CellIDsTFC,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
     print("")
-    print(f"Starting Snap {snapNumber}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting Snap {snapNumber}")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -254,7 +252,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     tmp = snapGas.data['age']
     del tmp
 
-    print(f"[@{snapNumber}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
@@ -284,8 +282,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
 
     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
-        print(f"[@{snapNumber}]:Finding Halo 0 Only Data!")
-
         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
 
     ###
@@ -300,7 +296,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     Rcrit = 500.
 
-    print(f"Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
     Cond = np.where(snapGas.data['R']<=Rcrit)
 
     for key, value in snapGas.data.items():
@@ -309,8 +305,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     CellIDsCFT = snapGas.data['id']
 
-    print("Selected!")
-    print("Entering save Cells...")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Selected!")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Entering save Cells...")
 
     CellsCFT = t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly)
     # #Add snap data to temperature specific dictionary
@@ -344,7 +340,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     if snapNumber is None:
         snapNumber = TRACERSPARAMS['selectSnap']
 
-    print(f"Starting T = {targetT} Analysis!")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting T = {targetT} Analysis!")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -360,7 +356,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     tmp = snapGas.data['age']
     del tmp
 
-    print(f"SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
@@ -368,15 +364,13 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
-    print("Calculating Tracked Parameters!")
-
     #Convert Units
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
-    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0)
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
@@ -389,19 +383,17 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     #to leave (outflow) or move inwards (inflow) from Halo.
 
     #Assign SubHaloID and FoFHaloIDs
-    snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
+    snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
 
 
     ### Exclude values outside halo 0 ###
     if (loadonlyhalo is True):
-        print(f"Finding Halo {int(HaloID)} Only Data!")
-
-        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,Halo=HaloID)
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID, snapNumber)
 
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
-    print("Setting Selection Condition!")
+    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
     whereGas = np.where(snapGas.type==0)
@@ -439,7 +431,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
 
     #SUBSET
     if (SUBSET is not None):
-        print(f"*** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        print(f"[@{int(snapNumber)} @T{int(targetT)}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
         TracersTFC = TracersTFC[:SUBSET]
 
     return CellIDsTFC, snapGas
@@ -447,16 +439,16 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
 #------------------------------------------------------------------------------#
 
 def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber):
-"""
-    Select the Cells which meet the conditional where Cond. Select from these cells
-    those which ALSO contain tracers. Pass this to saveTracerData to select the
-    data from these cells (as defined by which data is requested to be saved in
-    saveParams and saveTracersOnly).
+    """
+        Select the Cells which meet the conditional where Cond. Select from these cells
+        those which ALSO contain tracers. Pass this to saveTracerData to select the
+        data from these cells (as defined by which data is requested to be saved in
+        saveParams and saveTracersOnly).
 
-        A reminder that saveTracersOnly includes all data considered essential
-        for the code to run, and whatever other parameters the user requests to
-        track that we do not wish statistics for.
-"""
+            A reminder that saveTracersOnly includes all data considered essential
+            for the code to run, and whatever other parameters the user requests to
+            track that we do not wish statistics for.
+    """
     print(f"[@{snapNumber}]: Get Tracers From Cells!")
 
     #Select Cell IDs for cells which meet condition
@@ -484,13 +476,13 @@ def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,sna
 
 #------------------------------------------------------------------------------#
 def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,snapNumber):
-"""
-    Get the IDs and data from cells containing the Tracers passed in in Tracers.
-    Pass the indices of these cells to saveTracerData for adjusting the entries of Cells
-    by which cells contain tracers.
-    Will return an entry for EACH tracer, which will include duplicates of certain
-    Cells where more than one tracer is contained.
-"""
+    """
+        Get the IDs and data from cells containing the Tracers passed in in Tracers.
+        Pass the indices of these cells to saveTracerData for adjusting the entries of Cells
+        by which cells contain tracers.
+        Will return an entry for EACH tracer, which will include duplicates of certain
+        Cells where more than one tracer is contained.
+    """
     print(f"[@{snapNumber}]: Get Cells From Tracers!")
 
     #Select indices (positions in array) of Tracer IDs which are in the Tracers list
@@ -523,10 +515,10 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,
 
 #------------------------------------------------------------------------------#
 def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly):
-"""
-    Save the requested data from the Tracers' Cells data. Only saves the cells
-    assoicated with a Tracer, as determined by CellsIndices.
-"""
+    """
+        Save the requested data from the Tracers' Cells data. Only saves the cells
+        assoicated with a Tracer, as determined by CellsIndices.
+    """
     print(f"[@{snapNumber}]: Saving Tracer Data!")
 
     #Select the data for Cells that meet Cond which contain tracers
@@ -614,10 +606,10 @@ def t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly):
 ##  FvdV weighted percentile code:
 #------------------------------------------------------------------------------#
 def weightedperc(data, weights, perc,key):
-"""
-    Find the weighted Percentile of the data.
-    Returns a zero value and warning if all Data (or all weights) are NaN
-"""
+    """
+        Find the weighted Percentile of the data.
+        Returns a zero value and warning if all Data (or all weights) are NaN
+    """
 
     #percentage to decimal
     perc /= 100.
@@ -662,10 +654,10 @@ def weightedperc(data, weights, perc,key):
 #------------------------------------------------------------------------------#
 
 def SetCentre(snap,snap_subfind,HaloID,snapNumber):
-"""
-    Set centre of simulation box to centre on Halo HaloID.
-    Set velocities to be centred on the median velocity of this halo.
-"""
+    """
+        Set centre of simulation box to centre on Halo HaloID.
+        Set velocities to be centred on the median velocity of this halo.
+    """
     print(f'[@{snapNumber}]: Centering!')
 
     # subfind has calculated its centre of mass for you
@@ -683,9 +675,9 @@ def SetCentre(snap,snap_subfind,HaloID,snapNumber):
 
 #------------------------------------------------------------------------------#
 def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber):
-"""
-    Calculate the physical properties of all cells, or gas only where necessary
-"""
+    """
+        Calculate the physical properties of all cells, or gas only where necessary
+    """
     print(f"[@{snapNumber}]: Calculate Tracked Parameters!")
 
     whereGas = np.where(snapGas.type==0)
@@ -757,6 +749,8 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Magnetic Pressure [P/k_B K cm^-3]
     snapGas.data['P_magnetic'] = ((snapGas.data['B']*1e-6) **2)/( 8. * pi * c.KB)
 
+    snapGas.data['P_tot'] = snapGas.data['P_thermal'] + snapGas.data['P_magnetic']
+    
     #Kinetic "Pressure" [P/k_B K cm^-3]
     snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
 
@@ -777,9 +771,9 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     return snapGas
 #------------------------------------------------------------------------------#
 def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0,snapNumber=None):
-"""
-    Select only the snapGas entries associated with FoF Halo number Halo.
-"""
+    """
+        Select only the snapGas entries associated with FoF Halo number Halo.
+    """
     print(f"[@{snapNumber}]: Select only {Halo} Halo Gas!")
 
     #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
@@ -804,17 +798,17 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0,snapNumber=None):
 
 #------------------------------------------------------------------------------#
 def HighResOnlyGasSelect(snapGas,snapNumber):
-"""
-    Grab only snapGas entries for gas where high res gas mass (hrgm)
-    is greater than 90% of the cell mass. This defines the cosmological
-    Zoom region.
-"""
+    """
+        Grab only snapGas entries for gas where high res gas mass (hrgm)
+        is greater than 90% of the cell mass. This defines the cosmological
+        Zoom region.
+    """
     print(f"[@{snapNumber}]: Select High Res Gas Only!")
 
     whereGas = np.where(snapGas.data['type'] == 0)
     whereStars = np.where(snapGas.data['type'] == 4)
 
-    whereHighRes = np.where(snapGas.data['hrgm'] >= 0.90*snapGas.data['mass'][whereGas])
+    whereHighRes = np.where(snapGas.data['hrgm'][whereGas] >= 0.90*snapGas.data['mass'][whereGas])
 
     selected =np.array(whereHighRes[0].tolist() + whereStars[0].tolist())
 
@@ -824,16 +818,16 @@ def HighResOnlyGasSelect(snapGas,snapNumber):
 
     return snapGas
 #------------------------------------------------------------------------------#
-def HaloIDfinder(snapGas,snap_subfind,snapNumber):
-"""
-    Assign a unique ID value to each SubFind SubHalo --> SubHaloID
-    Assign a unique ID value to each FoF Halo --> FoFHaloID
-    Assign -1 to SubHaloID for unbound matter
-    Assign NaN to unclassified (no halo) gas and stars
+def HaloIDfinder(snapGas,snap_subfind,snapNumber,OnlyHalo=None):
+    """
+        Assign a unique ID value to each SubFind SubHalo --> SubHaloID
+        Assign a unique ID value to each FoF Halo --> FoFHaloID
+        Assign -1 to SubHaloID for unbound matter
+        Assign NaN to unclassified (no halo) gas and stars
 
-    Inputs: snapGas, snap_subfind
-    OutPuts: snapGas
-"""
+        Inputs: snapGas, snap_subfind
+        OutPuts: snapGas
+    """
 
     print(f"[@{snapNumber}]: HaloID Finder!")
 
@@ -851,9 +845,18 @@ def HaloIDfinder(snapGas,snap_subfind,snapNumber):
     snapGas.data['FoFHaloID'] = np.full(shape = np.shape(snapGas.data['type']),fill_value=np.nan)
     snapGas.data['SubHaloID'] = np.full(shape = np.shape(snapGas.data['type']),fill_value=np.nan)
 
-    cumsumfnsh = np.cumsum(snap_subfind.data['fnsh'])
-    cumsumflty = np.cumsum(snap_subfind.data['flty'],axis=0)
-    cumsumslty = np.cumsum(snap_subfind.data['slty'],axis=0)
+
+    fnsh = snap_subfind.data['fnsh']
+    flty = snap_subfind.data['flty']
+    slty = snap_subfind.data['slty']
+
+    if (OnlyHalo != None):
+        fnsh = np.array(fnsh[OnlyHalo])
+        flty = np.array(flty[OnlyHalo,:])
+
+    cumsumfnsh = np.cumsum(fnsh)
+    cumsumflty = np.cumsum(flty,axis=0)
+    cumsumslty = np.cumsum(slty,axis=0)
 
     #Loop over particle types
     for (ii,tp) in enumerate(types):
@@ -865,10 +868,17 @@ def HaloIDfinder(snapGas,snap_subfind,snapNumber):
 
         whereType = whereTypeList[ii]
 
-        #Loop over FoF Haloes as identified by an entry in flty
-        for (fofhalo, csflty) in enumerate(cumsumflty[:,tp]):
+        #if cumsumflty is 2D (has more than one halo) make iterator full list
+        #   else make iterator single halo
+        if (np.shape(np.shape(cumsumflty))[0]==1):
+            cumsumfltyIterator = np.array([cumsumflty[tp]])
+        else:
+            cumsumfltyIterator = cumsumflty[:,tp]
 
-            percentage = float(fofhalo)/float(len(cumsumflty[:,tp])) *100.
+        #Loop over FoF Haloes as identified by an entry in flty
+        for (fofhalo, csflty) in enumerate(cumsumfltyIterator):
+
+            percentage = float(fofhalo)/float(len(cumsumfltyIterator)) *100.
             if(percentage>=printcount):
                 # print(f"{percentage:0.02f}% Halo IDs assigned!")
                 printcount += printpercent
@@ -934,154 +944,6 @@ def HaloIDfinder(snapGas,snap_subfind,snapNumber):
             snapGas.data['SubHaloID'][whereSelectSHunassigned] = -1
 
     return snapGas
-
-# for (ii,tp) in enumerate(types):
-#     print(f"Haloes for particle type {tp}")
-#     printpercent = 5.
-#     printcount = 0.
-#     subhalo = 0
-#     fofhalo = 0
-#     useUp = 0
-#
-#     whereType = whereTypeList[ii]
-#     for (halo,nsh) in enumerate(cumsumfnsh):
-#         percentage = float(halo)/float(len(cumsumfnsh)) *100.
-#         if(percentage>=printcount):
-#             print(f"{percentage:0.02f}% Halo IDs assigned!")
-#             printcount += printpercent
-#
-#         if (halo == 0):
-#             nshLO = 0
-#             nshUP = cumsumfnsh[halo]
-#             lowest = np.array([0])
-#         else:
-#             nshLO = cumsumfnsh[halo-1]
-#             nshUP = cumsumfnsh[halo]
-#             lowest = cumsumslty[cumsumfnsh[halo - 1],tp]
-#             # print(f"lowest {lowest}")
-#
-#         lower = np.append(lowest,cumsumslty[nshLO:nshUP,tp])
-#         upper = np.append(cumsumslty[nshLO:nshUP,tp],cumsumflty[halo,tp])
-#
-#         assert len(lower) == (nshUP+1 - nshLO),"[@HaloIDfinder]: Lower selection list has fewer entries than number of subhaloes!"
-#         assert len(upper) == (nshUP+1 - nshLO),"[@HaloIDfinder]: Upper selection list has fewer entries than number of subhaloes!"
-#
-#         for (lo, up) in zip(lower[:-1],upper[:-1]):
-#             # print(f"lo {lo} : up {up} --> subhalo {subhalo}")
-#             whereSelectSH = whereType[0][lo:up]
-#             snapGas.data['SubHaloID'][whereSelectSH] = subhalo
-#             subhalo+=1
-#
-#         whereSelectSHunassigned = whereType[0][lower[-1]:upper[-1]]
-#         snapGas.data['SubHaloID'][whereSelectSHunassigned] = -1
-#
-#         whereSelectSHFoF= whereType[0][lower[0]:upper[-1]]
-#         snapGas.data['FoFHaloID'][whereSelectSHFoF] = halo
-
-# for (ii,tp) in enumerate(types):
-#
-#     printpercent = 5.
-#     printcount = 0.
-#     subhalo = 0
-#     fofhalo = 0
-#     useUp = 0
-#
-#     whereType = whereTypeList[ii]
-
-    # for (jj, upper) in enumerate(cumsumslty[:,tp]):
-    #     # print(f"snapGas.data['SubHaloID'][whereType] {snapGas.data['SubHaloID'][whereType]}")
-    #     percentage = float(jj)/float(len(cumsumslty[:,tp])) *100.
-    #     if(percentage>=printcount):
-    #         print(f"{percentage:0.02f}% Halo IDs assigned!")
-    #         printcount += printpercent
-    #
-    #     if ( jj == 0):
-    #         lower = 0
-    #     elif (useUp == 1):
-    #         useUp = 0
-    #         lower = up
-    #     else:
-    #         lower = cumsumslty[jj-1,tp] + 1
-    #         # print(f"bah!")
-    #         # print(f"lower {lower}")
-    #
-    #     # print(f"WhereType {whereType}, Lower {lower}, upper {upper}, subhalo {subhalo}")
-    #
-    #     whereSelect = whereType[0][lower:upper]
-    #
-    #     # print(f"whereSelect {whereSelect}")
-    #     # print(f"snapGas.data['SubHaloID'][whereSelect] {snapGas.data['SubHaloID'][whereSelect]}")
-    #     # fillarray = np.full(shape = np.shape(snapGas.data['SubHaloID'][whereSelect]),fill_value=subhalo)
-    #
-    #     snapGas.data['SubHaloID'][whereSelect] = subhalo
-    #
-    #     subhalo+=1
-    #
-    #     if (subhalo in cumsumfnsh):
-    #         low = upper
-    #         up = cumsumflty[fofhalo,tp]
-    #
-    #         print(f"low {low}, up {up}, subhalo {-1}, fofhalo {fofhalo}")
-    #         whereSelect = whereType[0][low:up]
-    #         snapGas.data['SubHaloID'][whereSelect] = -1
-    #
-    #         if(fofhalo==0):
-    #             lowest = 0
-    #
-    #         # print(f"WhereType {whereType}, lowest {lowest}, up {up}, fofhalo {fofhalo}")
-    #         whereSelect = whereType[0][lowest:up]
-    #
-    #         # print(f"whereSelect {whereSelect}")
-    #         # print(f"snapGas.data['FoFHaloID'][whereSelect] {snapGas.data['FoFHaloID'][whereSelect]}")
-    #         # fillarray = np.full(shape = np.shape(snapGas.data['FoFHaloID'][whereType][lowest:up]),fill_value=fofhalo)
-    #         snapGas.data['FoFHaloID'][whereSelect] = fofhalo
-    #
-    #         lowest = up + 1
-    #         useUp = 1
-    #         fofhalo+=1
-
-
-# for (halo, nsh) in enumerate(snap_subfind.data['fnsh']):
-#     percentage = float(halo)/float(len(snap_subfind.data['fnsh'])) * 100.
-#     print(f"{percentage:0.02f}% of Halo IDs assigned!")
-#     # print("nsh ",nsh)
-#     if (nsh != 0):
-#         nshUP = nshLO + nsh
-#         # print("nshLO ",nshLO)
-#         # print("nshUP ",nshUP)
-#
-#         dataLengthflty = snap_subfind.data['flty'][halo]
-#         # print("dataLengthflty ",dataLengthflty)
-#
-#         gasLengths = np.cumsum(snap_subfind.data['slty'][nshLO:nshUP],axis=0)
-#         dataLengthslty = gasLengths[-1]
-#         # print("dataLengthslty ",dataLengthslty)
-#
-#         unassignedDataLength = dataLengthflty - dataLengthslty
-#         # print("unassignedDataLength ",unassignedDataLength)
-#         for (ii, tp) in enumerate(types):
-#             # print("tp ", tp)
-#             whereType = whereTypeList[ii]
-#             for subhalo in range(0,nsh):
-#                 # print("subhalo ",subhalo)
-#                 # print("nshLO + subhalo ",nshLO + subhalo)
-#                 if(subhalo==0):
-#                     gasLengthLO = 0
-#                     gasLengthUP = gasLengths[subhalo,tp]
-#                 else:
-#                     gasLengthLO = gasLengths[subhalo-1,tp]
-#                     gasLengthUP = gasLengths[subhalo,tp]
-#
-#                 snapGas.data['FoFHaloID'][whereType][gasLengthLO:gasLengthUP] = halo
-#                 snapGas.data['SubHaloID'][whereType][gasLengthLO:gasLengthUP] = nshLO + subhalo
-#
-#             snapGas.data['FoFHaloID'][whereType][dataLengthslty[tp]+1:unassignedDataLength[tp]] = -1
-#             snapGas.data['SubHaloID'][whereType][dataLengthslty[tp]+1:unassignedDataLength[tp]] = -1
-#
-#         nshLO = nshUP + 1
-#         # print("nshLO final ",nshLO)
-#     else:
-#         pass
 
 #------------------------------------------------------------------------------#
 def LoadTracersParameters(TracersParamsPath):
