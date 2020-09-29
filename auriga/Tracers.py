@@ -113,10 +113,6 @@ omegabaryon0 = 0.048
 #==============================================================================#
 
 
-#Set Blank Data dictionary ALL data is stored here!
-FullDict = {}
-
-
 if __name__=="__main__":
     kk = 0
     #Loop over target temperatures

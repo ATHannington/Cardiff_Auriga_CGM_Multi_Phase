@@ -11,7 +11,11 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
+import matplotlib.transforms as tx
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 import const as c
 from gadget import *
 from gadget_subfind import *
@@ -20,18 +24,18 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 1000#10#1000
+subset = 21#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.03#0.5#0.03
+opacity = 0.5#0.5#0.03
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 
 logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
 
@@ -42,6 +46,7 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'P_thermal': r'$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]',\
  'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_tot': r'$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'tcool': r'Cooling Time [$Gyr$]',\
  'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
@@ -69,19 +74,14 @@ dataDict = {}
 
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-if('tcool_tff' in saveParams):
-    for key, dict in dataDict.items():
-        tcool = dict['tcool']
-        tff = dict['tff']
-        tctf = tcool/tff
-        dataDict[key].update({'tcool_tff' : tctf})
-
-
 print("Getting Tracer Data!")
+XScatterDict = {}
 Ydata = {}
 Xdata = {}
 Massdata ={}
 ViolinDict = {}
+FoFHaloIDDict = {}
+SubHaloIDDict = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
@@ -102,34 +102,43 @@ for T in TRACERSPARAMS['targetTLst']:
     #Select tracers from those present at data selection snapshot, snapnum
 
     key = (f"T{int(T)}",f"{int(TRACERSPARAMS['selectSnap'])}")
+
     rangeMin = 0
     rangeMax = len(dataDict[key]['trid'])
     TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
     #Take Random sample of Tracers size min(subset, len(data))
-    # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
-    selectMin = min(subset,rangeMax)
-    select = math.floor(float(rangeMax)/float(subset))
+    TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
 
-    TracerNumberSelect = TracerNumberSelect[::select]
+    # selectMin = min(subset,rangeMax)
+    # select = math.floor(float(rangeMax)/float(subset))
+    # TracerNumberSelect = TracerNumberSelect[::select]
+
     SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
 
+    XScatterSubDict = {}
     XSubDict = {}
     YSubDict = {}
     MassSubDict = {}
     ViolinSubDict = {}
+    FoFHaloIDSubDict = {}
+    SubHaloIDSubDict = {}
     for analysisParam in saveParams:
         print("")
         print(f"Starting {analysisParam} analysis")
 
         #Loop over snaps from and gather data for the SelectedTracers1.
         #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
+        tmpXScatterdata = []
         tmpXdata = []
         tmpYdata = []
         tmpMassdata = []
         tmpViolinData =[]
+        tmpFoFHaloID = []
+        tmpSubHaloID = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{int(T)}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
+            whereTracer = np.where(np.isin(dataDict[key]['trid'],SelectedTracers1))[0]
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
@@ -139,28 +148,40 @@ for T in TRACERSPARAMS['targetTLst']:
                 Data=dataDict[key][analysisParam][whereGas],mass=dataDict[key]['mass'][whereGas])
 
             #Append the data from this snapshot to a temporary list
+            lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
+            tmpXScatterdata.append(lookbackList)
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
             tmpMassdata.append(massData)
+
+            #Save HaloID data
+            tmpFoFHaloID.append(dataDict[key]['FoFHaloID'][whereTracer])
+            tmpSubHaloID.append(dataDict[key]['SubHaloID'][whereTracer])
 
             #Violin Data
             massMean = np.mean(dataDict[key]['mass'][whereGas])
             weightedData = (dataDict[key][analysisParam] * dataDict[key]['mass'])/massMean
             whereNOTnan = np.where(np.isnan(weightedData)==False)
-            weightedData=weightedData[whereNOTnan]
+            weightedData = weightedData[whereNOTnan]
             tmpViolinData.append(weightedData)
 
         #Append the data from this parameters to a sub dictionary
+        XScatterSubDict.update({analysisParam: np.array(tmpXScatterdata)})
         XSubDict.update({analysisParam: np.array(tmpXdata)})
         YSubDict.update({analysisParam:  np.array(tmpYdata)})
         MassSubDict.update({analysisParam: np.array(tmpMassdata)})
         ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
+        FoFHaloIDSubDict.update({analysisParam: np.array(tmpFoFHaloID)})
+        SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
+
     #Add the full list of snaps data to temperature dependent dictionary.
+    XScatterDict.update({f"T{int(T)}" : XScatterSubDict})
     Xdata.update({f"T{int(T)}" : XSubDict})
     Ydata.update({f"T{int(T)}" : YSubDict})
     Massdata.update({f"T{int(T)}" : MassSubDict})
     ViolinDict.update({f"T{int(T)}" : ViolinSubDict})
-
+    FoFHaloIDDict.update({f"T{int(T)}" : FoFHaloIDSubDict})
+    SubHaloIDDict.update({f"T{int(T)}" : SubHaloIDSubDict})
 #==============================================================================#
 
 #==============================================================================#
@@ -197,10 +218,20 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
+        plotXScatterdata = XScatterDict[f"T{int(temp)}"][analysisParam]
         plotYdata = Ydata[f"T{int(temp)}"][analysisParam]
         plotXdata = Xdata[f"T{int(temp)}"][analysisParam]
         violinData = ViolinDict[f"T{int(temp)}"][analysisParam]
+        SubHaloIDData = SubHaloIDDict[f"T{int(temp)}"][analysisParam].astype('int16')
 
+        uniqueSubHalo = np.unique(SubHaloIDData)
+
+        normedSubHaloIDData = SubHaloIDData.copy()
+        for (kk,halo) in enumerate(uniqueSubHalo):
+            whereHalo = np.where(SubHaloIDData==halo)
+            normedSubHaloIDData[whereHalo] = kk - 1
+
+        normedUniqueSubHalo = np.unique(normedSubHaloIDData)
         #Convert lookback time to universe age
         t0 = np.nanmax(plotXdata)
         plotXdata = abs(plotXdata - t0)
@@ -294,6 +325,14 @@ for analysisParam in saveParams:
         # facecolor=colour,alpha=opacityPercentiles,interpolate=False)
         # currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
+            # for jj in range(1,len(plotXdata)):
+            #     whereDataIsNOTnan = np.where((np.isnan(plotYdata[jj])==False)& (np.isnan(plotYdata[jj-1])==False))
+            #
+            #     for kk in range(len(plotYdata[jj-1][whereDataIsNOTnan])):
+            #         currentAx.plot(np.array([plotXScatterdata[jj-1][whereDataIsNOTnan][kk],plotXScatterdata[jj][whereDataIsNOTnan][kk]]),\
+            #         np.array([(plotYdata[jj-1][whereDataIsNOTnan][kk]),(plotYdata[jj][whereDataIsNOTnan][kk])]), color = colourTracersHalo[normedSubHaloIDData[jj][whereDataIsNOTnan]][kk], alpha = opacity )
+
+
         parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
         for pc in parts['bodies']:
@@ -325,6 +364,9 @@ for analysisParam in saveParams:
         currentAx.vlines(plotXdata, quartile1, quartile3, color='k', linestyle='-', lw=3)
         currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
+        currentAx.axvline(x=vline, c='red')
+        currentAx.set_ylim(ymin=datamin, ymax=datamax)
+
         if (ColourIndividuals == True):
             for jj in range(0,subset):
                 whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
@@ -332,14 +374,41 @@ for analysisParam in saveParams:
                 if (lenNOTnan>0):
                     currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
         else:
-            for jj in range(0,subset):
-                whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
-                lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
-                if (lenNOTnan>0):
-                    currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
+            # for jj in range(0,subset):
+            #     whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
+            #     lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
+            #     if (lenNOTnan>0):
+            #         currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
+
+            whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
+            points = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,1,2)
+            segments = np.concatenate([points[:-1],points[1:]], axis=1)
+
+            # cmapLC = ListedColormap(colourTracersHalo)
+            # norm = plt.Normalize(normedSubHaloIDData.min(),normedSubHaloIDData.max())
+            Ncolours = len(uniqueSubHalo)
+            cmap2 = matplotlib.cm.get_cmap(colourmapMain, 256)
+            newcolors = cmap2(np.linspace(0, 0.9, Ncolours))
+            cmap3 = ListedColormap(newcolors)
+            cmin = float(normedSubHaloIDData.min())-0.5
+            cmax = float(normedSubHaloIDData.max())+1.5
+            norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
+            # norm = BoundaryNorm(np.arange(0,len(uniqueSubHalo),1), cmapLC.N)
+
+            lc = LineCollection(segments,cmap = cmap3, norm=norm, alpha=opacity)
+            # tmp = np.concatenate([normedSubHaloIDData[:,:-1],normedSubHaloIDData[:,1:]],axis=1).reshape(-1)
+            lc.set_array(normedSubHaloIDData[1:,:].flatten())
+
+            # trans = tx.Affine2D().scale(0.1) + currentAx.transData
+            # line.set_transform(trans)
+
+            line = currentAx.add_collection(lc)
+
+            cbar = plt.colorbar(line,ticks=normedUniqueSubHalo,ax=currentAx, orientation = 'vertical')
+            cbar.set_label(label=r'Sub-Halo ID')
+            cbar.solids.set(alpha=1)
 
 
-        currentAx.axvline(x=vline, c='red')
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
         currentAx.yaxis.set_minor_locator(AutoMinorLocator())
         currentAx.tick_params(which='both')
