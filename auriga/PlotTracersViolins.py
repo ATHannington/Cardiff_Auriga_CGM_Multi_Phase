@@ -24,11 +24,11 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 21#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.5#0.03
+opacity = 0.03#0.5#0.03
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"
@@ -85,8 +85,8 @@ SubHaloIDDict = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
-    minTemp = int(TRACERSPARAMS['targetTLst'][0])
-    key = (f"T{int(minTemp)}", f"{int(snap)}")
+    minTemp = TRACERSPARAMS['targetTLst'][0]
+    key = (f"T{minTemp}", f"{int(snap)}")
 
     tage.append(dataDict[key]['Lookback'][0])
 
@@ -101,7 +101,7 @@ for T in TRACERSPARAMS['targetTLst']:
     print(f"Starting T{T} analysis")
     #Select tracers from those present at data selection snapshot, snapnum
 
-    key = (f"T{int(T)}",f"{int(TRACERSPARAMS['selectSnap'])}")
+    key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
 
     rangeMin = 0
     rangeMax = len(dataDict[key]['trid'])
@@ -136,16 +136,28 @@ for T in TRACERSPARAMS['targetTLst']:
         tmpFoFHaloID = []
         tmpSubHaloID = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
-            key = (f"T{int(T)}",f"{int(snap)}")
+            key = (f"T{T}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
             whereTracer = np.where(np.isin(dataDict[key]['trid'],SelectedTracers1))[0]
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
-            data, massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            data, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
                 Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key][analysisParam][whereGas],mass=dataDict[key]['mass'][whereGas])
+                Data=dataDict[key][analysisParam][whereGas])
+
+            massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+                Data=dataDict[key]['mass'][whereGas])
+
+            FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
+                Data=dataDict[key]['FoFHaloID'])
+
+            HaloData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
+                Data=dataDict[key]['SubHaloID'])
 
             #Append the data from this snapshot to a temporary list
             lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
@@ -155,8 +167,8 @@ for T in TRACERSPARAMS['targetTLst']:
             tmpMassdata.append(massData)
 
             #Save HaloID data
-            tmpFoFHaloID.append(dataDict[key]['FoFHaloID'][whereTracer])
-            tmpSubHaloID.append(dataDict[key]['SubHaloID'][whereTracer])
+            tmpFoFHaloID.append(FoFData)
+            tmpSubHaloID.append(HaloData)
 
             #Violin Data
             massMean = np.mean(dataDict[key]['mass'][whereGas])
@@ -175,13 +187,13 @@ for T in TRACERSPARAMS['targetTLst']:
         SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
 
     #Add the full list of snaps data to temperature dependent dictionary.
-    XScatterDict.update({f"T{int(T)}" : XScatterSubDict})
-    Xdata.update({f"T{int(T)}" : XSubDict})
-    Ydata.update({f"T{int(T)}" : YSubDict})
-    Massdata.update({f"T{int(T)}" : MassSubDict})
-    ViolinDict.update({f"T{int(T)}" : ViolinSubDict})
-    FoFHaloIDDict.update({f"T{int(T)}" : FoFHaloIDSubDict})
-    SubHaloIDDict.update({f"T{int(T)}" : SubHaloIDSubDict})
+    XScatterDict.update({f"T{T}" : XScatterSubDict})
+    Xdata.update({f"T{T}" : XSubDict})
+    Ydata.update({f"T{T}" : YSubDict})
+    Massdata.update({f"T{T}" : MassSubDict})
+    ViolinDict.update({f"T{T}" : ViolinSubDict})
+    FoFHaloIDDict.update({f"T{T}" : FoFHaloIDSubDict})
+    SubHaloIDDict.update({f"T{T}" : SubHaloIDSubDict})
 #==============================================================================#
 
 #==============================================================================#
@@ -218,11 +230,11 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotXScatterdata = XScatterDict[f"T{int(temp)}"][analysisParam]
-        plotYdata = Ydata[f"T{int(temp)}"][analysisParam]
-        plotXdata = Xdata[f"T{int(temp)}"][analysisParam]
-        violinData = ViolinDict[f"T{int(temp)}"][analysisParam]
-        SubHaloIDData = SubHaloIDDict[f"T{int(temp)}"][analysisParam].astype('int16')
+        plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam]
+        plotYdata = Ydata[f"T{temp}"][analysisParam]
+        plotXdata = Xdata[f"T{temp}"][analysisParam]
+        violinData = ViolinDict[f"T{temp}"][analysisParam]
+        SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16')
 
         uniqueSubHalo = np.unique(SubHaloIDData)
 
@@ -365,7 +377,7 @@ for analysisParam in saveParams:
         currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
         currentAx.axvline(x=vline, c='red')
-        currentAx.set_ylim(ymin=datamin, ymax=datamax)
+        currentAx.set_ylim(ymin=min(datamin,np.nanmin(whiskers_min)), ymax=max(datamax,np.nanmax(whiskers_max)))
 
         if (ColourIndividuals == True):
             for jj in range(0,subset):
@@ -387,7 +399,7 @@ for analysisParam in saveParams:
             # cmapLC = ListedColormap(colourTracersHalo)
             # norm = plt.Normalize(normedSubHaloIDData.min(),normedSubHaloIDData.max())
             Ncolours = len(uniqueSubHalo)
-            cmap2 = matplotlib.cm.get_cmap(colourmapMain, 256)
+            cmap2 = matplotlib.cm.get_cmap(colourmapIndividuals, 256)
             newcolors = cmap2(np.linspace(0, 0.9, Ncolours))
             cmap3 = ListedColormap(newcolors)
             cmin = float(normedSubHaloIDData.min())-0.5

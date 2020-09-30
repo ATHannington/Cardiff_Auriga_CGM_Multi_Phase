@@ -21,41 +21,6 @@ import logging
 #==============================================================================#
 #       USER DEFINED PARAMETERS
 #==============================================================================#
-#Entered parameters to be saved from
-#   n_H, B, R, T
-#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','csound','tcross','tff','tcool_tff']
-
-print("")
-print("Saved Parameters in this Analysis:")
-print(saveParams)
-
-#Optional Tracer only (no stats in .csv) parameters to be saved
-#   Cannot guarantee that all Plotting and post-processing are independent of these
-#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
-saveTracersOnly = ['sfr','age']
-
-print("")
-print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
-print(saveTracersOnly)
-
-#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['FoFHaloID','SubHaloID','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
-
-print("")
-print("ESSENTIAL Saved Parameters in this Analysis:")
-print(saveEssentials)
-
-saveTracersOnly = saveTracersOnly + saveEssentials
-
-#Save types, which when combined with saveparams define what data is saved.
-#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
-saveTypes= ['median','UP','LO']
-
-#Select Halo of interest:
-#   0 is the most massive:
-HaloID = 0
-
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -70,21 +35,13 @@ lazyLoadBool = True
 
 #Number of cores to run on:
 n_processes = 4
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
+saveTypes= ['median','UP','LO']
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
-
-#Combine saveParams and saveTypes to form each combination for saving data types
-saveKeys =[]
-for param in saveParams:
-    for TYPE in saveTypes:
-        saveKeys.append(param+TYPE)
-
-# #Add saveEssentials to saveKeys so as to save these without the median and quartiles
-# #   being taken.
-# for key in saveEssentials:
-#     saveKeys.append(key)
-
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
     #Save as .csv
@@ -96,6 +53,43 @@ for key,value in TRACERSPARAMS.items():
     print(f"{key}: {value}")
 
 print("")
+
+#Entered parameters to be saved from
+#   n_H, B, R, T
+#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
+saveParams = TRACERSPARAMS['saveParams']#['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','csound','tcross','tff','tcool_tff']
+
+print("")
+print("Saved Parameters in this Analysis:")
+print(saveParams)
+
+#Optional Tracer only (no stats in .csv) parameters to be saved
+#   Cannot guarantee that all Plotting and post-processing are independent of these
+#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
+saveTracersOnly = TRACERSPARAMS['saveTracersOnly']#['sfr','age']
+
+print("")
+print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
+print(saveTracersOnly)
+
+#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+saveEssentials = TRACERSPARAMS['saveEssentials']#['FoFHaloID','SubHaloID','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
+
+print("")
+print("ESSENTIAL Saved Parameters in this Analysis:")
+print(saveEssentials)
+
+saveTracersOnly = saveTracersOnly + saveEssentials
+
+#Combine saveParams and saveTypes to form each combination for saving data types
+saveKeys =[]
+for param in saveParams:
+    for TYPE in saveTypes:
+        saveKeys.append(param+TYPE)
+
+#Select Halo of interest:
+#   0 is the most massive:
+HaloID = int(TRACERSPARAMS['haloID'])
 #==============================================================================#
 #       Chemical Properties
 #==============================================================================#

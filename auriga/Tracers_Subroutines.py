@@ -26,7 +26,7 @@ def snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
     print("")
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting Snap {snapNumber}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Starting Snap {snapNumber}")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -47,7 +47,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     tmp = snapGas.data['mass']
     del tmp
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
@@ -92,13 +92,13 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber)
 
     # #Add snap data to temperature specific dictionary
-    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
-    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
-    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
+    # print(f"Adding (T{targetT},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
+    out = {(f"T{targetT}",f"{int(snapNumber)}"): CellsCFT}
 
-    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}"+ FullDataPathSuffix
+    savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}"+ FullDataPathSuffix
 
-    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Tracers data as: "+ savePath)
+    print("\n" + f"[@{snapNumber} @T{targetT}]: Saving Tracers data as: "+ savePath)
 
     hdf5_save(savePath,out)
 
@@ -112,7 +112,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
             nThreads = 2
 
         #Only perform Quad plot for one temperature as is same for each temp
-        if(int(targetT) == int(TRACERSPARAMS['targetTLst'][0])):
+        if(targetT == int(TRACERSPARAMS['targetTLst'][0])):
             quadBool = TRACERSPARAMS['QuadPlotBool']
         else:
             quadBool = False
@@ -137,7 +137,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     if snapNumber is None:
         snapNumber = TRACERSPARAMS['selectSnap']
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting T = {targetT} Analysis!")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Starting T = {targetT} Analysis!")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -156,7 +156,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     tmp = snapGas.data['mass']
     del tmp
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
@@ -192,7 +192,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Setting Selection Condition!")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
     whereGas = np.where(snapGas.type==0)
@@ -215,20 +215,20 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=snapNumber)
 
     # #Add snap data to temperature specific dictionary
-    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
-    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+    # print(f"Adding (T{targetT},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
     if (saveTracers is True):
-        out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'trid': TracersTFC}}
+        out = {(f"T{targetT}",f"{int(snapNumber)}"): {'trid': TracersTFC}}
 
-        savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Tracers"+ FullDataPathSuffix
+        savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}_Tracers"+ FullDataPathSuffix
 
-        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Saving Tracers ID ('trid') data as: "+ savePath)
+        print("\n" + f"[@{int(snapNumber)} @T{targetT}]: Saving Tracers ID ('trid') data as: "+ savePath)
 
         hdf5_save(savePath,out)
 
     #SUBSET
     if (SUBSET is not None):
-        print(f"[@{int(snapNumber)} @T{int(targetT)}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        print(f"[@{int(snapNumber)} @T{targetT}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
         TracersTFC = TracersTFC[:SUBSET]
 
     return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
@@ -241,7 +241,7 @@ def t3000_snap_analysis(snapNumber,targetT,TRACERSPARAMS,HaloID,CellIDsTFC,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True):
     print("")
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting Snap {snapNumber}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Starting Snap {snapNumber}")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -258,7 +258,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     tmp = snapGas.data['age']
     del tmp
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
@@ -305,7 +305,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     Rcrit = 500.
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
     Cond = np.where(snapGas.data['R']<=Rcrit)
 
     for key, value in snapGas.data.items():
@@ -314,18 +314,18 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     CellIDsCFT = snapGas.data['id']
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Selected!")
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Entering save Cells...")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Selected!")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Entering save Cells...")
 
     CellsCFT = t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly)
     # #Add snap data to temperature specific dictionary
-    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
-    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
-    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): CellsCFT}
+    # print(f"Adding (T{targetT},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
+    out = {(f"T{targetT}",f"{int(snapNumber)}"): CellsCFT}
 
-    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}"+ FullDataPathSuffix
+    savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}"+ FullDataPathSuffix
 
-    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Cells data as: "+ savePath)
+    print("\n" + f"[@{snapNumber} @T{targetT}]: Saving Cells data as: "+ savePath)
 
     hdf5_save(savePath,out)
 
@@ -349,7 +349,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     if snapNumber is None:
         snapNumber = TRACERSPARAMS['selectSnap']
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Starting T = {targetT} Analysis!")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Starting T = {targetT} Analysis!")
 
     # load in the subfind group files
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
@@ -365,7 +365,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     tmp = snapGas.data['age']
     del tmp
 
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
@@ -404,7 +404,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
-    print(f"[@{int(snapNumber)} @T{int(targetT)}]: Setting Selection Condition!")
+    print(f"[@{int(snapNumber)} @T{targetT}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
     whereGas = np.where(snapGas.type==0)
@@ -429,20 +429,20 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
 
     CellIDsTFC = snapGas.data['id']
     # #Add snap data to temperature specific dictionary
-    # print(f"Adding (T{int(targetT)},{int(snap)}) to Dict")
-    # FullDict.update({(f"T{int(targetT)}",f"{int(snap)}"): CellsCFT})
+    # print(f"Adding (T{targetT},{int(snap)}) to Dict")
+    # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
     if (saveCells is True):
-        out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'id': CellIDsTFC}}
+        out = {(f"T{targetT}",f"{int(snapNumber)}"): {'id': CellIDsTFC}}
 
-        savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_CellIDs"+ FullDataPathSuffix
+        savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}_CellIDs"+ FullDataPathSuffix
 
-        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Saving Cell ID ('id') data as: "+ savePath)
+        print("\n" + f"[@{int(snapNumber)} @T{targetT}]: Saving Cell ID ('id') data as: "+ savePath)
 
         hdf5_save(savePath,out)
 
     #SUBSET
     if (SUBSET is not None):
-        print(f"[@{int(snapNumber)} @T{int(targetT)}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        print(f"[@{int(snapNumber)} @T{targetT}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
         TracersTFC = TracersTFC[:SUBSET]
 
     return CellIDsTFC, snapGas
@@ -975,6 +975,11 @@ def LoadTracersParameters(TracersParamsPath):
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
             TRACERSPARAMS.update({key:lst2})
+        elif ((key == 'saveParams')or(key == 'saveTracersOnly')or(key == 'saveEssentials')):
+            #Convert targetTLst to list of floats
+            lst = value.split(",")
+            strlst = [str(item) for item in lst]
+            TRACERSPARAMS.update({key:strlst})
         elif ((key == 'simfile') or (key == 'savepath')):
             #Keep simfile as a string
             TRACERSPARAMS.update({key:value})
@@ -1000,7 +1005,7 @@ def LoadTracersParameters(TracersParamsPath):
         TRACERSPARAMS['TracerPlotBool'] = False
 
     #Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
-    Tlst = [str(int(item)) for item in TRACERSPARAMS['targetTLst']]
+    Tlst = [str(item) for item in TRACERSPARAMS['targetTLst']]
     Tstr = '-'.join(Tlst)
 
     #This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
@@ -1011,7 +1016,7 @@ def LoadTracersParameters(TracersParamsPath):
 
 #------------------------------------------------------------------------------#
 
-def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mass,NullEntry=np.nan):
+def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,NullEntry=np.nan):
 
     #Select which of the SelectedTracers are in Tracers from this snap
     TracersTruthy = np.isin(SelectedTracers,Tracers)
@@ -1044,20 +1049,11 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,mas
                 dataEntry = NullEntry
             else:
                 dataEntry = dataEntry[0]
-
-            massEntry = mass[dataIndex].tolist()
-            if (np.shape(massEntry)[0] == 0):
-                massEntry = NullEntry
-            else:
-                massEntry = massEntry[0]
-
             saveData.append(dataEntry)
-            massData.append(massEntry)
         else:
             saveData.append(NullEntry)
-            massData.append(NullEntry)
 
-    return saveData, massData, TracersReturned
+    return saveData, TracersReturned
 
 #------------------------------------------------------------------------------#
 
@@ -1102,14 +1098,19 @@ def hdf5_load(path):
 
     dataDict={}
     for key,value in loaded.items():
-        #Split the meta-key back into a tuple format
-        saveKey = tuple(key.split("_"))
+
+        loadKey = None
+        for entry in key.split("_"):
+            if loadKey is None:
+                loadKey = entry
+            else:
+                loadKey = tuple(key.split("_"))
         #Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k,v in value.items():
             tmpDict.update({k:v.value})
         #Add the sub-dictionary to the meta-dictionary
-        dataDict.update({saveKey:tmpDict})
+        dataDict.update({loadKey:tmpDict})
 
     return dataDict
 
@@ -1120,7 +1121,7 @@ def FullDict_hdf5_load(path,TRACERSPARAMS,FullDataPathSuffix):
     FullDict = {}
     for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1), int(TRACERSPARAMS['finalSnap']+1)),1):
         for targetT in TRACERSPARAMS['targetTLst']:
-            loadPath = path + f"_T{int(targetT)}_{int(snap)}"+ FullDataPathSuffix
+            loadPath = path + f"_T{targetT}_{int(snap)}"+ FullDataPathSuffix
             data = hdf5_load(loadPath)
             FullDict.update(data)
 
@@ -1134,7 +1135,7 @@ def Statistics_hdf5_load(targetT,path,TRACERSPARAMS,MiniDataPathSuffix):
     nested = {}
     for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1), int(TRACERSPARAMS['finalSnap']+1)),1):
             #Temperature specific load path
-            loadPath = path + f"_T{int(targetT)}_{int(snap)}_Statistics" + MiniDataPathSuffix
+            loadPath = path + f"_T{targetT}_{int(snap)}_Statistics" + MiniDataPathSuffix
             data = hdf5_load(loadPath)
             nested.update(data)
 
@@ -1225,7 +1226,7 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
     #       Flatten dict and take subset
     #------------------------------------------------------------------------------#
     print("")
-    print(f"[@{snapNumber} @T{int(targetT)}]: Analysing Statistics!")
+    print(f"[@{snapNumber} @T{targetT}]: Analysing Statistics!")
 
     statsData = {}
 
@@ -1262,10 +1263,10 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
 
 
     #Generate our savepath
-    savePath = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Statistics" + MiniDataPathSuffix
-    print("\n" + f"[@{snapNumber} @T{int(targetT)}]: Saving Statistics as: " + savePath)
+    savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}_Statistics" + MiniDataPathSuffix
+    print("\n" + f"[@{snapNumber} @T{targetT}]: Saving Statistics as: " + savePath)
 
-    out = {(f"T{int(targetT)}",f"{int(snapNumber)}"): statsData}
+    out = {(f"T{targetT}",f"{int(snapNumber)}"): statsData}
 
     hdf5_save(savePath,out)
 
@@ -1273,13 +1274,14 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
 
 #------------------------------------------------------------------------------#
 
-def flatten_wrt_T(dataDict,TRACERSPARAMS):
+def flatten_wrt_T(dataDict,snapRange,TRACERSPARAMS):
+
     flattened_dict = {}
-    for snap in TRACERSPARAMS['phasesSnaps']:
+    for snap in snapRange:
         tmp = {}
         newkey = f"{int(snap)}"
         for T in TRACERSPARAMS['targetTLst']:
-            key = (f"T{int(T)}",f"{int(snap)}")
+            key = (f"T{T}",f"{int(snap)}")
 
             for k, v in dataDict[key].items():
                 if (k in tmp.keys()):
@@ -1290,7 +1292,36 @@ def flatten_wrt_T(dataDict,TRACERSPARAMS):
         flattened_dict.update({newkey: tmp})
 
     return flattened_dict
+#------------------------------------------------------------------------------#
 
+def flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams):
+
+    flattened_dict = {}
+    snapRange = [xx for xx in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)]
+    for T in TRACERSPARAMS['targetTLst']:
+        tmp = {}
+        newkey = f"T{T}"
+        print(f"Starting {newkey} analysis!")
+
+        for snap in snapRange:
+            print(f"Snap {snap}!")
+            key = (f"T{T}",f"{int(snap)}")
+            for k, v in dataDict[key].items():
+                if (k in saveParams):
+                    tracerData,_  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                    Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
+                    SelectedTracers=dataDict[key]['trid'],Data=dataDict[key][k])
+                    tracerData = np.array(tracerData)
+                    if (k in tmp.keys()):
+                        entry = tmp[k]
+                        entry.append(tracerData)
+                        tmp.update({k : entry})
+                    else:
+                        tmp.update({k : [tracerData]})
+
+        flattened_dict.update({newkey: tmp})
+
+    return flattened_dict
 #------------------------------------------------------------------------------#
 
 def PlotProjections(snapGas,Cells,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
@@ -1298,7 +1329,7 @@ FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
 boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\
 CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
-    print(f"[@T{int(targetT)} @{int(snapNumber)}]: Starting Projections Video Plots!")
+    print(f"[@T{targetT} @{int(snapNumber)}]: Starting Projections Video Plots!")
 
     if(CMAP == None):
         cmap = plt.get_cmap("inferno")
@@ -1316,7 +1347,7 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
     #--------------------------#
     ## Slices and Projections ##
     #--------------------------#
-    print(f"[@T{int(targetT)} @{int(snapNumber)}]: Slices and Projections!")
+    print(f"[@T{targetT} @{int(snapNumber)}]: Slices and Projections!")
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
@@ -1332,13 +1363,13 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
     else:
         nprojections = 2
 
-    print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 1 of {nprojections}")
+    print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 1 of {nprojections}")
 
     proj_T = snapGas.get_Aslice("Tdens", box = [boxsize,boxsize],\
      center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
      nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
 
-    print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 2 of {nprojections}")
+    print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 2 of {nprojections}")
 
     proj_dens = snapGas.get_Aslice("rho_rhomean", box = [boxsize,boxsize],\
      center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
@@ -1346,19 +1377,19 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
     if(QuadPlotBool is True):
 
-        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 3 of {nprojections}")
+        print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 3 of {nprojections}")
 
         proj_nH = snapGas.get_Aslice("n_H", box = [boxsize,boxsize],\
          center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
          nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
 
-        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 4 of {nprojections}")
+        print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 4 of {nprojections}")
 
         proj_B = snapGas.get_Aslice("B", box = [boxsize,boxsize],\
          center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
          nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
 
-        print("\n"+f"[@T{int(targetT)} @{int(snapNumber)}]: Projection 5 of {nprojections}")
+        print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 5 of {nprojections}")
 
         proj_gz = snapGas.get_Aslice("gz", box = [boxsize,boxsize],\
          center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
@@ -1371,11 +1402,11 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 #
 #==============================================================================#
     if(TracerPlotBool is True):
-        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Selecting {int(subset)} subset of Tracers Positions...")
+        print("\n" + f"[@{int(snapNumber)} @T{targetT}]: Selecting {int(subset)} subset of Tracers Positions...")
         #Select new subset for first snap
         #   Use old subset for all others
         if (int(snapNumber) == int(TRACERSPARAMS['snapMin'])):
-            key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+            key = (f"T{targetT}",f"{int(snapNumber)}")
 
             # inRangeIDsIndices = np.where((Cells[key]['pos'][:,zAxis[0]]<=(float(boxlos)/2.))&(Cells[key]['pos'][:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
             # inRangeIDs = Cells[key]['id'][inRangeIDsIndices]
@@ -1386,12 +1417,12 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             SelectedTracers1 = random.sample(Cells[key]['trid'].tolist(), subset)
             SelectedTracers1 = np.array(SelectedTracers1)
         else:
-            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+            LoadPathTracers = DataSavepath + f"_T{targetT}_{int(snapNumber-1)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             oldData = hdf5_load(LoadPathTracers)
-            key = (f"T{int(targetT)}",f"{int(snapNumber-1)}")
+            key = (f"T{targetT}",f"{int(snapNumber-1)}")
             SelectedTracers1 = oldData[key]['trid']
 
-        key = (f"T{int(targetT)}",f"{int(snapNumber)}")
+        key = (f"T{targetT}",f"{int(snapNumber)}")
 
         whereGas = np.where(Cells[key]['type']==0)[0]
 
@@ -1403,11 +1434,11 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
         posData = np.array(posData)
 
-        TracersSaveData = {(f"T{int(targetT)}",f"{int(snapNumber)}"): {'trid': SelectedTracers1, 'pos' : posData}}
+        TracersSaveData = {(f"T{targetT}",f"{int(snapNumber)}"): {'trid': SelectedTracers1, 'pos' : posData}}
 
-        savePathTracers = DataSavepath + f"_T{int(targetT)}_{int(snapNumber)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+        savePathTracers = DataSavepath + f"_T{targetT}_{int(snapNumber)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
 
-        print("\n" + f"[@{int(snapNumber)} @T{int(targetT)}]: Saving {int(subset)} Subset Tracers ID ('trid') data as: "+ savePathTracers)
+        print("\n" + f"[@{int(snapNumber)} @T{targetT}]: Saving {int(subset)} Subset Tracers ID ('trid') data as: "+ savePathTracers)
 
         hdf5_save(savePathTracers,TracersSaveData)
 
@@ -1435,7 +1466,7 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 #==============================================================================#
 
     if (QuadPlotBool is True):
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Quad Plot...")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Quad Plot...")
 
         fullTicks =  [xx for xx in np.linspace(-1.*halfbox,halfbox,9)]
         fudgeTicks = fullTicks[1:]
@@ -1572,13 +1603,13 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         # fig.tight_layout()
 
         SaveSnapNumber = str(snapNumber).zfill(4);
-        savePath = DataSavepath + f"_T{int(targetT)}_Quad_Plot_{int(SaveSnapNumber)}.png"
+        savePath = DataSavepath + f"_T{targetT}_Quad_Plot_{int(SaveSnapNumber)}.png"
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Save {savePath}")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Save {savePath}")
         plt.savefig(savePath, dpi = DPI, transparent = False)
         plt.close()
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...done!")
+        print(f"[@T{targetT} @{int(snapNumber)}]: ...done!")
 
 
 #==============================================================================#
@@ -1589,21 +1620,21 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
 
     if(TracerPlotBool is True):
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Tracer Plot...")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Tracer Plot...")
 
         aspect = "equal"
         fontsize = 12
         fontsizeTitle = 16
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
 
         nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
 
         OldPosDict = {}
         for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
-            print(f"[@T{int(targetT)} @{int(snapNumber)}]: Loading Old Tracer T{int(targetT)} {int(snap)}")
+            print(f"[@T{targetT} @{int(snapNumber)}]: Loading Old Tracer T{targetT} {int(snap)}")
 
-            LoadPathTracers = DataSavepath + f"_T{int(targetT)}_{int(snap)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
+            LoadPathTracers = DataSavepath + f"_T{targetT}_{int(snap)}_Projection_Tracers_{int(subset)}_Subset"+ FullDataPathSuffix
             data = hdf5_load(LoadPathTracers)
             OldPosDict.update(data)
 
@@ -1621,9 +1652,9 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             tmpOldPosDict.update({key : tmp})
 
         OldPosDict = tmpOldPosDict
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
+        print(f"[@T{targetT} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot...")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Plot...")
         #DPI Controlled by user as lower res needed for videos #
         fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
@@ -1683,11 +1714,11 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
 
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Plot Tails...")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Plot Tails...")
         jj=1
         for snap in range(int(minSnap+1),snapNumber+1):
-            key1 = (f"T{int(targetT)}",f"{int(snap-1)}")
-            key2 = (f"T{int(targetT)}",f"{int(snap)}")
+            key1 = (f"T{targetT}",f"{int(snap-1)}")
+            key2 = (f"T{targetT}",f"{int(snap)}")
             if (snap != int(snapNumber)):
                 pos1 = OldPosDict[key1]['pos']
                 pos2 = OldPosDict[key2]['pos']
@@ -1703,7 +1734,7 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
                 ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c='white',alpha=alph)#colourTracers[ii],alpha=alph)
 
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...finished Plot Tails!")
+        print(f"[@T{targetT} @{int(snapNumber)}]: ...finished Plot Tails!")
 
         xmin = np.nanmin(proj_T['x'])
         xmax = np.nanmax(proj_T['x'])
@@ -1732,12 +1763,12 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         # fig.tight_layout()
 
         SaveSnapNumber = str(snapNumber).zfill(4);
-        savePath = DataSavepath + f"_T{int(targetT)}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+        savePath = DataSavepath + f"_T{targetT}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: Save {savePath}")
+        print(f"[@T{targetT} @{int(snapNumber)}]: Save {savePath}")
         plt.savefig(savePath, dpi = DPI, transparent = False)
         plt.close()
 
-        print(f"[@T{int(targetT)} @{int(snapNumber)}]: ...Tracer Plot done!")
+        print(f"[@T{targetT} @{int(snapNumber)}]: ...Tracer Plot done!")
 
     return
