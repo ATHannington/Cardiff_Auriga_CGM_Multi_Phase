@@ -18,6 +18,7 @@ import sys
 import logging
 import math
 import random
+from itertools import combinations
 
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
@@ -520,7 +521,7 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,
     Ntracers = int(len(TracersCFT))
     print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-    Cells = saveTracerData(snapGas,TracersCFT,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
+    Cells = saveCellsData(snapGas,TracersCFT,Parents,CellIDs,ParentsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
 
     return TracersCFT, Cells, CellIDs, Parents
 
@@ -571,7 +572,57 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
             Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
 
     return Cells
+#------------------------------------------------------------------------------#
 
+def saveCellsData(snapGas,Tracers,Parents,CellIDs,ParentsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly):
+    """
+        Save the requested data from the Tracers' Cells data. Should save an entry for every Tracer,
+        duplicating some cells.
+    """
+    print(f"[@{snapNumber}]: Saving Cells Data!")
+
+    #Select the data for Cells that meet Cond which contain tracers
+    #   Does this by creating new dict from old data.
+    #       Only selects values at index where Cell meets cond and contains tracers
+
+    assert np.shape(ParentsIndices)[1] == Ntracers,"[@saveCellsData]: Fewer Parents (Cells) than Tracers!!"
+
+    Cells={}
+    for key in saveParams:
+        Cells.update({key: snapGas.data[key][ParentsIndices]})
+
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+    #Redshift
+    redshift = snapGas.redshift        #z
+    aConst = 1. / (1. + redshift)   #[/]
+
+    #Get lookback time in Gyrs
+    #[0] to remove from numpy array for purposes of plot title
+    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+
+    for TracerSaveParameter in saveTracersOnly:
+        if (TracerSaveParameter == 'Lookback'):
+            Cells.update({'Lookback' : np.array([lookback]) })
+        elif (TracerSaveParameter == 'Ntracers'):
+            Cells.update({'Ntracers' : np.array([Ntracers])})
+        elif (TracerSaveParameter == 'Snap'):
+            Cells.update({'Snap' : np.array([snapNumber])})
+        elif (TracerSaveParameter == 'trid'):
+            #Save Tracer IDs
+            Cells.update({'trid':Tracers})
+        elif (TracerSaveParameter == 'prid'):
+            #Save Parent Cell IDs
+            Cells.update({'prid':Parents})
+        elif (TracerSaveParameter == 'id'):
+            #Save Cell IDs
+            Cells.update({'id':CellIDs})
+        else:
+            Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][ParentsIndices]})
+
+    return Cells
 def t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly):
 
     print(f"[@{snapNumber}]: Saving Cell Data!")
@@ -1070,11 +1121,14 @@ def hdf5_save(path,data):
             saveKey = None
             #Loop over Metakeys in tuple key of met-dictionary
             # Save this new metakey as one string, separated by '_'
-            for entry in key:
-                if saveKey is None:
-                    saveKey = entry
-                else:
-                    saveKey = saveKey + "_"  + str(entry)
+            if (isinstance(key,tuple)==True):
+                for entry in key:
+                    if saveKey is None:
+                        saveKey = entry
+                    else:
+                        saveKey = saveKey + "_"  + str(entry)
+            else:
+                saveKey = key
             #Create meta-dictionary entry with above saveKey
             #   Add to this dictionary entry a dictionary with keys from sub-dict
             #   and values from sub dict. Gzip for memory saving.
@@ -1294,32 +1348,33 @@ def flatten_wrt_T(dataDict,snapRange,TRACERSPARAMS):
     return flattened_dict
 #------------------------------------------------------------------------------#
 
-def flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams):
+def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
 
     flattened_dict = {}
     snapRange = [xx for xx in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)]
-    for T in TRACERSPARAMS['targetTLst']:
-        tmp = {}
-        newkey = f"T{T}"
-        print(f"Starting {newkey} analysis!")
 
-        for snap in snapRange:
-            print(f"Snap {snap}!")
-            key = (f"T{T}",f"{int(snap)}")
-            for k, v in dataDict[key].items():
-                if (k in saveParams):
-                    tracerData,_  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                    Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
-                    SelectedTracers=dataDict[key]['trid'],Data=dataDict[key][k])
-                    tracerData = np.array(tracerData)
-                    if (k in tmp.keys()):
-                        entry = tmp[k]
-                        entry.append(tracerData)
-                        tmp.update({k : entry})
-                    else:
-                        tmp.update({k : [tracerData]})
+    tmp = {}
+    newkey = f"T{targetT}"
+    print(f"Starting {newkey} analysis!")
 
-        flattened_dict.update({newkey: tmp})
+    for snap in snapRange:
+        print(f"T{targetT} Snap {snap}!")
+        key = (f"T{targetT}",f"{int(snap)}")
+        for k, v in dataDict[key].items():
+            if (k in saveParams):
+                # tracerData,_  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                # Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
+                # SelectedTracers=dataDict[key]['trid'],Data=dataDict[key][k])
+                # tracerData = np.array(tracerData)
+                tracerData = v
+                if (k in tmp.keys()):
+                    entry = tmp[k]
+                    entry.append(tracerData)
+                    tmp.update({k : entry})
+                else:
+                    tmp.update({k : [tracerData]})
+
+    flattened_dict.update({newkey: tmp})
 
     return flattened_dict
 #------------------------------------------------------------------------------#

@@ -35,10 +35,8 @@ colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
-
-logParameters = ['T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
-
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+# "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
  'vrad':r'Radial Velocity [$km$ $s^{-1}$]',\
@@ -51,7 +49,10 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
  'tff': r'Free Fall Time [$Gyr$]',\
- 'tcool_tff' : r'Cooling Time over Free Fall Time'}
+ 'tcool_tff' : r'Cooling Time over Free Fall Time',\
+ 'csound' : r'Sound Speed',\
+ 'rho_rhomean': r'Density over Average Universe Density',\
+ 'dens' : r'Density [$g$ $cm^{-3}$]'}
 
 for entry in logParameters:
     ylabel[entry] = r'Log10 '+ ylabel[entry]
@@ -64,6 +65,8 @@ else:
 
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+
+saveParams = TRACERSPARAMS['saveParams'] #['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 
 DataSavepathSuffix = f".h5"
 
@@ -230,20 +233,24 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam]
-        plotYdata = Ydata[f"T{temp}"][analysisParam]
-        plotXdata = Xdata[f"T{temp}"][analysisParam]
-        violinData = ViolinDict[f"T{temp}"][analysisParam]
-        SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16')
+        plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
+        plotYdata = Ydata[f"T{temp}"][analysisParam].copy()
+        plotXdata = Xdata[f"T{temp}"][analysisParam].copy()
+        violinData = ViolinDict[f"T{temp}"][analysisParam].copy()
+        SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16').copy()
 
         uniqueSubHalo = np.unique(SubHaloIDData)
 
         normedSubHaloIDData = SubHaloIDData.copy()
         for (kk,halo) in enumerate(uniqueSubHalo):
             whereHalo = np.where(SubHaloIDData==halo)
-            normedSubHaloIDData[whereHalo] = kk - 1
+            if((halo==int(TRACERSPARAMS['haloID']))or(halo==-1)):
+                normedSubHaloIDData[whereHalo] = halo
+            else:
+                normedSubHaloIDData[whereHalo] = int(TRACERSPARAMS['haloID']) + 1
 
         normedUniqueSubHalo = np.unique(normedSubHaloIDData)
+
         #Convert lookback time to universe age
         t0 = np.nanmax(plotXdata)
         plotXdata = abs(plotXdata - t0)
@@ -344,6 +351,21 @@ for analysisParam in saveParams:
             #         currentAx.plot(np.array([plotXScatterdata[jj-1][whereDataIsNOTnan][kk],plotXScatterdata[jj][whereDataIsNOTnan][kk]]),\
             #         np.array([(plotYdata[jj-1][whereDataIsNOTnan][kk]),(plotYdata[jj][whereDataIsNOTnan][kk])]), color = colourTracersHalo[normedSubHaloIDData[jj][whereDataIsNOTnan]][kk], alpha = opacity )
 
+        unboundFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==-1)[0])[0])/float(subset)
+        unboundFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==-1)[0])[0])/float(subset)
+        haloFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==int(TRACERSPARAMS['haloID']))[0])[0])/float(subset)
+        haloFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==int(TRACERSPARAMS['haloID']))[0])[0])/float(subset)
+        otherHaloFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==int(TRACERSPARAMS['haloID'])+1)[0])[0])/float(subset)
+        otherHaloFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==int(TRACERSPARAMS['haloID'])+1)[0])[0])/float(subset)
+
+        HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
+        +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes."\
+        +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes."
+
+        currentAx.text(1.02, 0.5, HaloString, horizontalalignment='left',verticalalignment='center',\
+        transform=currentAx.transAxes, wrap=True,bbox=dict(facecolor='tab:gray', alpha=0.25))
+
+        currentAx.transAxes
 
         parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
@@ -377,7 +399,7 @@ for analysisParam in saveParams:
         currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
         currentAx.axvline(x=vline, c='red')
-        currentAx.set_ylim(ymin=min(datamin,np.nanmin(whiskers_min)), ymax=max(datamax,np.nanmax(whiskers_max)))
+
 
         if (ColourIndividuals == True):
             for jj in range(0,subset):
@@ -396,29 +418,25 @@ for analysisParam in saveParams:
             points = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,1,2)
             segments = np.concatenate([points[:-1],points[1:]], axis=1)
 
-            # cmapLC = ListedColormap(colourTracersHalo)
-            # norm = plt.Normalize(normedSubHaloIDData.min(),normedSubHaloIDData.max())
-            Ncolours = len(uniqueSubHalo)
-            cmap2 = matplotlib.cm.get_cmap(colourmapIndividuals, 256)
-            newcolors = cmap2(np.linspace(0, 0.9, Ncolours))
-            cmap3 = ListedColormap(newcolors)
-            cmin = float(normedSubHaloIDData.min())-0.5
-            cmax = float(normedSubHaloIDData.max())+1.5
-            norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
-            # norm = BoundaryNorm(np.arange(0,len(uniqueSubHalo),1), cmapLC.N)
+            # Ncolours = len(uniqueSubHalo)
+            # cmap2 = matplotlib.cm.get_cmap(colourmapIndividuals, 256)
+            # newcolors = cmap2(np.linspace(0, 0.9, Ncolours))
+            # cmap3 = ListedColormap(newcolors)
+            # cmin = float(normedSubHaloIDData.min())-0.5
+            # cmax = float(normedSubHaloIDData.max())+1.5
+            # norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
 
-            lc = LineCollection(segments,cmap = cmap3, norm=norm, alpha=opacity)
-            # tmp = np.concatenate([normedSubHaloIDData[:,:-1],normedSubHaloIDData[:,1:]],axis=1).reshape(-1)
-            lc.set_array(normedSubHaloIDData[1:,:].flatten())
-
-            # trans = tx.Affine2D().scale(0.1) + currentAx.transData
-            # line.set_transform(trans)
+            if (ColourIndividuals == True):
+                lc = LineCollection(segments,cmap = colourmapIndividuals,alpha=opacity)
+            else:
+                lc = LineCollection(segments,color = colourTracers,alpha=opacity)
+            # lc.set_array(normedSubHaloIDData[1:,:].flatten())
 
             line = currentAx.add_collection(lc)
 
-            cbar = plt.colorbar(line,ticks=normedUniqueSubHalo,ax=currentAx, orientation = 'vertical')
-            cbar.set_label(label=r'Sub-Halo ID')
-            cbar.solids.set(alpha=1)
+            # cbar = plt.colorbar(line,ticks=normedUniqueSubHalo,ax=currentAx, orientation = 'vertical')
+            # cbar.set_label(label=r'Sub-Halo ID')
+            # cbar.solids.set(alpha=1)
 
 
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
@@ -426,10 +444,10 @@ for analysisParam in saveParams:
         currentAx.tick_params(which='both')
 
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
-        currentAx.set_ylim(ymin=datamin, ymax=datamax)
+        currentAx.set_ylim(ymin=min(datamin,np.nanmin(whiskers_min)), ymax=max(datamax,np.nanmax(whiskers_max)))
 
         plot_patch = matplotlib.patches.Patch(color=colour)
-        plot_label = r"$T = 10^{%3.0f} K$"%(float(temp))
+        plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
         currentAx.legend(handles=[plot_patch], labels=[plot_label],loc='upper right')
 
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
@@ -451,7 +469,7 @@ for analysisParam in saveParams:
     axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.90, wspace = 0.005)
+    plt.subplots_adjust(top=0.90, right=0.80)
     opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsViolins.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
