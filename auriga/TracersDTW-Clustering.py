@@ -62,6 +62,8 @@ loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
 dataDict = hdf5_load(loadPath)
 
 for T in Tlst:
+    dtwT_MDict = {}
+    dtwT_DDict = {}
     for analysisParam in dtwParams:
         loadPath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
 
@@ -73,7 +75,11 @@ for T in Tlst:
 
         D = dtwDict[loadKey]['distance_matrix'].copy()
 
+        dtwT_DDict.update({f"log10{analysisParam}" : D})
+
         M = np.log10(dataDict[f"T{T}"][f"{analysisParam}"].copy())
+
+        dtwT_MDict.update({f"log10{analysisParam}" : M})
 
         xData = dataDict[f"T{T}"][f"Lookback"].copy()
 
@@ -100,7 +106,7 @@ for T in Tlst:
         for clusterID in uniqueClusters:
             cluster = M[np.where(clusters==clusterID)]
             cluster_plot = plt.figure()
-            plt.title(f'Cluster {clusterIDT} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
+            plt.title(f'Cluster {clusterID} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
             plt.xlabel('Lookback [Gyr]')
             plt.ylabel(f'Log10{analysisParam}')
             for path in cluster:
@@ -117,3 +123,58 @@ for T in Tlst:
         print("\n" + f"[@T{T} log10{analysisParam}]: Saving Distance Matrix + Clusters data as: "+ savePath)
 
         hdf5_save(savePath,dtwDict)
+
+#------------------------------------------------------------------------------#
+    paramstring = "+".join(dtwParams)
+
+    #Normalise and then sum the distance vectors for each dtwParams
+    Djoint = np.zeros(np.shape(dtwT_DDict[f"log10{dtwParams[0]}"]))
+    for key,value in dtwT_DDict.items():
+        Dtmp = value
+        maxDtmp = np.nanmax(Dtmp)
+        Dtmp = Dtmp/maxDtmp
+        Djoint += Dtmp
+
+    Zjoint= linkage(Djoint,method=method)
+    dendo_plot = plt.figure(figsize=(xsize,ysize))
+    plt.title(f'T{T} log10{paramstring} Hierarchical Clustering Dendrogram using "{method}" method')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Distance')
+    ddata = dendrogram(Zjoint, color_threshold=1.)
+
+    prefixList = TRACERSPARAMS['savepath'].split('/')
+    prefixList = prefixList[(-4):-1]
+    prefix = "-".join(prefixList)
+
+    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"T{T}_log10{paramstring}"+"_"+f"_Joint-Dendrogram.pdf"
+    plt.savefig(opslaan, dpi = DPI, transparent = False)
+    print(opslaan)
+
+    d_crit = get_d_crit(Zjoint,sort_level,maxmimally_distinct_bool)
+    clusters = fcluster(Zjoint, t=d_crit,criterion='distance')
+
+    uniqueClusters =np.unique(clusters)
+
+    for clusterID in uniqueClusters:
+        for key, value in dtwT_MDict.items():
+            cluster = value[np.where(clusters==clusterID)]
+            cluster_plot = plt.figure()
+            plt.title(f'Cluster {clusterID} for {T} log10{paramstring} Hierarchical Clustering using "{method}" method')
+            plt.xlabel('Lookback [Gyr]')
+            plt.ylabel(f'Log10{key}')
+            for path in cluster:
+                plt.plot(xData,path)
+
+            opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"Cluster{clusterID}_T{T}_log10{key}_Joint-log10{paramstring}"+"_"+f"_Joint-Clustered-Individuals.pdf"
+            plt.savefig(opslaan2, dpi = DPI, transparent = False)
+            print(opslaan2)
+
+    newFullSaveDict = {f"T{T}" : T, "clusters" : clusters, "distance_matrices" : dtwT_DDict,\
+     "joint_distance_matrix" : Djoint, "data" : dtwT_MDict, "trid" : dtwDict[loadKey]['trid'].copy()\
+     , "prid" : dtwDict[loadKey]['prid'].copy(), "Lookback" : xData}
+
+    savePath = DataSavepath + f"_T{T}_log10{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
+
+    print("\n" + f"[@T{T} log10{paramstring}]: Saving Joint Distance Matrix + Clusters data as: "+ savePath)
+
+    hdf5_save(savePath,newFullSaveDict)
