@@ -40,8 +40,9 @@ def DTW_prep(M):
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-DataSavepathSuffix = f".h5"
+dtwSubset = int(TRACERSPARAMS['dtwSubset'])
 
+DataSavepathSuffix = f".h5"
 
 print("Loading data!")
 
@@ -79,6 +80,14 @@ for T in Tlst:
         M = np.log10(dataDict[key][analysisParam].T.copy())
         print("...Loaded M matrix!")
 
+        maxSize = min(np.shape(M)[0],dtwSubset)
+        if (maxSize<dtwSubset):
+            print("Taking full set of Tracers! No RAM issues!")
+        elif(maxSize==dtwSubset):
+            print(f"Taking subset {maxSize} number of Tracers to prevent RAM overload!")
+            
+        M = M[:maxSize,:]
+
         print("Prep iterator!")
         iterator = DTW_prep(M)
 
@@ -87,8 +96,8 @@ for T in Tlst:
 
         print("Send M to Mtens cuda!")
         Mtens = torch.tensor(M, device=cuda).view(np.shape(M)[0],np.shape(M)[1],1)
-        print("Make blank cuda tens!")
-        out = torch.empty((0), dtype=torch.float64, device=cuda)
+        print("Make blank list!")
+        out = []
         print("Let's do the Time Warp...")
         start = time.time()
 
@@ -109,7 +118,8 @@ for T in Tlst:
             x = Mtens[xlist].view(len(xlist),np.shape(M)[1],1)
             y = Mtens[ylist].view(len(ylist),np.shape(M)[1],1)
             out_tmp = dtw.forward(x,y)
-            out = torch.cat((out,out_tmp),dim=0)
+            out_tmp = out_tmp.cpu().detach().numpy().tolist()
+            out += out_tmp
             xlist =[]
             ylist =[]
 
@@ -117,14 +127,15 @@ for T in Tlst:
         x = Mtens[xlist].view(len(xlist),np.shape(M)[1],1)
         y = Mtens[ylist].view(len(ylist),np.shape(M)[1],1)
         out_tmp = dtw.forward(x,y)
-        out = torch.cat((out,out_tmp),dim=0)
+        out_tmp = out_tmp.cpu().detach().numpy().tolist()
+        out += out_tmp
 
         end = time.time()
         elapsed = end - start
         print(f"Elapsed time in DTW = {elapsed}s")
 
         saveKey = (f"T{T}",f"log10{analysisParam}")
-        D = out.cpu().detach().numpy()
+        D = np.array(out)
         saveSubDict = {'distance_matrix': D ,'trid': dataDict[f"T{T}"]['trid'].copy(),'prid': dataDict[f"T{T}"]['prid'].copy()}
         saveDict = {saveKey : saveSubDict}
 

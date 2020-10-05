@@ -1126,7 +1126,7 @@ def hdf5_save(path,data):
                     if saveKey is None:
                         saveKey = entry
                     else:
-                        saveKey = saveKey + "_"  + str(entry)
+                        saveKey = saveKey + "-"  + str(entry)
             else:
                 saveKey = key
             #Create meta-dictionary entry with above saveKey
@@ -1154,11 +1154,11 @@ def hdf5_load(path):
     for key,value in loaded.items():
 
         loadKey = None
-        for entry in key.split("_"):
+        for entry in key.split("-"):
             if loadKey is None:
                 loadKey = entry
             else:
-                loadKey = tuple(key.split("_"))
+                loadKey = tuple(key.split("-"))
         #Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k,v in value.items():
