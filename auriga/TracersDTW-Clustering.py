@@ -4,6 +4,7 @@ import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 import matplotlib.colors as mcolors
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from itertools import combinations
@@ -17,7 +18,7 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
+dtwParams = ['T','R','dens','gz','P_tot','B']
 TracersParamsPath = 'TracersParams.csv'
 
 sort_level = 0
@@ -27,9 +28,10 @@ DPI = 250
 xsize =50
 ysize =20
 colourmapIndividuals = "nipy_spectral"
+colour = "tab:gray"
 rgbcolour = mcolors.to_rgb(colour)
-opacity = 0.01
-subset = 500
+opacity = 0.5
+subset = 50
 #==============================================================================#
 def get_d_crit(Z,sort_level,maxmimally_distinct_bool):
     distance_levels = np.array(abs(Z[:-1,2] - Z[1:,2]))
@@ -63,7 +65,7 @@ loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
 
 dataDict = hdf5_load(loadPath)
 
-for T in ['4.0','5.0']:
+for T in Tlst:
     dtwT_MDict = {}
     dtwT_DDict = {}
     for analysisParam in dtwParams:
@@ -71,7 +73,11 @@ for T in ['4.0','5.0']:
 
         print("\n" + f"[@T{T} log10{analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
 
-        loadKey = (f"T{T}",f"log10{analysisParam}")
+        splitString = analysisParam.split("_")
+        if len(splitString)==1:
+            loadKey = (f"T{T}",f"log10{analysisParam}")
+        else:
+            loadKey = (f"T{T}",f"log10{splitString[0]}",splitString[1:])
 
         dtwDict = hdf5_load(loadPath)
 
@@ -97,10 +103,10 @@ for T in ['4.0','5.0']:
         ddata = dendrogram(Z, color_threshold=1.)
 
         prefixList = TRACERSPARAMS['savepath'].split('/')
-        prefixList = prefixList[(-4):-1]
+        prefixList = prefixList[(-4):-2]
         prefix = "-".join(prefixList)
 
-        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"T{T}_log10{analysisParam}"+f"_Dendrogram.pdf"
+        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{analysisParam}"+f"_Dendrogram.pdf"
         plt.savefig(opslaan, dpi = DPI, transparent = False)
         print(opslaan)
 
@@ -117,72 +123,38 @@ for T in ['4.0','5.0']:
         clusters = fcluster(Z, t=d_crit,criterion='distance')
 
         uniqueClusters =np.unique(clusters)
-        plotYdata = []
-        clusterIDdata = []
+
+        print("Cluster Plots!")
         for clusterID in uniqueClusters:
             cluster = M[np.where(clusters==clusterID)]
             clusterIndices = [xx for xx in range(len(cluster))]
             subsetClusterIndices = sample(clusterIndices,min(subset,len(cluster)))
-            subsetCluster = cluster[subsetClusterIndices]
-            plotYdata += subsetCluster.tolist()
-            clusterIDtmp = [clusterID for xx in range(len(subsetCluster))]
-            clusterIDdata += clusterIDtmp
+            plotYdata = cluster[subsetClusterIndices]
 
-        plotYdata = np.array(plotYdata)
-        clusterIDdata = np.array(clusterIDdata)
-
-        print("Cluster Plots!")
-
-        cluster_plot, ax = plt.subplots()
-
-        plt.title(f'Clusters for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
-        plt.xlabel('Lookback [Gyr]')
-        plt.ylabel(f'Log10{analysisParam}')
+            cluster_plot, ax = plt.subplots()
+            plt.title(f'Cluster {clusterID} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
+            plt.xlabel('Lookback [Gyr]')
+            plt.ylabel(f'Log10{analysisParam}')
 
 
-        plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
+            plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
 
-        points = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,1,2)
-        segments = np.concatenate([points[:-1],points[1:]], axis=1)
-        # colourList = [rgbcolour for ii in range(len(segments))]
-        lc = LineCollection(segments,cmap = colourmapIndividuals ,alpha=opacity)
-        line = ax.add_collection(lc)
-        lc.set_array(clusterIDdata.flatten())
-        ax.autoscale()
-        ax.set_xlim(np.min(xData),np.max(xData))
-        ax.set_ylim(np.min(M),np.max(M))
-        # for path in cluster:
-        #     plt.plot(xData,path,color=colour,alpha=opacity)
+            points = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,1,2)
+            segments = np.concatenate([points[:-1],points[1:]], axis=1)
+            # colourList = [rgbcolour for ii in range(len(segments))]
+            lc = LineCollection(segments,color = colour,alpha=opacity)
+            line = ax.add_collection(lc)
+            ax.autoscale()
+            ax.set_xlim(np.min(xData),np.max(xData))
+            ax.set_ylim(np.min(M),np.max(M))
+            # for path in cluster:
+            #     plt.plot(xData,path,color=colour,alpha=opacity)
 
-        opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"Cluster{clusterID}_T{T}_log10{analysisParam}"+f"_Clustered-Individuals.pdf"
-        plt.savefig(opslaan2, dpi = DPI, transparent = False)
-        print(opslaan2)
-        plt.close()
-        # for clusterID in uniqueClusters:
-        #     cluster = M[np.where(clusters==clusterID)]
-        #     cluster_plot, ax = plt.subplots()
-        #     plt.title(f'Cluster {clusterID} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
-        #     plt.xlabel('Lookback [Gyr]')
-        #     plt.ylabel(f'Log10{analysisParam}')
-        #
-        #
-        #     plotXdata = np.array([xData[:,0] for path in range(len(cluster))])
-        #
-        #     points = np.array([plotXdata.T, cluster.T]).T.reshape(-1,1,2)
-        #     segments = np.concatenate([points[:-1],points[1:]], axis=1)
-        #     # colourList = [rgbcolour for ii in range(len(segments))]
-        #     lc = LineCollection(segments,color = colour,alpha=opacity)
-        #     line = ax.add_collection(lc)
-        #     ax.autoscale()
-        #     ax.set_xlim(np.min(xData),np.max(xData))
-        #     ax.set_ylim(np.min(M),np.max(M))
-        #     # for path in cluster:
-        #     #     plt.plot(xData,path,color=colour,alpha=opacity)
-        #
-        #     opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"Cluster{clusterID}_T{T}_log10{analysisParam}"+f"_Clustered-Individuals.pdf"
-        #     plt.savefig(opslaan2, dpi = DPI, transparent = False)
-        #     print(opslaan2)
-        #     plt.close()
+            opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{analysisParam}"+f"_Clustered-Individuals.pdf"
+            plt.savefig(opslaan2, dpi = DPI, transparent = False)
+            print(opslaan2)
+            plt.close()
+
         dtwDict[loadKey].update({"clusters" : clusters})
 
         savePath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-clusters"+DataSavepathSuffix
@@ -196,6 +168,32 @@ for T in ['4.0','5.0']:
 
     #Normalise and then sum the distance vectors for each dtwParams
     print("Djoint!")
+    dtwT_DDict = {}
+    dtwT_MDict = {}
+    for analysisParam in dtwParams:
+        loadPath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
+
+        print("\n" + f"[@T{T} log10{analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
+
+        splitString = analysisParam.split("_")
+        if len(splitString)==1:
+            loadKey = (f"T{T}",f"log10{analysisParam}")
+        else:
+            loadKey = (f"T{T}",f"log10{splitString[0]}",splitString[1])
+
+        dtwDict = hdf5_load(loadPath)
+
+        D = dtwDict[loadKey]['distance_matrix'].copy()
+        maxD = np.nanmax(D)
+        D = D/maxD
+
+        dtwT_DDict.update({f"log10{analysisParam}" : D})
+
+        M = np.log10(dataDict[f"T{T}"][f"{analysisParam}"].T.copy())
+
+        dtwT_MDict.update({f"log10{analysisParam}" : M})
+
+        xData = dataDict[f"T{T}"][f"Lookback"].copy()
     Djoint = np.zeros(np.shape(dtwT_DDict[f"log10{dtwParams[0]}"]))
     for key,value in dtwT_DDict.items():
         Djoint += value
@@ -211,50 +209,62 @@ for T in ['4.0','5.0']:
     ddata = dendrogram(Zjoint, color_threshold=1.)
 
     prefixList = TRACERSPARAMS['savepath'].split('/')
-    prefixList = prefixList[(-4):-1]
+    prefixList = prefixList[(-4):-2]
     prefix = "-".join(prefixList)
 
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"T{T}_log10{paramstring}"+f"_Joint-Dendrogram.pdf"
+    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{paramstring}"+f"_Joint-Dendrogram.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
 
-    print(f"Check Dendrogram and input d_crit params:")
-    maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
-    maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
+print(f"Check Dendrogram and input d_crit params:")
+maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
+maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
 
-    sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
-    sort_level = int(sort_level_input)
+sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
+sort_level = int(sort_level_input)
 
-    print("Joint d_crit!")
-    d_crit = get_d_crit(Zjoint,sort_level,maxmimally_distinct_bool)
-    print("Joint Fcluster!")
-    clusters = fcluster(Zjoint, t=d_crit,criterion='distance')
+print("Joint d_crit!")
+d_crit = get_d_crit(Zjoint,sort_level,maxmimally_distinct_bool)
+print("Joint Fcluster!")
+clusters = fcluster(Zjoint, t=d_crit,criterion='distance')
 
-    uniqueClusters =np.unique(clusters)
+uniqueClusters =np.unique(clusters)
 
-    print("Joint clusters!")
-    for clusterID in uniqueClusters:
-        for key, value in dtwT_MDict.items():
+print("Joint clusters!")
+for clusterID in uniqueClusters:
+    for key, value in dtwT_MDict.items():
+        if (key == "log10R"):
+            tmp = value[np.where(clusters==clusterID)]
+            bases = np.array([[10. for yy in range(len(xData[:,0]))] for xx in range(len(tmp))])
+            cluster = np.power(bases,tmp)
+            ymin = 0.
+            ymax = 300.
+        else:
             cluster = value[np.where(clusters==clusterID)]
-            cluster_plot, ax = plt.subplots()
-            plt.title(f'Cluster {clusterID} for {T} log10{paramstring} Hierarchical Clustering using "{method}" method')
-            plt.xlabel('Lookback [Gyr]')
-            plt.ylabel(f'Log10{key}')
+            ymin = np.min(value)
+            ymax = np.max(value)
+        clusterIndices = [xx for xx in range(len(cluster))]
+        subsetClusterIndices = sample(clusterIndices,min(subset,len(cluster)))
+        plotYdata = cluster[subsetClusterIndices]
 
-            plotXdata = np.array([xData[:,0] for path in range(len(cluster))])
+        cluster_plot, ax = plt.subplots()
+        plt.title(f'Cluster {clusterID} for {T} log10{paramstring} Hierarchical Clustering using "{method}" method')
+        plt.xlabel('Lookback [Gyr]')
+        plt.ylabel(f'Log10{key}')
 
-            points = np.array([plotXdata.T, cluster.T]).T.reshape(-1,1,2)
-            segments = np.concatenate([points[:-1],points[1:]], axis=1)
-            # colourList = [rgbcolour for ii in range(len(segments))]
-            lc = LineCollection(segments,color = colour,alpha=opacity)
-            line = ax.add_collection(lc)
-            ax.autoscale()
-            ax.set_xlim(np.min(xData),np.max(xData))
-            ax.set_ylim(np.min(M),np.max(M))
+        plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
 
-            opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"Cluster{clusterID}_T{T}_log10{key}_Joint-log10{paramstring}"+f"_Joint-Clustered-Individuals.pdf"
-            plt.savefig(opslaan2, dpi = DPI, transparent = False)
-            print(opslaan2)
+        paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,len(xData[:,0]),2)
+
+        lc = LineCollection(paths, color = colour ,alpha=opacity)
+        line = ax.add_collection(lc)
+        ax.autoscale()
+        ax.set_xlim(np.min(xData),np.max(xData))
+        ax.set_ylim(ymin,ymax)
+
+        opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{key}_Joint-log10{paramstring}"+f"_Joint-Clustered-Individuals.pdf"
+        plt.savefig(opslaan2, dpi = DPI, transparent = False)
+        print(opslaan2)
 
     newFullSaveDict = {f"T{T}" : T, "clusters" : clusters, "distance_matrices" : dtwT_DDict,\
      "joint_distance_matrix" : Djoint, "data" : dtwT_MDict, "trid" : dtwDict[loadKey]['trid'].copy()\

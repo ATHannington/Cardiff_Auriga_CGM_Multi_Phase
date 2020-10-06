@@ -38,6 +38,15 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     # load tracers data
     snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
+
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
@@ -52,15 +61,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
-
-    #--------------------------#
-    ##    Units Conversion    ##
-    #--------------------------#
-
-    #Convert Units
-    ## Make this a seperate function at some point??
-    snapGas.pos *= 1e3 #[kpc]
-    snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
@@ -91,7 +91,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     #Select Cells which have the tracers from the selection snap in them
     TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber)
-
+    print(f"After GetCellsFromTracers CellsCFT R= {CellsCFT['R']}")
     # #Add snap data to temperature specific dictionary
     # print(f"Adding (T{targetT},{int(snap)}) to Dict")
     # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
@@ -146,6 +146,14 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
     snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo=HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
 
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
@@ -161,14 +169,6 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
-
-    #--------------------------#
-    ##    Units Conversion    ##
-    #--------------------------#
-    #Convert Units
-    ## Make this a seperate function at some point??
-    snapGas.pos *= 1e3 #[kpc]
-    snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
@@ -211,7 +211,6 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
                     (snapGas.data['sfr'][whereGas]<=0))
 
     Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
-
     #Get Cell data and Cell IDs from tracers based on condition
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=snapNumber)
 
@@ -567,7 +566,7 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
             Cells.update({'prid':Parents})
         elif (TracerSaveParameter == 'id'):
             #Save Cell IDs
-            Cells.update({'id':CellIDs})
+            Cells.update({'id':Parents})
         else:
             Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
 
@@ -618,7 +617,7 @@ def saveCellsData(snapGas,Tracers,Parents,CellIDs,ParentsIndices,Ntracers,snapNu
             Cells.update({'prid':Parents})
         elif (TracerSaveParameter == 'id'):
             #Save Cell IDs
-            Cells.update({'id':CellIDs})
+            Cells.update({'id':Parents})
         else:
             Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][ParentsIndices]})
 
@@ -723,7 +722,7 @@ def SetCentre(snap,snap_subfind,HaloID,snapNumber):
     print(f'[@{snapNumber}]: Centering!')
 
     # subfind has calculated its centre of mass for you
-    HaloCentre = snap_subfind.data['fpos'][HaloID,:]
+    HaloCentre = snap_subfind.data['fpos'][HaloID,:]*1e3
     # use the subfind COM to centre the coordinates on the galaxy
     snap.data['pos'] = (snap.data['pos'] - np.array(HaloCentre))
 

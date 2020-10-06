@@ -415,8 +415,8 @@ for analysisParam in saveParams:
             #         currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
 
             whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
-            points = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,1,2)
-            segments = np.concatenate([points[:-1],points[1:]], axis=1)
+            paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
+            # segments = np.concatenate([points[:-1],points[1:]], axis=1)
 
             # Ncolours = len(uniqueSubHalo)
             # cmap2 = matplotlib.cm.get_cmap(colourmapIndividuals, 256)
@@ -427,9 +427,9 @@ for analysisParam in saveParams:
             # norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
 
             if (ColourIndividuals == True):
-                lc = LineCollection(segments,cmap = colourmapIndividuals,alpha=opacity)
+                lc = LineCollection(paths,cmap = colourmapIndividuals,alpha=opacity)
             else:
-                lc = LineCollection(segments,color = colourTracers,alpha=opacity)
+                lc = LineCollection(paths,color = colourTracers,alpha=opacity)
             # lc.set_array(normedSubHaloIDData[1:,:].flatten())
 
             line = currentAx.add_collection(lc)
