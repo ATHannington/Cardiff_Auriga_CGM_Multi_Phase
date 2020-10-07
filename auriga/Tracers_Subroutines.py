@@ -38,15 +38,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     # load tracers data
     snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
 
-    #--------------------------#
-    ##    Units Conversion    ##
-    #--------------------------#
-
-    #Convert Units
-    ## Make this a seperate function at some point??
-    snapGas.pos *= 1e3 #[kpc]
-    snapGas.vol *= 1e9 #[kpc^3]
-
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
@@ -61,6 +52,16 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
+
+
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
@@ -146,14 +147,6 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
     snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo=HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapTracers = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [6], lazy_load=lazyLoadBool)
-    #--------------------------#
-    ##    Units Conversion    ##
-    #--------------------------#
-
-    #Convert Units
-    ## Make this a seperate function at some point??
-    snapGas.pos *= 1e3 #[kpc]
-    snapGas.vol *= 1e9 #[kpc^3]
 
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
@@ -169,6 +162,15 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
 
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
+
+    #--------------------------#
+    ##    Units Conversion    ##
+    #--------------------------#
+
+    #Convert Units
+    ## Make this a seperate function at some point??
+    snapGas.pos *= 1e3 #[kpc]
+    snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
@@ -722,7 +724,7 @@ def SetCentre(snap,snap_subfind,HaloID,snapNumber):
     print(f'[@{snapNumber}]: Centering!')
 
     # subfind has calculated its centre of mass for you
-    HaloCentre = snap_subfind.data['fpos'][HaloID,:]*1e3
+    HaloCentre = snap_subfind.data['fpos'][HaloID,:]
     # use the subfind COM to centre the coordinates on the galaxy
     snap.data['pos'] = (snap.data['pos'] - np.array(HaloCentre))
 
@@ -838,27 +840,27 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0,snapNumber=None):
     """
     print(f"[@{snapNumber}]: Select only Halo {Halo} and 'unbound' Gas!")
 
-    HaloList = [float(Halo),-1.]
-    whereHalo = np.where(np.isin(snapGas.data['SubHaloID'],HaloList))[0]
+    # HaloList = [float(Halo),-1.]
+    # whereHalo = np.where(np.isin(snapGas.data['SubHaloID'],HaloList))[0]
 
 
-    # #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
-    # gaslength = snap_subfind.data['slty'][Halo,0]
-    #
-    # whereGas = np.where(snapGas.type==0)[0]
-    # whereStars = np.where(snapGas.type==4)[0]
-    # NGas = len(snapGas.type[whereGas])
-    # NStars = len(snapGas.type[whereStars])
-    #
-    # selectGas = [ii for ii in range(0,gaslength)]
-    # selectStars = [ii for ii in range(NGas,NStars)]
-    #
-    # selected = selectGas + selectStars
+    #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
+    gaslength = snap_subfind.data['slty'][Halo,0]
+
+    whereGas = np.where(snapGas.type==0)[0]
+    whereStars = np.where(snapGas.type==4)[0]
+    NGas = len(snapGas.type[whereGas])
+    NStars = len(snapGas.type[whereStars])
+
+    selectGas = [ii for ii in range(0,gaslength)]
+    selectStars = [ii for ii in range(NGas,NStars)]
+
+    selected = selectGas + selectStars
 
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
         if (value is not None):
-            snapGas.data[key] = value[whereHalo]
+            snapGas.data[key] = value[selected]
 
     return snapGas
 
