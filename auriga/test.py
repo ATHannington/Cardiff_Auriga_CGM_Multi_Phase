@@ -38,6 +38,17 @@ snap_subfind = load_subfind(snapNumber,dir=simfile)
 
 # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
 snapGas     = gadget_readsnap(snapNumber, simfile, hdf5=True, loadonlytype = [0,4], lazy_load=True, subfind = snap_subfind)
+
+#Load Cell IDs - avoids having to turn lazy_load off...
+# But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+#  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+#   Be in memory so taking the subset would be skipped.
+tmp = snapGas.data['id']
+tmp = snapGas.data['age']
+tmp = snapGas.data['hrgm']
+tmp = snapGas.data['mass']
+del tmp
+
 #Centre the simulation on HaloID 0
 snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
 

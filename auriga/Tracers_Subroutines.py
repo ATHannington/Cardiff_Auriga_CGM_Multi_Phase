@@ -46,6 +46,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     tmp = snapGas.data['age']
     tmp = snapGas.data['hrgm']
     tmp = snapGas.data['mass']
+    tmp = snapGas.data['pos']
+    tmp = snapGas.data['vol']
     del tmp
 
     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
@@ -156,6 +158,8 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     tmp = snapGas.data['age']
     tmp = snapGas.data['hrgm']
     tmp = snapGas.data['mass']
+    tmp = snapGas.data['pos']
+    tmp = snapGas.data['vol']
     del tmp
 
     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
@@ -840,27 +844,27 @@ def HaloOnlyGasSelect(snapGas,snap_subfind,Halo=0,snapNumber=None):
     """
     print(f"[@{snapNumber}]: Select only Halo {Halo} and 'unbound' Gas!")
 
-    # HaloList = [float(Halo),-1.]
-    # whereHalo = np.where(np.isin(snapGas.data['SubHaloID'],HaloList))[0]
+    HaloList = [float(Halo),-1.]
+    whereHalo = np.where(np.isin(snapGas.data['SubHaloID'],HaloList))[0]
 
 
-    #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
-    gaslength = snap_subfind.data['slty'][Halo,0]
-
-    whereGas = np.where(snapGas.type==0)[0]
-    whereStars = np.where(snapGas.type==4)[0]
-    NGas = len(snapGas.type[whereGas])
-    NStars = len(snapGas.type[whereStars])
-
-    selectGas = [ii for ii in range(0,gaslength)]
-    selectStars = [ii for ii in range(NGas,NStars)]
-
-    selected = selectGas + selectStars
+    # #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
+    # gaslength = snap_subfind.data['slty'][Halo,0]
+    #
+    # whereGas = np.where(snapGas.type==0)[0]
+    # whereStars = np.where(snapGas.type==4)[0]
+    # NGas = len(snapGas.type[whereGas])
+    # NStars = len(snapGas.type[whereStars])
+    #
+    # selectGas = [ii for ii in range(0,gaslength)]
+    # selectStars = [ii for ii in range(NGas,NStars)]
+    #
+    # selected = selectGas + selectStars
 
     #Take only data from above HaloID
     for key, value in snapGas.data.items():
         if (value is not None):
-            snapGas.data[key] = value[selected]
+            snapGas.data[key] = value[whereHalo]
 
     return snapGas
 
