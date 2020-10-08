@@ -20,58 +20,17 @@ import pytest
 SUBSET = None
 IndividualTracerSubset = 500
 
-#Select Halo of interest:
-#   0 is the most massive:
-HaloID = 0
-
-#Input parameters path:
-TracersParamsPath = 'TracersParams_unit-test.csv'
-
-#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
-lazyLoadBool = True
-
 #Parameters where shape should be (1,)
 singleValueParams = ['Lookback','Ntracers','Snap']
 
 #Params where shape should be >= shape('id')
-exceptionsParams = ['trid','prid']
+#exceptionsParams = ['trid','prid']
+
 #==============================================================================#
 #       USER DEFINED PARAMETERS
 #==============================================================================#
-#Entered parameters to be saved from
-#   n_H, B, R, T
-#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','csound','tcross','tff','tcool_tff']
-
-print("")
-print("Saved Parameters in this Analysis:")
-print(saveParams)
-
-#Optional Tracer only (no stats in .csv) parameters to be saved
-#   Cannot guarantee that all Plotting and post-processing are independent of these
-#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
-saveTracersOnly = ['sfr','age']
-
-print("")
-print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
-print(saveTracersOnly)
-
-#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
-saveEssentials = ['Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
-
-print("")
-print("ESSENTIAL Saved Parameters in this Analysis:")
-print(saveEssentials)
-
-saveTracersOnly = saveTracersOnly + saveEssentials
-
-#Save types, which when combined with saveparams define what data is saved.
-#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
-saveTypes= ['median','UP','LO']
-
-#Select Halo of interest:
-#   0 is the most massive:
-HaloID = 0
+#Input parameters path:
+TracersParamsPath = 'TracersParams.csv'
 
 #File types for data save.
 #   Mini: small median and percentiles data
@@ -79,6 +38,15 @@ HaloID = 0
 MiniDataPathSuffix = f".h5"
 FullDataPathSuffix = f".h5"
 
+#Lazy Load switch. Set to False to save all data (warning, pickle file may explode)
+lazyLoadBool = True
+
+#Number of cores to run on:
+n_processes = 4
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
+saveTypes= ['median','UP','LO']
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -93,11 +61,46 @@ for key,value in TRACERSPARAMS.items():
     print(f"{key}: {value}")
 
 print("")
+
+#Entered parameters to be saved from
+#   n_H, B, R, T
+#   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
+saveParams = TRACERSPARAMS['saveParams']#['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','csound','tcross','tff','tcool_tff']
+
+print("")
+print("Saved Parameters in this Analysis:")
+print(saveParams)
+
+#Optional Tracer only (no stats in .csv) parameters to be saved
+#   Cannot guarantee that all Plotting and post-processing are independent of these
+#       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
+saveTracersOnly = TRACERSPARAMS['saveTracersOnly']#['sfr','age']
+
+print("")
+print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
+print(saveTracersOnly)
+
+#SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+saveEssentials = TRACERSPARAMS['saveEssentials']#['FoFHaloID','SubHaloID','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
+
+print("")
+print("ESSENTIAL Saved Parameters in this Analysis:")
+print(saveEssentials)
+
+saveTracersOnly = saveTracersOnly + saveEssentials
+
+#Combine saveParams and saveTypes to form each combination for saving data types
+saveKeys =[]
+for param in saveParams:
+    for TYPE in saveTypes:
+        saveKeys.append(param+TYPE)
+
+#Select Halo of interest:
+#   0 is the most ive:
+HaloID = int(TRACERSPARAMS['haloID'])
 #==============================================================================#
-
-simfile='/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
-snapnum=127 # set snapshot to look at
-
+#       Chemical Properties
+#==============================================================================#
 #element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
 elements       = ['H',  'He',  'C',   'N',   'O',   'Ne',  'Mg',  'Si',  'Fe',  'Y',   'Sr',  'Zr',  'Ba',   'Pb']
 elements_Z     = [1,    2,     6,     7,     8,     10,    12,    14,    26,    39,    38,    40,    56,     82]
@@ -108,6 +111,9 @@ Zsolar = 0.0127
 
 omegabaryon0 = 0.048
 #==============================================================================#
+#       MAIN PROGRAM
+#==============================================================================#
+#==============================================================================#
 #                                                                              #
 #                       PREPARE SAMPLE DATA                                    #
 #                                                                              #
@@ -115,7 +121,7 @@ omegabaryon0 = 0.048
 FullDict = {}
 
 if (len(TRACERSPARAMS['targetTLst'])>1):
-    print(f"[@TRACERSPARAMS @Tracers_unit-test.py :] len(targetTLst) > 1 ! Only 1 first temperature is utilised in unit-test.")
+    print(f"[@TRACERSPARAMS :] len(targetTLst) > 1 ! Only 1 first temperature is utilised.")
 
 targetT = TRACERSPARAMS['targetTLst'][0]
 
@@ -218,13 +224,6 @@ def test_CellsShapes():
     for key, values in CellsTFC.items():
         if (key in singleValueParams):
             truthyList.append(np.shape(values)[0] == 1)
-        elif(key in exceptionsParams):
-            if(key == 'trid'):
-                truthyList.append(np.shape(values)[0] == np.shape(TracersTFC)[0])
-            elif(key == 'prid'):
-                truthyList.append(np.shape(values)[0] == np.shape(ParentsTFC)[0])
-            else:
-                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsTFC)[0])
         else:
             truthyList.append(np.shape(values)[0] == np.shape(CellIDsTFC)[0])
 
@@ -237,13 +236,6 @@ def test_CellsShapes():
     for key, values in CellsCFTinit.items():
         if (key in singleValueParams):
             truthyList.append(np.shape(values)[0] == 1)
-        elif(key in exceptionsParams):
-            if(key == 'trid'):
-                truthyList.append(np.shape(values)[0] == np.shape(TracersCFTinit)[0])
-            elif(key == 'prid'):
-                truthyList.append(np.shape(values)[0] == np.shape(ParentsCFTinit)[0])
-            else:
-                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsCFTinit)[0])
         else:
             truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFTinit)[0])
 
@@ -255,13 +247,6 @@ def test_CellsShapes():
     for key, values in CellsCFT.items():
         if (key in singleValueParams):
             truthyList.append(np.shape(values)[0] == 1)
-        elif(key in exceptionsParams):
-            if(key == 'trid'):
-                truthyList.append(np.shape(values)[0] == np.shape(TracersCFT)[0])
-            elif(key == 'prid'):
-                truthyList.append(np.shape(values)[0] == np.shape(ParentsCFT)[0])
-            else:
-                truthyList.append(np.shape(values)[0] >= np.shape(CellIDsCFT)[0])
         else:
             truthyList.append(np.shape(values)[0] == np.shape(CellIDsCFT)[0])
 
@@ -313,9 +298,9 @@ def test_IndividualTracerFakeData():
     assert len(SelectedTracers1) == rangeMax,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 contains non-trid entries!"
 
-    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
-    Data=tempData,mass=mass1)
+    Data=tempData)
 
     data_flat = []
     for val in data:
@@ -326,19 +311,8 @@ def test_IndividualTracerFakeData():
 
     data = data_flat
 
-    massData_flat = []
-    for val in massData:
-         if isinstance(val,list):
-             massData_flat.append(val[0])
-         else:
-             massData_flat.append(val)
-
-    massData = massData_flat
-
 
     assert np.shape(data)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned data not size == rangeMax! Some data/NaNs may be missing!"
-    assert np.shape(massData)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned mass data not size == rangeMax! Some data/NaNs may be missing!"
-
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= rangeMax,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not of size <= rangeMax! There may be too many Returned Tracers!"
 
@@ -362,9 +336,9 @@ def test_IndividualTracerFakeData():
     assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 contains non-trid entries!"
 
-    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
-    Data=tempData,mass=mass1)
+    Data=tempData)
 
     data_flat = []
     for val in data:
@@ -375,18 +349,7 @@ def test_IndividualTracerFakeData():
 
     data = data_flat
 
-    massData_flat = []
-    for val in massData:
-         if isinstance(val,list):
-             massData_flat.append(val[0])
-         else:
-             massData_flat.append(val)
-
-    massData = massData_flat
-
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
-    assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
-
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
 
@@ -418,9 +381,9 @@ def test_IndividualTracerFakeData():
     assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 contains non-trid2 entries!"
 
-    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=trid2,\
+    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid2,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
-    Data=tempData,mass=mass1)
+    Data=tempData)
 
     data_flat = []
     for val in data:
@@ -431,18 +394,7 @@ def test_IndividualTracerFakeData():
 
     data = data_flat
 
-    massData_flat = []
-    for val in massData:
-         if isinstance(val,list):
-             massData_flat.append(val[0])
-         else:
-             massData_flat.append(val)
-
-    massData = massData_flat
-
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
-    assert np.shape(massData)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned mass data not size == subset! Some data/NaNs may be missing!"
-
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
 
@@ -473,9 +425,9 @@ def test_IndividualTracer():
 
     SelectedTracers1 = snapTracers.data['trid'][TracerNumberSelect]
 
-    data, massData, TracersReturned = GetIndividualCellFromTracer(Tracers=snapTracers.data['trid'],\
+    data, TracersReturned = GetIndividualCellFromTracer(Tracers=snapTracers.data['trid'],\
     Parents=snapTracers.data['prid'],CellIDs=snapGas.data['id'],SelectedTracers=SelectedTracers1,\
-    Data=snapGas.data['T'],mass=snapGas.data['mass'])
+    Data=snapGas.data['T'])
 
     data_flat = []
     for val in data:
@@ -486,17 +438,7 @@ def test_IndividualTracer():
 
     data = data_flat
 
-    massData_flat = []
-    for val in massData:
-         if isinstance(val,list):
-             massData_flat.append(val[0])
-         else:
-             massData_flat.append(val)
-
-    massData = massData_flat
-
     assert np.shape(data)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
-    assert np.shape(massData)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned mass data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
 
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@Individual Tracer:] Tracers Returned is not a IndividualTracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= IndividualTracerSubset,"[@Individual Tracer:] Tracers Returned is not of size <= IndividualTracerSubset! There may be too many Returned Tracers!"

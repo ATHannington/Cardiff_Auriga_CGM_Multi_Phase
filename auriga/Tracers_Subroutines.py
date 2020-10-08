@@ -55,7 +55,6 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #Centre the simulation on HaloID 0
     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
 
-
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
@@ -87,14 +86,13 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
-
     ###
     ##  Selection   ##
     ###
 
     #Select Cells which have the tracers from the selection snap in them
     TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber)
-    print(f"After GetCellsFromTracers CellsCFT R= {CellsCFT['R']}")
+
     # #Add snap data to temperature specific dictionary
     # print(f"Adding (T{targetT},{int(snap)}) to Dict")
     # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
@@ -217,8 +215,10 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
                     (snapGas.data['sfr'][whereGas]<=0))
 
     Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
+
     #Get Cell data and Cell IDs from tracers based on condition
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=snapNumber)
+
 
     # #Add snap data to temperature specific dictionary
     # print(f"Adding (T{targetT},{int(snap)}) to Dict")
@@ -479,9 +479,29 @@ def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,sna
     Tracers = snapTracers.trid[ParentsIndices]
     Parents = snapTracers.prid[ParentsIndices]
 
-    #Get CellIDs for cells which meet condition AND contain tracers
-    CellsIndices = np.where(np.isin(snapGas.id,Parents))
-    CellIDs = snapGas.id[CellsIndices]
+    #Get indices of CellIDs contained in parents. This should return duplicates
+    #   if an ID is repeated in Parents.
+    CellIndex = np.array([])
+    for ID in Parents:
+        value = np.where(np.isin(CellIDs,ID))
+        CellIndex = np.append(CellIndex, value)
+
+    CellIndex = np.array(list(map(int, CellIndex)))
+
+    #Grab the CellIDs with tracers in, that meet cond. Using CellIndex
+    #   here will intentionally return duplicates s.t. every tracer has a cell.
+    CellIDs = CellIDs[CellIndex]
+    #Grab the indices of the snapGas.id's that have tracers, and meet cond.
+    #   This allows for selection of indices without usin np.isin etc..
+    #       intentionally returns duplicates s.t. every tracer has an associated cell.
+    CellsIndices = Cond[CellIndex]
+
+    # CellsIndices = np.array([])
+    # for ID in CellIDs:
+    #     value = np.where(np.isin(snapGas.id,ID))
+    #     CellsIndices = np.append(CellsIndices, value)
+    #
+    # CellsIndices = np.array(list(map(int, CellsIndices)))
 
     # Save number of tracers
     Ntracers = int(len(Tracers))
@@ -514,19 +534,41 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,
     #Select Cell IDs which are in Parents
     #   NOTE:   This selection causes trouble. Selecting only Halo=HaloID means some Parents now aren't associated with Halo
     #           This means some parents and tracers need to be dropped as they are no longer in desired halo.
-    CellsIndices = np.where(np.isin(snapGas.id,Parents))
-    CellIDs = snapGas.id[CellsIndices]
+    # CellsIndices = np.where(np.isin(snapGas.id,Parents))
+    # CellIDs = snapGas.id[CellsIndices]
 
     #So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
     ParentsIndices = np.where(np.isin(Parents,snapGas.id))
     Parents = Parents[ParentsIndices]
     TracersCFT = TracersCFT[ParentsIndices]
 
+    #Select IDs for Cells with Tracers with no duplicates
+    CellIndicesShort = np.where(np.isin(snapGas.id,Parents))[0]
+    CellIDs = snapGas.id[CellIndicesShort]
+
+    #Create a list of indices of CellIDs that contains a ParentID:
+    #   This WILL include duplicates!
+    CellIndex = np.array([])
+    for ID in Parents:
+        value = np.where(np.isin(CellIDs,ID))
+        CellIndex = np.append(CellIndex, value)
+
+    #Make sure CellIndex is of the right type
+    CellIndex = np.array(list(map(int, CellIndex)))
+
+    #Grab the Cell IDs for cells with Tracers,
+    #   Using CelolIndex here will return duplicate entries s.t. every
+    #   there is a cell for every tracer including duplicates
+    CellIDs = CellIDs[CellIndex]
+    #Grabe The Indices of the snapGas.id's  with parents in. Using
+    #   CellIndex here returns duplicates such that there is a cell for every tracers.
+    CellsIndices = CellIndicesShort[CellIndex]
+
     # Save number of tracers
     Ntracers = int(len(TracersCFT))
     print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-    Cells = saveCellsData(snapGas,TracersCFT,Parents,CellIDs,ParentsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
+    Cells = saveCellsData(snapGas,TracersCFT,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
 
     return TracersCFT, Cells, CellIDs, Parents
 
@@ -538,6 +580,7 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
     """
     print(f"[@{snapNumber}]: Saving Tracer Data!")
 
+    assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
     #Select the data for Cells that meet Cond which contain tracers
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
@@ -572,14 +615,14 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
             Cells.update({'prid':Parents})
         elif (TracerSaveParameter == 'id'):
             #Save Cell IDs
-            Cells.update({'id':Parents})
+            Cells.update({'id':CellIDs})
         else:
             Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
 
     return Cells
 #------------------------------------------------------------------------------#
 
-def saveCellsData(snapGas,Tracers,Parents,CellIDs,ParentsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly):
+def saveCellsData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly):
     """
         Save the requested data from the Tracers' Cells data. Should save an entry for every Tracer,
         duplicating some cells.
@@ -590,11 +633,11 @@ def saveCellsData(snapGas,Tracers,Parents,CellIDs,ParentsIndices,Ntracers,snapNu
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
 
-    assert np.shape(ParentsIndices)[1] == Ntracers,"[@saveCellsData]: Fewer Parents (Cells) than Tracers!!"
+    assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
 
     Cells={}
     for key in saveParams:
-        Cells.update({key: snapGas.data[key][ParentsIndices]})
+        Cells.update({key: snapGas.data[key][CellsIndices]})
 
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
@@ -623,9 +666,9 @@ def saveCellsData(snapGas,Tracers,Parents,CellIDs,ParentsIndices,Ntracers,snapNu
             Cells.update({'prid':Parents})
         elif (TracerSaveParameter == 'id'):
             #Save Cell IDs
-            Cells.update({'id':Parents})
+            Cells.update({'id':CellIDs})
         else:
-            Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][ParentsIndices]})
+            Cells.update({f'{TracerSaveParameter}' : snapGas.data[TracerSaveParameter][CellsIndices]})
 
     return Cells
 def t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly):
