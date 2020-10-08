@@ -1414,6 +1414,7 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
                 # Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
                 # SelectedTracers=dataDict[key]['trid'],Data=dataDict[key][k])
                 # tracerData = np.array(tracerData)
+
                 tracerData = v
                 if (k in tmp.keys()):
                     entry = tmp[k]
@@ -1424,9 +1425,35 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
 
     flattened_dict.update({newkey: tmp})
 
-    return flattened_dict
-#------------------------------------------------------------------------------#
+    final_dict = {}
 
+    for key,dict in flattened_dict.items():
+        tmp = delete_nan_inf_axis(dict,axis=0)
+        final_dict.update({key : tmp})
+
+    return final_dict
+#------------------------------------------------------------------------------#
+def delete_nan_inf_axis(dict,axis=0):
+    """
+        Delete any column of dict with entry NaN or Inf in row (axis).
+    """
+
+    new_dict = {}
+    for key, value in dict.items():
+        if (value is not None):
+            if(axis == 0):
+                value = np.array(value)
+                data = value[:,~np.isnan(value).any(axis=0)&~np.isinf(value).any(axis=0)]
+            elif(axis==1):
+                value = np.array(value)
+                data = value[~np.isnan(value).any(axis=1)&~np.isinf(value).any(axis=1)]
+            else:
+                print("[@delete_nan_inf_axis]: Greater than 2D dimensions of data in dict. Check logic!")
+                assert True==False
+            new_dict.update({key : data})
+
+    return new_dict
+#------------------------------------------------------------------------------#
 def PlotProjections(snapGas,Cells,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
 boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\

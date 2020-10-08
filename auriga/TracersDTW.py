@@ -20,6 +20,8 @@ from random import sample
 import math
 
 dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
+logParams = ['T','dens','gz','P_tot','B']
+
 TracersParamsPath = 'TracersParams.csv'
 batch_limit = 1e5
 printpercent = 1.
@@ -69,6 +71,18 @@ while True:
 
 print("last_batch_size",last_batch_size)
 print("multi_batch_limit",multi_batch_limit)
+tmpanalysisDict = {}
+for T in Tlst:
+    for analysisParam in dtwParams:
+        key = f"T{T}"
+        if (analysisParam in logParams):
+            newkey = (f"T{T}",f"log10{analysisParam}")
+            tmpanalysisDict.update({newkey : np.log10(dataDict[key][analysisParam].T.copy())})
+        else:
+            newkey = (f"T{T}",f"{analysisParam}")
+            tmpanalysisDict.update({newkey : dataDict[key][analysisParam].T.copy()})
+
+analysisDict = delete_nan_inf_axis(tmpanalysisDict,axis=1)
 
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")
@@ -76,8 +90,11 @@ for T in Tlst:
         print(f"Starting T{T} {analysisParam} Analysis!")
 
         print("Load M matrix...")
-        key = f"T{T}"
-        M = np.log10(dataDict[key][analysisParam].T.copy())
+        if (analysisParam in logParams):
+            key = (f"T{T}",f"log10{analysisParam}")
+        else:
+            key = (f"T{T}",f"{analysisParam}")
+        M = analysisDict[key].copy()
         print("...Loaded M matrix!")
 
         maxSize = min(np.shape(M)[0],dtwSubset)
@@ -85,7 +102,7 @@ for T in Tlst:
             print("Taking full set of Tracers! No RAM issues!")
         elif(maxSize==dtwSubset):
             print(f"Taking subset {maxSize} number of Tracers to prevent RAM overload!")
-            
+
         M = M[:maxSize,:]
 
         print("Prep iterator!")
@@ -134,10 +151,9 @@ for T in Tlst:
         elapsed = end - start
         print(f"Elapsed time in DTW = {elapsed}s")
 
-        saveKey = (f"T{T}",f"log10{analysisParam}")
         D = np.array(out)
         saveSubDict = {'distance_matrix': D ,'trid': dataDict[f"T{T}"]['trid'].copy(),'prid': dataDict[f"T{T}"]['prid'].copy()}
-        saveDict = {saveKey : saveSubDict}
+        saveDict = {key : saveSubDict}
 
         savePath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
 

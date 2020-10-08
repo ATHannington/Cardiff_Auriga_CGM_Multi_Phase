@@ -284,10 +284,14 @@ for analysisParam in saveParams:
         datamax = np.nanmax(plotYdata[YDataisNOTinf])
 
         if (analysisParam in logParameters):
+            tmp = []
             for (ind, array) in enumerate(violinData):
                 tmpData = np.log10(array)
                 whereNOTnan = np.where(np.isnan(tmpData)==False)
-                violinData[ind] = tmpData[whereNOTnan]
+                wherenan = np.where(np.isnan(tmpData)==True)
+                tmp.append(tmpData[whereNOTnan])
+
+            violinData = np.array(tmp)
 
             plotYdata = np.log10(plotYdata)
 
@@ -350,17 +354,30 @@ for analysisParam in saveParams:
             #     for kk in range(len(plotYdata[jj-1][whereDataIsNOTnan])):
             #         currentAx.plot(np.array([plotXScatterdata[jj-1][whereDataIsNOTnan][kk],plotXScatterdata[jj][whereDataIsNOTnan][kk]]),\
             #         np.array([(plotYdata[jj-1][whereDataIsNOTnan][kk]),(plotYdata[jj][whereDataIsNOTnan][kk])]), color = colourTracersHalo[normedSubHaloIDData[jj][whereDataIsNOTnan]][kk], alpha = opacity )
+        startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
+        endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
+        startNtracers = dataDict[startkey]['Ntracers'][0]
+        endNtracers = dataDict[endkey]['Ntracers'][0]
 
-        unboundFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==-1)[0])[0])/float(subset)
-        unboundFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==-1)[0])[0])/float(subset)
-        haloFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==int(TRACERSPARAMS['haloID']))[0])[0])/float(subset)
-        haloFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==int(TRACERSPARAMS['haloID']))[0])[0])/float(subset)
-        otherHaloFracStart = float(np.shape(np.where(normedSubHaloIDData[0,:]==int(TRACERSPARAMS['haloID'])+1)[0])[0])/float(subset)
-        otherHaloFracEnd = float(np.shape(np.where(normedSubHaloIDData[-1,:]==int(TRACERSPARAMS['haloID'])+1)[0])[0])/float(subset)
+        startSubHaloIDDataFull = dataDict[startkey]['SubHaloID'].copy()
+        endSubHaloIDDataFull = dataDict[endkey]['SubHaloID'].copy()
+        unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
+        unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
+        haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
+        haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
+
+        otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+        &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
+
+        otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+        &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
+
+        unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
+        unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
 
         HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
-        +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes."\
-        +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes."
+        +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes, {unassignedFracStart:3.3%} start unassigned."\
+        +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes, {unassignedFracEnd:3.3%} end unassigned."
 
         currentAx.text(1.02, 0.5, HaloString, horizontalalignment='left',verticalalignment='center',\
         transform=currentAx.transAxes, wrap=True,bbox=dict(facecolor='tab:gray', alpha=0.25))
