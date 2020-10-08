@@ -94,7 +94,7 @@ for T in Tlst:
             key = (f"T{T}",f"log10{analysisParam}")
         else:
             key = (f"T{T}",f"{analysisParam}")
-        M = analysisDict[key].copy()
+        M = analysisDict[key]
         print("...Loaded M matrix!")
 
         maxSize = min(np.shape(M)[0],dtwSubset)
@@ -104,7 +104,8 @@ for T in Tlst:
             print(f"Taking subset {maxSize} number of Tracers to prevent RAM overload!")
 
         M = M[:maxSize,:]
-
+        print(f"Shape of M : {np.shape(M)}")
+        
         print("Prep iterator!")
         iterator = DTW_prep(M)
 
