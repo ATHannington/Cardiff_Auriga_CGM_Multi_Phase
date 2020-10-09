@@ -120,12 +120,20 @@ for dataKey in saveParams:
             if dataKey in logParameters:
                 data = np.log10(data)
 
+            wheredata = np.where((np.isinf(data)==False)&((np.isnan(data)==False)))[0]
+            whereweights =  np.where((np.isinf(weights)==False)&((np.isnan(weights)==False)))[0]
+            whereFull =  whereFull = wheredata[np.where(np.isin(wheredata,whereweights))]
+            data = data[whereFull]
+            weights = weights[whereFull]
+
+            if (np.shape(data)[0]==0):
+                print("No Data! Skipping Entry!")
+                continue
+
             xmin = np.nanmin(data)
             xmax = np.nanmax(data)
 
-            if ((np.isnan(xmax)==True) or (np.isnan(xmin)==True)):
-                print("NaN xmin/xmax. Skipping Entry!")
-                continue
+
 
             #
             # step = (xmax-xmin)/Nbins
