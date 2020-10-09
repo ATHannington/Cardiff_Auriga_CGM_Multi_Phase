@@ -13,7 +13,7 @@ from gadget import gadget_readsnap
 from gadget_subfind import load_subfind, sum
 from Tracers_Subroutines import *
 from random import sample
-
+from numba import jit
 import pytest
 
 
@@ -30,7 +30,7 @@ singleValueParams = ['Lookback','Ntracers','Snap']
 #       USER DEFINED PARAMETERS
 #==============================================================================#
 #Input parameters path:
-TracersParamsPath = 'TracersParams.csv'
+TracersParamsPath = 'TracersParams_UnitTest.csv'
 
 #File types for data save.
 #   Mini: small median and percentiles data

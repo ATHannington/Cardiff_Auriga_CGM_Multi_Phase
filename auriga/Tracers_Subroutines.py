@@ -255,6 +255,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
     snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
+    # load tracers data
 
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
@@ -262,23 +263,28 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #   Be in memory so taking the subset would be skipped.
     tmp = snapGas.data['id']
     tmp = snapGas.data['age']
+    tmp = snapGas.data['hrgm']
+    tmp = snapGas.data['mass']
+    tmp = snapGas.data['pos']
+    tmp = snapGas.data['vol']
     del tmp
 
     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
-    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
 
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
+
     #Convert Units
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
-    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
@@ -294,11 +300,11 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
 
     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
+
         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
-
     ###
     ##  Selection   ##
     ###
@@ -361,31 +367,35 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
-    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo = HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
-
+    snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo=HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
     #Load Cell IDs - avoids having to turn lazy_load off...
     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
     tmp = snapGas.data['id']
     tmp = snapGas.data['age']
+    tmp = snapGas.data['hrgm']
+    tmp = snapGas.data['mass']
+    tmp = snapGas.data['pos']
+    tmp = snapGas.data['vol']
     del tmp
 
     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     #Centre the simulation on HaloID 0
-    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID)
+    snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
 
     #--------------------------#
     ##    Units Conversion    ##
     #--------------------------#
+
     #Convert Units
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
 
     #Calculate New Parameters and Load into memory others we want to track
-    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
+    snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
@@ -393,20 +403,17 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     #Select only gas in High Res Zoom Region
     snapGas = HighResOnlyGasSelect(snapGas,snapNumber)
 
-    #Find Halo=HaloID data for only selection snapshot. This ensures the
-    #selected tracers are originally in the Halo, but allows for tracers
-    #to leave (outflow) or move inwards (inflow) from Halo.
-
     #Assign SubHaloID and FoFHaloIDs
     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
 
-
     ### Exclude values outside halo 0 ###
     if (loadonlyhalo is True):
-        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID, snapNumber)
+
+        snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
 
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
+
     #--------------------------------------------------------------------------#
     ####                    SELECTION                                        ###
     #--------------------------------------------------------------------------#
@@ -1425,13 +1432,13 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
 
     flattened_dict.update({newkey: tmp})
 
-    final_dict = {}
+    # final_dict = {}
+    #
+    # for key,dict in flattened_dict.items():
+    #     tmp = delete_nan_inf_axis(dict,axis=0)
+    #     final_dict.update({key : tmp})
 
-    for key,dict in flattened_dict.items():
-        tmp = delete_nan_inf_axis(dict,axis=0)
-        final_dict.update({key : tmp})
-
-    return final_dict
+    return flattened_dict
 #------------------------------------------------------------------------------#
 def delete_nan_inf_axis(dict,axis=0):
     """
@@ -1439,20 +1446,24 @@ def delete_nan_inf_axis(dict,axis=0):
     """
 
     new_dict = {}
+    where_dict = {}
     for key, value in dict.items():
         if (value is not None):
             if(axis == 0):
+                whereEntry = ~np.isnan(value).any(axis=0)&~np.isinf(value).any(axis=0)
                 value = np.array(value)
-                data = value[:,~np.isnan(value).any(axis=0)&~np.isinf(value).any(axis=0)]
+                data = value[:,whereEntry]
             elif(axis==1):
+                whereEntry = ~np.isnan(value).any(axis=1)&~np.isinf(value).any(axis=1)
                 value = np.array(value)
-                data = value[~np.isnan(value).any(axis=1)&~np.isinf(value).any(axis=1)]
+                data = value[whereEntry]
             else:
                 print("[@delete_nan_inf_axis]: Greater than 2D dimensions of data in dict. Check logic!")
                 assert True==False
             new_dict.update({key : data})
+            where_dict.update({key : whereEntry})
 
-    return new_dict
+    return new_dict, where_dict
 #------------------------------------------------------------------------------#
 def PlotProjections(snapGas,Cells,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\

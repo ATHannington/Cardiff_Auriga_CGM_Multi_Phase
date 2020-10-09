@@ -24,6 +24,8 @@ xsize = 10.
 ysize = 12.
 DPI = 250
 
+ageUniverse = 13.77 #[Gyr]
+
 colourmapMain = "viridis"
 
 #Input parameters path:
@@ -50,21 +52,21 @@ Xdata = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
-    minTemp = int(TRACERSPARAMS['targetTLst'][0])
-    key = (f"T{int(minTemp)}", f"{int(snap)}")
+    minTemp = TRACERSPARAMS['targetTLst'][0]
+    key = (f"T{minTemp}", f"{int(snap)}")
 
     tage.append(dataDict[key]['Lookback'][0])
 
 tage = np.array(tage)
-t0 = np.nanmax(tage)
-tage = abs(tage - t0)
+# t0 = np.nanmax(tage)
+tage = abs(tage - ageUniverse)
 
 
     #Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
 for T in TRACERSPARAMS['targetTLst']:
     print("")
     print(f"Starting T{T} analysis")
-    key = (f"T{int(T)}",f"{int(TRACERSPARAMS['selectSnap'])}")
+    key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
 
     whereGas = np.where(dataDict[key]['type']==0)[0]
     data = dataDict[key]['T'][whereGas]
@@ -88,7 +90,7 @@ for T in TRACERSPARAMS['targetTLst']:
         SelectedTracers = dataDict[key]['trid'][ParentsIndices]
 
         for snap in snapRange:
-            key = (f"T{int(T)}",f"{int(snap)}")
+            key = (f"T{T}",f"{int(snap)}")
 
             whereGas = np.where(dataDict[key]['type']==0)[0]
 
@@ -124,8 +126,8 @@ for T in TRACERSPARAMS['targetTLst']:
 
 
     #Convert lookback time to universe age
-    t0 = np.nanmax(tmpXdata)
-    tmpXdata = [abs(xx - t0) for xx in tmpXdata]
+    # t0 = np.nanmax(tmpXdata)
+    tmpXdata = [abs(xx - ageUniverse) for xx in tmpXdata]
 
     #Sort data by smallest Lookback time
     ind_sorted = np.argsort(tmpXdata)
@@ -140,8 +142,8 @@ for T in TRACERSPARAMS['targetTLst']:
     tmpYarray = tmpYarray[ind_sorted]
 
     #Add the full list of snaps data to temperature dependent dictionary.
-    Xdata.update({f"T{int(T)}" : tmpXarray})
-    Ydata.update({f"T{int(T)}" : tmpYarray})
+    Xdata.update({f"T{T}" : tmpXarray})
+    Ydata.update({f"T{T}" : tmpYarray})
 
 
 #==============================================================================#
@@ -165,8 +167,8 @@ for ii in range(len(Tlst)):
     #Get temperature
     temp = TRACERSPARAMS['targetTLst'][ii]
 
-    plotYdata = Ydata[f"T{int(temp)}"]
-    plotXdata = Xdata[f"T{int(temp)}"]
+    plotYdata = Ydata[f"T{temp}"]
+    plotXdata = Xdata[f"T{temp}"]
 
     cmap = matplotlib.cm.get_cmap(colourmapMain)
     colour = cmap(float(ii+1)/float(len(Tlst)))
@@ -202,7 +204,7 @@ for ii in range(len(Tlst)):
     fig.suptitle(f"Percentage Tracers Still at Selection Temperature " +\
     r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
     "\n" + r" selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-    f" and selected at snap {TRACERSPARAMS['selectSnap']:0.0f}", fontsize=12)
+    f" and selected at {vline[0]:3.2f} Gyr", fontsize=12)
     currentAx.legend(loc='upper right')
 
 

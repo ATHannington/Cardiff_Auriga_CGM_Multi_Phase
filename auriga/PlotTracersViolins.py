@@ -24,11 +24,13 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 1000#10#1000
+subset = 20#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.03#0.5#0.03
+opacity = 0.5#0.5#0.03
+
+ageUniverse = 13.77 #[Gyr]
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"
@@ -83,8 +85,8 @@ Ydata = {}
 Xdata = {}
 Massdata ={}
 ViolinDict = {}
-FoFHaloIDDict = {}
-SubHaloIDDict = {}
+# FoFHaloIDDict = {}
+# SubHaloIDDict = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
@@ -94,8 +96,7 @@ for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']
     tage.append(dataDict[key]['Lookback'][0])
 
 tage = np.array(tage)
-t0 = np.nanmax(tage)
-tage = abs(tage - t0)
+tage = abs(tage - ageUniverse)
 
 
     #Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
@@ -123,8 +124,8 @@ for T in TRACERSPARAMS['targetTLst']:
     YSubDict = {}
     MassSubDict = {}
     ViolinSubDict = {}
-    FoFHaloIDSubDict = {}
-    SubHaloIDSubDict = {}
+    # FoFHaloIDSubDict = {}
+    # SubHaloIDSubDict = {}
     for analysisParam in saveParams:
         print("")
         print(f"Starting {analysisParam} analysis")
@@ -136,8 +137,8 @@ for T in TRACERSPARAMS['targetTLst']:
         tmpYdata = []
         tmpMassdata = []
         tmpViolinData =[]
-        tmpFoFHaloID = []
-        tmpSubHaloID = []
+        # tmpFoFHaloID = []
+        # tmpSubHaloID = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{T}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
@@ -154,13 +155,13 @@ for T in TRACERSPARAMS['targetTLst']:
                 Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key]['mass'][whereGas])
 
-            FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key]['FoFHaloID'])
-
-            HaloData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key]['SubHaloID'])
+            # FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
+            #     Data=dataDict[key]['FoFHaloID'])
+            #
+            # HaloData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
+            #     Data=dataDict[key]['SubHaloID'])
 
             #Append the data from this snapshot to a temporary list
             lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
@@ -169,9 +170,9 @@ for T in TRACERSPARAMS['targetTLst']:
             tmpYdata.append(data)
             tmpMassdata.append(massData)
 
-            #Save HaloID data
-            tmpFoFHaloID.append(FoFData)
-            tmpSubHaloID.append(HaloData)
+            # #Save HaloID data
+            # tmpFoFHaloID.append(FoFData)
+            # tmpSubHaloID.append(HaloData)
 
             #Violin Data
             massMean = np.mean(dataDict[key]['mass'][whereGas])
@@ -186,8 +187,8 @@ for T in TRACERSPARAMS['targetTLst']:
         YSubDict.update({analysisParam:  np.array(tmpYdata)})
         MassSubDict.update({analysisParam: np.array(tmpMassdata)})
         ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
-        FoFHaloIDSubDict.update({analysisParam: np.array(tmpFoFHaloID)})
-        SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
+        # FoFHaloIDSubDict.update({analysisParam: np.array(tmpFoFHaloID)})
+        # SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
 
     #Add the full list of snaps data to temperature dependent dictionary.
     XScatterDict.update({f"T{T}" : XScatterSubDict})
@@ -195,8 +196,8 @@ for T in TRACERSPARAMS['targetTLst']:
     Ydata.update({f"T{T}" : YSubDict})
     Massdata.update({f"T{T}" : MassSubDict})
     ViolinDict.update({f"T{T}" : ViolinSubDict})
-    FoFHaloIDDict.update({f"T{T}" : FoFHaloIDSubDict})
-    SubHaloIDDict.update({f"T{T}" : SubHaloIDSubDict})
+    # FoFHaloIDDict.update({f"T{T}" : FoFHaloIDSubDict})
+    # SubHaloIDDict.update({f"T{T}" : SubHaloIDSubDict})
 #==============================================================================#
 
 #==============================================================================#
@@ -237,24 +238,24 @@ for analysisParam in saveParams:
         plotYdata = Ydata[f"T{temp}"][analysisParam].copy()
         plotXdata = Xdata[f"T{temp}"][analysisParam].copy()
         violinData = ViolinDict[f"T{temp}"][analysisParam].copy()
-        SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16').copy()
+        # SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16').copy()
 
-        uniqueSubHalo = np.unique(SubHaloIDData)
-
-        normedSubHaloIDData = SubHaloIDData.copy()
-        for (kk,halo) in enumerate(uniqueSubHalo):
-            whereHalo = np.where(SubHaloIDData==halo)
-            if((halo==int(TRACERSPARAMS['haloID']))or(halo==-1)):
-                normedSubHaloIDData[whereHalo] = halo
-            else:
-                normedSubHaloIDData[whereHalo] = int(TRACERSPARAMS['haloID']) + 1
-
-        normedUniqueSubHalo = np.unique(normedSubHaloIDData)
+        # uniqueSubHalo = np.unique(SubHaloIDData)
+        #
+        # normedSubHaloIDData = SubHaloIDData.copy()
+        # for (kk,halo) in enumerate(uniqueSubHalo):
+        #     whereHalo = np.where(SubHaloIDData==halo)
+        #     if((halo==int(TRACERSPARAMS['haloID']))or(halo==-1)):
+        #         normedSubHaloIDData[whereHalo] = halo
+        #     else:
+        #         normedSubHaloIDData[whereHalo] = int(TRACERSPARAMS['haloID']) + 1
+        #
+        # normedUniqueSubHalo = np.unique(normedSubHaloIDData)
 
         #Convert lookback time to universe age
-        t0 = np.nanmax(plotXdata)
-        plotXdata = abs(plotXdata - t0)
-
+        # t0 = np.nanmax(plotXdata)
+        plotXdata = abs(plotXdata - ageUniverse)
+        plotXScatterdata = abs(plotXScatterdata - ageUniverse)
         #Set style options
         opacityPercentiles = 0.25
         lineStyleMedian = "solid"
@@ -417,13 +418,16 @@ for analysisParam in saveParams:
 
         currentAx.axvline(x=vline, c='red')
 
+        whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
+        paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
 
         if (ColourIndividuals == True):
-            for jj in range(0,subset):
-                whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
-                lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
-                if (lenNOTnan>0):
-                    currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
+            lc = LineCollection(paths,colors = colourTracers,alpha=opacity)
+            # for jj in range(0,subset):
+                # whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
+                # lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
+                # if (lenNOTnan>0):
+                #     currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
         else:
             # for jj in range(0,subset):
             #     whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
@@ -431,8 +435,7 @@ for analysisParam in saveParams:
             #     if (lenNOTnan>0):
             #         currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
 
-            whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
-            paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
+
             # segments = np.concatenate([points[:-1],points[1:]], axis=1)
 
             # Ncolours = len(uniqueSubHalo)
@@ -443,18 +446,14 @@ for analysisParam in saveParams:
             # cmax = float(normedSubHaloIDData.max())+1.5
             # norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
 
-            if (ColourIndividuals == True):
-                lc = LineCollection(paths,cmap = colourmapIndividuals,alpha=opacity)
-            else:
-                lc = LineCollection(paths,color = colourTracers,alpha=opacity)
-            # lc.set_array(normedSubHaloIDData[1:,:].flatten())
+            lc = LineCollection(paths,color = colourTracers,alpha=opacity)
 
-            line = currentAx.add_collection(lc)
 
             # cbar = plt.colorbar(line,ticks=normedUniqueSubHalo,ax=currentAx, orientation = 'vertical')
             # cbar.set_label(label=r'Sub-Halo ID')
             # cbar.solids.set(alpha=1)
 
+        line = currentAx.add_collection(lc)
 
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
         currentAx.yaxis.set_minor_locator(AutoMinorLocator())
@@ -470,7 +469,7 @@ for analysisParam in saveParams:
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
         "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-        "\n" + f" and selected at snap {TRACERSPARAMS['selectSnap']:0.0f}"+\
+        "\n" + f" and selected at {vline[0]:3.2f} Gyr"+\
         f" weighted by mass" +\
         "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
         , fontsize=12)

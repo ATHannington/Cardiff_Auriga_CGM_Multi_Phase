@@ -24,18 +24,18 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 20#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.5#0.03
+opacity = 0.03#0.5#0.03
 
 ageUniverse = 13.77 #[Gyr]
 
 colourmapMain = "viridis"
 colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
-TracersParamsPath = 'TracersParams.csv'
+TracersParamsPath = 'TracersParams_t3000.csv'
 
 logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
@@ -108,16 +108,16 @@ for T in TRACERSPARAMS['targetTLst']:
     key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
 
     rangeMin = 0
-    rangeMax = len(dataDict[key]['trid'])
-    TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-    #Take Random sample of Tracers size min(subset, len(data))
-    TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+    rangeMax = len(dataDict[key]['id'])
+    CellNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+    #Take Random sample of Cells size min(subset, len(data))
+    CellNumberSelect = sample(CellNumberSelect.tolist(),min(subset,rangeMax))
 
     # selectMin = min(subset,rangeMax)
     # select = math.floor(float(rangeMax)/float(subset))
-    # TracerNumberSelect = TracerNumberSelect[::select]
-
-    SelectedTracers1 = dataDict[key]['trid'][TracerNumberSelect]
+    # CellNumberSelect = CellNumberSelect[::select]
+    #
+    SelectedCells1 = dataDict[key]['id'][CellNumberSelect]
 
     XScatterSubDict = {}
     XSubDict = {}
@@ -130,8 +130,8 @@ for T in TRACERSPARAMS['targetTLst']:
         print("")
         print(f"Starting {analysisParam} analysis")
 
-        #Loop over snaps from and gather data for the SelectedTracers1.
-        #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
+        #Loop over snaps from and gather data for the SelectedCells1.
+        #   This should be the same Cells for all time points due to the above selection, and thus data and massdata should always have the same shape.
         tmpXScatterdata = []
         tmpXdata = []
         tmpYdata = []
@@ -142,18 +142,13 @@ for T in TRACERSPARAMS['targetTLst']:
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{T}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
-            whereTracer = np.where(np.isin(dataDict[key]['trid'],SelectedTracers1))[0]
+            whereCell = np.where(np.isin(dataDict[key]['id'],SelectedCells1))[0]
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
-            data, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key][analysisParam][whereGas])
-
-            massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key]['mass'][whereGas])
+            data = dataDict[key][analysisParam][whereGas][whereCell]
+            massData = dataDict[key]['mass'][whereGas][whereCell]
 
             # FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
             #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
@@ -164,7 +159,7 @@ for T in TRACERSPARAMS['targetTLst']:
             #     Data=dataDict[key]['SubHaloID'])
 
             #Append the data from this snapshot to a temporary list
-            lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
+            lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['id'][[whereCell]]]
             tmpXScatterdata.append(lookbackList)
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
@@ -332,7 +327,7 @@ for analysisParam in saveParams:
             currentAx = ax
         else:
             currentAx = ax[ii]
-        #
+
         # UPisINF = np.where(np.isinf(plotData[UP]) == True)
         # LOisINF = np.where(np.isinf(plotData[LO]) == True)
         # medianisINF = np.where(np.isinf(plotData[median]) == True)
@@ -345,9 +340,9 @@ for analysisParam in saveParams:
         # print(f"after {median} {plotData[median][medianisINF] }")
 
 
-        currentAx.fill_between(tage,plotData[UP],plotData[LO],\
-        facecolor=colour,alpha=opacityPercentiles,interpolate=False)
-        currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        # currentAx.fill_between(tage,plotData[UP],plotData[LO],\
+        # facecolor=colour,alpha=opacityPercentiles,interpolate=False)
+        # currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
             # for jj in range(1,len(plotXdata)):
             #     whereDataIsNOTnan = np.where((np.isnan(plotYdata[jj])==False)& (np.isnan(plotYdata[jj-1])==False))
@@ -357,26 +352,26 @@ for analysisParam in saveParams:
             #         np.array([(plotYdata[jj-1][whereDataIsNOTnan][kk]),(plotYdata[jj][whereDataIsNOTnan][kk])]), color = colourTracersHalo[normedSubHaloIDData[jj][whereDataIsNOTnan]][kk], alpha = opacity )
         startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
         endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
-        startNtracers = dataDict[startkey]['Ntracers'][0]
-        endNtracers = dataDict[endkey]['Ntracers'][0]
+        startNCell = dataDict[startkey]['Ncells'][0]
+        endNCell = dataDict[endkey]['Ncells'][0]
 
         startSubHaloIDDataFull = dataDict[startkey]['SubHaloID'].copy()
         endSubHaloIDDataFull = dataDict[endkey]['SubHaloID'].copy()
-        unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
-        unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
-        haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
-        haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
+        unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNCell)
+        unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNCell)
+        haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNCell)
+        haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNCell)
 
         otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-        &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
+        &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNCell)
 
         otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-        &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
+        &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNCell)
 
-        unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
-        unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
+        unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNCell)
+        unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNCell)
 
-        HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
+        HaloString = f"Of Cell Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
         +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes, {unassignedFracStart:3.3%} start unassigned."\
         +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes, {unassignedFracEnd:3.3%} end unassigned."
 
@@ -385,36 +380,36 @@ for analysisParam in saveParams:
 
         currentAx.transAxes
 
-        # parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-        #
-        # for pc in parts['bodies']:
-        #     pc.set_facecolor(colour)
-        #     pc.set_edgecolor('black')
-        #     pc.set_alpha(opacityPercentiles)
-        #
-        # quartile1 = []
-        # medians = []
-        # quartile3 = []
-        # for dataset in violinData:
-        #     q1,med,q3 = np.percentile(dataset, [int(TRACERSPARAMS['percentileLO']), 50, int(TRACERSPARAMS['percentileUP'])], axis=0)
-        #     quartile1.append(q1)
-        #     medians.append(med)
-        #     quartile3.append(q3)
-        #
-        # sorted_violinData = []
-        # for dataset in violinData:
-        #     ind_sorted = np.argsort(dataset)
-        #     dataset = dataset[ind_sorted]
-        #     sorted_violinData.append(dataset)
-        #
-        # whiskers = np.array([
-        #     adjacent_values(sorted_array, q1, q3)
-        #     for sorted_array, q1, q3 in zip(sorted_violinData, quartile1, quartile3)])
-        # whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
-        #
-        # currentAx.scatter(plotXdata, medians, marker='o', color='white', s=30, zorder=3)
-        # currentAx.vlines(plotXdata, quartile1, quartile3, color='k', linestyle='-', lw=3)
-        # currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
+        parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+
+        for pc in parts['bodies']:
+            pc.set_facecolor(colour)
+            pc.set_edgecolor('black')
+            pc.set_alpha(opacityPercentiles)
+
+        quartile1 = []
+        medians = []
+        quartile3 = []
+        for dataset in violinData:
+            q1,med,q3 = np.percentile(dataset, [int(TRACERSPARAMS['percentileLO']), 50, int(TRACERSPARAMS['percentileUP'])], axis=0)
+            quartile1.append(q1)
+            medians.append(med)
+            quartile3.append(q3)
+
+        sorted_violinData = []
+        for dataset in violinData:
+            ind_sorted = np.argsort(dataset)
+            dataset = dataset[ind_sorted]
+            sorted_violinData.append(dataset)
+
+        whiskers = np.array([
+            adjacent_values(sorted_array, q1, q3)
+            for sorted_array, q1, q3 in zip(sorted_violinData, quartile1, quartile3)])
+        whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
+
+        currentAx.scatter(plotXdata, medians, marker='o', color='white', s=30, zorder=3)
+        currentAx.vlines(plotXdata, quartile1, quartile3, color='k', linestyle='-', lw=3)
+        currentAx.vlines(plotXdata, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
         currentAx.axvline(x=vline, c='red')
 
@@ -422,7 +417,7 @@ for analysisParam in saveParams:
         paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
 
         if (ColourIndividuals == True):
-            lc = LineCollection(paths,colors = colourTracers,alpha=opacity)
+            lc = LineCollection(paths,cmap = colourmapIndividuals,alpha=opacity)
             # for jj in range(0,subset):
                 # whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
                 # lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
@@ -466,12 +461,12 @@ for analysisParam in saveParams:
         plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
         currentAx.legend(handles=[plot_patch], labels=[plot_label],loc='upper right')
 
-        fig.suptitle(f"Cells Containing Tracers selected by: " +\
+        fig.suptitle(f"Cells selected by: " +\
         "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n" + f" and selected at {vline[0]:3.2f} Gyr"+\
         f" weighted by mass" +\
-        "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
+        "\n" + f"Subset of {int(subset)} Individual Cells at each Temperature Plotted" \
         , fontsize=12)
 
 
@@ -486,7 +481,7 @@ for analysisParam in saveParams:
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, right=0.80)
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsMedians.pdf"
+    opslaan = f"Cells_t3000_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsViolins.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
     plt.close()

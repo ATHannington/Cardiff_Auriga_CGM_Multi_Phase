@@ -21,6 +21,9 @@ Nbins = 100
 xsize = 12.
 ysize = 10.
 DPI = 100
+
+ageUniverse = 13.77 #[Gyr]
+
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -93,7 +96,7 @@ for dataKey in saveParams:
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
 
-            dictkey = (f"T{int(T)}",f"{int(snap)}")
+            dictkey = (f"T{T}",f"{int(snap)}")
 
             whereGas = np.where(dataDict[dictkey]['type'] == 0)
 
@@ -111,6 +114,8 @@ for dataKey in saveParams:
 
             data = dataDict[dictkey][dataKey]
             weights = dataDict[dictkey]['mass']
+
+            selectTime = abs(dataDict[dictkey]['Lookback'][0] - ageUniverse)
 
             if dataKey in logParameters:
                 data = np.log10(data)
@@ -146,7 +151,7 @@ for dataKey in saveParams:
             fig.suptitle(f"PDF of Cells Containing Tracers selected by: " +\
             "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
             r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-            "\n" + f" and selected at snap {TRACERSPARAMS['selectSnap']:0.0f}"+\
+            "\n" + f" and selected at {selectTime:3.2f} Gyr"+\
             f" weighted by mass"+\
             "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=12)
             ax.axvline(x=vline, c='red')
@@ -154,7 +159,7 @@ for dataKey in saveParams:
             plt.tight_layout()
             plt.subplots_adjust(top=0.90, hspace = 0.005)
 
-            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{int(T)}_{dataKey}_PDF.pdf"
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
             plt.savefig(opslaan, dpi = DPI, transparent = False)
             print(opslaan)
             plt.close()
