@@ -20,7 +20,7 @@ from random import sample
 import math
 
 dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
-logParams = ['T','dens','gz','P_tot','B']
+logParams = ['T','dens','P_tot','B']
 
 TracersParamsPath = 'TracersParams.csv'
 batch_limit = 1e5
@@ -125,7 +125,7 @@ for T in Tlst:
         print(f"Shape of M : {np.shape(M)}")
         print(f"Shape of tridData : {np.shape(tridData)}")
         print(f"Shape of pridData : {np.shape(pridData)}")
-        
+
         print("Prep iterator!")
         iterator = DTW_prep(M)
 

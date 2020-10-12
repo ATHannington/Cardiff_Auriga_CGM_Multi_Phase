@@ -7,6 +7,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 import matplotlib.colors as mcolors
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from scipy.spatial.distance import squareform
 from itertools import combinations
 import time
 
@@ -18,11 +19,15 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-dtwParams = ['T','R','dens','gz','P_tot','B']
+dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
+
+logParams = ['T','dens','P_tot','B']
+
 TracersParamsPath = 'TracersParams.csv'
 
-sort_level = 0
-maxmimally_distinct_bool = True
+sort_level = 3
+maxmimally_distinct_bool = False
+
 method = 'ward'
 DPI = 250
 xsize =50
@@ -65,19 +70,35 @@ loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
 
 dataDict = hdf5_load(loadPath)
 
+
+tmpanalysisDict = {}
+for T in Tlst:
+    for analysisParam in dtwParams:
+        key = f"T{T}"
+        if (analysisParam in logParams):
+            newkey = (f"T{T}",f"log10{analysisParam}")
+            tmpanalysisDict.update({newkey : np.log10(dataDict[key][analysisParam].T.copy())})
+        else:
+            newkey = (f"T{T}",f"{analysisParam}")
+            tmpanalysisDict.update({newkey : dataDict[key][analysisParam].T.copy()})
+
+analysisDict, whereDict = delete_nan_inf_axis(tmpanalysisDict,axis=1)
+
+
 for T in Tlst:
     dtwT_MDict = {}
     dtwT_DDict = {}
+    dtwT_PridDict = {}
+    dtwT_TridDict = {}
     for analysisParam in dtwParams:
-        loadPath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
-
-        print("\n" + f"[@T{T} log10{analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
-
-        splitString = analysisParam.split("_")
-        if len(splitString)==1:
+        if (analysisParam in logParams):
             loadKey = (f"T{T}",f"log10{analysisParam}")
+            loadPath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
+            print("\n" + f"[@T{T} log10{analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
         else:
-            loadKey = (f"T{T}",f"log10{splitString[0]}",splitString[1:])
+            loadKey = (f"T{T}",f"{analysisParam}")
+            loadPath = DataSavepath + f"_T{T}_{analysisParam}_DTW-distance"+DataSavepathSuffix
+            print("\n" + f"[@T{T} {analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
 
         dtwDict = hdf5_load(loadPath)
 
@@ -85,18 +106,29 @@ for T in Tlst:
         maxD = np.nanmax(D)
         D = D/maxD
 
-        dtwT_DDict.update({f"log10{analysisParam}" : D})
+        M = analysisDict[loadKey].copy()
 
-        M = np.log10(dataDict[f"T{T}"][f"{analysisParam}"].T.copy())
-
-        dtwT_MDict.update({f"log10{analysisParam}" : M})
+        if (analysisParam in logParams):
+            dtwT_MDict.update({f"log10{analysisParam}" : M})
+            dtwT_DDict.update({f"log10{analysisParam}" : D})
+            dtwT_PridDict.update({f"log10{analysisParam}" : dtwDict[loadKey]['prid'].copy()})
+            dtwT_TridDict.update({f"log10{analysisParam}" : dtwDict[loadKey]['trid'].copy()})
+        else:
+            dtwT_MDict.update({f"{analysisParam}" : M})
+            dtwT_DDict.update({f"{analysisParam}" : D})
+            dtwT_PridDict.update({f"{analysisParam}" : dtwDict[loadKey]['prid'].copy()})
+            dtwT_TridDict.update({f"{analysisParam}" : dtwDict[loadKey]['trid'].copy()})
 
         xData = dataDict[f"T{T}"][f"Lookback"].copy()
 
         print("Linkage!")
         Z= linkage(D,method=method)
         dendo_plot = plt.figure(figsize=(xsize,ysize))
-        plt.title(f'T{T} log10{analysisParam} Hierarchical Clustering Dendrogram using "{method}" method')
+
+        if (analysisParam in logParams):
+            plt.title(f'T{T} log10{analysisParam} Hierarchical Clustering Dendrogram using "{method}" method')
+        else:
+            plt.title(f'T{T} {analysisParam} Hierarchical Clustering Dendrogram using "{method}" method')
         plt.xlabel('Sample Index')
         plt.ylabel('Distance')
         print("Dendrogram!")
@@ -106,16 +138,19 @@ for T in Tlst:
         prefixList = prefixList[(-4):-2]
         prefix = "-".join(prefixList)
 
-        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{analysisParam}"+f"_Dendrogram.pdf"
+        if (analysisParam in logParams):
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{analysisParam}"+f"_Dendrogram.pdf"
+        else:
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_{analysisParam}"+f"_Dendrogram.pdf"
         plt.savefig(opslaan, dpi = DPI, transparent = False)
         print(opslaan)
 
-        print(f"Check Dendrogram and input d_crit params:")
-        maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
-        maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
-
-        sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
-        sort_level = int(sort_level_input)
+        # print(f"Check Dendrogram and input d_crit params:")
+        # maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
+        # maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
+        #
+        # sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
+        # sort_level = int(sort_level_input)
 
         print("D_crit!")
         d_crit = get_d_crit(Z,sort_level,maxmimally_distinct_bool)
@@ -132,77 +167,94 @@ for T in Tlst:
             plotYdata = cluster[subsetClusterIndices]
 
             cluster_plot, ax = plt.subplots()
-            plt.title(f'Cluster {clusterID} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
-            plt.xlabel('Lookback [Gyr]')
-            plt.ylabel(f'Log10{analysisParam}')
-
+            if (analysisParam in logParams):
+                plt.title(f'Cluster {clusterID} for {T} log10{analysisParam} Hierarchical Clustering using "{method}" method')
+                plt.xlabel('Lookback [Gyr]')
+                plt.ylabel(f'Log10{analysisParam}')
+            else:
+                plt.title(f'Cluster {clusterID} for {T} {analysisParam} Hierarchical Clustering using "{method}" method')
+                plt.xlabel('Lookback [Gyr]')
+                plt.ylabel(f'{analysisParam}')
 
             plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
 
-            points = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,1,2)
-            segments = np.concatenate([points[:-1],points[1:]], axis=1)
+            paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,len(xData[:,0]),2)
             # colourList = [rgbcolour for ii in range(len(segments))]
-            lc = LineCollection(segments,color = colour,alpha=opacity)
+            lc = LineCollection(paths,color = colour,alpha=opacity)
             line = ax.add_collection(lc)
             ax.autoscale()
-            ax.set_xlim(np.min(xData),np.max(xData))
-            ax.set_ylim(np.min(M),np.max(M))
+            ax.set_xlim(np.nanmin(xData),np.nanmax(xData))
+            ax.set_ylim(np.nanmin(M),np.nanmax(M))
             # for path in cluster:
             #     plt.plot(xData,path,color=colour,alpha=opacity)
 
-            opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{analysisParam}"+f"_Clustered-Individuals.pdf"
+            if (analysisParam in logParams):
+                opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{analysisParam}"+f"_Clustered-Individuals.pdf"
+            else:
+                opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_{analysisParam}"+f"_Clustered-Individuals.pdf"
+
             plt.savefig(opslaan2, dpi = DPI, transparent = False)
             print(opslaan2)
             plt.close()
 
-        dtwDict[loadKey].update({"clusters" : clusters})
+        saveDict = {}
+        saveDict.update({"clusters" : clusters})
+        saveDict.update({"prid" : dtwDict[loadKey]['prid'].copy()})
+        saveDict.update({"trid" : dtwDict[loadKey]['prid'].copy()})
+        if (analysisParam in logParams):
+            saveDict.update({f"log10{analysisParam}" : M})
+        else:
+            saveDict.update({f"{analysisParam}" : M})
 
-        savePath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-clusters"+DataSavepathSuffix
+        finalDict = {f"T{T}" : saveDict}
 
-        print("\n" + f"[@T{T} log10{analysisParam}]: Saving Distance Matrix + Clusters data as: "+ savePath)
+        if (analysisParam in logParams):
+            savePath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-clusters"+DataSavepathSuffix
+            print("\n" + f"[@T{T} log10{analysisParam}]: Saving Clusters data as: "+ savePath)
+        else:
+            savePath = DataSavepath + f"_T{T}_{analysisParam}_DTW-clusters"+DataSavepathSuffix
+            print("\n" + f"[@T{T} {analysisParam}]: Saving Clusters data as: "+ savePath)
 
-        hdf5_save(savePath,dtwDict)
+        hdf5_save(savePath,finalDict)
 
 #------------------------------------------------------------------------------#
+    del dtwDict, M, D, saveDict, lc, line, paths, plotXdata, plotYdata, cluster, clusters,Z,ddata,xData,dendo_plot,d_crit,uniqueClusters,clusterIndices,subsetClusterIndices
     paramstring = "+".join(dtwParams)
+    plt.close('all')
+
+    xData = dataDict[f"T{T}"][f"Lookback"].copy()
+
+    print(f"Get intersection of trids!")
+    dtwT_TridDictkeys = list(dtwT_TridDict.keys())
+    dtwT_TridDict_list = list(dtwT_TridDict.values())
+    trid_list = []
+    for entry in dtwT_TridDict.values():
+        trid_list.append(entry[:,0].tolist())
+    tridSet = [set(tuple(xx)) for xx in trid_list]
+    whereTracers =  np.where(np.isin(dtwT_TridDict_list[0][:,0],np.array(list(set.intersection(*tridSet)))))[0]
+    print(f"Shape whereTracers {np.shape(whereTracers)}")
+    del trid_list, tridSet
 
     #Normalise and then sum the distance vectors for each dtwParams
-    print("Djoint!")
-    dtwT_DDict = {}
-    dtwT_MDict = {}
-    for analysisParam in dtwParams:
-        loadPath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
+    print("Djoint! This may take a while...")
 
-        print("\n" + f"[@T{T} log10{analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
-
-        splitString = analysisParam.split("_")
-        if len(splitString)==1:
-            loadKey = (f"T{T}",f"log10{analysisParam}")
-        else:
-            loadKey = (f"T{T}",f"log10{splitString[0]}",splitString[1])
-
-        dtwDict = hdf5_load(loadPath)
-
-        D = dtwDict[loadKey]['distance_matrix'].copy()
-        maxD = np.nanmax(D)
-        D = D/maxD
-
-        dtwT_DDict.update({f"log10{analysisParam}" : D})
-
-        M = np.log10(dataDict[f"T{T}"][f"{analysisParam}"].T.copy())
-
-        dtwT_MDict.update({f"log10{analysisParam}" : M})
-
-        xData = dataDict[f"T{T}"][f"Lookback"].copy()
-    Djoint = np.zeros(np.shape(dtwT_DDict[f"log10{dtwParams[0]}"]))
+    kk = 0
     for key,value in dtwT_DDict.items():
-        Djoint += value
+        print(f"{key}")
+        if (kk ==0 ):
+            Djoint = np.zeros(shape=(np.shape(value)))
+        entry = squareform(value)[whereTracers[:,np.newaxis],whereTracers]
+        Djoint += squareform(entry)
+        kk+=1
 
     print("Joint Linkage!")
     Zjoint= linkage(Djoint,method=method)
 
     dendo_plot = plt.figure(figsize=(xsize,ysize))
-    plt.title(f'T{T} log10{paramstring} Hierarchical Clustering Dendrogram using "{method}" method')
+    if (analysisParam in logParams):
+        plt.title(f'T{T} log10{paramstring} Hierarchical Clustering Dendrogram using "{method}" method')
+    else:
+        plt.title(f'T{T} {paramstring} Hierarchical Clustering Dendrogram using "{method}" method')
     plt.xlabel('Sample Index')
     plt.ylabel('Distance')
     print("Joint dendrogram!")
@@ -212,66 +264,88 @@ for T in Tlst:
     prefixList = prefixList[(-4):-2]
     prefix = "-".join(prefixList)
 
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{paramstring}"+f"_Joint-Dendrogram.pdf"
+    if (analysisParam in logParams):
+        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_log10{paramstring}"+f"_Joint-Dendrogram.pdf"
+    else:
+        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_T{T}_{paramstring}"+f"_Joint-Dendrogram.pdf"
+
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
 
-print(f"Check Dendrogram and input d_crit params:")
-maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
-maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
+    # print(f"Check Dendrogram and input d_crit params:")
+    # maxmimally_distinct_bool_input = input("Enter maxmimally_distinct_bool true=1, false=0 : ")
+    # maxmimally_distinct_bool = bool(int(maxmimally_distinct_bool_input))
+    #
+    # sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
+    # sort_level = int(sort_level_input)
 
-sort_level_input = input("Enter sort_level 0 top/most distinct, 1 second to top/second most distinct : ")
-sort_level = int(sort_level_input)
+    print("Joint d_crit!")
+    d_crit = get_d_crit(Zjoint,sort_level,maxmimally_distinct_bool)
+    print("Joint Fcluster!")
+    clusters = fcluster(Zjoint, t=d_crit,criterion='distance')
 
-print("Joint d_crit!")
-d_crit = get_d_crit(Zjoint,sort_level,maxmimally_distinct_bool)
-print("Joint Fcluster!")
-clusters = fcluster(Zjoint, t=d_crit,criterion='distance')
+    uniqueClusters =np.unique(clusters)
 
-uniqueClusters =np.unique(clusters)
-
-print("Joint clusters!")
-for clusterID in uniqueClusters:
-    for key, value in dtwT_MDict.items():
-        if (key == "log10R"):
-            tmp = value[np.where(clusters==clusterID)]
-            bases = np.array([[10. for yy in range(len(xData[:,0]))] for xx in range(len(tmp))])
-            cluster = np.power(bases,tmp)
-            ymin = 0.
-            ymax = 300.
-        else:
+    print("Joint clusters!")
+    for clusterID in uniqueClusters:
+        for key, value in dtwT_MDict.items():
             cluster = value[np.where(clusters==clusterID)]
-            ymin = np.min(value)
-            ymax = np.max(value)
-        clusterIndices = [xx for xx in range(len(cluster))]
-        subsetClusterIndices = sample(clusterIndices,min(subset,len(cluster)))
-        plotYdata = cluster[subsetClusterIndices]
+            ymin = np.nanmin(value)
+            ymax = np.nanmax(value)
 
-        cluster_plot, ax = plt.subplots()
-        plt.title(f'Cluster {clusterID} for {T} log10{paramstring} Hierarchical Clustering using "{method}" method')
-        plt.xlabel('Lookback [Gyr]')
-        plt.ylabel(f'Log10{key}')
+            clusterIndices = [xx for xx in range(len(cluster))]
+            subsetClusterIndices = sample(clusterIndices,min(subset,len(cluster)))
+            plotYdata = cluster[subsetClusterIndices]
 
-        plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
+            cluster_plot, ax = plt.subplots()
+            if (analysisParam in logParams):
+                plt.title(f'Cluster {clusterID} for {T} log10{paramstring} Hierarchical Clustering using "{method}" method')
+                plt.xlabel('Lookback [Gyr]')
+                plt.ylabel(f'Log10{key}')
+            else:
+                plt.title(f'Cluster {clusterID} for {T} {paramstring} Hierarchical Clustering using "{method}" method')
+                plt.xlabel('Lookback [Gyr]')
+                plt.ylabel(f'{key}')
+            plotXdata = np.array([xData[:,0] for path in range(len(plotYdata))])
 
-        paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,len(xData[:,0]),2)
+            paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1,len(xData[:,0]),2)
 
-        lc = LineCollection(paths, color = colour ,alpha=opacity)
-        line = ax.add_collection(lc)
-        ax.autoscale()
-        ax.set_xlim(np.min(xData),np.max(xData))
-        ax.set_ylim(ymin,ymax)
+            lc = LineCollection(paths, color = colour ,alpha=opacity)
+            line = ax.add_collection(lc)
+            ax.autoscale()
+            ax.set_xlim(np.nanmin(xData),np.nanmax(xData))
+            ax.set_ylim(ymin,ymax)
+            if (analysisParam in logParams):
+                opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{key}_Joint-{paramstring}"+f"_Joint-Clustered-Individuals.pdf"
+            else:
+                opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_{key}_Joint-{paramstring}"+f"_Joint-Clustered-Individuals.pdf"
 
-        opslaan2 = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+prefix+f"_Cluster{clusterID}_T{T}_log10{key}_Joint-log10{paramstring}"+f"_Joint-Clustered-Individuals.pdf"
-        plt.savefig(opslaan2, dpi = DPI, transparent = False)
-        print(opslaan2)
+            plt.savefig(opslaan2, dpi = DPI, transparent = False)
+            print(opslaan2)
 
-    newFullSaveDict = {f"T{T}" : T, "clusters" : clusters, "distance_matrices" : dtwT_DDict,\
-     "joint_distance_matrix" : Djoint, "data" : dtwT_MDict, "trid" : dtwDict[loadKey]['trid'].copy()\
-     , "prid" : dtwDict[loadKey]['prid'].copy(), "Lookback" : xData}
+        tridData = dtwT_TridDict[dtwT_TridDictkeys[0]][whereTracers]
+        pridData = dtwT_PridDict[dtwT_TridDictkeys[0]][whereTracers]
 
-    savePath = DataSavepath + f"_T{T}_log10{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
+        saveDict = {}
+        saveDict.update({"clusters" : clusters})
+        saveDict.update({"prid" : pridData})
+        saveDict.update({"trid" : tridData})
+        finalDict = {f"T{T}" : saveDict}
+        for param in dtwParams:
+            if (param in logParams):
+                saveDict.update({f"log10{param}" : dtwT_MDict[f"log10{param}"][whereTracers]})
+            else:
+                saveDict.update({f"{param}" : dtwT_MDict[f"{param}"][whereTracers]})
 
-    print("\n" + f"[@T{T} log10{paramstring}]: Saving Joint Distance Matrix + Clusters data as: "+ savePath)
+        if (analysisParam in logParams):
+            savePath = DataSavepath + f"_T{T}_log10{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
+            print("\n" + f"[@T{T} log10{paramstring}]: Saving Joint Clusters data as: "+ savePath)
+        else:
+            savePath = DataSavepath + f"_T{T}_{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
+            print("\n" + f"[@T{T} {paramstring}]: Saving Joint Clusters data as: "+ savePath)
 
-    hdf5_save(savePath,newFullSaveDict)
+        hdf5_save(savePath,finalDict)
+
+        plt.close('all')
+
+        del finalDict, saveDict, Djoint, Z, cluster, clusters, clusterIndices, subsetClusterIndices, plotYdata, plotXdata, paths, whereTracers, d_crit

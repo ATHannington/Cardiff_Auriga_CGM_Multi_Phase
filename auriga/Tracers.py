@@ -17,7 +17,7 @@ import h5py
 import multiprocessing as mp
 import sys
 import logging
-from numba import jit
+
 
 #==============================================================================#
 #       USER DEFINED PARAMETERS
