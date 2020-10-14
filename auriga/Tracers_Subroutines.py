@@ -1131,11 +1131,13 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
     #   Also add list of Tracer IDs trids to list for debugging purposes
     TracersIndices = []
     TracersReturned = []
+    ParentsReturned = []
     for ind, tracer in enumerate(SelectedTracers):
         truthy = np.isin(Tracers,tracer)
         if np.any(truthy) == True:
             TracersIndices.append(np.where(truthy)[0])
             TracersReturned.append(Tracers[np.where(truthy)])
+            ParentsReturned.append(Parents[np.where(truthy)])
         else:
             TracersIndices.append([np.nan])
 
@@ -1143,13 +1145,13 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
     #   parent, and from there its cell, then grab data.
     #   If the tracer from SelectedTracers is not in tracers, put a nan value.
     #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+
     saveData = []
     massData = []
     for (ind, element) in zip(TracersIndices,TracersTruthy):
         if element == True:
             parent = Parents[ind]
             dataIndex = np.where(np.isin(CellIDs,parent))
-
             dataEntry = Data[dataIndex].tolist()
             if (np.shape(dataEntry)[0] == 0):
                 dataEntry = NullEntry
@@ -1159,8 +1161,50 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
         else:
             saveData.append(NullEntry)
 
-    return saveData, TracersReturned
+    saveData = np.array(saveData).flatten()
+    TracersReturned = np.array(TracersReturned).flatten()
+    ParentsReturned = np.array(ParentsReturned).flatten()
 
+    return saveData, TracersReturned, ParentsReturned
+#------------------------------------------------------------------------------#
+
+def GetIndividualCell(CellIDs,SelectedCells,Data,NullEntry=np.nan):
+
+    #Select which of the SelectedTracers are in Tracers from this snap
+    CellsTruthy = np.isin(SelectedCells,CellIDs)
+
+    #Grab the indices of the Cell CellIDs if it is contained in SelectedCells
+    #   Also add list of Cell IDs to list for debugging purposes
+    CellsIndices = []
+    CellsReturned = []
+    for ind, cell in enumerate(SelectedCells):
+        truthy = np.isin(CellIDs,cell)
+        if np.any(truthy) == True:
+            CellsIndices.append(np.where(truthy)[0])
+            CellsReturned.append(CellIDs[np.where(truthy)])
+        else:
+            CellsIndices.append([np.nan])
+
+    #If the tracer from SelectedTracers is in tracers, use the above indices to select its
+    #   parent, and from there its cell, then grab data.
+    #   If the tracer from SelectedTracers is not in tracers, put a nan value.
+    #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+    saveData = []
+    for (ind, element) in zip(CellsIndices,CellsTruthy):
+        if element == True:
+            dataEntry = Data[ind].tolist()
+            if (np.shape(dataEntry)[0] == 0):
+                dataEntry = NullEntry
+            else:
+                dataEntry = dataEntry[0]
+            saveData.append(dataEntry)
+        else:
+            saveData.append(NullEntry)
+
+    saveData = np.array(saveData).flatten()
+    CellsReturned = np.array(CellsReturned).flatten()
+    
+    return saveData, CellsReturned
 #------------------------------------------------------------------------------#
 
 def hdf5_save(path,data):
@@ -1410,25 +1454,29 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
 
     tmp = {}
     newkey = f"T{targetT}"
+    key = (f"T{targetT}",f"{int(TRACERSPARAMS['selectSnap'])}")
     print(f"Starting {newkey} analysis!")
-
+    TracerOrder = dataDict[key]['trid']
     for snap in snapRange:
         print(f"T{targetT} Snap {snap}!")
         key = (f"T{targetT}",f"{int(snap)}")
         for k, v in dataDict[key].items():
             if (k in saveParams):
-                # tracerData,_  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                # Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
-                # SelectedTracers=dataDict[key]['trid'],Data=dataDict[key][k])
-                # tracerData = np.array(tracerData)
+                tracerData,TracersReturned,ParentsReturned  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],\
+                SelectedTracers=TracerOrder,Data=dataDict[key][k])
 
-                tracerData = v
+                if (k =='trid'):
+                    tracerData = TracersReturned
+                elif (k =='prid'):
+                    tracerData = ParentsReturned
+
                 if (k in tmp.keys()):
                     entry = tmp[k]
                     entry.append(tracerData)
                     tmp.update({k : entry})
                 else:
-                    tmp.update({k : [tracerData]})
+                    tmp.update({k : tracerData.tolist()})
 
     flattened_dict.update({newkey: tmp})
 
@@ -1571,7 +1619,7 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
 
         posData, _, _ = GetIndividualCellFromTracer(Tracers=Cells[key]['trid'],\
             Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-            Data=Cells[key]['pos'][whereGas],mass=Cells[key]['mass'][whereGas],NullEntry=nullEntry)
+            Data=Cells[key]['pos'][whereGas],NullEntry=nullEntry)
 
         posData = np.array(posData)
 

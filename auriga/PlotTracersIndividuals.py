@@ -37,7 +37,7 @@ colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-logParameters = ['dens','rho_rhomean','csound','T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -147,19 +147,19 @@ for T in TRACERSPARAMS['targetTLst']:
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
-            data, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            data, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
                 Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key][analysisParam][whereGas])
 
-            massData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            massData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
                 Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key]['mass'][whereGas])
 
-            # FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            # FoFData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
             #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
             #     Data=dataDict[key]['FoFHaloID'])
             #
-            # HaloData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
+            # HaloData, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
             #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
             #     Data=dataDict[key]['SubHaloID'])
 

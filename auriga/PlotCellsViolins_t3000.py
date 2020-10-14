@@ -37,7 +37,7 @@ colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams_t3000.csv'
 
-logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -107,17 +107,27 @@ for T in TRACERSPARAMS['targetTLst']:
 
     key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
 
+
+    Rcrit = 500.
+
+    print(f"Select approx HaloID = {int(TRACERSPARAMS['haloID'])} or unbound and by R<={Rcrit:0.02f} kpc")
+
+    targetHaloList = np.array([int(TRACERSPARAMS['haloID']),-1])
+    Cond = np.where((dataDict[key]['R']<=Rcrit) & (np.isin(dataDict[key]['SubHaloID'],targetHaloList)))
+
     rangeMin = 0
-    rangeMax = len(dataDict[key]['id'])
+    rangeMax = len(dataDict[key]['id'][Cond])
     CellNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
     #Take Random sample of Cells size min(subset, len(data))
     CellNumberSelect = sample(CellNumberSelect.tolist(),min(subset,rangeMax))
+
+
 
     # selectMin = min(subset,rangeMax)
     # select = math.floor(float(rangeMax)/float(subset))
     # CellNumberSelect = CellNumberSelect[::select]
     #
-    SelectedCells1 = dataDict[key]['id'][CellNumberSelect]
+    SelectedCells1 = dataDict[key]['id'][Cond][CellNumberSelect]
 
     XScatterSubDict = {}
     XSubDict = {}
@@ -141,14 +151,22 @@ for T in TRACERSPARAMS['targetTLst']:
         # tmpSubHaloID = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{T}",f"{int(snap)}")
-            whereGas = np.where(dataDict[key]['type']==0)[0]
-            whereCell = np.where(np.isin(dataDict[key]['id'],SelectedCells1))[0]
+            Cond = np.where((dataDict[key]['R']<=Rcrit) & (np.isin(dataDict[key]['SubHaloID'],targetHaloList)))
+            whereGas = np.where(dataDict[key]['type'][Cond]==0)[0]
+            whereCell = np.where(np.isin(dataDict[key]['id'][whereGas],SelectedCells1))[0]
+            data,_ = GetIndividualCell(CellIDs=dataDict[key]['id'][whereGas],SelectedCells=SelectedCells1,Data=dataDict[key][analysisParam][whereGas])
+            massData,_ = GetIndividualCell(CellIDs=dataDict[key]['id'][whereGas],SelectedCells=SelectedCells1,Data=dataDict[key]['mass'][whereGas])
+
+
+            # whereCellInv  = np.where(np.isin(SelectedCells1,dataDict[key]['id'][whereGas]))
+            # data = np.where(np.isin(SelectedCells1[whereCellInv],dataDict[key]['id'][whereGas][whereCell]),dataDict[key][analysisParam][whereGas][whereCell],np.nan)
+            # massData = np.where(np.isin(SelectedCells1[whereCellInv],dataDict[key]['id'][whereGas][whereCell]),dataDict[key]['mass'][whereGas][whereCell],np.nan)
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
-            data = dataDict[key][analysisParam][whereGas][whereCell]
-            massData = dataDict[key]['mass'][whereGas][whereCell]
+            # data = dataDict[key][analysisParam][whereGas][whereCell]
+            # massData = dataDict[key]['mass'][whereGas][whereCell]
 
             # FoFData, _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
             #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
@@ -159,7 +177,7 @@ for T in TRACERSPARAMS['targetTLst']:
             #     Data=dataDict[key]['SubHaloID'])
 
             #Append the data from this snapshot to a temporary list
-            lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['id'][[whereCell]]]
+            lookbackList = [dataDict[key]['Lookback'][0] for kk in SelectedCells1]
             tmpXScatterdata.append(lookbackList)
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
@@ -171,7 +189,7 @@ for T in TRACERSPARAMS['targetTLst']:
 
             #Violin Data
             massMean = np.mean(dataDict[key]['mass'][whereGas])
-            weightedData = (dataDict[key][analysisParam] * dataDict[key]['mass'])/massMean
+            weightedData = (dataDict[key][analysisParam][whereGas] * dataDict[key]['mass'][whereGas])/massMean
             whereNOTnan = np.where(np.isnan(weightedData)==False)
             weightedData = weightedData[whereNOTnan]
             tmpViolinData.append(weightedData)
@@ -231,7 +249,7 @@ for analysisParam in saveParams:
 
         plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
         plotYdata = Ydata[f"T{temp}"][analysisParam].copy()
-        plotXdata = Xdata[f"T{temp}"][analysisParam].copy()
+        plotXdata = Xdata[f"T{temp}"][analysisParam].astype('float64').copy()
         violinData = ViolinDict[f"T{temp}"][analysisParam].copy()
         # SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16').copy()
 

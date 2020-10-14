@@ -61,29 +61,23 @@ TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 DataSavepathSuffix = f".h5"
 
-
-print("Loading data!")
-
 dataDict = {}
 
-loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
+dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-dataDict = hdf5_load(loadPath)
+xDataDict = {}
+snapRange = range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1)))
 
-
-tmpanalysisDict = {}
 for T in Tlst:
-    for analysisParam in dtwParams:
-        key = f"T{T}"
-        if (analysisParam in logParams):
-            newkey = (f"T{T}",f"log10{analysisParam}")
-            tmpanalysisDict.update({newkey : np.log10(dataDict[key][analysisParam].T.copy())})
-        else:
-            newkey = (f"T{T}",f"{analysisParam}")
-            tmpanalysisDict.update({newkey : dataDict[key][analysisParam].T.copy()})
+    tmp = []
+    for snap in snapRange:
+        key = (f"T{T}",f"{int(snap)}")
+        tmp.append(dataDict[key][f"Lookback"].copy())
+    newKey = f"T{T}"
+    tmp = np.array(tmp).flatten()
+    xDataDict.update({newKey : tmp})
 
-analysisDict, whereDict = delete_nan_inf_axis(tmpanalysisDict,axis=1)
-
+del dataDict
 
 for T in Tlst:
     dtwT_MDict = {}
@@ -101,12 +95,12 @@ for T in Tlst:
             print("\n" + f"[@T{T} {analysisParam}]: Loading Distance Matrix data as: "+ loadPath)
 
         dtwDict = hdf5_load(loadPath)
-
+        STOP80
         D = dtwDict[loadKey]['distance_matrix'].copy()
         maxD = np.nanmax(D)
         D = D/maxD
 
-        M = analysisDict[loadKey].copy()
+        M = dtwDict[loadKey]['data'].copy()
 
         if (analysisParam in logParams):
             dtwT_MDict.update({f"log10{analysisParam}" : M})
@@ -119,7 +113,7 @@ for T in Tlst:
             dtwT_PridDict.update({f"{analysisParam}" : dtwDict[loadKey]['prid'].copy()})
             dtwT_TridDict.update({f"{analysisParam}" : dtwDict[loadKey]['trid'].copy()})
 
-        xData = dataDict[f"T{T}"][f"Lookback"].copy()
+        xData = xDataDict[f"T{T}"]
 
         print("Linkage!")
         Z= linkage(D,method=method)
@@ -222,7 +216,7 @@ for T in Tlst:
     paramstring = "+".join(dtwParams)
     plt.close('all')
 
-    xData = dataDict[f"T{T}"][f"Lookback"].copy()
+    xData = xDataDict[f"T{T}"]
 
     print(f"Get intersection of trids!")
     dtwT_TridDictkeys = list(dtwT_TridDict.keys())
@@ -241,11 +235,13 @@ for T in Tlst:
     kk = 0
     for key,value in dtwT_DDict.items():
         print(f"{key}")
-        if (kk ==0 ):
-            Djoint = np.zeros(shape=(np.shape(value)))
         entry = squareform(value)[whereTracers[:,np.newaxis],whereTracers]
-        Djoint += squareform(entry)
+        if (kk ==0 ):
+            Djoint = np.zeros(shape=np.shape(entry))
+        Djoint += entry
         kk+=1
+
+    Djoint = squareform(Djoint)
 
     print("Joint Linkage!")
     Zjoint= linkage(Djoint,method=method)
@@ -348,4 +344,4 @@ for T in Tlst:
 
         plt.close('all')
 
-        del finalDict, saveDict, Djoint, Z, cluster, clusters, clusterIndices, subsetClusterIndices, plotYdata, plotXdata, paths, whereTracers, d_crit
+    del finalDict, saveDict, Djoint, Zjoint, cluster, clusters, clusterIndices, subsetClusterIndices, plotYdata, plotXdata, paths, whereTracers, d_crit

@@ -294,22 +294,13 @@ def test_IndividualTracerFakeData():
         Full set of Tracers Tests!
     """
     SelectedTracers1 = trid[TracerNumberSelect]
-
+    SelectedParents1 = prid[TracerNumberSelect]
     assert len(SelectedTracers1) == rangeMax,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Full Set:], SelectedTracers1 contains non-trid entries!"
 
-    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    data, TracersReturned, ParentsReturned = GetIndividualCellFromTracer(Tracers=trid,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData)
-
-    data_flat = []
-    for val in data:
-         if isinstance(val,list):
-             data_flat.append(val[0])
-         else:
-             data_flat.append(val)
-
-    data = data_flat
 
 
     assert np.shape(data)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned data not size == rangeMax! Some data/NaNs may be missing!"
@@ -317,6 +308,9 @@ def test_IndividualTracerFakeData():
     assert np.shape(TracersReturned)[0] <= rangeMax,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not of size <= rangeMax! There may be too many Returned Tracers!"
 
     assert np.all(np.isin(TracersReturned,trid)) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned not subset of trid! Selection error!"
+    assert np.all(np.isin(ParentsReturned,prid)) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned not subset of trid! Selection error!"
+    assert np.all(TracersReturned == SelectedTracers1) == True , "[@IndividualTracerFakeData Full Set:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
+    assert np.all(ParentsReturned == SelectedParents1) == True , "[@IndividualTracerFakeData Full Set:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"
 
 
     truthyList =[]
@@ -332,28 +326,23 @@ def test_IndividualTracerFakeData():
         Subset of Tracers Selected Tests!
     """
     SelectedTracers1 = trid[randomSample]
+    SelectedParents1 = prid[randomSample]
 
     assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:], SelectedTracers1 contains non-trid entries!"
 
-    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid,\
+    data, TracersReturned, ParentsReturned = GetIndividualCellFromTracer(Tracers=trid,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData)
-
-    data_flat = []
-    for val in data:
-         if isinstance(val,list):
-             data_flat.append(val[0])
-         else:
-             data_flat.append(val)
-
-    data = data_flat
 
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Random Subset of Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
 
     assert np.all(np.isin(TracersReturned,trid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned not subset of trid! Selection error!"
+    assert np.all(np.isin(ParentsReturned,prid)) == True,"[@IndividualTracerFakeData Random Subset of Tracers:] Tracers Returned not subset of trid! Selection error!"
+    assert np.all(TracersReturned == SelectedTracers1) == True , "[@IndividualTracerFakeData Random Subset of Tracers:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
+    assert np.all(ParentsReturned == SelectedParents1) == True , "[@IndividualTracerFakeData Random Subset of Tracers:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"
 
 
     truthyList =[]
@@ -381,25 +370,15 @@ def test_IndividualTracerFakeData():
     assert len(SelectedTracers1) == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 not correct shape!"
     assert np.all(np.isin(SelectedTracers1,trid)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 contains non-trid2 entries!"
 
-    data, TracersReturned = GetIndividualCellFromTracer(Tracers=trid2,\
+    data, TracersReturned, ParentsReturned = GetIndividualCellFromTracer(Tracers=trid2,\
     Parents=prid,CellIDs=id,SelectedTracers=SelectedTracers1,\
     Data=tempData)
-
-    data_flat = []
-    for val in data:
-         if isinstance(val,list):
-             data_flat.append(val[0])
-         else:
-             data_flat.append(val)
-
-    data = data_flat
 
     assert np.shape(data)[0] == subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] returned data not size == subset! Some data/NaNs may be missing!"
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not a subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= subset,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
 
     assert np.all(np.isin(TracersReturned,trid2)) == True,"[@IndividualTracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned not subset of trid2! Selection error!"
-
 
     truthyList =[]
     for ind, value in enumerate(data):
@@ -424,21 +403,15 @@ def test_IndividualTracer():
     TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(IndividualTracerSubset,rangeMax))
 
     SelectedTracers1 = snapTracers.data['trid'][TracerNumberSelect]
+    SelectedParents1 = snapTracers.data['prid'][TracerNumberSelect]
 
-    data, TracersReturned = GetIndividualCellFromTracer(Tracers=snapTracers.data['trid'],\
+    data, TracersReturned,ParentsReturned = GetIndividualCellFromTracer(Tracers=snapTracers.data['trid'],\
     Parents=snapTracers.data['prid'],CellIDs=snapGas.data['id'],SelectedTracers=SelectedTracers1,\
     Data=snapGas.data['T'])
-
-    data_flat = []
-    for val in data:
-         if isinstance(val,list):
-             data_flat.append(val[0])
-         else:
-             data_flat.append(val)
-
-    data = data_flat
 
     assert np.shape(data)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
 
     assert np.all(np.isin(TracersReturned,SelectedTracers1)) == True,"[@Individual Tracer:] Tracers Returned is not a IndividualTracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= IndividualTracerSubset,"[@Individual Tracer:] Tracers Returned is not of size <= IndividualTracerSubset! There may be too many Returned Tracers!"
+    assert np.all(TracersReturned == SelectedTracers1) == True , "[@Individual Tracer:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
+    assert np.all(ParentsReturned == SelectedParents1) == True , "[@Individual Tracer:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"

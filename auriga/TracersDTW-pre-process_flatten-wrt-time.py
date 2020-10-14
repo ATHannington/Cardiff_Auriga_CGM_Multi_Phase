@@ -17,7 +17,8 @@ import sys
 import logging
 
 TracersParamsPath = 'TracersParams.csv'
-n_processes = 4
+
+singleValueParams = ['Lookback','Ntracers','Snap']
 #==============================================================================#
 
 #Load Analysis Setup Data
@@ -25,7 +26,8 @@ TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
 saveParams = TRACERSPARAMS['saveParams'] + TRACERSPARAMS['saveTracersOnly'] + TRACERSPARAMS['saveEssentials']
 
-saveParams.remove('id')
+for param in singleValueParams:
+    saveParams.remove(param)
 
 DataSavepathSuffix = f".h5"
 
@@ -35,30 +37,13 @@ dataDict = {}
 
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-print("Flattening wrt time!")
-if __name__=="__main__":
-    #Loop over target temperatures
-    args_default = [dataDict,TRACERSPARAMS,saveParams]
-
-    args_list = [[targetT]+args_default for targetT in TRACERSPARAMS['targetTLst']]
-
-    #Open multiprocesssing pool
-
-    print("\n" + f"Opening {n_processes} core Pool!")
-    mp.log_to_stderr(logging.DEBUG)
-    pool = mp.Pool(processes=n_processes)
-
-    #Compute Snap analysis
-    output_list = [pool.apply_async(flatten_wrt_time,args=args) for args in args_list]
-
-    pool.close()
-    pool.join()
 
 flatDict = {}
+print("Flattening wrt time!")
+for targetT in TRACERSPARAMS['targetTLst']:
+    out = flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams)
+    flatDict.update(out)
 
-for (targetT,output) in zip(TRACERSPARAMS['targetTLst'],output_list):
-    tempOut = output.get()
-    flatDict.update({f"T{targetT}" : tempOut[f"T{targetT}"]})
 
 savePath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
 

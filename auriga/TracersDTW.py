@@ -109,18 +109,30 @@ for T in Tlst:
             key = (f"T{T}",f"log10{analysisParam}")
         else:
             key = (f"T{T}",f"{analysisParam}")
-        M = analysisDict[key]
+        Mtmp = analysisDict[key]
         print("...Loaded M matrix!")
 
-        maxSize = min(np.shape(M)[0],dtwSubset)
+        maxSize = min(np.shape(Mtmp)[0],dtwSubset)
         if (maxSize<dtwSubset):
             print("Taking full set of Tracers! No RAM issues!")
         elif(maxSize==dtwSubset):
             print(f"Taking subset {maxSize} number of Tracers to prevent RAM overload!")
 
-        M = M[:maxSize,:]
-        tridData = tridDict[key][:maxSize,:]
-        pridData = pridDict[key][:maxSize,:]
+
+        subset = tridDict[key][:maxSize,0]
+        tridData = []
+        pridData = []
+        M = []
+        for (tracers,parents,Mrow) in zip(tridDict[key].T,pridDict[key].T,Mtmp.T):
+            whereSubset = np.where(np.isin(tracers,subset))[0]
+            tridData.append(tracers[whereSubset].T)
+            pridData.append(parents[whereSubset].T)
+            M.append(Mrow[whereSubset].T)
+
+        M = np.array(M)
+        tridData = np.array(tridData)
+        pridData = np.array(pridData)
+        del Mtmp
 
         print(f"Shape of M : {np.shape(M)}")
         print(f"Shape of tridData : {np.shape(tridData)}")
@@ -173,15 +185,15 @@ for T in Tlst:
         print(f"Elapsed time in DTW = {elapsed}s")
 
         D = np.array(out)
-        saveSubDict = {'distance_matrix': D ,'trid':tridData ,'prid': pridData}
+        saveSubDict = {'distance_matrix': D ,'trid':tridData ,'prid': pridData,'data' : M}
         saveDict = {key : saveSubDict}
 
         if (analysisParam in logParams):
             savePath = DataSavepath + f"_T{T}_log10{analysisParam}_DTW-distance"+DataSavepathSuffix
-            print("\n" + f"[@T{T} log10{analysisParam}]: Saving Distance Matrix data as: "+ savePath)
+            print("\n" + f"[@T{T} log10{analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "+ savePath)
 
         else:
             savePath = DataSavepath + f"_T{T}_{analysisParam}_DTW-distance"+DataSavepathSuffix
-            print("\n" + f"[@T{T} {analysisParam}]: Saving Distance Matrix data as: "+ savePath)
+            print("\n" + f"[@T{T} {analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "+ savePath)
 
         hdf5_save(savePath,saveDict)
