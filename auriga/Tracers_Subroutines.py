@@ -18,7 +18,7 @@ import sys
 import logging
 import math
 import random
-from itertools import combinations
+from itertools import combinations, chain
 
 #==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
@@ -486,31 +486,10 @@ def GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,sna
     Tracers = snapTracers.trid[ParentsIndices]
     Parents = snapTracers.prid[ParentsIndices]
 
-    #Get indices of CellIDs contained in parents. This should return duplicates
-    #   if an ID is repeated in Parents.
-    CellIndex = np.array([])
-    for ID in Parents:
-        value = np.where(np.isin(CellIDs,ID))
-        CellIndex = np.append(CellIndex, value)
+    #Get Gas meeting Cond AND with tracers
+    CellsIndices = np.where(np.isin(snapGas.id,Parents))
+    CellIDs = snapGas.id[CellsIndices]
 
-    CellIndex = np.array(list(map(int, CellIndex)))
-
-    #Grab the CellIDs with tracers in, that meet cond. Using CellIndex
-    #   here will intentionally return duplicates s.t. every tracer has a cell.
-    CellIDs = CellIDs[CellIndex]
-    #Grab the indices of the snapGas.id's that have tracers, and meet cond.
-    #   This allows for selection of indices without usin np.isin etc..
-    #       intentionally returns duplicates s.t. every tracer has an associated cell.
-    CellsIndices = Cond[CellIndex]
-
-    # CellsIndices = np.array([])
-    # for ID in CellIDs:
-    #     value = np.where(np.isin(snapGas.id,ID))
-    #     CellsIndices = np.append(CellsIndices, value)
-    #
-    # CellsIndices = np.array(list(map(int, CellsIndices)))
-
-    # Save number of tracers
     Ntracers = int(len(Tracers))
     print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
@@ -553,29 +532,29 @@ def GetCellsFromTracers(snapGas, snapTracers,Tracers,saveParams,saveTracersOnly,
     CellIndicesShort = np.where(np.isin(snapGas.id,Parents))[0]
     CellIDs = snapGas.id[CellIndicesShort]
 
-    #Create a list of indices of CellIDs that contains a ParentID:
-    #   This WILL include duplicates!
-    CellIndex = np.array([])
-    for ID in Parents:
-        value = np.where(np.isin(CellIDs,ID))
-        CellIndex = np.append(CellIndex, value)
-
-    #Make sure CellIndex is of the right type
-    CellIndex = np.array(list(map(int, CellIndex)))
-
-    #Grab the Cell IDs for cells with Tracers,
-    #   Using CelolIndex here will return duplicate entries s.t. every
-    #   there is a cell for every tracer including duplicates
-    CellIDs = CellIDs[CellIndex]
-    #Grabe The Indices of the snapGas.id's  with parents in. Using
-    #   CellIndex here returns duplicates such that there is a cell for every tracers.
-    CellsIndices = CellIndicesShort[CellIndex]
+    # #Create a list of indices of CellIDs that contains a ParentID:
+    # #   This WILL include duplicates!
+    # CellIndex = np.array([])
+    # for ID in Parents:
+    #     value = np.where(np.isin(CellIDs,ID))
+    #     CellIndex = np.append(CellIndex, value)
+    #
+    # #Make sure CellIndex is of the right type
+    # CellIndex = np.array(list(map(int, CellIndex)))
+    #
+    # #Grab the Cell IDs for cells with Tracers,
+    # #   Using CelolIndex here will return duplicate entries s.t. every
+    # #   there is a cell for every tracer including duplicates
+    # CellIDs = CellIDs[CellIndex]
+    # #Grabe The Indices of the snapGas.id's  with parents in. Using
+    # #   CellIndex here returns duplicates such that there is a cell for every tracers.
+    # CellsIndices = CellIndicesShort[CellIndex]
 
     # Save number of tracers
     Ntracers = int(len(TracersCFT))
     print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-    Cells = saveCellsData(snapGas,TracersCFT,Parents,CellIDs,CellsIndices,Ntracers,snapNumber,saveParams,saveTracersOnly)
+    Cells = saveCellsData(snapGas,TracersCFT,Parents,CellIDs,CellIndicesShort,Ntracers,snapNumber,saveParams,saveTracersOnly)
 
     return TracersCFT, Cells, CellIDs, Parents
 
@@ -587,7 +566,7 @@ def saveTracerData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNum
     """
     print(f"[@{snapNumber}]: Saving Tracer Data!")
 
-    assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
+    # assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
     #Select the data for Cells that meet Cond which contain tracers
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
@@ -640,7 +619,7 @@ def saveCellsData(snapGas,Tracers,Parents,CellIDs,CellsIndices,Ntracers,snapNumb
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
 
-    assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
+    # assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
 
     Cells={}
     for key in saveParams:
@@ -1124,87 +1103,157 @@ def LoadTracersParameters(TracersParamsPath):
 
 def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,NullEntry=np.nan):
 
+    if (np.shape(np.shape(Data))[0]==1):
+        dimension = 1
+        NullEntry = np.nan
+    else:
+        dimension = 3
+        NullEntry = [np.nan for dd in range(dimension)]
+
     #Select which of the SelectedTracers are in Tracers from this snap
-    TracersTruthy = np.isin(SelectedTracers,Tracers)
+    SelectedTrids = np.where(np.isin(SelectedTracers,Tracers),SelectedTracers,np.nan)
+    whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
+    whereSelected =  np.where(np.isin(SelectedTracers,Tracers)==True)[0]
 
-    #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
-    #   Also add list of Tracer IDs trids to list for debugging purposes
-    TracersIndices = []
-    TracersReturned = []
-    ParentsReturned = []
-    for ind, tracer in enumerate(SelectedTracers):
-        truthy = np.isin(Tracers,tracer)
-        if np.any(truthy) == True:
-            TracersIndices.append(np.where(truthy)[0])
-            TracersReturned.append(Tracers[np.where(truthy)])
-            ParentsReturned.append(Parents[np.where(truthy)])
-        else:
-            TracersIndices.append([np.nan])
+    pridBlank = np.full(shape=np.shape(SelectedTracers),fill_value=-1)
+    pridBlank[whereSelected] = Parents[whereTrids]
 
-    #If the tracer from SelectedTracers is in tracers, use the above indices to select its
-    #   parent, and from there its cell, then grab data.
-    #   If the tracer from SelectedTracers is not in tracers, put a nan value.
-    #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+    SelectedPrids = pridBlank
 
-    saveData = []
-    massData = []
-    for (ind, element) in zip(TracersIndices,TracersTruthy):
-        if element == True:
-            parent = Parents[ind]
-            dataIndex = np.where(np.isin(CellIDs,parent))
-            dataEntry = Data[dataIndex].tolist()
-            if (np.shape(dataEntry)[0] == 0):
-                dataEntry = NullEntry
-            else:
-                dataEntry = dataEntry[0]
-            saveData.append(dataEntry)
-        else:
-            saveData.append(NullEntry)
+    if (dimension == 1):
+        dataBlank = np.full(shape=np.shape(SelectedTracers),fill_value=NullEntry)
+    elif(dimension==3):
+        dataBlank = np.full(shape=(np.shape(SelectedTracers)[0],dimension),fill_value=NullEntry)
+    else:
+        print(f"[@GetIndividualCellFromTracer]: dimension not 1 or 3! dataBlank Failure!")
+        assert True==False
 
-    saveData = np.array(saveData).flatten()
-    TracersReturned = np.array(TracersReturned).flatten()
-    ParentsReturned = np.array(ParentsReturned).flatten()
+    ParentsEqualsCellIDs = np.all(Parents==CellIDs)
+    if (ParentsEqualsCellIDs ==False):
+        for (ind, ID) in enumerate(SelectedPrids):
+            if(ID!=-1):
+                value = np.where(np.isin(CellIDs,ID))[0]
+                if(np.shape(value)[0]>0):
+                    dataBlank[ind] = Data[value]
+    else:
+        dataBlank[whereSelected] = Data[whereTrids]
 
-    return saveData, TracersReturned, ParentsReturned
+    SelectedData = dataBlank
+
+    assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+    assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+    assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+    # #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
+    # #   Also add list of Tracer IDs trids to list for debugging purposes
+    # TracersIndices = []
+    # TracersReturned = []
+    # ParentsReturned = []
+    # for ind, tracer in enumerate(SelectedTracers):
+    #     truthy = np.isin(Tracers,tracer)
+    #     if np.any(truthy) == True:
+    #         TracersIndices.append(np.where(truthy)[0])
+    #         TracersReturned.append(Tracers[np.where(truthy)])
+    #         ParentsReturned.append(Parents[np.where(truthy)])
+    #     else:
+    #         TracersIndices.append([np.nan])
+    #
+    # #If the tracer from SelectedTracers is in tracers, use the above indices to select its
+    # #   parent, and from there its cell, then grab data.
+    # #   If the tracer from SelectedTracers is not in tracers, put a nan value.
+    # #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+    #
+    # saveData = []
+    # massData = []
+    # for (ind, element) in zip(TracersIndices,TracersTruthy):
+    #     if element == True:
+    #         parent = Parents[ind]
+    #         dataIndex = np.where(np.isin(CellIDs,parent))
+    #         dataEntry = Data[dataIndex].tolist()
+    #         if (np.shape(dataEntry)[0] == 0):
+    #             dataEntry = NullEntry
+    #         else:
+    #             dataEntry = dataEntry[0]
+    #         saveData.append(dataEntry)
+    #     else:
+    #         saveData.append(NullEntry)
+    #
+    # saveData = np.array(saveData).flatten()
+    # TracersReturned = np.array(TracersReturned).flatten()
+    # ParentsReturned = np.array(ParentsReturned).flatten()
+
+    return SelectedData, SelectedTrids, SelectedPrids
 #------------------------------------------------------------------------------#
 
 def GetIndividualCell(CellIDs,SelectedCells,Data,NullEntry=np.nan):
+    if (np.shape(np.shape(Data))[0]==1):
+        dimension = 1
+        NullEntry = np.nan
+    else:
+        dimension = 3
+        NullEntry = [np.nan for dd in range(dimension)]
 
-    #Select which of the SelectedTracers are in Tracers from this snap
-    CellsTruthy = np.isin(SelectedCells,CellIDs)
+        #Select which of the SelectedTracers are in Tracers from this snap
+    SelectedCellsReturned = np.where(np.isin(SelectedCells,CellIDs),SelectedCells,-1)
+    whereCells = np.where(np.isin(CellIDs,SelectedCells)==True)[0]
+    whereSelected =  np.where(np.isin(SelectedCells,CellIDs)==True)[0]
 
-    #Grab the indices of the Cell CellIDs if it is contained in SelectedCells
-    #   Also add list of Cell IDs to list for debugging purposes
-    CellsIndices = []
-    CellsReturned = []
-    for ind, cell in enumerate(SelectedCells):
-        truthy = np.isin(CellIDs,cell)
-        if np.any(truthy) == True:
-            CellsIndices.append(np.where(truthy)[0])
-            CellsReturned.append(CellIDs[np.where(truthy)])
-        else:
-            CellsIndices.append([np.nan])
+    if (dimension == 1):
+        dataBlank = np.full(shape=np.shape(SelectedCells),fill_value=NullEntry)
+    elif(dimension==3):
+        dataBlank = np.full(shape=(np.shape(SelectedCells)[0],dimension),fill_value=NullEntry)
+    else:
+        print(f"[@GetIndividualCellFromTracer]: dimension not 1 or 3! dataBlank Failure!")
+        assert True==False
 
-    #If the tracer from SelectedTracers is in tracers, use the above indices to select its
-    #   parent, and from there its cell, then grab data.
-    #   If the tracer from SelectedTracers is not in tracers, put a nan value.
-    #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
-    saveData = []
-    for (ind, element) in zip(CellsIndices,CellsTruthy):
-        if element == True:
-            dataEntry = Data[ind].tolist()
-            if (np.shape(dataEntry)[0] == 0):
-                dataEntry = NullEntry
-            else:
-                dataEntry = dataEntry[0]
-            saveData.append(dataEntry)
-        else:
-            saveData.append(NullEntry)
 
-    saveData = np.array(saveData).flatten()
-    CellsReturned = np.array(CellsReturned).flatten()
-    
-    return saveData, CellsReturned
+    for (ind, ID) in enumerate(SelectedCellsReturned):
+        if(ID!=-1):
+            value = np.where(np.isin(CellIDs,ID))[0]
+            if(np.shape(value)[0]>0):
+                dataBlank[ind] = Data[value]
+
+    SelectedData = dataBlank
+    assert np.shape(SelectedData)[0] == np.shape(SelectedCells)[0]
+    assert np.shape(SelectedCellsReturned) == np.shape(SelectedCells)
+    #
+    #
+
+    #
+    # #Select which of the SelectedTracers are in Tracers from this snap
+    # CellsTruthy = np.isin(SelectedCells,CellIDs)
+    #
+    # #Grab the indices of the Cell CellIDs if it is contained in SelectedCells
+    # #   Also add list of Cell IDs to list for debugging purposes
+    # CellsIndices = []
+    # CellsReturned = []
+    # for ind, cell in enumerate(SelectedCells):
+    #     truthy = np.isin(CellIDs,cell)
+    #     if np.any(truthy) == True:
+    #         CellsIndices.append(np.where(truthy)[0])
+    #         CellsReturned.append(CellIDs[np.where(truthy)])
+    #     else:
+    #         CellsIndices.append([np.nan])
+    #
+    # #If the tracer from SelectedTracers is in tracers, use the above indices to select its
+    # #   parent, and from there its cell, then grab data.
+    # #   If the tracer from SelectedTracers is not in tracers, put a nan value.
+    # #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+    # saveData = []
+    # for (ind, element) in zip(CellsIndices,CellsTruthy):
+    #     if element == True:
+    #         dataEntry = Data[ind].tolist()
+    #         if (np.shape(dataEntry)[0] == 0):
+    #             dataEntry = NullEntry
+    #         else:
+    #             dataEntry = dataEntry[0]
+    #         saveData.append(dataEntry)
+    #     else:
+    #         saveData.append(NullEntry)
+    #
+    # saveData = np.array(saveData).flatten()
+    # CellsReturned = np.array(CellsReturned).flatten()
+
+    return SelectedData, SelectedCellsReturned
 #------------------------------------------------------------------------------#
 
 def hdf5_save(path,data):

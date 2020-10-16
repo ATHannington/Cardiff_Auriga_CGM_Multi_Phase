@@ -24,11 +24,11 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 20#10#1000
+subset = 1000#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.5#0.5#0.03
+opacity = 0.03#0.5#0.03
 
 ageUniverse = 13.77 #[Gyr]
 
@@ -147,12 +147,12 @@ for T in TRACERSPARAMS['targetTLst']:
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
             #   Grab data for analysisParam and mass.
-            data, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+            data, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'][whereGas],\
+                Parents=dataDict[key]['prid'][whereGas],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key][analysisParam][whereGas])
 
-            massData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-                Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+            massData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'][whereGas],\
+                Parents=dataDict[key]['prid'][whereGas],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key]['mass'][whereGas])
 
             # FoFData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\

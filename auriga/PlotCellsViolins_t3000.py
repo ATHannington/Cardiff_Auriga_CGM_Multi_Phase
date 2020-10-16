@@ -151,7 +151,7 @@ for T in TRACERSPARAMS['targetTLst']:
         # tmpSubHaloID = []
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{T}",f"{int(snap)}")
-            Cond = np.where((dataDict[key]['R']<=Rcrit) & (np.isin(dataDict[key]['SubHaloID'],targetHaloList)))
+            Cond = np.where(np.isin(dataDict[key]['SubHaloID'],targetHaloList))
             whereGas = np.where(dataDict[key]['type'][Cond]==0)[0]
             whereCell = np.where(np.isin(dataDict[key]['id'][whereGas],SelectedCells1))[0]
             data,_ = GetIndividualCell(CellIDs=dataDict[key]['id'][whereGas],SelectedCells=SelectedCells1,Data=dataDict[key][analysisParam][whereGas])
