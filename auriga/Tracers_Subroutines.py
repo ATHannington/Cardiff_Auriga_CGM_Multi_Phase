@@ -1112,11 +1112,11 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
 
     #Select which of the SelectedTracers are in Tracers from this snap
     SelectedTrids = np.where(np.isin(SelectedTracers,Tracers),SelectedTracers,np.nan)
-    whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
-    whereSelected =  np.where(np.isin(SelectedTracers,Tracers)==True)[0]
+    # whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
+    _, SelectedIndices,TridIndices =  np.intersect1d(SelectedTracers,Tracers,return_indices=True)
 
     pridBlank = np.full(shape=np.shape(SelectedTracers),fill_value=-1)
-    pridBlank[whereSelected] = Parents[whereTrids]
+    pridBlank[SelectedIndices] = Parents[TridIndices]
 
     SelectedPrids = pridBlank
 
@@ -1136,13 +1136,16 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
                 if(np.shape(value)[0]>0):
                     dataBlank[ind] = Data[value]
     else:
-        dataBlank[whereSelected] = Data[whereTrids]
+        dataBlank[SelectedIndices] = Data[TridIndices]
 
     SelectedData = dataBlank
 
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+
+    # #Select which of the SelectedTracers are in Tracers from this snap
+    # TracersTruthy = np.isin(SelectedTracers,Tracers)
     # #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
     # #   Also add list of Tracer IDs trids to list for debugging purposes
     # TracersIndices = []
@@ -1180,7 +1183,8 @@ def GetIndividualCellFromTracer(Tracers,Parents,CellIDs,SelectedTracers,Data,Nul
     # saveData = np.array(saveData).flatten()
     # TracersReturned = np.array(TracersReturned).flatten()
     # ParentsReturned = np.array(ParentsReturned).flatten()
-
+    #
+    # return saveData, TracersReturned, ParentsReturned
     return SelectedData, SelectedTrids, SelectedPrids
 #------------------------------------------------------------------------------#
 
@@ -1194,8 +1198,8 @@ def GetIndividualCell(CellIDs,SelectedCells,Data,NullEntry=np.nan):
 
         #Select which of the SelectedTracers are in Tracers from this snap
     SelectedCellsReturned = np.where(np.isin(SelectedCells,CellIDs),SelectedCells,-1)
-    whereCells = np.where(np.isin(CellIDs,SelectedCells)==True)[0]
-    whereSelected =  np.where(np.isin(SelectedCells,CellIDs)==True)[0]
+    # whereCells = np.where(np.isin(CellIDs,SelectedCells)==True)[0]
+    # _, SelectedIndices,CellIndices = np.intersect1d(SelectedCells,CellIDs,return_indices=True)
 
     if (dimension == 1):
         dataBlank = np.full(shape=np.shape(SelectedCells),fill_value=NullEntry)

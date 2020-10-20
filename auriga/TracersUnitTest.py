@@ -309,7 +309,8 @@ def test_IndividualTracerFakeData():
     Data=tempData)
 
 
-
+    expectedData = np.array([tempData,tempData]).flatten()
+    assert np.all(data==expectedData) ==True,"[@IndividualTracerFakeData Full Set:] dataReturned != expectedData ! Some data is false or re-ordering has occurred!"
     assert np.shape(data)[0] == rangeMax,"[@IndividualTracerFakeData Full Set:] returned data not size == rangeMax! Some data/NaNs may be missing!"
     assert np.all(TracersReturned==SelectedTracers1) == True,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not equal to Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= rangeMax,"[@IndividualTracerFakeData Full Set:] Tracers Returned is not of size <= rangeMax! There may be too many Returned Tracers!"
@@ -426,10 +427,39 @@ def test_IndividualTracer():
     Parents=snapTracers.data['prid'],CellIDs=snapGas.data['id'],SelectedTracers=SelectedTracers1,\
     Data=snapGas.data['T'])
 
-    assert np.shape(data)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
+    #Select indices (positions in array) of Tracer IDs which are in the Tracers list
+    TracersIndices = np.where(np.isin(snapTracers.trid,SelectedTracers1))
 
+    #Select the matching parent cell IDs for tracers which are in Tracers list
+    Parents = snapTracers.prid[TracersIndices]
+
+    #Select Tracers which are in the original tracers list (thus their original cells met condition and contained tracers)
+    TracersCFT = snapTracers.trid[TracersIndices]
+
+    #Select Cell IDs which are in Parents
+    #   NOTE:   This selection causes trouble. Selecting only Halo=HaloID means some Parents now aren't associated with Halo
+    #           This means some parents and tracers need to be dropped as they are no longer in desired halo.
+    # CellsIndices = np.where(np.isin(snapGas.id,Parents))
+    # CellIDs = snapGas.id[CellsIndices]
+
+    #So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
+    ParentsIndices = np.where(np.isin(Parents,snapGas.id))
+    Parents = Parents[ParentsIndices]
+    TracersCFT = TracersCFT[ParentsIndices]
+
+    #Select IDs for Cells with Tracers with no duplicates
+    CellIndicesShort = np.where(np.isin(snapGas.id,Parents))[0]
+    CellIDs = snapGas.id[CellIndicesShort]
+    expectedData = snapGas.data['T'][CellIndicesShort]
+
+    whereDataNotNaN = np.where(np.isnan(data)==False)
     whereTracersReturnedNotNaN = np.where(np.isnan(TracersReturned)==False)
     whereParentsReturnedNotNaN = np.where(ParentsReturned!=-1)
+
+    assert  np.all(np.isin(data[whereDataNotNaN],expectedData)) == True,"[@Individual Tracer:] returned data not all contained in expectedData! Some data/NaNs may be missing!"
+
+    assert np.shape(data)[0] == IndividualTracerSubset,"[@Individual Tracer:] returned data not size == IndividualTracerSubset! Some data/NaNs may be missing!"
+
     assert np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN],SelectedTracers1)) == True,"[@Individual Tracer:] Tracers Returned is not a IndividualTracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert np.shape(TracersReturned)[0] <= IndividualTracerSubset,"[@Individual Tracer:] Tracers Returned is not of size <= IndividualTracerSubset! There may be too many Returned Tracers!"
     assert np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN],SelectedTracers1)) == True , "[@Individual Tracer:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
