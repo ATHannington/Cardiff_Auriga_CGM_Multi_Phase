@@ -32,9 +32,9 @@ selectedSnaps = [112,119,127]
 #Entered parameters to be saved from
 #   n_H, B, R, T
 #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+# saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 
-logParameters = ['T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','tcool','theat','tcross','tff','tcool_tff']
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 
 xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -43,16 +43,22 @@ xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'P_thermal': r'$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]',\
  'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'P_tot': r'$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'tcool': r'Cooling Time [$Gyr$]',\
  'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
  'tff': r'Free Fall Time [$Gyr$]',\
- 'tcool_tff' : r'Cooling Time over Free Fall Time'}
+ 'tcool_tff' : r'Cooling Time over Free Fall Time',\
+ 'csound' : r'Sound Speed',\
+ 'rho_rhomean': r'Density over Average Universe Density',\
+ 'dens' : r'Density [$g$ $cm^{-3}$]'}
 
 for entry in logParameters:
     xlabel[entry] = r'Log10 '+ xlabel[entry]
 
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+
+saveParams = TRACERSPARAMS['saveParams']
 
 DataSavepathSuffix = f".h5"
 

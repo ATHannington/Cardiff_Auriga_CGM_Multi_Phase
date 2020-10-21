@@ -207,7 +207,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         xdataCells = np.log10(snapGasFinalDict[key]['rho_rhomean'][whereCellsGas])
         ydataCells = np.log10(snapGasFinalDict[key]['T'][whereCellsGas])
-        massCells = np.log10(snapGasFinalDict[key]['mass'][whereCellsGas]*1e10) #10^10Msol -> Msol
+        massCells = np.log10(snapGasFinalDict[key]['mass'][whereCellsGas])
         weightDataCells = np.log10(snapGasFinalDict[key][weightKey][whereCellsGas]) * massCells
 
         xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
@@ -259,7 +259,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         xdataTracers = np.log10(TracersFinalDict[key]['rho_rhomean'][whereTracersGas])
         ydataTracers = np.log10(TracersFinalDict[key]['T'][whereTracersGas])
-        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas]*1e10) #10^10Msol -> Msol
+        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas]) 
         weightDataTracers = np.log10(TracersFinalDict[key][weightKey][whereTracersGas]) * massTracers
 
         xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]

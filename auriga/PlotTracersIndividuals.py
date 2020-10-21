@@ -296,6 +296,9 @@ for analysisParam in saveParams:
 
             plotYdata = np.log10(plotYdata)
 
+            for k, v in plotData.items():
+                plotData.update({k : np.log10(v)})
+
             YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
 
             datamin = np.nanmin(plotYdata[YDataisNOTinf])
@@ -460,7 +463,7 @@ for analysisParam in saveParams:
         currentAx.tick_params(which='both')
 
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
-        currentAx.set_ylim(ymin=min(datamin,np.nanmin(whiskers_min)), ymax=max(datamax,np.nanmax(whiskers_max)))
+        currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
         plot_patch = matplotlib.patches.Patch(color=colour)
         plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))

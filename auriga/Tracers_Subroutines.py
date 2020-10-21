@@ -63,7 +63,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
-
+    snapGas.mass *= 1e10 #[Msol]
+    
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
@@ -173,6 +174,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
+    snapGas.mass *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
@@ -282,6 +284,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
+    snapGas.mass *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
@@ -393,6 +396,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     ## Make this a seperate function at some point??
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
+    snapGas.mass *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
@@ -861,7 +865,6 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     #Cooling time over free fall time
     snapGas.data['tcool_tff'] = snapGas.data['tcool']/snapGas.data['tff']
-
     del tmp
 
     return snapGas
@@ -1529,7 +1532,14 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
                     entry.append(tracerData)
                     tmp.update({k : entry})
                 else:
-                    tmp.update({k : tracerData.tolist()})
+                    tmp.update({k : [tracerData]})
+                # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
+
+    # print("To array!")
+    for k, v in tmp.items():
+        tmp.update({k :np.array(v)})
+        # print(f"k : {k} --> type(np.array(v)) : {type(np.array(v))} --> type(tmp[k]) {type(tmp[k])}")
+
 
     flattened_dict.update({newkey: tmp})
 

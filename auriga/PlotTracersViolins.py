@@ -24,11 +24,11 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 1000#10#1000
+subset = 10#10#1000
 xsize = 10.
 ysize = 12.
 DPI = 250
-opacity = 0.03#0.5#0.03
+opacity = 0.5#0.5#0.03
 
 ageUniverse = 13.77 #[Gyr]
 
@@ -295,6 +295,9 @@ for analysisParam in saveParams:
             violinData = np.array(tmp)
 
             plotYdata = np.log10(plotYdata)
+
+            for k, v in plotData.items():
+                plotData.update({k : np.log10(v)})
 
             YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
 
