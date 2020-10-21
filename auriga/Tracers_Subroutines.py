@@ -64,7 +64,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
     snapGas.mass *= 1e10 #[Msol]
-    
+    snapGas.hrgm *= 1e10 #[Msol]
+
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
@@ -175,6 +176,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
     snapGas.mass *= 1e10 #[Msol]
+    snapGas.hrgm *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
@@ -285,6 +287,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
     snapGas.mass *= 1e10 #[Msol]
+    snapGas.hrgm *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
@@ -397,6 +400,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     snapGas.pos *= 1e3 #[kpc]
     snapGas.vol *= 1e9 #[kpc^3]
     snapGas.mass *= 1e10 #[Msol]
+    snapGas.hrgm *= 1e10 #[Msol]
 
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
