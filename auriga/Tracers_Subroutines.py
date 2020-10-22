@@ -326,9 +326,15 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     print(f"[@{int(snapNumber)} @T{targetT}]: Select approx HaloID = {int(HaloID)} by R<={Rcrit:0.02f} kpc")
     Cond = np.where(snapGas.data['R']<=Rcrit)
 
+    NCells = len(snapGas.data['type'])
+    print(f"[@{int(snapNumber)} @T{targetT}]: Number of Cells Pre-Selection Condition : {NCells}")
+
     for key, value in snapGas.data.items():
         if (value is not None):
             snapGas.data[key] = value[Cond]
+
+    NCells = len(snapGas.data['type'])
+    print(f"[@{int(snapNumber)} @T{targetT}]: Number of Cells Post-Selection Condition : {NCells}")
 
     CellIDsCFT = snapGas.data['id']
 
@@ -444,9 +450,15 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
 
     Cond =np.array(StarsSelect[0].tolist() + GasSelect[0].tolist())
 
+    NCells = len(snapGas.data['type'])
+    print(f"[@{int(snapNumber)} @T{targetT}]: Number of Cells Pre-Selection Condition : {NCells}")
+
     for key, value in snapGas.data.items():
         if (value is not None):
             snapGas.data[key] = value[Cond]
+
+    NCells = len(snapGas.data['type'])
+    print(f"[@{int(snapNumber)} @T{targetT}]: Number of Cells Post-Selection Condition : {NCells}")
 
     CellIDsTFC = snapGas.data['id']
     # #Add snap data to temperature specific dictionary

@@ -211,6 +211,54 @@ def adjacent_values(vals, q1, q3):
     lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
     return lower_adjacent_value, upper_adjacent_value
 
+
+unboundFracStartDict = {}
+unboundFracEndDict = {}
+haloFracStartDict = {}
+haloFracEndDict = {}
+otherHaloFracStartDict = {}
+otherHaloFracEndDict = {}
+unassignedFracStartDict = {}
+unassignedFracEndDict = {}
+
+print("")
+for temp in Tlst:
+    print(f"T{temp} : HaloID Analyis!")
+    startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
+    endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
+    startNtracers = dataDict[startkey]['Ntracers'][0]
+    endNtracers = dataDict[endkey]['Ntracers'][0]
+
+    startSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[startkey]['trid'],\
+        Parents=dataDict[startkey]['prid'],CellIDs=dataDict[startkey]['id'],SelectedTracers=dataDict[startkey]['trid'],\
+        Data=dataDict[startkey]['SubHaloID'])
+    endSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[endkey]['trid'],\
+        Parents=dataDict[endkey]['prid'],CellIDs=dataDict[endkey]['id'],SelectedTracers=dataDict[endkey]['trid'],\
+        Data=dataDict[endkey]['SubHaloID'])
+    unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
+    unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
+    haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
+    haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
+
+    otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+    &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
+
+    otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+    &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
+
+    unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
+    unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
+
+    unboundFracStartDict.update({f"T{temp}" : unboundFracStart})
+    unboundFracEndDict.update({f"T{temp}" : unboundFracEnd})
+    haloFracStartDict.update({f"T{temp}" : haloFracStart})
+    haloFracEndDict.update({f"T{temp}" : haloFracEnd})
+    otherHaloFracStartDict.update({f"T{temp}" : otherHaloFracStart})
+    otherHaloFracEndDict.update({f"T{temp}" : otherHaloFracEnd})
+    unassignedFracStartDict.update({f"T{temp}" : unassignedFracStart})
+    unassignedFracEndDict.update({f"T{temp}" : unassignedFracEnd})
+print("")
+
 for analysisParam in saveParams:
     print("")
     print(f"Starting {analysisParam} Sub-plots!")
@@ -358,26 +406,15 @@ for analysisParam in saveParams:
             #     for kk in range(len(plotYdata[jj-1][whereDataIsNOTnan])):
             #         currentAx.plot(np.array([plotXScatterdata[jj-1][whereDataIsNOTnan][kk],plotXScatterdata[jj][whereDataIsNOTnan][kk]]),\
             #         np.array([(plotYdata[jj-1][whereDataIsNOTnan][kk]),(plotYdata[jj][whereDataIsNOTnan][kk])]), color = colourTracersHalo[normedSubHaloIDData[jj][whereDataIsNOTnan]][kk], alpha = opacity )
-        startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
-        endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
-        startNtracers = dataDict[startkey]['Ntracers'][0]
-        endNtracers = dataDict[endkey]['Ntracers'][0]
 
-        startSubHaloIDDataFull = dataDict[startkey]['SubHaloID'].copy()
-        endSubHaloIDDataFull = dataDict[endkey]['SubHaloID'].copy()
-        unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
-        unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
-        haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
-        haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
-
-        otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-        &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
-
-        otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-        &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
-
-        unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
-        unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
+        unboundFracStart = unboundFracStartDict[f"T{temp}"]
+        unboundFracEnd = unboundFracEndDict[f"T{temp}"]
+        haloFracStart = haloFracStartDict[f"T{temp}"]
+        haloFracEnd = haloFracEndDict[f"T{temp}"]
+        otherHaloFracStart = otherHaloFracStartDict[f"T{temp}"]
+        otherHaloFracEnd = otherHaloFracEndDict[f"T{temp}"]
+        unassignedFracStart = unassignedFracStartDict[f"T{temp}"]
+        unassignedFracEnd = unassignedFracEndDict[f"T{temp}"]
 
         HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
         +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes, {unassignedFracStart:3.3%} start unassigned."\

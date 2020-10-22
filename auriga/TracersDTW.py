@@ -129,9 +129,9 @@ for T in Tlst:
             pridData.append(parents[whereSubset].T)
             M.append(Mrow[whereSubset].T)
 
-        M = np.array(M)
-        tridData = np.array(tridData)
-        pridData = np.array(pridData)
+        M = np.array(M).T
+        tridData = np.array(tridData).T
+        pridData = np.array(pridData).T
         del Mtmp
 
         print(f"Shape of M : {np.shape(M)}")
