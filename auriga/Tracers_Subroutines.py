@@ -798,8 +798,8 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     whereGas = np.where(snapGas.type==0)
     #Density is rho/ <rho> where <rho> is average baryonic density
-    rhocrit = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3 + snapGas.omegalambda) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
-    rhomean = 3. * (snapGas.omega0 * (1+snapGas.redshift)**3) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
+    rhocrit = 3. * (snapGas.omega0 * (1.+snapGas.redshift)**3 + snapGas.omegalambda) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
+    rhomean = 3. * (snapGas.omega0 * (1.+snapGas.redshift)**3) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
 
     #Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
