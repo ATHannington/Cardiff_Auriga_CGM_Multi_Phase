@@ -10,6 +10,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from scipy.spatial.distance import squareform
 from itertools import combinations
 import time
+from functools import reduce
 
 import const as c
 from gadget import *
@@ -118,14 +119,26 @@ for T in Tlst:
 
     print(f"Get intersection of trids!")
     dtwT_TridDictkeys = list(dtwT_TridDict.keys())
-    dtwT_TridDict_list = list(dtwT_TridDict.values())
     trid_list = []
     for entry in dtwT_TridDict.values():
-        trid_list.append(entry[:,0].tolist())
-    tridSet = [set(tuple(xx)) for xx in trid_list]
-    whereTracers =  np.where(np.isin(dtwT_TridDict_list[0][:,0],np.array(list(set.intersection(*tridSet)))))[0]
-    print(f"Shape whereTracers {np.shape(whereTracers)}")
-    del trid_list, tridSet
+        trid_list.append(entry[:,0])
+
+    intersect = reduce(np.intersect1d,trid_list)
+    intersectDict = {}
+    for analysisParam in dtwParams:
+        if (analysisParam in logParams):
+            key = f"log10{analysisParam}"
+        else:
+            key = f"{analysisParam}"
+        trids = dtwT_TridDict[key][:,0]
+        entry, a_ind, b_ind = np.intersect1d(trids,intersect,return_indices=True)
+        dtwT_MDict.update({key :dtwT_MDict[key][a_ind]})
+        intersectDict.update({key : a_ind})
+
+    intersectDictList = list(intersectDict.values())
+    oldIntersect = intersectDictList[0]
+    for key, value in intersectDict.items():
+        assert np.shape(value) == np.shape(oldIntersect)
 
     #Normalise and then sum the distance vectors for each dtwParams
     print("Djoint! This may take a while...")
@@ -133,6 +146,8 @@ for T in Tlst:
     kk = 0
     for key,value in dtwT_DDict.items():
         print(f"{key}")
+        whereTracers = intersectDict[key]
+        print(f"Shape whereTracers {np.shape(whereTracers)}")
         entry = squareform(value)[whereTracers[:,np.newaxis],whereTracers]
         maxD = np.nanmax(entry)
         entry = entry/maxD
@@ -220,6 +235,8 @@ for T in Tlst:
             plt.savefig(opslaan2, dpi = DPI, transparent = False)
             print(opslaan2)
 
+
+    whereTracers = intersectDict[dtwT_TridDictkeys[0]]
     tridData = dtwT_TridDict[dtwT_TridDictkeys[0]][whereTracers]
     pridData = dtwT_PridDict[dtwT_TridDictkeys[0]][whereTracers]
 
@@ -227,20 +244,18 @@ for T in Tlst:
     saveDict.update({"clusters" : clusters})
     saveDict.update({"prid" : pridData})
     saveDict.update({"trid" : tridData})
-    finalDict = {f"T{T}" : saveDict}
+
     for param in dtwParams:
         if (param in logParams):
-            saveDict.update({f"log10{param}" : dtwT_MDict[f"log10{param}"][whereTracers]})
+            saveDict.update({f"log10{param}" : dtwT_MDict[f"log10{param}"]})
         else:
-            saveDict.update({f"{param}" : dtwT_MDict[f"{param}"][whereTracers]})
+            saveDict.update({f"{param}" : dtwT_MDict[f"{param}"]})
 
-    if (analysisParam in logParams):
-        savePath = DataSavepath + f"_T{T}_log10{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
-        print("\n" + f"[@T{T} log10{paramstring}]: Saving Joint Clusters data as: "+ savePath)
-    else:
-        savePath = DataSavepath + f"_T{T}_{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
-        print("\n" + f"[@T{T} {paramstring}]: Saving Joint Clusters data as: "+ savePath)
+    savePath = DataSavepath + f"_T{T}_{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
+    print("\n" + f"[@T{T} {paramstring}]: Saving Joint Clusters data as: "+ savePath)
 
+    finalDict = {f"T{T}" : saveDict}
+    
     hdf5_save(savePath,finalDict)
 
     plt.close('all')
