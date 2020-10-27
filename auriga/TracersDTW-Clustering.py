@@ -180,6 +180,10 @@ for T in Tlst:
         saveDict.update({"clusters" : clusters})
         saveDict.update({"prid" : dtwDict[loadKey]['prid'].copy()})
         saveDict.update({"trid" : dtwDict[loadKey]['prid'].copy()})
+        saveDict.update({"d_crit" : np.array([d_crit])})
+        saveDict.update({"maxmimally_distinct_bool" : np.array([maxmimally_distinct_bool])})
+        saveDict.update({"sort_level" : np.array([sort_level])})
+
         if (analysisParam in logParams):
             saveDict.update({f"log10{analysisParam}" : M})
         else:

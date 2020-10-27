@@ -244,6 +244,9 @@ for T in Tlst:
     saveDict.update({"clusters" : clusters})
     saveDict.update({"prid" : pridData})
     saveDict.update({"trid" : tridData})
+    saveDict.update({"d_crit" : np.array([d_crit])})
+    saveDict.update({"maxmimally_distinct_bool" : np.array([maxmimally_distinct_bool])})
+    saveDict.update({"sort_level" : np.array([sort_level])})
 
     for param in dtwParams:
         if (param in logParams):
@@ -255,7 +258,7 @@ for T in Tlst:
     print("\n" + f"[@T{T} {paramstring}]: Saving Joint Clusters data as: "+ savePath)
 
     finalDict = {f"T{T}" : saveDict}
-    
+
     hdf5_save(savePath,finalDict)
 
     plt.close('all')
