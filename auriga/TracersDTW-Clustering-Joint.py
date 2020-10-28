@@ -20,10 +20,6 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
-
-logParams = ['T','dens','P_tot','B']
-
 TracersParamsPath = 'TracersParams.csv'
 
 sort_level = 4
@@ -59,6 +55,9 @@ def get_d_crit(Z,sort_level,maxmimally_distinct_bool):
 #==============================================================================#
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+
+dtwParams = TRACERSPARAMS['dtwParams']
+logParams = TRACERSPARAMS['dtwlogParams']
 
 DataSavepathSuffix = f".h5"
 

@@ -12,10 +12,7 @@ import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+from matplotlib.ticker import AutoMinorLocator
 import const as c
 from gadget import *
 from gadget_subfind import *
@@ -80,10 +77,10 @@ dataDict = {}
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
 print("Getting Tracer Data!")
-XScatterDict = {}
+# XScatterDict = {}
 Ydata = {}
 Xdata = {}
-Massdata ={}
+# Massdata ={}
 ViolinDict = {}
 # FoFHaloIDDict = {}
 # SubHaloIDDict = {}
@@ -132,7 +129,7 @@ for T in TRACERSPARAMS['targetTLst']:
 
         #Loop over snaps from and gather data for the SelectedTracers1.
         #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
-        tmpXScatterdata = []
+        # tmpXScatterdata = []
         tmpXdata = []
         tmpYdata = []
         tmpMassdata = []
@@ -151,9 +148,9 @@ for T in TRACERSPARAMS['targetTLst']:
                 Parents=dataDict[key]['prid'][whereGas],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                 Data=dataDict[key][analysisParam][whereGas])
 
-            massData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'][whereGas],\
-                Parents=dataDict[key]['prid'][whereGas],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-                Data=dataDict[key]['mass'][whereGas])
+            # massData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'][whereGas],\
+            #     Parents=dataDict[key]['prid'][whereGas],CellIDs=dataDict[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+            #     Data=dataDict[key]['mass'][whereGas])
 
             # FoFData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
             #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
@@ -164,37 +161,34 @@ for T in TRACERSPARAMS['targetTLst']:
             #     Data=dataDict[key]['SubHaloID'])
 
             #Append the data from this snapshot to a temporary list
-            lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
-            tmpXScatterdata.append(lookbackList)
+            # lookbackList = [dataDict[key]['Lookback'][0] for kk in dataDict[key]['trid'][whereTracer]]
+            # tmpXScatterdata.append(lookbackList)
             tmpXdata.append(dataDict[key]['Lookback'][0])
             tmpYdata.append(data)
-            tmpMassdata.append(massData)
+            # tmpMassdata.append(massData)
 
             # #Save HaloID data
             # tmpFoFHaloID.append(FoFData)
             # tmpSubHaloID.append(HaloData)
 
             #Violin Data
-            massMean = np.mean(dataDict[key]['mass'][whereGas])
-            weightedData = (dataDict[key][analysisParam] * dataDict[key]['mass'])/massMean
-            whereNOTnan = np.where(np.isnan(weightedData)==False)
-            weightedData = weightedData[whereNOTnan]
+            weightedData = weightedperc(data=dataDict[key][analysisParam][whereGas], weights=dataDict[key]['mass'][whereGas], perc=50,key='mass')
             tmpViolinData.append(weightedData)
 
         #Append the data from this parameters to a sub dictionary
-        XScatterSubDict.update({analysisParam: np.array(tmpXScatterdata)})
+        # XScatterSubDict.update({analysisParam: np.array(tmpXScatterdata)})
         XSubDict.update({analysisParam: np.array(tmpXdata)})
         YSubDict.update({analysisParam:  np.array(tmpYdata)})
-        MassSubDict.update({analysisParam: np.array(tmpMassdata)})
+        # MassSubDict.update({analysisParam: np.array(tmpMassdata)})
         ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
         # FoFHaloIDSubDict.update({analysisParam: np.array(tmpFoFHaloID)})
         # SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
 
     #Add the full list of snaps data to temperature dependent dictionary.
-    XScatterDict.update({f"T{T}" : XScatterSubDict})
+    # XScatterDict.update({f"T{T}" : XScatterSubDict})
     Xdata.update({f"T{T}" : XSubDict})
     Ydata.update({f"T{T}" : YSubDict})
-    Massdata.update({f"T{T}" : MassSubDict})
+    # Massdata.update({f"T{T}" : MassSubDict})
     ViolinDict.update({f"T{T}" : ViolinSubDict})
     # FoFHaloIDDict.update({f"T{T}" : FoFHaloIDSubDict})
     # SubHaloIDDict.update({f"T{T}" : SubHaloIDSubDict})
@@ -282,7 +276,7 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
+        # plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
         plotYdata = Ydata[f"T{temp}"][analysisParam].copy()
         plotXdata = Xdata[f"T{temp}"][analysisParam].copy()
         violinData = ViolinDict[f"T{temp}"][analysisParam].copy()
@@ -303,7 +297,7 @@ for analysisParam in saveParams:
         #Convert lookback time to universe age
         # t0 = np.nanmax(plotXdata)
         plotXdata = abs(plotXdata - ageUniverse)
-        plotXScatterdata = abs(plotXScatterdata - ageUniverse)
+        # plotXScatterdata = abs(plotXScatterdata - ageUniverse)
         #Set style options
         opacityPercentiles = 0.25
         lineStyleMedian = "solid"
@@ -458,42 +452,17 @@ for analysisParam in saveParams:
 
         currentAx.axvline(x=vline, c='red')
 
-        whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
-        paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
+        # whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
+        # paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
 
         if (ColourIndividuals == True):
-            lc = LineCollection(paths,colors = colourTracers,alpha=opacity)
-            # for jj in range(0,subset):
-                # whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
-                # lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
-                # if (lenNOTnan>0):
-                #     currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers[jj], alpha = opacity )
+            for (tracer,col) in zip(plotYdata.T,colourTracers):
+                currentAx.plot(plotXdata,tracer,color = col, alpha = opacity)
         else:
-            # for jj in range(0,subset):
-            #     whereDataIsNOTnan = np.where(np.isnan(plotYdata[:,jj])==False)
-            #     lenNOTnan = len(plotYdata[:,jj][whereDataIsNOTnan])
-            #     if (lenNOTnan>0):
-            #         currentAx.plot(plotXdata,(plotYdata.T[jj]).T, color = colourTracers, alpha = opacity )
+            for tracer in plotYdata.T:
+                currentAx.plot(plotXdata,tracer,color = colourTracers, alpha = opacity)
 
-
-            # segments = np.concatenate([points[:-1],points[1:]], axis=1)
-
-            # Ncolours = len(uniqueSubHalo)
-            # cmap2 = matplotlib.cm.get_cmap(colourmapIndividuals, 256)
-            # newcolors = cmap2(np.linspace(0, 0.9, Ncolours))
-            # cmap3 = ListedColormap(newcolors)
-            # cmin = float(normedSubHaloIDData.min())-0.5
-            # cmax = float(normedSubHaloIDData.max())+1.5
-            # norm = BoundaryNorm([xx for xx in np.arange(cmin,cmax,1)], cmap3.N)
-
-            lc = LineCollection(paths,color = colourTracers,alpha=opacity)
-
-
-            # cbar = plt.colorbar(line,ticks=normedUniqueSubHalo,ax=currentAx, orientation = 'vertical')
-            # cbar.set_label(label=r'Sub-Halo ID')
-            # cbar.solids.set(alpha=1)
-
-        line = currentAx.add_collection(lc)
+        # line = currentAx.add_collection(lc)
 
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
         currentAx.yaxis.set_minor_locator(AutoMinorLocator())

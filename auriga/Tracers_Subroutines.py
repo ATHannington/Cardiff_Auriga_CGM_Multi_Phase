@@ -1079,7 +1079,7 @@ def LoadTracersParameters(TracersParamsPath):
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
             TRACERSPARAMS.update({key:lst2})
-        elif ((key == 'saveParams')or(key == 'saveTracersOnly')or(key == 'saveEssentials')):
+        elif ((key == 'saveParams')or(key == 'saveTracersOnly')or(key == 'saveEssentials') or(key == 'dtwParams') or (key == 'dtwlogParams')):
             #Convert targetTLst to list of floats
             lst = value.split(",")
             strlst = [str(item) for item in lst]

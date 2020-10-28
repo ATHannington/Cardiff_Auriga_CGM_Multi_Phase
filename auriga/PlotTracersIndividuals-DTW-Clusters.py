@@ -12,10 +12,9 @@ import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+from matplotlib.ticker import AutoMinorLocator
+from matplotlib.gridspec import GridSpec
+
 import const as c
 from gadget import *
 from gadget_subfind import *
@@ -24,23 +23,28 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-subset = 100#10#1000
 xsize = 10.
-ysize = 12.
+ysize = 10.
 DPI = 250
-opacity = 0.05#0.5#0.03
 
 ageUniverse = 13.77 #[Gyr]
 
 colourmapMain = "viridis"
 colourmapIndividuals = "Dark2"#"nipy_spectral"
+#Set style options
+
+lineStyleMedian = "-"
+lineWidthMedian = 2
+
+
+opacityPercentiles = 0.1
+lineStylePercentiles = "-."
+lineWidthPercentiles = 1
+
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
 dtwJoint = True
-dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
-logParams = ['T','dens','P_tot','B']
-paramstring = "+".join(dtwParams)
 
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
@@ -60,22 +64,22 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'rho_rhomean': r'Density over Average Universe Density',\
  'dens' : r'Density [$g$ $cm^{-3}$]'}
 
-for entry in logParams:
-    ylabel[entry] = r'Log10 '+ ylabel[entry]
-
-if (subset<=20):
-    ColourIndividuals = True
-else:
-    ColourIndividuals = False
 #==============================================================================#
 
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-saveParams = dtwParams #['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
+saveParams = TRACERSPARAMS['dtwParams']
+logParams = TRACERSPARAMS['dtwlogParams']
+
+
+for entry in logParams:
+    ylabel[entry] = r'Log10 '+ ylabel[entry]
 
 DataSavepathSuffix = f".h5"
 
+
+paramstring = "+".join(saveParams)
 
 print("Loading data!")
 
@@ -83,15 +87,16 @@ dataDict = {}
 
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
+loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
+
+FlatDataDict = hdf5_load(loadPath)
+
 print("Getting Tracer Data!")
-XScatterDict = {}
 Ydata = {}
 Xdata = {}
-Massdata ={}
 ViolinDict = {}
 ClusterDict = {}
-# FoFHaloIDDict = {}
-# SubHaloIDDict = {}
+MassDict = {}
 
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
@@ -117,19 +122,19 @@ for T in TRACERSPARAMS['targetTLst']:
         dtwDict = hdf5_load(loadPath)
 
         Tkey = f"T{T}"
-        rangeMin = 0
-        rangeMax = len(dtwDict[Tkey]['trid'])
-        TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-        #Take Random sample of Tracers size min(subset, len(data))
-        TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+        # rangeMin = 0
+        # rangeMax = len(dtwDict[Tkey]['trid'])
+        # TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+        # #Take Random sample of Tracers size min(subset, len(data))
+        # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+        #
+        # # selectMin = min(subset,rangeMax)
+        # # select = math.floor(float(rangeMax)/float(subset))
+        # # TracerNumberSelect = TracerNumberSelect[::select]
+        #
+        # SelectedTracers1 = dtwDict[Tkey]['trid'][TracerNumberSelect]
 
-        # selectMin = min(subset,rangeMax)
-        # select = math.floor(float(rangeMax)/float(subset))
-        # TracerNumberSelect = TracerNumberSelect[::select]
-
-        SelectedTracers1 = dtwDict[Tkey]['trid'][TracerNumberSelect]
-
-    XScatterSubDict = {}
+    # XScatterSubDict = {}
     XSubDict = {}
     YSubDict = {}
     MassSubDict = {}
@@ -149,91 +154,67 @@ for T in TRACERSPARAMS['targetTLst']:
                 print("\n" + f"[@T{T} {analysisParam}]: Saving Clusters data as: "+ loadPath)
             dtwDict = hdf5_load(loadPath)
             Tkey = f"T{T}"
-            rangeMin = 0
-            rangeMax = len(dtwDict[Tkey]['trid'])
-            TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
-            #Take Random sample of Tracers size min(subset, len(data))
-            TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
-
-            # selectMin = min(subset,rangeMax)
-            # select = math.floor(float(rangeMax)/float(subset))
-            # TracerNumberSelect = TracerNumberSelect[::select]
-
-            SelectedTracers1 = dtwDict[Tkey]['trid'][TracerNumberSelect]
+            # rangeMin = 0
+            # rangeMax = len(dtwDict[Tkey]['trid'])
+            # TracerNumberSelect = np.arange(start=rangeMin, stop = rangeMax, step = 1 )
+            # #Take Random sample of Tracers size min(subset, len(data))
+            # TracerNumberSelect = sample(TracerNumberSelect.tolist(),min(subset,rangeMax))
+            #
+            # # selectMin = min(subset,rangeMax)
+            # # select = math.floor(float(rangeMax)/float(subset))
+            # # TracerNumberSelect = TracerNumberSelect[::select]
+            #
+            # SelectedTracers1 = dtwDict[Tkey]['trid'][TracerNumberSelect]
         #Loop over snaps from and gather data for the SelectedTracers1.
         #   This should be the same tracers for all time points due to the above selection, and thus data and massdata should always have the same shape.
-        tmpXScatterdata = []
+
         tmpXdata = []
-        tmpYdata = []
-        tmpMassdata = []
-        tmpViolinData =[]
         tmpClusterData = []
         if (analysisParam in logParams):
             paramKey = f"log10{analysisParam}"
         else:
             paramKey = f"{analysisParam}"
 
+
         snapRange = range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1)))
-        for (ii,snap) in zip(range(len(snapRange)),snapRange):
+        for snap in snapRange:
             fullkey = (f"T{T}",f"{int(snap)}")
             whereGas = np.where(dataDict[fullkey]['type']==0)[0]
-            whereTracer = np.where(np.isin(dtwDict[Tkey]['trid'],SelectedTracers1))[0]
-            #Get Individual Cell Data from selected Tracers.
-            #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
-            #   This allows for plotting of all tracers for all snaps they exist.
-            #   Grab data for analysisParam and mass.
-            data = dtwDict[Tkey][paramKey][whereTracer][:,ii]
-
-            massData = np.array([np.nan])#dtwDict[Tkey]['mass'][whereTracer]
-
-            clusterData = dtwDict[Tkey]["clusters"][whereTracer]
-
-            # FoFData, _ , _  = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-            #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
-            #     Data=dataDict[key]['FoFHaloID'])
-            #
-            # HaloData, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[key]['trid'],\
-            #     Parents=dataDict[key]['prid'],CellIDs=dataDict[key]['id'],SelectedTracers=SelectedTracers1,\
-            #     Data=dataDict[key]['SubHaloID'])
-
-            #Append the data from this snapshot to a temporary list
-            whereTracerFull = np.where(np.isin(dataDict[fullkey]['trid'],SelectedTracers1))[0]
-            lookbackList = [dataDict[fullkey]['Lookback'][0] for kk in dataDict[fullkey]['trid'][whereTracerFull]]
-            tmpXScatterdata.append(lookbackList)
             tmpXdata.append(dataDict[fullkey]['Lookback'][0])
-            tmpYdata.append(data)
-            tmpMassdata.append(massData)
-            tmpClusterData.append(clusterData)
-            # #Save HaloID data
-            # tmpFoFHaloID.append(FoFData)
-            # tmpSubHaloID.append(HaloData)
 
             #Violin Data
-            massMean = np.mean(dataDict[fullkey]['mass'][whereGas])
-            weightedData = (dataDict[fullkey][analysisParam] * dataDict[fullkey]['mass'])/massMean
-            whereNOTnan = np.where(np.isnan(weightedData)==False)
-            weightedData = weightedData[whereNOTnan]
-            tmpViolinData.append(weightedData)
+            # weightedData = weightedperc(data=dataDict[fullkey][analysisParam][whereGas], weights=dataDict[fullkey]['mass'][whereGas], perc=50,key='mass')
+            # tmpViolinData.append(weightedData)
+
+        #Get Data
+        tmpYSubSubDict = {}
+        tmpMassSubSubDict = {}
+
+        tmpClusterData = np.unique(dtwDict[Tkey]["clusters"])
+        for cluster in tmpClusterData:
+            whereCluster = np.where(dtwDict[Tkey]["clusters"]==cluster)
+            data = dtwDict[Tkey][paramKey][whereCluster]
+            tmpYSubSubDict.update({f"{cluster}" : data})
+
+            massData = []
+            for jj in range(len(snapRange)):
+                whereTrid = np.where(np.isin(FlatDataDict[Tkey]['trid'][jj,:],dtwDict[Tkey]['trid'][:,jj][whereCluster]))[0]
+                massData.append(FlatDataDict[Tkey]['mass'][jj,:][whereTrid])
+            tmpMassSubSubDict.update({f"{cluster}" : np.array(massData)})
 
         #Append the data from this parameters to a sub dictionary
-        XScatterSubDict.update({analysisParam: np.array(tmpXScatterdata)})
         XSubDict.update({analysisParam: np.array(tmpXdata)})
-        YSubDict.update({analysisParam:  np.array(tmpYdata)})
-        MassSubDict.update({analysisParam: np.array(tmpMassdata)})
-        ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
+        YSubDict.update({analysisParam:  tmpYSubSubDict })
+        MassSubDict.update({analysisParam : tmpMassSubSubDict})
+        # ViolinSubDict.update({analysisParam : np.array(tmpViolinData)})
         ClusterSubDict.update({analysisParam : np.array(tmpClusterData)})
-        # FoFHaloIDSubDict.update({analysisParam: np.array(tmpFoFHaloID)})
-        # SubHaloIDSubDict.update({analysisParam : np.array(tmpSubHaloID)})
 
     #Add the full list of snaps data to temperature dependent dictionary.
-    XScatterDict.update({f"T{T}" : XScatterSubDict})
     Xdata.update({f"T{T}" : XSubDict})
     Ydata.update({f"T{T}" : YSubDict})
-    Massdata.update({f"T{T}" : MassSubDict})
-    ViolinDict.update({f"T{T}" : ViolinSubDict})
+    MassDict.update({f"T{T}" : MassSubDict})
+    # ViolinDict.update({f"T{T}" : ViolinSubDict})
     ClusterDict.update({f"T{T}" : ClusterSubDict})
-    # FoFHaloIDDict.update({f"T{T}" : FoFHaloIDSubDict})
-    # SubHaloIDDict.update({f"T{T}" : SubHaloIDSubDict})
 #==============================================================================#
 
 #==============================================================================#
@@ -246,59 +227,57 @@ def adjacent_values(vals, q1, q3):
     lower_adjacent_value = q1 - (q3 - q1) * 1.5
     lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
     return lower_adjacent_value, upper_adjacent_value
+#
+# unboundFracStartDict = {}
+# unboundFracEndDict = {}
+# haloFracStartDict = {}
+# haloFracEndDict = {}
+# otherHaloFracStartDict = {}
+# otherHaloFracEndDict = {}
+# unassignedFracStartDict = {}
+# unassignedFracEndDict = {}
 
-unboundFracStartDict = {}
-unboundFracEndDict = {}
-haloFracStartDict = {}
-haloFracEndDict = {}
-otherHaloFracStartDict = {}
-otherHaloFracEndDict = {}
-unassignedFracStartDict = {}
-unassignedFracEndDict = {}
-
-print("")
-for temp in Tlst:
-    print(f"T{temp} : HaloID Analyis!")
-    startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
-    endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
-    startNtracers = dataDict[startkey]['Ntracers'][0]
-    endNtracers = dataDict[endkey]['Ntracers'][0]
-
-    startSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[startkey]['trid'],\
-        Parents=dataDict[startkey]['prid'],CellIDs=dataDict[startkey]['id'],SelectedTracers=dataDict[startkey]['trid'],\
-        Data=dataDict[startkey]['SubHaloID'])
-    endSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[endkey]['trid'],\
-        Parents=dataDict[endkey]['prid'],CellIDs=dataDict[endkey]['id'],SelectedTracers=dataDict[endkey]['trid'],\
-        Data=dataDict[endkey]['SubHaloID'])
-    unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
-    unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
-    haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
-    haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
-
-    otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-    &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
-
-    otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
-    &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
-
-    unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
-    unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
-
-    unboundFracStartDict.update({f"T{temp}" : unboundFracStart})
-    unboundFracEndDict.update({f"T{temp}" : unboundFracEnd})
-    haloFracStartDict.update({f"T{temp}" : haloFracStart})
-    haloFracEndDict.update({f"T{temp}" : haloFracEnd})
-    otherHaloFracStartDict.update({f"T{temp}" : otherHaloFracStart})
-    otherHaloFracEndDict.update({f"T{temp}" : otherHaloFracEnd})
-    unassignedFracStartDict.update({f"T{temp}" : unassignedFracStart})
-    unassignedFracEndDict.update({f"T{temp}" : unassignedFracEnd})
-print("")
+# print("")
+# for temp in Tlst:
+#     print(f"T{temp} : HaloID Analyis!")
+#     startkey = (f"T{temp}", f"{int(TRACERSPARAMS['snapMin'])}")
+#     endkey = (f"T{temp}", f"{min(int(TRACERSPARAMS['finalSnap']),int(TRACERSPARAMS['snapMax']))}")
+#     startNtracers = dataDict[startkey]['Ntracers'][0]
+#     endNtracers = dataDict[endkey]['Ntracers'][0]
+#
+#     startSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[startkey]['trid'],\
+#         Parents=dataDict[startkey]['prid'],CellIDs=dataDict[startkey]['id'],SelectedTracers=dataDict[startkey]['trid'],\
+#         Data=dataDict[startkey]['SubHaloID'])
+#     endSubHaloIDDataFull, _ , _ = GetIndividualCellFromTracer(Tracers=dataDict[endkey]['trid'],\
+#         Parents=dataDict[endkey]['prid'],CellIDs=dataDict[endkey]['id'],SelectedTracers=dataDict[endkey]['trid'],\
+#         Data=dataDict[endkey]['SubHaloID'])
+#     unboundFracStart = float(np.shape(np.where(startSubHaloIDDataFull==-1)[0])[0])/float(startNtracers)
+#     unboundFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==-1)[0])[0])/float(endNtracers)
+#     haloFracStart = float(np.shape(np.where(startSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(startNtracers)
+#     haloFracEnd = float(np.shape(np.where(endSubHaloIDDataFull==int(TRACERSPARAMS['haloID']))[0])[0])/float(endNtracers)
+#
+#     otherHaloFracStart = float(np.shape(np.where((startSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+#     &(startSubHaloIDDataFull!=-1)&(np.isnan(startSubHaloIDDataFull)==False))[0])[0])/float(startNtracers)
+#
+#     otherHaloFracEnd = float(np.shape(np.where((endSubHaloIDDataFull!=int(TRACERSPARAMS['haloID']))\
+#     &(endSubHaloIDDataFull!=-1)&(np.isnan(endSubHaloIDDataFull)==False))[0])[0])/float(endNtracers)
+#
+#     unassignedFracStart = float(np.shape(np.where(np.isnan(startSubHaloIDDataFull)==True)[0]) [0])/float(startNtracers)
+#     unassignedFracEnd = float(np.shape(np.where(np.isnan(endSubHaloIDDataFull)==True)[0])[0])/float(endNtracers)
+#
+#     unboundFracStartDict.update({f"T{temp}" : unboundFracStart})
+#     unboundFracEndDict.update({f"T{temp}" : unboundFracEnd})
+#     haloFracStartDict.update({f"T{temp}" : haloFracStart})
+#     haloFracEndDict.update({f"T{temp}" : haloFracEnd})
+#     otherHaloFracStartDict.update({f"T{temp}" : otherHaloFracStart})
+#     otherHaloFracEndDict.update({f"T{temp}" : otherHaloFracEnd})
+#     unassignedFracStartDict.update({f"T{temp}" : unassignedFracStart})
+#     unassignedFracEndDict.update({f"T{temp}" : unassignedFracEnd})
+# print("")
 
 for analysisParam in saveParams:
     print("")
     print(f"Starting {analysisParam} Sub-plots!")
-
-    fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
 
     #Create a plot for each Temperature
     for ii in range(len(Tlst)):
@@ -317,11 +296,15 @@ for analysisParam in saveParams:
         #Get temperature
         temp = TRACERSPARAMS['targetTLst'][ii]
 
-        plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
+        # plotXScatterdata = XScatterDict[f"T{temp}"][analysisParam].copy()
         plotYdata = Ydata[f"T{temp}"][analysisParam].copy()
         plotXdata = Xdata[f"T{temp}"][analysisParam].copy()
-        violinData = ViolinDict[f"T{temp}"][analysisParam].copy()
-        clusterData = ClusterDict[f"T{temp}"][analysisParam][0].copy()
+        MassData = MassDict[f"T{temp}"][analysisParam].copy()
+        clusterData = ClusterDict[f"T{temp}"][analysisParam].copy()
+
+        nClusters = len(clusterData)
+        fig = plt.figure(constrained_layout=True, figsize = (xsize,ysize), dpi = DPI)
+        gs = GridSpec(3, int(nClusters/2), figure=fig)
         # SubHaloIDData = SubHaloIDDict[f"T{temp}"][analysisParam].astype('int16').copy()
 
         # uniqueSubHalo = np.unique(SubHaloIDData)
@@ -339,11 +322,8 @@ for analysisParam in saveParams:
         #Convert lookback time to universe age
         # t0 = np.nanmax(plotXdata)
         plotXdata = abs(plotXdata - ageUniverse)
-        plotXScatterdata = abs(plotXScatterdata - ageUniverse)
-        #Set style options
-        opacityPercentiles = 0.25
-        lineStyleMedian = "solid"
-        lineStylePercentiles = "-."
+        # plotXScatterdata = abs(plotXScatterdata - ageUniverse)
+
 
         #Select a Temperature specific colour from colourmap
         maxCluster = np.nanmax(np.unique(clusterData))
@@ -357,63 +337,45 @@ for analysisParam in saveParams:
         median = analysisParam +'median'
 
 
-        YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
-
-        datamin = np.nanmin(plotYdata[YDataisNOTinf])
-        datamax = np.nanmax(plotYdata[YDataisNOTinf])
+        # YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
+        #
+        # datamin = np.nanmin(plotYdata[YDataisNOTinf])
+        # datamax = np.nanmax(plotYdata[YDataisNOTinf])
 
         if (analysisParam in logParams):
             tmp = []
-            for (ind, array) in enumerate(violinData):
-                tmpData = np.log10(array)
-                whereNOTnan = np.where(np.isnan(tmpData)==False)
-                wherenan = np.where(np.isnan(tmpData)==True)
-                tmp.append(tmpData[whereNOTnan])
+            # for (ind, array) in enumerate(violinData):
+            #     tmpData = np.log10(array)
+            #     whereNOTnan = np.where(np.isnan(tmpData)==False)
+            #     wherenan = np.where(np.isnan(tmpData)==True)
+            #     tmp.append(tmpData[whereNOTnan])
 
-            violinData = np.array(tmp)
+            # violinData = np.array(tmp)
 
             # plotYdata = np.log10(plotYdata)
 
             for k, v in plotData.items():
                 plotData.update({k : np.log10(v)})
 
-            YDataisNOTinf = np.where(np.isinf(plotYdata)==False)
-
-            datamin = np.nanmin(plotYdata[YDataisNOTinf])
-            datamax = np.nanmax(plotYdata[YDataisNOTinf])
-
-        if ((np.isnan(datamax)==True) or (np.isnan(datamin)==True)):
-            print("NaN datamin/datamax. Skipping Entry!")
-            continue
-
-        if ((np.isinf(datamax)==True) or (np.isinf(datamin)==True)):
-            print("Inf datamin/datamax. Skipping Entry!")
-            continue
-
         ##
         #   If all entries of data are nan, and thus dataset len == 0
         #   add a nan and zero array to omit violin but continue plotting
         #   without errors.
         ##
-        tmp = []
-        for dataset in violinData:
-            if (len(dataset)==0):
-                tmp.append(np.array([np.nan,0,np.nan]))
-            else:
-                tmp.append(dataset)
-
-        violinData = tmp
+        # tmp = []
+        # for dataset in violinData:
+        #     if (len(dataset)==0):
+        #         tmp.append(np.array([np.nan,0,np.nan]))
+        #     else:
+        #         tmp.append(dataset)
+        #
+        # violinData = tmp
 
 
         print("")
         print("Sub-Plot!")
 
 
-        if (len(Tlst)==1):
-            currentAx = ax
-        else:
-            currentAx = ax[ii]
-        #
         # UPisINF = np.where(np.isinf(plotData[UP]) == True)
         # LOisINF = np.where(np.isinf(plotData[LO]) == True)
         # medianisINF = np.where(np.isinf(plotData[median]) == True)
@@ -425,27 +387,88 @@ for analysisParam in saveParams:
         # plotData[LO][LOisINF] = np.array([0.])
         # print(f"after {median} {plotData[median][medianisINF] }")
 
+        currentAx = fig.add_subplot(gs[0, 0:int(nClusters/2)])
 
         currentAx.fill_between(tage,plotData[UP],plotData[LO],\
         facecolor=colour,alpha=opacityPercentiles,interpolate=False)
-        currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        currentAx.plot(plotXdata,plotData[median], color = colour, lineStyle=lineStyleMedian, linewidth = lineWidthMedian)
+        currentAx.plot(plotXdata,plotData[LO], color = colour, lineStyle=lineStylePercentiles, linewidth=lineWidthPercentiles)
+        currentAx.plot(plotXdata,plotData[UP], color = colour, lineStyle=lineStylePercentiles, linewidth=lineWidthPercentiles)
 
-        unboundFracStart = unboundFracStartDict[f"T{temp}"]
-        unboundFracEnd = unboundFracEndDict[f"T{temp}"]
-        haloFracStart = haloFracStartDict[f"T{temp}"]
-        haloFracEnd = haloFracEndDict[f"T{temp}"]
-        otherHaloFracStart = otherHaloFracStartDict[f"T{temp}"]
-        otherHaloFracEnd = otherHaloFracEndDict[f"T{temp}"]
-        unassignedFracStart = unassignedFracStartDict[f"T{temp}"]
-        unassignedFracEnd = unassignedFracEndDict[f"T{temp}"]
+        datamin = np.nanmin(plotData[LO])
+        datamax = np.nanmax(plotData[UP])
+        for (col,clusterID) in zip(colourTracers,clusterData):
+            startcol = int((clusterID-1)%3)
+            endcol = startcol + 1
+
+            row = int(math.floor((clusterID-1)/(3)))+1
+
+            tmpAx = fig.add_subplot(gs[row, startcol:endcol])
+            data = plotYdata[f"{clusterID}"].T
+            mass = MassData[f"{clusterID}"]
+            medianData = []
+            upData = []
+            loData = []
+            for snap in range(np.shape(data)[0]):
+                medianData.append(weightedperc(data=data[snap,:], weights=mass[snap,:], perc=50,key='median'))
+                upData.append(weightedperc(data=data[snap,:], weights=mass[snap,:], perc=int(TRACERSPARAMS['percentileUP']),key='up'))
+                loData.append(weightedperc(data=data[snap,:], weights=mass[snap,:], perc=int(TRACERSPARAMS['percentileLO']),key='lo'))
+            # currentAx.plot(plotXdata,tracer,color = col, alpha = opacity, label = f"Cluster {clusterID}")
+            medianData = np.array(medianData)
+            upData = np.array(upData)
+            loData = np.array(loData)
+
+            tmpAx.fill_between(plotXdata,upData,loData,facecolor=col,alpha=opacityPercentiles,interpolate=False)
+            tmpAx.plot(plotXdata,medianData, color = col, lineStyle=lineStyleMedian, linewidth = lineWidthMedian, label=f"Cluster {int(clusterID)}")
+            tmpAx.plot(plotXdata,upData, color = col, lineStyle=lineStylePercentiles, linewidth = lineWidthPercentiles)
+            tmpAx.plot(plotXdata,loData, color = col, lineStyle=lineStylePercentiles, linewidth = lineWidthPercentiles)
+
+            tmpAx.axvline(x=vline, c='red')
+
+            if tmpAx.is_last_row():
+                tmpAx.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
+            else:
+                plt.setp(tmpAx.get_xticklabels(), visible=False)
+
+            if tmpAx.is_first_col():
+                tmpAx.set_ylabel(ylabel[analysisParam],fontsize=10)
+            else:
+                plt.setp(tmpAx.get_yticklabels(), visible=False)
+            tmpAx.xaxis.set_minor_locator(AutoMinorLocator())
+            tmpAx.yaxis.set_minor_locator(AutoMinorLocator())
+            tmpAx.tick_params(which='both')
+
+            # tmpAx.set_ylabel(ylabel[analysisParam],fontsize=10)
+            tmpAx.set_ylim(ymin=np.nanmin(loData), ymax=np.nanmax(upData))
+
+            tmpAx.legend(loc='upper right')
+            tmpAx.set_ylim(ymin=datamin, ymax=datamax)
+            # tmpAx.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
+
+        # if ((np.isnan(datamax)==True) or (np.isnan(datamin)==True)):
+        #     print("NaN datamin/datamax. Skipping Entry!")
+        #     continue
+        #
+        # if ((np.isinf(datamax)==True) or (np.isinf(datamin)==True)):
+        #     print("Inf datamin/datamax. Skipping Entry!")
+        #     continue
+
+        # unboundFracStart = unboundFracStartDict[f"T{temp}"]
+        # unboundFracEnd = unboundFracEndDict[f"T{temp}"]
+        # haloFracStart = haloFracStartDict[f"T{temp}"]
+        # haloFracEnd = haloFracEndDict[f"T{temp}"]
+        # otherHaloFracStart = otherHaloFracStartDict[f"T{temp}"]
+        # otherHaloFracEnd = otherHaloFracEndDict[f"T{temp}"]
+        # unassignedFracStart = unassignedFracStartDict[f"T{temp}"]
+        # unassignedFracEnd = unassignedFracEndDict[f"T{temp}"]
 
 
-        HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
-        +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes, {unassignedFracStart:3.3%} start unassigned."\
-        +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes, {unassignedFracEnd:3.3%} end unassigned."
-
-        currentAx.text(1.02, 0.5, HaloString, horizontalalignment='left',verticalalignment='center',\
-        transform=currentAx.transAxes, wrap=True,bbox=dict(facecolor='tab:gray', alpha=0.25))
+        # HaloString = f"Of Tracer Subset: \n {haloFracStart:3.3%} start in Halo {int(TRACERSPARAMS['haloID'])},"\
+        # +f" {unboundFracStart:3.3%} start 'unbound',{otherHaloFracStart:3.3%} start in other Haloes, {unassignedFracStart:3.3%} start unassigned."\
+        # +f"\n {haloFracEnd:3.3%} end in Halo {int(TRACERSPARAMS['haloID'])}, {unboundFracEnd:3.3%} end 'unbound',{otherHaloFracEnd:3.3%} end in other Haloes, {unassignedFracEnd:3.3%} end unassigned."
+        #
+        # currentAx.text(1.02, 0.5, HaloString, horizontalalignment='left',verticalalignment='center',\
+        # transform=currentAx.transAxes, wrap=True,bbox=dict(facecolor='tab:gray', alpha=0.25))
 
         plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
         currentAx.text(0.05, 0.95, plot_label, horizontalalignment='left',verticalalignment='center',\
@@ -489,9 +512,6 @@ for analysisParam in saveParams:
         # whereDataIsNOTnan = np.where(np.isnan(plotYdata)==False)
         # paths = np.array([plotXScatterdata, plotYdata]).T.reshape(-1,len(plotXdata),2)
 
-        for (tracer,col,clusterID) in zip(plotYdata.T,colourTracers,clusterData):
-            currentAx.plot(plotXdata,tracer,color = col, alpha = opacity, label = f"Cluster {clusterID}")
-
         # line = currentAx.add_collection(lc)
 
         currentAx.xaxis.set_minor_locator(AutoMinorLocator())
@@ -501,31 +521,22 @@ for analysisParam in saveParams:
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
         currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
-        currentAx.legend(loc='upper right')
+        # currentAx.legend(loc='upper right')
         fig.suptitle(f"Cells Containing Tracers selected by: " +\
         "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n" + f" and selected at {vline[0]:3.2f} Gyr"+\
-        f" weighted by mass" +\
-        "\n" + f"Subset of {int(subset)} Individual Tracers at each Temperature Plotted" \
+        f" weighted by mass"\
         , fontsize=12)
 
+        currentAx.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
 
-
-    #Only give 1 x-axis a label, as they sharex
-    if (len(Tlst)==1):
-        axis0 = ax
-    else:
-        axis0 = ax[len(Tlst)-1]
-
-    axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
-
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.90, right=0.80)
-    if (dtwJoint == True):
-        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsMedians-DTW-Joint-Clusters.pdf"
-    else:
-        opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+"_"+str(int(subset))+f"_IndividualsMedians-DTW-Clusters.pdf"
-    plt.savefig(opslaan, dpi = DPI, transparent = False)
-    print(opslaan)
-    plt.close()
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.90)
+        if (dtwJoint == True):
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_T{temp}"+f"_IndividualsMedians-DTW-Joint-Clusters.pdf"
+        else:
+            opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_T{temp}"+f"_IndividualsMedians-DTW-Clusters.pdf"
+        plt.savefig(opslaan, dpi = DPI, transparent = False)
+        print(opslaan)
+        plt.close()

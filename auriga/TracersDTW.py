@@ -19,9 +19,6 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-dtwParams = ['T','R','dens','gz','P_tot','B','vrad']
-logParams = ['T','dens','P_tot','B']
-
 TracersParamsPath = 'TracersParams.csv'
 batch_limit = 1e5
 printpercent = 1.
@@ -41,6 +38,9 @@ def DTW_prep(M):
 
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+
+dtwParams = TRACERSPARAMS['dtwParams']
+logParams = TRACERSPARAMS['dtwlogParams']
 
 dtwSubset = int(TRACERSPARAMS['dtwSubset'])
 
