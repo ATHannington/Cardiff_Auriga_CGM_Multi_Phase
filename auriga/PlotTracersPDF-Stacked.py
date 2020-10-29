@@ -16,6 +16,7 @@ from gadget import *
 from gadget_subfind import *
 import h5py
 from Tracers_Subroutines import *
+import scipy.stats as stats
 
 Nbins = 100
 xsize = 12.
@@ -23,6 +24,7 @@ ysize = 10.
 DPI = 100
 
 ageUniverse = 13.77 #[Gyr]
+selectColour= 'red'
 
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
@@ -69,9 +71,10 @@ dataDict = {}
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
 for dataKey in saveParams:
+    print(f"{dataKey}")
     #Create a plot for each Temperature
     for ii in range(len(Tlst)):
-
+        print(f"T{Tlst[ii]}")
         #Get number of temperatures
         NTemps = float(len(Tlst))
 
@@ -98,13 +101,13 @@ for dataKey in saveParams:
         #     plotData.update({key: sorted_data})
 
         selectKey = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
-
         selectTime = abs(dataDict[selectKey]['Lookback'][0] - ageUniverse)
 
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI, frameon=False)
+        ymax = []
+        ymin = []
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
-        for snap in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1))):
-
+        for (jj, snap) in enumerate(range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1)))):
 
             dictkey = (f"T{T}",f"{int(snap)}")
 
@@ -149,19 +152,41 @@ for dataKey in saveParams:
 
             #Select a Temperature specific colour from colourmap
             cmap = matplotlib.cm.get_cmap('viridis')
-            colour = cmap(((float(ii)+1.0)/(NTemps)))
+            if (int(snap) == int(TRACERSPARAMS['selectSnap']) ):
+                colour = selectColour
+            else:
+                sRange = int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1)) - int(TRACERSPARAMS['snapMin'])
+                colour = cmap(((float(jj)+1.0)/(sRange)))
 
-            print("Sub-plot!")
+            # print("Sub-plot!")
 
-            print(f"Snap{snap} T{T} Type {dataKey}")
+            # Small reduction of the X extents to get a cheap perspective effect
+            # xscale = 1 - jj / 200.
+            # Same for linewidth (thicker strokes on bottom)
+            lw = 2.0 + jj / 100.0
 
-            ax.hist(data, bins = Nbins, range = [xmin,xmax], weights = weights, normed = True, color=colour)
+            # print(f"Snap{snap} T{T} Type {dataKey}")
+            density = stats.gaussian_kde(data)
+            n,x,_ = plt.hist(data, bins = Nbins, range = [xmin,xmax], weights = weights, density = True, color=colour, alpha = 0.)
+
+            tmpymax = np.nanmax(density(x))
+            deltay = (jj/10.)
+            ymax.append(tmpymax - deltay)
+            ax.plot(x, density(x) - deltay, lw=lw, color=colour)
+
+            empty = np.zeros(shape=np.shape(x))
+            ax.plot(x, empty - deltay, lw=lw, color=colour, alpha = 0.1)
+            ymin.append(-1.*deltay)
+            ax.set_yticks([])
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
             # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
             # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)
+        yup = np.nanmax(ymax)
+        ylo = np.nanmin(ymin)
+        ax.set_ylim(ylo,yup)
         ax.set_xlabel(xlabel[dataKey],fontsize=15)
         # ax[1].set_xlabel(xlabel[dataKey],fontsize=8)
-        ax.set_ylabel("Normalised Count",fontsize=15)
+        # ax.set_ylabel("Normalised Count",fontsize=15)
         # ax[1].set_ylabel("Cumulative Normalised Count",fontsize=8)
         fig.suptitle(f"PDF of Cells Containing Tracers selected by: " +\
         "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\

@@ -34,7 +34,7 @@ colourmapIndividuals = "nipy_spectral"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-logParameters = ['dens','rho_rhomean','csound','T','n_H','B','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -139,7 +139,7 @@ for T in TRACERSPARAMS['targetTLst']:
         for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
             key = (f"T{T}",f"{int(snap)}")
             whereGas = np.where(dataDict[key]['type']==0)[0]
-            whereTracer = np.where(np.isin(dataDict[key]['trid'],SelectedTracers1))[0]
+            # whereTracer = np.where(np.isin(dataDict[key]['trid'],SelectedTracers1))[0]
             #Get Individual Cell Data from selected Tracers.
             #   Not all Tracers will be present at all snapshots, so we return a NaN value in that instance.
             #   This allows for plotting of all tracers for all snaps they exist.
@@ -172,8 +172,12 @@ for T in TRACERSPARAMS['targetTLst']:
             # tmpSubHaloID.append(HaloData)
 
             #Violin Data
-            weightedData = weightedperc(data=dataDict[key][analysisParam][whereGas], weights=dataDict[key]['mass'][whereGas], perc=50,key='mass')
-            tmpViolinData.append(weightedData)
+            dat = dataDict[key][analysisParam][whereGas]
+            mass = dataDict[key]['mass'][whereGas]
+            medianMass = np.median(mass)
+            whereNOTnan = np.where(np.isnan(dat)==False)
+            weightedData = (dat[whereNOTnan]*mass[whereNOTnan])/medianMass
+            tmpViolinData.append()
 
         #Append the data from this parameters to a sub dictionary
         # XScatterSubDict.update({analysisParam: np.array(tmpXScatterdata)})
@@ -330,8 +334,8 @@ for analysisParam in saveParams:
             tmp = []
             for (ind, array) in enumerate(violinData):
                 tmpData = np.log10(array)
-                whereNOTnan = np.where(np.isnan(tmpData)==False)
-                wherenan = np.where(np.isnan(tmpData)==True)
+                whereNOTnan = np.where(np.isnan(tmpData)==False)[0]
+                wherenan = np.where(np.isnan(tmpData)==True)[0]
                 tmp.append(tmpData[whereNOTnan])
 
             violinData = np.array(tmp)
