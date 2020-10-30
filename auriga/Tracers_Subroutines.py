@@ -1445,7 +1445,7 @@ def PadNonEntries(snapGas,snapNumber):
 
 #------------------------------------------------------------------------------#
 
-def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath,MiniDataPathSuffix=".csv"):
+def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath=None,MiniDataPathSuffix=".csv",saveBool=True):
 
     #------------------------------------------------------------------------------#
     #       Flatten dict and take subset
@@ -1458,7 +1458,6 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
     for k, v in Cells.items():
         if (k in saveParams):
             whereErrorKey = f"{k}"
-            weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey)
             #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
             #   combined keys in saveKeys.
             #       We are saving the key (k) + median, UP, or LO in a new dict, statsData
@@ -1487,15 +1486,16 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
     #------------------------------------------------------------------------------#
 
 
-    #Generate our savepath
-    savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}_Statistics" + MiniDataPathSuffix
-    print("\n" + f"[@{snapNumber} @T{targetT}]: Saving Statistics as: " + savePath)
+    if (saveBool == True):
+        #Generate our savepath
+        savePath = DataSavepath + f"_T{targetT}_{int(snapNumber)}_Statistics" + MiniDataPathSuffix
+        print("\n" + f"[@{snapNumber} @T{targetT}]: Saving Statistics as: " + savePath)
 
-    out = {(f"T{targetT}",f"{int(snapNumber)}"): statsData}
+        out = {(f"T{targetT}",f"{int(snapNumber)}"): statsData}
 
-    hdf5_save(savePath,out)
+        hdf5_save(savePath,out)
 
-    return
+    return statsData
 
 #------------------------------------------------------------------------------#
 

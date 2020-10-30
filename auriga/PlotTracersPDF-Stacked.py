@@ -143,8 +143,11 @@ for dataKey in saveParams:
                 print("No Data! Skipping Entry!")
                 continue
 
-            xmin = np.nanmin(data)
-            xmax = np.nanmax(data)
+            oneperc = weightedperc(data=data, weights=weights, perc=int(1),key='1')
+            ninetynineperc = weightedperc(data=data, weights=weights, perc=int(99),key='9')
+
+            xmin = oneperc#np.nanmin(data)
+            xmax = ninetynineperc#np.nanmax(data)
             #
             # step = (xmax-xmin)/Nbins
             #
@@ -170,7 +173,11 @@ for dataKey in saveParams:
             n,x,_ = plt.hist(data, bins = Nbins, range = [xmin,xmax], weights = weights, density = True, color=colour, alpha = 0.)
 
             tmpymax = np.nanmax(density(x))
-            deltay = (jj/10.)
+            if dataKey in logParameters:
+                deltay = (jj/10.)
+            else:
+                deltay = (jj/200.)
+
             ymax.append(tmpymax - deltay)
             ax.plot(x, density(x) - deltay, lw=lw, color=colour)
 
@@ -178,6 +185,17 @@ for dataKey in saveParams:
             ax.plot(x, empty - deltay, lw=lw, color=colour, alpha = 0.1)
             ymin.append(-1.*deltay)
             ax.set_yticks([])
+
+            plot_label = r"$T = 10^{%3.2f} K$"%(float(T))
+            ax.text(0.80, 0.95, plot_label, horizontalalignment='left',verticalalignment='center',\
+            transform=ax.transAxes, wrap=True,bbox=dict(facecolor=selectColour, alpha=0.05),fontsize = 12 )
+
+            time_label = r"Age of Universe [Gyr]" + "\n" + r"$\odot$"
+            ax.text(0.10, 0.50, time_label, horizontalalignment='center',verticalalignment='center',\
+            transform=ax.transAxes, wrap=True,bbox=dict(facecolor=selectColour, alpha=0.05),fontsize = 12 )
+
+            ax.transAxes
+
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
             # ax[0].hist(data,bins=bins,density=True, weights=weights, log=True, color=colour)
             # ax[1].hist(data,bins=bins,density=True, cumulative=True, weights=weights,color=colour)
@@ -193,7 +211,7 @@ for dataKey in saveParams:
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n" + f" and selected at {selectTime:3.2f} Gyr"+\
         f" weighted by mass"+\
-        "\n" + f"{percentage:0.03f}% of Tracers in Stars",fontsize=12)
+        "\n" + f"1% to 99% percentiles shown",fontsize=12)
         # ax.axvline(x=vline, c='red')
 
         plt.tight_layout()
