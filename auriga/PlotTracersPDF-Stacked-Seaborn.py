@@ -28,6 +28,8 @@ ageUniverse = 13.77 #[Gyr]
 selectColour= 'red'
 selectStyle = '-.'
 selectWidth = 4
+percentileLO = 1.0
+percentileUP = 99.0
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -105,13 +107,13 @@ for dataKey in saveParams:
         selectKey = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
         selectTime = abs(dataDict[selectKey]['Lookback'][0] - ageUniverse)
 
-        ymax = []
-        ymin = []
+        xmaxlist = []
+        xminlist = []
         dataList = []
         weightsList = []
         snapRange = [xx for xx in range(int(TRACERSPARAMS['snapMin']), int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1)))]
         sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
-        fig, ax = plt.subplots(nrows=len(snapRange), ncols=1, figsize = (xsize,ysize), dpi = DPI, frameon=False)
+        fig, ax = plt.subplots(nrows=len(snapRange), ncols=1, figsize = (xsize,ysize), dpi = DPI, frameon=False, sharex=True)
         #Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
         for (jj, snap) in enumerate(snapRange):
             currentAx = ax[jj]
@@ -171,11 +173,12 @@ for dataKey in saveParams:
             sns.kdeplot(df["x"], weights= df['y'], ax =currentAx, clip_on=False, color="w", lw=linewidth, linestyle=lineStyle, bw_adjust=.5)
             currentAx.axhline( y=0, lw=linewidth, linestyle=lineStyle, clip_on=False)
 
-            # oneperc = weightedperc(data=data, weights=weights, perc=int(1),key='1')
-            # ninetynineperc = weightedperc(data=data, weights=weights, perc=int(99),key='9')
-            #
-            # xmin = oneperc#np.nanmin(data)
-            # xmax = ninetynineperc#np.nanmax(data)
+            LO = weightedperc(data=data, weights=weights, perc=percentileLO,key='LO')
+            UP = weightedperc(data=data, weights=weights, perc=percentileUP,key='UP')
+
+            xmin = xminlist.append(LO)#np.nanmin(data)
+            xmax = xmaxlist.append(UP)#np.nanmax(data)
+
             # #            # # step = (xmax-xmin)/Nbins
             # #
             # # bins = 10**(np.arange(start=xmin,stop=xmax,step=step))
@@ -207,11 +210,7 @@ for dataKey in saveParams:
             # ymin.append(-1.*deltay)
             currentAx.set_yticks([])
             currentAx.set_ylabel("")
-            if currentAx.is_last_row():
-                currentAx.set_xlabel(xlabel[dataKey],fontsize=15)
-            else:
-                currentAx.set_xticks([])
-                currentAx.set_xlabel("")
+            currentAx.set_xlabel(xlabel[dataKey],fontsize=15)
             sns.despine(bottom=True, left=True)
 
             # ax[1].hist(np.log10(data), bins = Nbins, range = [xmin,xmax], cumulative=True, weights = weights, density = True, color=colour)
@@ -220,9 +219,10 @@ for dataKey in saveParams:
 
         # # Define and use a simple function to label the plot in axes coordinates
 
-        # yup = np.nanmax(ymax)
-        # ylo = np.nanmin(ymin)
-        # ax.set_ylim(ylo,yup)
+        xmin = np.nanmin(xminlist)
+        xmax = np.nanmax(xmaxlist)
+
+        plt.xlim(xmin,xmax)
         #
         plot_label = r"$T = 10^{%3.2f} K$"%(float(T))
         plt.text(0.80, 0.90, plot_label, horizontalalignment='left',verticalalignment='center',\
@@ -242,7 +242,8 @@ for dataKey in saveParams:
         "\n"+ r"$T = 10^{%05.2f \pm %05.2f} K$"%(T,TRACERSPARAMS['deltaT']) +\
         r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n" + f" and selected at {selectTime:3.2f} Gyr"+\
-        f" weighted by mass", fontsize=15)
+        f" weighted by mass"+\
+        "\n"+f"{percentileLO:3.2f}% to {percentileUP:3.2f}% Mass Weighted Percentiles Shown", fontsize=12)
         # ax.axvline(x=vline, c='red')
 
         plt.tight_layout()
