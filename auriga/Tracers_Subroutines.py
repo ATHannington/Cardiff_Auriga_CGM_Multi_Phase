@@ -1963,10 +1963,8 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         #     colourTracers.append(colour)
         #
         # colourTracers = np.array(colourTracers)
-        if (int(snapNumber) == int(TRACERSPARAMS['selectSnap'])):
-            colour = "green"
-        else:
-            colour = "white"
+
+        colour = "white"
 
         ax1 = axes
 
@@ -1997,8 +1995,6 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
         minSnap = int(snapNumber) - min(int(nOldSnaps),3)
 
 
-
-
         print(f"[@T{targetT} @{int(snapNumber)}]: Plot Tails...")
         jj=1
         for snap in range(int(minSnap+1),snapNumber+1):
@@ -2018,10 +2014,6 @@ CMAP=None,QuadPlotBool=False,TracerPlotBool=True, numThreads=2):
             ntails = np.shape(pos1[whereInRange])[0]
             alph = float(jj)/float(max(1,min(int(nOldSnaps),3))+1.)
             jj +=1
-            if (int(snap) == int(TRACERSPARAMS['selectSnap'])):
-                colour = "green"
-            else:
-                colour = "white"
 
             for ii in range(0,int(ntails)):
                 ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c=colour,alpha=alph)#colourTracers[ii],alpha=alph)
