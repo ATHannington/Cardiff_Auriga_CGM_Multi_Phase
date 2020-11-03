@@ -26,8 +26,9 @@ DPI = 100
 
 ageUniverse = 13.77 #[Gyr]
 selectColour= 'red'
-selectStyle = '-.'
+selectStyle = '-'
 selectWidth = 4
+selectlinecolour = "black"
 percentileLO = 1.0
 percentileUP = 99.0
 #Input parameters path:
@@ -158,11 +159,15 @@ for dataKey in saveParams:
                 colour = selectColour
                 lineStyle = selectStyle
                 linewidth = selectWidth
+                linecolour = selectlinecolour
+                hlinecolour = selectlinecolour
             else:
                 sRange = int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1)) - int(TRACERSPARAMS['snapMin'])
                 colour = cmap(((float(jj)+1.0)/(sRange)))
                 lineStyle = "-"
                 linewidth = 2
+                linecolour = 'w'
+                hlinecolour = "blue"
 
             tmpdict = {'x':data, 'y': weights}
             df = pd.DataFrame(tmpdict)
@@ -170,8 +175,8 @@ for dataKey in saveParams:
             sns.kdeplot(df["x"], weights= df['y'],
                   ax =currentAx, bw_adjust=.5, clip_on=False,
                   fill=True, alpha=1, linewidth=1.5,color=colour)
-            sns.kdeplot(df["x"], weights= df['y'], ax =currentAx, clip_on=False, color="w", lw=linewidth, linestyle=lineStyle, bw_adjust=.5)
-            currentAx.axhline( y=0, lw=linewidth, linestyle=lineStyle, clip_on=False)
+            sns.kdeplot(df["x"], weights= df['y'], ax =currentAx, clip_on=False, color=linecolour, lw=linewidth, linestyle=lineStyle, bw_adjust=.5)
+            currentAx.axhline( y=0, lw=linewidth, linestyle=lineStyle, color=hlinecolour, clip_on=False)
 
             LO = weightedperc(data=data, weights=weights, perc=percentileLO,key='LO')
             UP = weightedperc(data=data, weights=weights, perc=percentileUP,key='UP')
