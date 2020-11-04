@@ -1799,10 +1799,10 @@ CMAP=None, numThreads=4):
 #------------------------------------------------------------------------------#
 
 #------------------------------------------------------------------------------#
-def TracerPlot(Cells,TRACERSPARAMS, DataSavepath,\
+def TracerPlot(Cells,tridDict,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
 boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\
-CMAP=None, numThreads=16):
+CMAP=None, numThreads=16, MaxSubset=100):
 
     if(CMAP == None):
         cmap = plt.get_cmap("inferno")
@@ -1812,97 +1812,123 @@ CMAP=None, numThreads=16):
     #Axes Labels to allow for adaptive axis selection
     AxesLabels = ['x','y','z']
 
+    #Set plot figure sizes
+    xsize = 10.
+    ysize = 10.
+    ageUniverse = 13.77
+    #Define halfsize for histogram ranges which are +/-
+    halfbox = boxsize/2.
+
+    nullEntry = [np.nan, np.nan, np.nan]
+
     #Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
     imgcent =[0.,0.,0.]
 
-    subset = int(TRACERSPARAMS['subset'])
+    #element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
+    elements       = ['H',  'He',  'C',   'N',   'O',   'Ne',  'Mg',  'Si',  'Fe',  'Y',   'Sr',  'Zr',  'Ba',   'Pb']
+    elements_Z     = [1,    2,     6,     7,     8,     10,    12,    14,    26,    39,    38,    40,    56,     82]
+    elements_mass  = [1.01, 4.00,  12.01, 14.01, 16.00, 20.18, 24.30, 28.08, 55.85, 88.91, 87.62, 91.22, 137.33, 207.2]
+    elements_solar = [12.0, 10.93, 8.43,  7.83,  8.69,  7.93,  7.60,  7.51,  7.50,  2.21,  2.87,  2.58,  2.18,   1.75]
 
-    for targetT in TRACERSPARAMS['targetTLst']:
-        print("")
-        print(f"Starting T{T} analysis")
+    Zsolar = 0.0127
 
-        selectkey = (f"T{targetT}",f"{int(TRACERSPARAMS['selectSnap'])}")
-
-        whereGas = np.where(Cells[selectkey]['type']==0)[0]
-        SelectedTracers1 = random.sample(Cells[selectkey]['trid'][whereGas].tolist(), subset)
-        SelectedTracers1 = np.array(SelectedTracers1)
-
-        for snapNumber in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
-            #--------------------------#
-            ## Slices and Projections ##
-            #--------------------------#
-            print(f"[@T{targetT} @{int(snapNumber)}]: Load snap!")
-
-            # load in the subfind group files
-            snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
-
-            # load in the gas particles mass and position only for HaloID 0.
-            #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-            snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = snap_subfind)
+    omegabaryon0 = 0.048
 
 
-            #Load Cell IDs - avoids having to turn lazy_load off...
-            # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
-            #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
-            #   Be in memory so taking the subset would be skipped.
-            tmp = snapGas.data['id']
-            tmp = snapGas.data['age']
-            tmp = snapGas.data['hrgm']
-            tmp = snapGas.data['mass']
-            tmp = snapGas.data['pos']
-            tmp = snapGas.data['vol']
-            del tmp
 
-            print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    for snapNumber in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
+        #--------------------------#
+        ## Slices and Projections ##
+        #--------------------------#
+        print(f"[@{int(snapNumber)}]: Load snap!")
 
-            #Centre the simulation on HaloID 0
-            snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
+        # load in the subfind group files
+        snap_subfind = load_subfind(snapNumber,dir=TRACERSPARAMS['simfile'])
 
-            #--------------------------#
-            ##    Units Conversion    ##
-            #--------------------------#
+        # load in the gas particles mass and position only for HaloID 0.
+        #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+        snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = snap_subfind)
 
-            #Convert Units
-            ## Make this a seperate function at some point??
-            snapGas.pos *= 1e3 #[kpc]
-            snapGas.vol *= 1e9 #[kpc^3]
-            snapGas.mass *= 1e10 #[Msol]
-            snapGas.hrgm *= 1e10 #[Msol]
 
-            #Calculate New Parameters and Load into memory others we want to track
-            snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
+        #Load Cell IDs - avoids having to turn lazy_load off...
+        # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+        #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+        #   Be in memory so taking the subset would be skipped.
+        tmp = snapGas.data['id']
+        tmp = snapGas.data['hrgm']
+        tmp = snapGas.data['mass']
+        tmp = snapGas.data['pos']
+        tmp = snapGas.data['vol']
+        del tmp
 
-            print(f"[@T{targetT} @{int(snapNumber)}]: Slices and Projections!")
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
-            #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
-            #  axes = Axes, proj = False, numthreads=16)
-            #
-            # slice_B   = snap.get_Aslice("B", box = [boxsize,boxsize],\
-            #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
-            #  axes = Axes, proj = False, numthreads=16)
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-            nprojections = 2
+        print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
-            print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 1 of {nprojections}")
+        #Centre the simulation on HaloID 0
+        snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=int(TRACERSPARAMS['haloID']),snapNumber = snapNumber)
 
-            proj_T = snapGas.get_Aslice("Tdens", box = [boxsize,boxsize],\
-             center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
-             nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+        #--------------------------#
+        ##    Units Conversion    ##
+        #--------------------------#
 
-            print("\n"+f"[@T{targetT} @{int(snapNumber)}]: Projection 2 of {nprojections}")
+        #Convert Units
+        ## Make this a seperate function at some point??
+        snapGas.pos *= 1e3 #[kpc]
+        snapGas.vol *= 1e9 #[kpc^3]
+        snapGas.mass *= 1e10 #[Msol]
+        snapGas.hrgm *= 1e10 #[Msol]
 
-            proj_dens = snapGas.get_Aslice("rho_rhomean", box = [boxsize,boxsize],\
-             center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
-             nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+        #Calculate New Parameters and Load into memory others we want to track
+        snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
+
+        #Redshift
+        redshift = snapGas.redshift        #z
+        aConst = 1. / (1. + redshift)   #[/]
+
+        #[0] to remove from numpy array for purposes of plot title
+        lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+        tage = abs(lookback - ageUniverse)
+        print(f"[@{int(snapNumber)}]: Slices and Projections!")
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
+        #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+        #  axes = Axes, proj = False, numthreads=16)
+        #
+        # slice_B   = snap.get_Aslice("B", box = [boxsize,boxsize],\
+        #  center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+        #  axes = Axes, proj = False, numthreads=16)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        nprojections = 2
+
+        print("\n"+f"[@{int(snapNumber)}]: Projection 1 of {nprojections}")
+
+        proj_T = snapGas.get_Aslice("Tdens", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
+
+        print("\n"+f"[@{int(snapNumber)}]: Projection 2 of {nprojections}")
+
+        proj_dens = snapGas.get_Aslice("rho_rhomean", box = [boxsize,boxsize],\
+         center = imgcent, nx = int(boxsize/pixres), ny = int(boxsize/pixres),\
+         nz = int(boxlos/pixreslos), boxz = boxlos, axes = Axes, proj = True, numthreads=numThreads)
 
         #==============================================================================#
         #
         #           Grab positions of Tracer Subset
         #
         #==============================================================================#
+        for targetT in TRACERSPARAMS['targetTLst']:
+            print("")
+            print(f"Starting T{targetT} analysis")
 
-            print("\n" + f"[@{int(snapNumber)} @T{targetT}]: Selecting {int(subset)} subset of Tracers Positions...")
+            selectkey = (f"T{targetT}",f"{int(TRACERSPARAMS['selectSnap'])}")
+
+            whereGas = np.where(Cells[selectkey]['type']==0)[0]
+            subset = min(len(tridDict[selectkey]),MaxSubset)
+            SelectedTracers1 = random.sample(tridDict[selectkey].tolist(), subset)
+            SelectedTracers1 = np.array(SelectedTracers1)
+
+
+            print("\n" + f"[@T{targetT} @{int(snapNumber)}]: Selecting {int(subset)} subset of Tracers Positions...")
             #Select new subset for first snap
             #   Use old subset for all others
             key = (f"T{targetT}",f"{int(snapNumber)}")
@@ -1917,21 +1943,6 @@ CMAP=None, numThreads=16):
 
         #------------------------------------------------------------------------------#
             #PLOTTING TIME
-            #Set plot figure sizes
-            xsize = 10.
-            ysize = 10.
-            ageUniverse = 13.77
-            #Define halfsize for histogram ranges which are +/-
-            halfbox = boxsize/2.
-
-            #Redshift
-            redshift = snapGas.redshift        #z
-            aConst = 1. / (1. + redshift)   #[/]
-
-            #[0] to remove from numpy array for purposes of plot title
-            lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
-            tage = abs(lookback - ageUniverse)
-
 
             print(f"[@T{targetT} @{int(snapNumber)}]: Tracer Plot...")
 
@@ -1951,7 +1962,7 @@ CMAP=None, numThreads=16):
             tmplookback = tmpsnapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
             selecttage = abs(tmplookback - ageUniverse)
 
-            print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+            print(f"[@T{targetT}] @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
             aspect = "equal"
             fontsize = 12
@@ -1960,6 +1971,7 @@ CMAP=None, numThreads=16):
             print(f"[@T{targetT} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
 
             nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
+
 
             OldPosDict = {}
             for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
@@ -2063,10 +2075,10 @@ CMAP=None, numThreads=16):
                 key1 = (f"T{targetT}",f"{int(snap-1)}")
                 key2 = (f"T{targetT}",f"{int(snap)}")
                 if (snap != int(snapNumber)):
-                    pos1 = OldPosDict[key1]['pos']
-                    pos2 = OldPosDict[key2]['pos']
+                    pos1 = OldPosDict[key1]
+                    pos2 = OldPosDict[key2]
                 else:
-                    pos1 = OldPosDict[key1]['pos']
+                    pos1 = OldPosDict[key1]
                     pos2 = posData
 
                 whereInRange = np.where((pos1[:,zAxis[0]]<=(float(boxlos)/2.))&(pos1[:,zAxis[0]]>=(-1.*float(boxlos)/2.))\

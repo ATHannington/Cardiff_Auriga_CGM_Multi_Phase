@@ -129,6 +129,12 @@ for analysisParam in saveParams:
             for k, v in plotData.items():
                 plotData.update({k : np.log10(v)})
 
+        ymin = np.nanmin(plotData[median])
+        ymax = np.nanmax(plotData[median])
+
+        if ((np.isinf(ymin)==True) or (np.isinf(ymax)==True) or (np.isnan(ymin)==True) or (np.isnan(ymax)==True)):
+            print("Data All Inf/NaN! Skipping entry!")
+            continue
         print("")
         print("Sub-Plot!")
 
@@ -149,7 +155,7 @@ for analysisParam in saveParams:
         currentAx.tick_params(which='both')
 
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
-        currentAx.set_ylim(ymin=np.nanmin(plotData[median]), ymax=np.nanmax(plotData[median]))
+        currentAx.set_ylim(ymin=ymin, ymax=ymax)
 
         plot_patch = matplotlib.patches.Patch(color=colour)
         plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
@@ -174,7 +180,7 @@ for analysisParam in saveParams:
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, hspace=0.0)
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_IndividualsMedians.pdf"
+    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_Medians.pdf"
     plt.savefig(opslaan, dpi = DPI, transparent = False)
     print(opslaan)
     plt.close()
