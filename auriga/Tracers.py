@@ -137,34 +137,32 @@ if __name__=="__main__":
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
         #   MAIN ANALYSIS
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-        if (TRACERSPARAMS['TracerPlotBool'] == False):
-            print("\n" + f"'TracerPlotBool' == False : Starting MULTIPROCESSING type Analysis!")
-            #Setup arguments combinations for parallel processing pool
-            print("\n" + f"Sorting multi-core arguments!")
+        print("\n" + f"Starting MULTIPROCESSING type Analysis!")
+        #Setup arguments combinations for parallel processing pool
+        print("\n" + f"Sorting multi-core arguments!")
 
-            args_default = [targetT,TRACERSPARAMS,HaloID,TracersTFC,\
-            elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-            saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool]
+        args_default = [targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool]
 
-            args_list = [[snap]+args_default for snap in snapRange]
+        args_list = [[snap]+args_default for snap in snapRange]
 
-            #Open multiprocesssing pool
+        #Open multiprocesssing pool
 
-            print("\n" + f"Opening {n_processes} core Pool!")
-            mp.log_to_stderr(logging.DEBUG)
-            pool = mp.Pool(processes=n_processes)
+        print("\n" + f"Opening {n_processes} core Pool!")
+        pool = mp.Pool(processes=n_processes)
 
-            #Compute Snap analysis
-            output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
+        #Compute Snap analysis
+        output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
 
-            pool.close()
-            pool.join()
-            #Close multiprocesssing pool
-            print(f"Closing core Pool!")
-        else:
-            print("\n" + f"'TracerPlotBool' == True : Starting SERIAL type Analysis!")
-            for snap in snapRange:
-                out = snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
-                elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-                saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
+        pool.close()
+        pool.join()
+        #Close multiprocesssing pool
+        print(f"Closing core Pool!")
+
+        # print("\n" + f"Starting SERIAL type Analysis!")
+        # for snap in snapRange:
+        #     out = snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+        #     elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+        #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
         #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
