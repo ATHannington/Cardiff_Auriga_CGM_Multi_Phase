@@ -191,15 +191,15 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     print(f"[@{int(snapNumber)} @T{targetT}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
-    whereGas = np.where(snapGas.type==0)
-    whereStars = np.where(snapGas.type==4)
+    whereGas = np.where(snapGas.type==0)[0]
+    whereStars = np.where(snapGas.type==4)[0]
     NGas = len(snapGas.type[whereGas])
 
     Cond = np.where((snapGas.data['T'][whereGas]>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['T'][whereGas]<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['R'][whereGas]>=TRACERSPARAMS['Rinner']) & \
                     (snapGas.data['R'][whereGas]<=TRACERSPARAMS['Router']) &\
-                    (snapGas.data['sfr'][whereGas]<=0))
+                    (snapGas.data['sfr'][whereGas]<=0))[0]
 
     #Get Cell data and Cell IDs from tracers based on condition
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,Cond,saveParams,saveTracersOnly,snapNumber=snapNumber)
@@ -415,15 +415,15 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveCells=True,loadonlyhalo=True):
     print(f"[@{int(snapNumber)} @T{targetT}]: Setting Selection Condition!")
 
     #Set condition for Tracer selection
-    whereGas = np.where(snapGas.type==0)
-    whereStars = np.where(snapGas.type==4)
+    whereGas = np.where(snapGas.type==0)[0]
+    whereStars = np.where(snapGas.type==4)[0]
     NGas = len(snapGas.type[whereGas])
 
     Cond = np.where((snapGas.data['T'][whereGas]>=1.*10**(targetT-TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['T'][whereGas]<=1.*10**(targetT+TRACERSPARAMS['deltaT'])) & \
                     (snapGas.data['R'][whereGas]>=TRACERSPARAMS['Rinner']) & \
                     (snapGas.data['R'][whereGas]<=TRACERSPARAMS['Router']) &\
-                    (snapGas.data['sfr'][whereGas]<=0))
+                    (snapGas.data['sfr'][whereGas]<=0))[0]
 
     NCells = len(snapGas.data['type'])
     print(f"[@{int(snapNumber)} @T{targetT}]: Number of Cells Pre-Selection Condition : {NCells}")

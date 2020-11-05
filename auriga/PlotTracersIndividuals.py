@@ -96,7 +96,8 @@ for analysisParam in saveParams:
     print(f"Starting {analysisParam} Sub-plots!")
 
     fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
-
+    yminlist = []
+    ymaxlist = []
     #Create a plot for each Temperature
     for ii in range(len(Tlst)):
 
@@ -129,8 +130,10 @@ for analysisParam in saveParams:
             for k, v in plotData.items():
                 plotData.update({k : np.log10(v)})
 
-        ymin = np.nanmin(plotData[median])
-        ymax = np.nanmax(plotData[median])
+        ymin = np.nanmin(plotData[LO])
+        ymax = np.nanmax(plotData[UP])
+        yminlist.append(ymin)
+        ymaxlist.append(ymax)
 
         if ((np.isinf(ymin)==True) or (np.isinf(ymax)==True) or (np.isnan(ymin)==True) or (np.isnan(ymax)==True)):
             print("Data All Inf/NaN! Skipping entry!")
@@ -155,7 +158,6 @@ for analysisParam in saveParams:
         currentAx.tick_params(which='both')
 
         currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
-        currentAx.set_ylim(ymin=ymin, ymax=ymax)
 
         plot_patch = matplotlib.patches.Patch(color=colour)
         plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
@@ -177,6 +179,12 @@ for analysisParam in saveParams:
         axis0 = ax[len(Tlst)-1]
 
     axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
+    finalymin = np.nanmin(yminlist)
+    finalymax = np.nanmax(ymaxlist)
+    if ((np.isinf(finalymin)==True) or (np.isinf(finalymax)==True) or (np.isnan(finalymin)==True) or (np.isnan(finalymax)==True)):
+        print("Data All Inf/NaN! Skipping entry!")
+        continue
+    plt.ylim(ymin=finalymin, ymax=finalymax)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, hspace=0.0)

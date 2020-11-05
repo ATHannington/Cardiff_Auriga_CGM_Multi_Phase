@@ -18,8 +18,10 @@ from gadget_subfind import *
 from Tracers_Subroutines import *
 import h5py
 import multiprocessing as mp
+from functools import reduce
 
-Nbins = 1000
+
+Nbins = 250
 xsize = 20.
 ysize = 10.
 fontsize = 15
@@ -35,7 +37,11 @@ colourmapMain = "viridis"
 
 #Paramters to weight the 2D hist by
 weightKeys = ['mass','tcool','gz']
-
+zlimDict = {'mass': {'zmin':3.5,'zmax':5.5},'tcool': {'zmin':-5.0,'zmax':5.0},'gz': {'zmin':-2.0,'zmax':2.0}}
+ymin = 1.0 #[Log10 T]
+ymax = 7.0 #[Log10 T]
+xmin = 1.0 #[Log10 rho_rhomean]
+xmax = 7.0 #[Log10 rho_rhomean]
 labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
  'gz':r'Log10 Average Metallicity per pixel $Z/Z_{\odot}$',\
  'tcool': r'Log10 Cooling Time per pixel [$Gyr$]',\
@@ -153,6 +159,7 @@ print("Flatten Tracers Data (snapData).")
 snapRange = [snap for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1))]
 TracersFinalDict = flatten_wrt_T(FullDict,snapRange,TRACERSPARAMS)
 
+# STOP156
 #------------------------------------------------------------------------------#
 #               PLOTTING
 #
@@ -163,26 +170,26 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         print("\n"+f"Starting weightKey {weightKey}")
         key = f"{int(snap)}"
 
-        FullDictKey = (f"T{float(Tlst[0])}", f"{int(snap)}")
+        FullDictKey = (f"T{float(Tlst[0])}", f"{int(TRACERSPARAMS['selectSnap'])}")
         selectTime = abs(FullDict[FullDictKey]['Lookback'][0] - ageUniverse)
 
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
 
-        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)
-        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
+        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)[0]
+        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)[0]
 
-        snapGasFinalDict[key]['age'][np.where(np.isnan(snapGasFinalDict[key]['age']) == True)] = 0.
-        TracersFinalDict[key]['age'][np.where(np.isnan(TracersFinalDict[key]['age']) == True)] = 0.
+        snapGasFinalDict[key]['age'][np.where(np.isnan(snapGasFinalDict[key]['age']) == True)[0]] = 0.
+        TracersFinalDict[key]['age'][np.where(np.isnan(TracersFinalDict[key]['age']) == True)[0]] = 0.
 
         whereCellsStars = np.where((snapGasFinalDict[key]['type'] == 4)&\
-                              (snapGasFinalDict[key]['age'] >= 0.))
+                              (snapGasFinalDict[key]['age'] >= 0.))[0]
 
         whereTracersStars = np.where((TracersFinalDict[key]['type'] == 4)&\
-                  (TracersFinalDict[key]['age'] >= 0.))
+                  (TracersFinalDict[key]['age'] >= 0.))[0]
 
-        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)
+        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)[0]
 
-        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)
+        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)[0]
 
         NGasCells = len(snapGasFinalDict[key]['type'][whereCellsGas])
         NStarsCells = len(snapGasFinalDict[key]['type'][whereCellsStars])
@@ -199,6 +206,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         percentageTracers = (float(NStarsTracers)/(float(NtotTracers)))*100.
 
 
+        zmin = zlimDict[weightKey]['zmin']
+        zmax = zlimDict[weightKey]['zmax']
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #   Figure 1: Full Cells Data
@@ -215,35 +224,38 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
         massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
 
-        whereData =  xdataCellsNotNaNorInf[np.where((np.isin(xdataCellsNotNaNorInf,ydataCellsNotNaNorInf))&\
-        (np.isin(xdataCellsNotNaNorInf,weightDataCellsNotNaNorInf))&\
-        (np.isin(xdataCellsNotNaNorInf,massCellsNotNaNorInf)))[0]]
+
+        where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
+        weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
+
+        whereData = np.array(reduce(np.intersect1d,where_list))
 
         xdataCells = xdataCells[whereData]
         ydataCells = ydataCells[whereData]
         massCells  = massCells[whereData]
         weightDataCells = weightDataCells[whereData]
 
-        mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells,normed=False)
-        histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells,normed=False)
+        mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+        histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
 
         finalHistCells = histCells/mhistCells
 
         finalHistCells = finalHistCells.T
 
-        if (weightKey != 'gz'):
-            zmin = np.nanmin(finalHistCells)
-        else:
-            zmin = -2.0
+        xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
-        img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=np.nanmax(finalHistCells) \
-        ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
+        img1 = ax[0].pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax)
+
+        # img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=zmax \
+        # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
         ax[0].set_xlabel(r"Log10 Density [$\rho / \langle \rho \rangle $]",fontsize=fontsize)
         ax[0].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
 
+        ax[0].set_ylim(ymin,ymax)
+        ax[0].set_xlim(xmin,xmax)
         cax1 = inset_axes(ax[0],width="5%",height="95%",loc='right')
-        fig.colorbar(img1, cax = cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize)
+        fig.colorbar(img1, cax = cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize, rasterized=True)
         cax1.yaxis.set_ticks_position("left")
         cax1.yaxis.set_label_position("left")
         cax1.yaxis.label.set_color("black")
@@ -259,7 +271,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         xdataTracers = np.log10(TracersFinalDict[key]['rho_rhomean'][whereTracersGas])
         ydataTracers = np.log10(TracersFinalDict[key]['T'][whereTracersGas])
-        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas]) 
+        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas])
         weightDataTracers = np.log10(TracersFinalDict[key][weightKey][whereTracersGas]) * massTracers
 
         xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]
@@ -267,27 +279,35 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         weightDataTracersNotNaNorInf = np.where((np.isinf(weightDataTracers)==False) & (np.isnan(weightDataTracers)==False))[0]
         massTracersNotNaNorInf = np.where((np.isinf(massTracers)==False) & (np.isnan(massTracers)==False))[0]
 
-        whereTracers =  xdataTracersNotNaNorInf[np.where((np.isin(xdataTracersNotNaNorInf,ydataTracersNotNaNorInf))&\
-        (np.isin(xdataTracersNotNaNorInf,weightDataTracersNotNaNorInf))&\
-        (np.isin(xdataTracersNotNaNorInf,massTracersNotNaNorInf)))[0]]
+        where_list = [xdataTracersNotNaNorInf.tolist(),ydataTracersNotNaNorInf.tolist(),\
+        weightDataTracersNotNaNorInf.tolist(),massTracersNotNaNorInf.tolist()]
+
+        whereTracers = np.array(reduce(np.intersect1d,where_list))
 
         xdataTracers = xdataTracers[whereTracers]
         ydataTracers = ydataTracers[whereTracers]
         massTracers  = massTracers[whereTracers]
         weightDataTracers = weightDataTracers[whereTracers]
 
-        mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers,normed=False)
-        histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers,normed=False)
+        mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
+        histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers)
 
         finalHistTracers = histTracers/mhistTracers
 
         finalHistTracers = finalHistTracers.T
 
-        img2 = ax[1].imshow(finalHistTracers,cmap=colourmap,vmin=np.nanmin(finalHistTracers),vmax=np.nanmax(finalHistTracers) \
-        ,extent=[np.min(xedgeTracers),np.max(xedgeTracers),np.min(yedgeTracers),np.max(yedgeTracers)],origin='lower')
+        xtracers, ytracers = np.meshgrid(xedgeTracers, yedgeTracers)
+
+        img2 = ax[1].pcolormesh(xtracers, ytracers, finalHistTracers, cmap=colourmap,vmin=zmin,vmax=zmax, rasterized=True)
+
+        # img2 = ax[1].imshow(finalHistTracers,cmap=colourmap,vmin=zmin,vmax=zmax \
+        # ,extent=[np.min(xedgeTracers),np.max(xedgeTracers),np.min(yedgeTracers),np.max(yedgeTracers)],origin='lower')
 
         ax[1].set_xlabel(r"Log10 Density [$\rho / \langle \rho \rangle $]",fontsize=fontsize)
         ax[1].set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
+
+        ax[1].set_ylim(ymin,ymax)
+        ax[1].set_xlim(xmin,xmax)
 
         cax2 = inset_axes(ax[1],width="5%",height="95%",loc='right')
         fig.colorbar(img2, cax = cax2, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize)
@@ -306,7 +326,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
         f" and selected at {selectTime:3.2f} Gyr",fontsize=fontsize)
 
-        plt.subplots_adjust(top=0.90, hspace = 0.005)
+        plt.subplots_adjust(top=0.90, hspace = 0.01)
 
         opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
         plt.savefig(opslaan, dpi = DPI, transparent = False)
@@ -322,7 +342,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             else:
                 currentAx = ax[ii]
 
-            selectTime = abs(FullDict[FullDictKey]['Lookback'][0] - ageUniverse)
+            selectTime = abs(FullDict[(f"T{float(T)}", f"{int(TRACERSPARAMS['selectSnap'])}")]['Lookback'][0] - ageUniverse)
 
 
 
@@ -331,9 +351,9 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             FullDict[FullDictKey]['age'][np.where(np.isnan(FullDict[FullDictKey]['age']) == True)] = 0.
 
             whereStars = np.where((FullDict[FullDictKey]['type'] == 4)&\
-                                  (FullDict[FullDictKey]['type'] >= 0.))
+                                  (FullDict[FullDictKey]['type'] >= 0.))[0]
 
-            whereGas = np.where(FullDict[FullDictKey]['type'] == 0)
+            whereGas = np.where(FullDict[FullDictKey]['type'] == 0)[0]
 
             NGasCells = len(FullDict[FullDictKey]['type'][whereGas])
             NStarsCells = len(FullDict[FullDictKey]['type'][whereStars])
@@ -343,14 +363,14 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             percentageCells = (float(NStarsCells)/(float(NtotCells)))*100.
 
 
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-    #   Figure 1: Full Cells Data
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+        #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+        #   Figure 1: Full Cells Data
+        #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
             print(f"T{T} Sub-Plot!")
 
             xdataCells = np.log10(FullDict[FullDictKey]['rho_rhomean'][whereGas])
             ydataCells = np.log10(FullDict[FullDictKey]['T'][whereGas])
-            massCells = np.log10(FullDict[FullDictKey]['mass'][whereGas]*1e10) #10^10Msol -> Msol
+            massCells = np.log10(FullDict[FullDictKey]['mass'][whereGas]) #10^10Msol -> Msol
             weightDataCells = np.log10(FullDict[FullDictKey][weightKey][whereGas]) * massCells
 
             xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
@@ -358,32 +378,35 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
             massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
 
-            whereData =  xdataCellsNotNaNorInf[np.where((np.isin(xdataCellsNotNaNorInf,ydataCellsNotNaNorInf))&\
-            (np.isin(xdataCellsNotNaNorInf,weightDataCellsNotNaNorInf))&\
-            (np.isin(xdataCellsNotNaNorInf,massCellsNotNaNorInf)))[0]]
+            where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
+            weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
+
+            whereData = np.array(reduce(np.intersect1d,where_list))
 
             xdataCells = xdataCells[whereData]
             ydataCells = ydataCells[whereData]
             massCells  = massCells[whereData]
             weightDataCells = weightDataCells[whereData]
 
-            mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells,normed=False)
-            histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells,normed=False)
+            mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+            histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
 
             finalHistCells = histCells/mhistCells
 
             finalHistCells = finalHistCells.T
 
-            if (weightKey != 'gz'):
-                zmin = np.nanmin(finalHistCells)
-            else:
-                zmin = -2.0
+            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
-            img1 = currentAx.imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=np.nanmax(finalHistCells) \
-            ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
+            img1 = currentAx.pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax, rasterized=True)
+            #
+            # img1 = currentAx.imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=zmax \
+            # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
             currentAx.set_xlabel(r"Log10 Density [$\rho / \langle \rho \rangle $]",fontsize=fontsize)
             currentAx.set_ylabel(r"Log10 Temperatures [$K$]",fontsize=fontsize)
+
+            currentAx.set_ylim(ymin,ymax)
+            currentAx.set_xlim(xmin,xmax)
 
             cmap = matplotlib.cm.get_cmap(colourmapMain)
             colour = cmap(float(ii+1)/float(len(Tlst)))
@@ -408,9 +431,9 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
         f" and selected at {selectTime:3.2f} Gyr"+"\n"+ f"Selected Tracers Data" +\
         r" - Selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-        "\n"+ r" and temperatures " + r"$ 10^{n \pm %05.2f} K $"%(TRACERSPARAMS['deltaT']),fontsize=fontsize)
+        r" and temperatures " + r"$ 10^{n \pm %05.2f} K $"%(TRACERSPARAMS['deltaT']),fontsize=fontsize)
 
-        plt.subplots_adjust(top=0.90, hspace = 0.005)
+        plt.subplots_adjust(top=0.90, hspace = 0.01)
 
         opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
         plt.savefig(opslaan, dpi = DPI, transparent = False)
