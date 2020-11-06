@@ -184,8 +184,10 @@ for analysisParam in saveParams:
     if ((np.isinf(finalymin)==True) or (np.isinf(finalymax)==True) or (np.isnan(finalymin)==True) or (np.isnan(finalymax)==True)):
         print("Data All Inf/NaN! Skipping entry!")
         continue
-    plt.ylim(ymin=finalymin, ymax=finalymax)
-
+    finalymin = math.floor(finalymin)
+    finalymax = math.ceil(finalymax)
+    custom_ylim = (finalymin,finalymax)
+    plt.setp(ax, ylim=custom_ylim)
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, hspace=0.0)
     opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_Medians.pdf"

@@ -18,11 +18,6 @@ ageUniverse = 13.77 #[Gyr]
 TracersParamsPath = 'TracersParams.csv'
 DataSavepathSuffix = f".h5"
 
-dtwJoint = True
-
-ignoreParams = ['clusters', 'd_crit', 'maxmimally_distinct_bool', 'sort_level']
-StatsEntries = ['Cluster','Snap','Lookback',"T","%Tracers",'%Halo0','%Unbound','%OtherHalo',"%NoHalo",'%Stars',"%ISM",'%Wind',"%Inflow","%Outflow"]
-
 #==============================================================================#
 #       Chemical Properties
 #==============================================================================#
@@ -41,318 +36,183 @@ omegabaryon0 = 0.048
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-dtwParams = TRACERSPARAMS['dtwParams']
-saveParams = TRACERSPARAMS['saveParams']
-logParams = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
-
-paramstring = "+".join(dtwParams)
-
 print("Loading data!")
 
 dataDict = {}
 
 dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
-
-FlatDataDict = hdf5_load(loadPath)
-
-paramStatsDict = {}
-dtwDict ={}
-for T in Tlst:
-    paramStatsDict.update({ f"T{T}": Statistics_hdf5_load(T,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)})
-
-    if (dtwJoint == True):
-        loadPath = DataSavepath + f"_T{T}_{paramstring}_Joint-DTW-clusters"+DataSavepathSuffix
-
-        dtwDict.update(hdf5_load(loadPath))
-
-print("Analyse Data!")
 snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
 
 ################################################################################
-##              Full (not clustered) Data                                   ####
+##                           Definitions                                    ####
 ################################################################################
+#------------------------------------------------------------------------------#
+#                        Get id trid prid data
+#------------------------------------------------------------------------------#
+def _get_id(dataDict,whereEntries):
 
+    id = dataDict['id'][whereEntries]
 
-def _inner_analysis(dataDict,T,ClusterID,FullKey,NtracersFull):
+    _,prid_ind,_ = np.intersect1d(dataDict['prid'],id,return_indices=True)
 
-    lookback = []
-    temp = []
-    cluster = []
-    tracers = []
-    halo0 = []
-    unbound =[]
-    otherHalo =[]
-    noHalo = []
-    gas = []
-    stars = []
-    ism = []
-    wind = []
-    inflow = []
-    outflow = []
+    prid = dataDict['prid'][prid_ind]
+    trid = dataDict['trid'][prid_ind]
 
-    NtracersAll = dataDict[FullKey]['Ntracers'][0]
-    tracers.append(100.*(NtracersAll/NtracersFull))
-    # print("")
-    # print(f"T{T} FullKey{FullKey} cluster{ClusterID}")
-    # print(f"All {NtracersAll} : FullData {NtracersFull}")
-    SubHalo = dataDict[FullKey]['SubHaloID']
+    return {'id': id, 'prid': prid, 'trid' : trid}
+#------------------------------------------------------------------------------#
+#               Analyse log10(T) and snap specfifc statistics
+#------------------------------------------------------------------------------#
+def _inner_analysis(dataDict):
 
-    whereGas = np.where(dataDict[FullKey]['type']==0)[0]
+    out = {}
+
+    NtracersAll = dataDict['Ntracers']
+
+    id = dataDict['id']
+    prid = dataDict['prid']
+    trid = dataDict['trid']
+
+    tracers = {'data' : NtracersAll , 'id' : id, 'prid': prid, 'trid': trid}
+    out.update({"TracersFull" : tracers})
+
+    gas = {}
+    whereGas = np.where(dataDict['type']==0)[0]
+    tmp = _get_id(dataDict,whereGas)
+    gas.update(tmp)
+    gasdata = (100.*(np.shape(gas['trid'])[0]/NtracersAll))
+    gas.update({'data' : gasdata})
+    out.update({"%Gas": gas})
 
     Ntracers = np.shape(whereGas)[0]
 
-    gas.append(100.*(Ntracers/NtracersAll))
+    SubHalo = dataDict['SubHaloID']
 
-    halo0.append(100.*(np.shape(np.where(SubHalo[whereGas]==int(TRACERSPARAMS['haloID']))[0])[0]/Ntracers))
+    halo0 = {}
+    wherehalo0 = np.where(SubHalo[whereGas]==int(TRACERSPARAMS['haloID']))[0]
+    tmp = _get_id(dataDict,wherehalo0)
+    halo0.update(tmp)
+    halo0data = (100.*(np.shape(halo0['trid'])[0]/Ntracers))
+    halo0.update({'data' : halo0data})
+    out.update({"%Halo0": halo0})
 
-    unbound.append(100.*(np.shape(np.where(SubHalo[whereGas]==-1)[0])[0]/Ntracers))
+    unbound = {}
+    whereunbound = np.where(SubHalo[whereGas]==-1)[0]
+    tmp = _get_id(dataDict,whereunbound)
+    unbound.update(tmp)
+    unbounddata = (100.*(np.shape(unbound['trid'])[0]/Ntracers))
+    unbound.update({'data' : unbounddata})
+    out.update({"%Unbound": unbound})
 
-    otherHalo.append(100.*(np.shape(np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
-        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==False))[0])[0]/Ntracers))
+    otherHalo = {}
+    whereotherHalo = np.where(SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
+        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==False))[0]
+    tmp = _get_id(dataDict,whereotherHalo)
+    otherHalo.update(tmp)
+    otherHalodata = (100.*(np.shape(otherHalo['trid'])[0]/Ntracers))
+    otherHalo.update({'data' : otherHalodata})
+    out.update({"%OtherHalo": otherHalo})
 
-    noHalo.append(100.*(np.shape(np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
-        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==True))[0])[0]/Ntracers))
+    noHalo = {}
+    wherenoHalo = np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
+        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==True))[0]
+    tmp = _get_id(dataDict,wherenoHalo)
+    noHalo.update(tmp)
+    noHalodata = (100.*(np.shape(noHalo['trid'])[0]/Ntracers))
+    noHalo.update({'data' : noHalodata})
+    out.update({"%NoHalo": noHalo})
 
-    stars.append(100.*(np.shape(np.where((dataDict[FullKey]['age']>=0)&(dataDict[FullKey]['type']==4))[0])[0]/NtracersAll))
+    stars = {}
+    wherestars = np.where((dataDict['age']>=0)&(dataDict['type']==4))[0]
+    tmp = _get_id(dataDict,wherestars)
+    stars.update(tmp)
+    starsdata = (100.*(np.shape(stars['trid'])[0]/NtracersAll))
+    stars.update({'data' : starsdata})
+    out.update({"%Stars": stars})
 
-    wind.append(100.*(np.shape(np.where((dataDict[FullKey]['age']<0)&(dataDict[FullKey]['type']==4))[0])[0]/NtracersAll))
+    wind = {}
+    wherewind = np.where((dataDict['age']<0)&(dataDict['type']==4))[0]
+    tmp = _get_id(dataDict,wherewind)
+    wind.update(tmp)
+    winddata = (100.*(np.shape(wind['trid'])[0]/NtracersAll))
+    wind.update({'data' : winddata})
+    out.update({"%Wind": wind})
 
-    ism.append(100.*(np.shape(np.where((dataDict[FullKey]['sfr']>0)&(dataDict[FullKey]['R']<=25.))[0])[0]/NtracersAll))
+    ism = {}
+    whereism = np.where((dataDict['sfr']>0)&(dataDict['R']<=25.))[0]
+    tmp = _get_id(dataDict,whereism)
+    ism.update(tmp)
+    ismdata = (100.*(np.shape(ism['trid'])[0]/Ntracers))
+    ism.update({'data' : ismdata})
+    out.update({"%ISM": ism})
 
-    inflow.append(100.*(np.shape(np.where(dataDict[FullKey]['vrad'][whereGas]<0.)[0])[0]/Ntracers))
-    outflow.append(100.*(np.shape(np.where(dataDict[FullKey]['vrad'][whereGas]>0.)[0])[0]/Ntracers))
 
-    cluster.append(ClusterID)
-    temp.append(T)
-    lookback.append(dataDict[FullKey]['Lookback'][0])
+    inflow = {}
+    whereinflow = np.where((dataDict['sfr']>0)&(dataDict['R']<=25.))[0]
+    tmp = _get_id(dataDict,whereinflow)
+    inflow.update(tmp)
+    inflowdata = (100.*(np.shape(inflow['trid'])[0]/Ntracers))
+    inflow.update({'data' : inflowdata})
+    out.update({"%Inflow": inflow})
 
-    return  lookback, temp, cluster ,tracers, halo0 , unbound, otherHalo ,noHalo , gas, stars, ism , wind ,inflow, outflow
+    outflow = {}
+    whereoutflow = np.where(dataDict['vrad'][whereGas]>0.)[0]
+    tmp = _get_id(dataDict,whereoutflow)
+    outflow.update(tmp)
+    outflowdata = (100.*(np.shape(outflow['trid'])[0]/Ntracers))
+    outflow.update({'data' : outflowdata})
+    out.update({"%Outflow": outflow})
 
-def fullData_analyse_cluster(dataDict,paramStatsDict,Tlst,snapsRange,ClusterID=-1):
-    dfList = []
+    aboveZ = {}
+    whereaboveZ = np.where(dataDict['gz'][whereGas]>=(1./3.)*Zsolar)[0]
+    tmp = _get_id(dataDict,whereaboveZ)
+    aboveZ.update(tmp)
+    aboveZdata = (100.*(np.shape(aboveZ['trid'])[0]/Ntracers))
+    aboveZ.update({'data' : aboveZdata})
+    out.update({"%Above1/3(Z_solar)": aboveZ})
+
+    belowZ = {}
+    wherebelowZ = np.where(dataDict['gz'][whereGas]<=(1./3.)*Zsolar)[0]
+    tmp = _get_id(dataDict,wherebelowZ)
+    belowZ.update(tmp)
+    belowZdata = (100.*(np.shape(belowZ['trid'])[0]/Ntracers))
+    belowZ.update({'data' : belowZdata})
+    out.update({"%Below1/3(Z_solar)": belowZ})
+
+    heating = {}
+    whereheating = np.where(np.isnan(dataDict['theat'][whereGas])==False)[0]
+    tmp = _get_id(dataDict,whereheating)
+    heating.update(tmp)
+    heatingdata = (100.*(np.shape(heating['trid'])[0]/Ntracers))
+    heating.update({'data' : heatingdata})
+    out.update({"%Heating": heating})
+
+    cooling = {}
+    wherecooling = np.where(np.isnan(dataDict['tcool'][whereGas])==False)[0]
+    tmp = _get_id(dataDict,wherecooling)
+    cooling.update(tmp)
+    coolingdata = (100.*(np.shape(cooling['trid'])[0]/Ntracers))
+    cooling.update({'data' : coolingdata})
+    out.update({"%Cooling": cooling})
+
+    out.update({"T": T})
+    out.update({'Lookback' : dataDict['Lookback']})
+
+    return  out
+#------------------------------------------------------------------------------#
+#               Analyse statistics for all T and snaps
+#------------------------------------------------------------------------------#
+def fullData_analyse(dataDict,Tlst,snapsRange):
     for T in Tlst:
         Tkey = f"T{T}"
-        innerDF = pd.DataFrame({})
-        lookback = []
-        temp = []
-        cluster = []
-        tracers = []
-        halo0 = []
-        unbound =[]
-        otherHalo =[]
-        noHalo = []
-        gas = []
-        stars = []
-        ism = []
-        wind = []
-        inflow = []
-        outflow = []
         for ii, snap in enumerate(snapsRange):
-            tmpsnapdataDict = {}
-            for k, v in dataDict[Tkey].items():
-                if(np.shape(np.shape(v))[0]>1):
-                    if(np.shape(v)[1]>1):
-                        tmpsnapdataDict.update({k : v[ii,:]})
-                    else:
-                        tmpsnapdataDict.update({k : v[ii]})
-                else:
-                    tmpsnapdataDict.update({k : v})
-            tmpsnapdataDict.update({'Ntracers' : [np.shape(tmpsnapdataDict['type'])[0]]})
-            snapdataDict = {Tkey : tmpsnapdataDict}
-            NtracersFull = dataDict[Tkey]['Ntracers'][ii]
-            # FullKey = (f"T{T}",f"{int(snap)}")
-            # tmplookback, tmptemp, tmpcluster ,tmptracers,\
-            #  tmphalo0 , tmpunbound, tmpotherHalo ,tmpnoHalo ,\
-            #   tmpgas, tmpstars, tmpism , tmpwind ,tmpinflow, tmpoutflow \
-            #   = _inner_analysis(dataDict,T,ClusterID, FullKey = FullKey)
-            tmplookback, tmptemp, tmpcluster ,tmptracers,\
-             tmphalo0 , tmpunbound, tmpotherHalo ,tmpnoHalo ,\
-              tmpgas, tmpstars, tmpism , tmpwind ,tmpinflow, tmpoutflow \
-              = _inner_analysis(snapdataDict,T,ClusterID=ClusterID, FullKey = Tkey, NtracersFull = NtracersFull)
-            lookback.append(tmplookback[0])
-            temp.append(tmptemp[0])
-            cluster.append(tmpcluster[0])
-            tracers.append(tmptracers[0])
-            halo0.append(tmphalo0[0])
-            unbound.append(tmpunbound[0])
-            otherHalo.append(tmpotherHalo[0])
-            noHalo.append(tmpnoHalo[0])
-            gas.append(tmpgas[0])
-            stars.append(tmpstars[0])
-            ism.append(tmpism[0])
-            wind.append(tmpwind[0])
-            inflow.append(tmpinflow[0])
-            outflow.append(tmpoutflow[0])
-
-        tmp = np.array([cluster,snapsRange.tolist(),lookback,temp,tracers,halo0,unbound,otherHalo,noHalo,gas,stars,wind,ism,inflow,outflow]).T
-        df = pd.DataFrame(tmp,columns=['Cluster','Snap','Lookback','T','%Tracers',\
-        '%Halo0','%Unbound','%OtherHalo','%NoHalo','%Gas',\
-        '%Stars','%Wind','%ISM','%Inflow','%Outflow'])
-        df = df.astype('float64')
-        df = df.astype({'Cluster' : 'int32', 'Snap': 'int32'})
-        innerDF= pd.concat([innerDF,df], axis=1, join='outer',sort=False)
-
-        df = pd.DataFrame(paramStatsDict[Tkey]).astype('float64')
-        innerDF = pd.concat([innerDF,df], axis=1, join='outer',sort=False)
-
-        dfList.append(innerDF)
-
-    StatsDF = pd.concat(dfList, axis=0, join='outer',sort=False, ignore_index=True)
-    return StatsDF
-
-def clusteredData_analyse_cluster(dataDict,dtwparamStatsDict,Tlst,snapsRange,FullDict,ignoreParams):
-
-    dfList = []
-    for T in Tlst:
-        Tkey = f"T{T}"
-        clusters =  np.unique(dataDict[Tkey]["clusters"])
-        for clusterID in clusters:
-
-            innerDF = pd.DataFrame({})
-            lookback = []
-            temp = []
-            cluster = []
-            tracers = []
-            halo0 = []
-            unbound =[]
-            otherHalo =[]
-            noHalo = []
-            gas = []
-            stars = []
-            ism = []
-            wind = []
-            inflow = []
-            outflow = []
-            for ii, snap in enumerate(snapsRange):
-                whereCluster = np.where(dataDict[Tkey]["clusters"][ii,:]==clusterID)[0]
-                tmpsnapdataDict = {}
-                for k, v in dataDict[Tkey].items():
-                    if(np.shape(np.shape(v))[0]>1):
-                        if(np.shape(v)[1]>1):
-                            tmpsnapdataDict.update({k : v[ii,:][whereCluster]})
-                        else:
-                            tmpsnapdataDict.update({k : v[ii]})
-                    else:
-                        tmpsnapdataDict.update({k : v})
-                tmpsnapdataDict.update({'Ntracers' : [np.shape(tmpsnapdataDict['type'])[0]]})
-                NtracersFull = FullDict[Tkey]['Ntracers'][ii]
-                snapdataDict = {Tkey : tmpsnapdataDict}
-                tmplookback, tmptemp, tmpcluster ,tmptracers,\
-                 tmphalo0 , tmpunbound, tmpotherHalo ,tmpnoHalo ,\
-                  tmpgas, tmpstars, tmpism , tmpwind ,tmpinflow, tmpoutflow \
-                  = _inner_analysis(snapdataDict,T,ClusterID=clusterID, FullKey = Tkey, NtracersFull = NtracersFull)
-                lookback.append(tmplookback[0])
-                temp.append(tmptemp[0])
-                cluster.append(tmpcluster[0])
-                tracers.append(tmptracers[0])
-                halo0.append(tmphalo0[0])
-                unbound.append(tmpunbound[0])
-                otherHalo.append(tmpotherHalo[0])
-                noHalo.append(tmpnoHalo[0])
-                gas.append(tmpgas[0])
-                stars.append(tmpstars[0])
-                ism.append(tmpism[0])
-                wind.append(tmpwind[0])
-                inflow.append(tmpinflow[0])
-                outflow.append(tmpoutflow[0])
-
-            tmp = np.array([cluster,snapsRange.tolist(),lookback,temp,tracers,halo0,unbound,otherHalo,noHalo,gas,stars,wind,ism,inflow,outflow]).T
-            df = pd.DataFrame(tmp,columns=['Cluster','Snap','Lookback','T','%Tracers',\
-            '%Halo0','%Unbound','%OtherHalo','%NoHalo','%Gas',\
-            '%Stars','%Wind','%ISM','%Inflow','%Outflow'])
-            df = df.astype('float64')
-            df = df.astype({'Cluster' : 'int32', 'Snap': 'int32'})
-            innerDF= pd.concat([innerDF,df], axis=1, join='outer',sort=False)
-
-            df = pd.DataFrame(dtwparamStatsDict[Tkey]).astype('float64')
-            innerDF = pd.concat([innerDF,df], axis=1, join='outer',sort=False)
-
-            dfList.append(innerDF)
-
-    StatsDF = pd.concat(dfList, axis=0, join='outer',sort=False, ignore_index=True)
-    return StatsDF
-
-clusteredDict = {}
-for T in Tlst:
-    key = f"T{T}"
-    print(key)
-    dictlist = []
-    for ii, snap in enumerate(snapsRange):
-        FullKey = (f"T{T}",f"{int(snap)}")
-        _, tridIndices,dtwIndices =  np.intersect1d(FlatDataDict[key]['trid'][ii,:],dtwDict[key]['trid'][:,ii],return_indices=True)
-        tmp = {}
-        for k,v in FlatDataDict[key].items():
-            tmp.update({k : v[ii,:][tridIndices]})
-        for k,v in dtwDict[key].items():
-            if(np.shape(np.shape(v))[0]>1):
-                tmp.update({k : v[:,ii][dtwIndices]})
-            else:
-                tmp.update({k : v})
-        FullKey = (f"T{T}",f"{int(snap)}")
-        tmp.update({'Lookback' : dataDict[FullKey]['Lookback']})
-        tmp.update({'Ntracers' : [np.shape(tmp['type'])[0]] })
-        dictlist.append(tmp)
-    final = {}
-    for d in dictlist:
-        for k,v in d.items():
-            if k in final:
-                entry = final[k]
-                entry.append(v)
-                final.update({k : entry})
-            else:
-                final.update({k : [v]})
-    for k,v in final.items():
-        final.update({k : np.array(v)})
-    clusteredDict.update({key : final})
-
-dtwparamStatsDict = {}
-for T in Tlst:
-    key = f"T{T}"
-    print(key)
-    dictlist = []
-    for ii, snap in enumerate(snapsRange):
-        FullKey = (f"T{T}",f"{int(snap)}")
-        _, tridIndices,_ =  np.intersect1d(dataDict[FullKey]['trid'],dtwDict[key]['trid'][:,ii],return_indices=True)
-        prids = dataDict[FullKey]['prid'][tridIndices]
-        _, dataIndices,_ =  np.intersect1d(prids,dataDict[FullKey]['id'],return_indices=True)
-        data = {}
-        for k, v in dataDict[FullKey].items():
-            if (k in saveParams+['mass']):
-                data.update({k : v[dataIndices]})
-        statsData = save_statistics(data, T, snap, TRACERSPARAMS, saveParams, DataSavepath=DataSavepath +"_DTW-Clusters" ,MiniDataPathSuffix=".csv",saveBool=True)
-        dictlist.append(statsData)
-    final = {}
-    for d in dictlist:
-        for k,v in d.items():
-            if k in final:
-                entry = final[k]
-                entry.append(v)
-                final.update({k : entry})
-            else:
-                final.update({k : [v]})
-    dtwparamStatsDict.update({key : final})
-
-for key, value in FlatDataDict.items():
-    tmp = []
-    for entry in value['type']:
-        tmp.append([np.shape(np.where(np.isnan(entry)==False)[0])[0]])
-    tmp = np.array(tmp)
-    FlatDataDict[key].update({'Ntracers' : tmp})
-    FlatDataDict[key].update({'Lookback' : clusteredDict[key]['Lookback']})
-
-savePath = DataSavepath + f"_DTW-Flat_Full-Data"+ DataSavepathSuffix
-print("\n" + f" Saving Merged Data as: "+ savePath)
-hdf5_save(savePath,clusteredDict)
-
-StatsDF = fullData_analyse_cluster(FlatDataDict,paramStatsDict,Tlst,snapsRange,ClusterID=-1)
-clusterStatsDF = clusteredData_analyse_cluster(clusteredDict,dtwparamStatsDict,Tlst,snapsRange,FullDict = FlatDataDict, ignoreParams=ignoreParams)
-
-finalStatsDF = pd.concat([StatsDF,clusterStatsDF], axis=0, join='outer',sort=False, ignore_index=True)
-
-savePath = DataSavepath + "_DTW-Cluster-Statistics-Table.csv"
-
-print("\n"+f"Saving Stats table .csv as {savePath}")
-
-finalStatsDF.to_csv(savePath, index=False)
+            FullKey = (Tkey , f"{int(snap)})
+            snapdataDict = dataDict[FullKey]
+            outinner  = _inner_analysis(snapdataDict)
+        out.update({FullKey : outinner})
+    return out
+################################################################################
+##                           MAIN PROGRAM                                   ####
+################################################################################
+print("Analyse Data!")
+statsDict = fullData_analyse(dataDict,Tlst,snapsRange)

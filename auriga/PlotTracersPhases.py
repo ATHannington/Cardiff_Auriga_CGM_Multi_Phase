@@ -37,9 +37,9 @@ colourmapMain = "viridis"
 
 #Paramters to weight the 2D hist by
 weightKeys = ['mass','tcool','gz']
-zlimDict = {'mass': {'zmin':3.5,'zmax':5.5},'tcool': {'zmin':-5.0,'zmax':5.0},'gz': {'zmin':-2.0,'zmax':2.0}}
-ymin = 1.0 #[Log10 T]
-ymax = 7.0 #[Log10 T]
+zlimDict = {'mass': {'zmin':4.0,'zmax':9.0},'tcool': {'zmin':-5.0,'zmax':4.0},'gz': {'zmin':-2.0,'zmax':2.0}}
+ymin = 3.5 #[Log10 T]
+ymax = 7.5 #[Log10 T]
 xmin = 1.0 #[Log10 rho_rhomean]
 xmax = 7.0 #[Log10 rho_rhomean]
 labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
@@ -170,8 +170,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         print("\n"+f"Starting weightKey {weightKey}")
         key = f"{int(snap)}"
 
-        FullDictKey = (f"T{float(Tlst[0])}", f"{int(TRACERSPARAMS['selectSnap'])}")
-        selectTime = abs(FullDict[FullDictKey]['Lookback'][0] - ageUniverse)
+        selectTime = abs(FullDict[(f"T{float(Tlst[0])}", f"{int(TRACERSPARAMS['selectSnap'])}")]['Lookback'][0] - ageUniverse)
+        currentTime = abs(FullDict[(f"T{float(Tlst[0])}", f"{int(snap)}")]['Lookback'][0] - ageUniverse)
 
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
 
@@ -214,10 +214,10 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         print(f"snapData Plot!")
 
-        xdataCells = np.log10(snapGasFinalDict[key]['rho_rhomean'][whereCellsGas])
-        ydataCells = np.log10(snapGasFinalDict[key]['T'][whereCellsGas])
-        massCells = np.log10(snapGasFinalDict[key]['mass'][whereCellsGas])
-        weightDataCells = np.log10(snapGasFinalDict[key][weightKey][whereCellsGas]) * massCells
+        xdataCells = snapGasFinalDict[key]['rho_rhomean'][whereCellsGas]
+        ydataCells = snapGasFinalDict[key]['T'][whereCellsGas]
+        massCells = snapGasFinalDict[key]['mass'][whereCellsGas]
+        weightDataCells = snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
 
         xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
         ydataCellsNotNaNorInf = np.where((np.isinf(ydataCells)==False) & (np.isnan(ydataCells)==False))[0]
@@ -235,16 +235,21 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         massCells  = massCells[whereData]
         weightDataCells = weightDataCells[whereData]
 
-        mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
-        histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
+        if (weightKey == 'mass'):
+            finalHistCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+        else:
+            mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+            histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
 
-        finalHistCells = histCells/mhistCells
+            finalHistCells = histCells/mhistCells
 
         finalHistCells = finalHistCells.T
+        finalHistCells[finalHistCells==0.0] = np.nan
+        finalHistCells = np.log10(finalHistCells)
 
         xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
-        img1 = ax[0].pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax)
+        img1 = ax[0].pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax, rasterized=True)
 
         # img1 = ax[0].imshow(finalHistCells,cmap=colourmap,vmin=zmin,vmax=zmax \
         # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
@@ -255,7 +260,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         ax[0].set_ylim(ymin,ymax)
         ax[0].set_xlim(xmin,xmax)
         cax1 = inset_axes(ax[0],width="5%",height="95%",loc='right')
-        fig.colorbar(img1, cax = cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize, rasterized=True)
+        fig.colorbar(img1, cax = cax1, orientation = 'vertical').set_label(label=labelDict[weightKey],size=fontsize)
         cax1.yaxis.set_ticks_position("left")
         cax1.yaxis.set_label_position("left")
         cax1.yaxis.label.set_color("black")
@@ -289,6 +294,18 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         massTracers  = massTracers[whereTracers]
         weightDataTracers = weightDataTracers[whereTracers]
 
+        if (weightKey == 'mass'):
+            finalHistTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
+        else:
+            mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
+            histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers)
+
+            finalHistTracers = histTracers/mhistTracers
+
+        finalHistTracers = finalHistTracers.T
+        finalHistTracers[finalHistTracers==0.0] = np.nan
+        finalHistTracers = np.log10(finalHistTracers)
+
         mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
         histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers)
 
@@ -316,15 +333,15 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         cax2.yaxis.label.set_color("black")
         cax2.tick_params(axis="y", colors="black",labelsize=fontsize)
 
-        ax[1].set_title(f"Selected Tracers Data" +\
-        r" - Selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
+        ax[1].set_title(f"Tracers Data, selected at {selectTime:3.2f} Gyr as being "\
+        r"$%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         "\n"+ r" and temperatures " + r"$ 10^{n \pm %05.2f} K $"%(TRACERSPARAMS['deltaT']))
         ax[1].set_aspect("auto")
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #   Full Figure: Finishing up
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
-        f" and selected at {selectTime:3.2f} Gyr",fontsize=fontsize)
+        f" and selected at {currentTime:3.2f} Gyr",fontsize=fontsize)
 
         plt.subplots_adjust(top=0.90, hspace = 0.01)
 
@@ -341,10 +358,6 @@ for snap in TRACERSPARAMS['phasesSnaps']:
                 currentAx = ax
             else:
                 currentAx = ax[ii]
-
-            selectTime = abs(FullDict[(f"T{float(T)}", f"{int(TRACERSPARAMS['selectSnap'])}")]['Lookback'][0] - ageUniverse)
-
-
 
             whereGas = np.where(FullDict[FullDictKey]['type'] == 0)
 
@@ -388,14 +401,17 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             massCells  = massCells[whereData]
             weightDataCells = weightDataCells[whereData]
 
-            mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
-            histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
+            if (weightKey == 'mass'):
+                finalHistCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+            else:
+                mhistCells,_,_=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
+                histCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=weightDataCells)
 
-            finalHistCells = histCells/mhistCells
+                finalHistCells = histCells/mhistCells
 
             finalHistCells = finalHistCells.T
-
-            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
+            finalHistCells[finalHistCells==0.0] = np.nan
+            finalHistCells = np.log10(finalHistCells)
 
             img1 = currentAx.pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax, rasterized=True)
             #
@@ -429,8 +445,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         #   Temperature Figure: Finishing up
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         fig.suptitle(f"Temperature Density Diagram, weighted by {weightKey}" +\
-        f" and selected at {selectTime:3.2f} Gyr"+"\n"+ f"Selected Tracers Data" +\
-        r" - Selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
+        f" at {currentTime:3.2f} Gyr"+"\n"+f"Tracers Data, selected at {selectTime:3.2f} Gyr as being"+\
+        r" $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
         r" and temperatures " + r"$ 10^{n \pm %05.2f} K $"%(TRACERSPARAMS['deltaT']),fontsize=fontsize)
 
         plt.subplots_adjust(top=0.90, hspace = 0.01)
