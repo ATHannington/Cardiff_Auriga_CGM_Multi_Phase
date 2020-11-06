@@ -176,35 +176,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), dpi = DPI)
 
         whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)[0]
-        whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)[0]
-
-        snapGasFinalDict[key]['age'][np.where(np.isnan(snapGasFinalDict[key]['age']) == True)[0]] = 0.
-        TracersFinalDict[key]['age'][np.where(np.isnan(TracersFinalDict[key]['age']) == True)[0]] = 0.
-
-        whereCellsStars = np.where((snapGasFinalDict[key]['type'] == 4)&\
-                              (snapGasFinalDict[key]['age'] >= 0.))[0]
-
-        whereTracersStars = np.where((TracersFinalDict[key]['type'] == 4)&\
-                  (TracersFinalDict[key]['age'] >= 0.))[0]
-
-        whereCellsGas = np.where(snapGasFinalDict[key]['type'] == 0)[0]
 
         whereTracersGas = np.where(TracersFinalDict[key]['type'] == 0)[0]
-
-        NGasCells = len(snapGasFinalDict[key]['type'][whereCellsGas])
-        NStarsCells = len(snapGasFinalDict[key]['type'][whereCellsStars])
-        NtotCells = NGasCells + NStarsCells
-
-        #Percentage in stars
-        percentageCells = (float(NStarsCells)/(float(NtotCells)))*100.
-
-        NGasTracers = len(TracersFinalDict[key]['type'][whereTracersGas])
-        NStarsTracers = len(TracersFinalDict[key]['type'][whereTracersStars])
-        NtotTracers = NGasTracers + NStarsTracers
-
-        #Percentage in stars
-        percentageTracers = (float(NStarsTracers)/(float(NtotTracers)))*100.
-
 
         zmin = zlimDict[weightKey]['zmin']
         zmax = zlimDict[weightKey]['zmax']
@@ -214,26 +187,26 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
         print(f"snapData Plot!")
 
-        xdataCells = snapGasFinalDict[key]['rho_rhomean'][whereCellsGas]
-        ydataCells = snapGasFinalDict[key]['T'][whereCellsGas]
+        xdataCells = np.log10(snapGasFinalDict[key]['rho_rhomean'][whereCellsGas])
+        ydataCells = np.log10(snapGasFinalDict[key]['T'][whereCellsGas])
         massCells = snapGasFinalDict[key]['mass'][whereCellsGas]
         weightDataCells = snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
 
-        xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
-        ydataCellsNotNaNorInf = np.where((np.isinf(ydataCells)==False) & (np.isnan(ydataCells)==False))[0]
-        weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
-        massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
-
-
-        where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
-        weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
-
-        whereData = np.array(reduce(np.intersect1d,where_list))
-
-        xdataCells = xdataCells[whereData]
-        ydataCells = ydataCells[whereData]
-        massCells  = massCells[whereData]
-        weightDataCells = weightDataCells[whereData]
+        # xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
+        # ydataCellsNotNaNorInf = np.where((np.isinf(ydataCells)==False) & (np.isnan(ydataCells)==False))[0]
+        # weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
+        # massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
+        #
+        #
+        # where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
+        # weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
+        #
+        # whereData = np.array(reduce(np.intersect1d,where_list))
+        #
+        # xdataCells = xdataCells[whereData]
+        # ydataCells = ydataCells[whereData]
+        # massCells  = massCells[whereData]
+        # weightDataCells = weightDataCells[whereData]
 
         if (weightKey == 'mass'):
             finalHistCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
@@ -243,9 +216,9 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
             finalHistCells = histCells/mhistCells
 
-        finalHistCells = finalHistCells.T
         finalHistCells[finalHistCells==0.0] = np.nan
         finalHistCells = np.log10(finalHistCells)
+        finalHistCells = finalHistCells.T
 
         xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
@@ -276,23 +249,23 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
         xdataTracers = np.log10(TracersFinalDict[key]['rho_rhomean'][whereTracersGas])
         ydataTracers = np.log10(TracersFinalDict[key]['T'][whereTracersGas])
-        massTracers = np.log10(TracersFinalDict[key]['mass'][whereTracersGas])
-        weightDataTracers = np.log10(TracersFinalDict[key][weightKey][whereTracersGas]) * massTracers
+        massTracers = TracersFinalDict[key]['mass'][whereTracersGas]
+        weightDataTracers = TracersFinalDict[key][weightKey][whereTracersGas] * massTracers
 
-        xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]
-        ydataTracersNotNaNorInf = np.where((np.isinf(ydataTracers)==False) & (np.isnan(ydataTracers)==False))[0]
-        weightDataTracersNotNaNorInf = np.where((np.isinf(weightDataTracers)==False) & (np.isnan(weightDataTracers)==False))[0]
-        massTracersNotNaNorInf = np.where((np.isinf(massTracers)==False) & (np.isnan(massTracers)==False))[0]
-
-        where_list = [xdataTracersNotNaNorInf.tolist(),ydataTracersNotNaNorInf.tolist(),\
-        weightDataTracersNotNaNorInf.tolist(),massTracersNotNaNorInf.tolist()]
-
-        whereTracers = np.array(reduce(np.intersect1d,where_list))
-
-        xdataTracers = xdataTracers[whereTracers]
-        ydataTracers = ydataTracers[whereTracers]
-        massTracers  = massTracers[whereTracers]
-        weightDataTracers = weightDataTracers[whereTracers]
+        # xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]
+        # ydataTracersNotNaNorInf = np.where((np.isinf(ydataTracers)==False) & (np.isnan(ydataTracers)==False))[0]
+        # weightDataTracersNotNaNorInf = np.where((np.isinf(weightDataTracers)==False) & (np.isnan(weightDataTracers)==False))[0]
+        # massTracersNotNaNorInf = np.where((np.isinf(massTracers)==False) & (np.isnan(massTracers)==False))[0]
+        #
+        # where_list = [xdataTracersNotNaNorInf.tolist(),ydataTracersNotNaNorInf.tolist(),\
+        # weightDataTracersNotNaNorInf.tolist(),massTracersNotNaNorInf.tolist()]
+        #
+        # whereTracers = np.array(reduce(np.intersect1d,where_list))
+        #
+        # xdataTracers = xdataTracers[whereTracers]
+        # ydataTracers = ydataTracers[whereTracers]
+        # massTracers  = massTracers[whereTracers]
+        # weightDataTracers = weightDataTracers[whereTracers]
 
         if (weightKey == 'mass'):
             finalHistTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
@@ -302,15 +275,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
             finalHistTracers = histTracers/mhistTracers
 
-        finalHistTracers = finalHistTracers.T
         finalHistTracers[finalHistTracers==0.0] = np.nan
         finalHistTracers = np.log10(finalHistTracers)
-
-        mhistTracers,_,_=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=massTracers)
-        histTracers,xedgeTracers,yedgeTracers=np.histogram2d(xdataTracers,ydataTracers,bins=Nbins,weights=weightDataTracers)
-
-        finalHistTracers = histTracers/mhistTracers
-
         finalHistTracers = finalHistTracers.T
 
         xtracers, ytracers = np.meshgrid(xedgeTracers, yedgeTracers)
@@ -359,21 +325,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             else:
                 currentAx = ax[ii]
 
-            whereGas = np.where(FullDict[FullDictKey]['type'] == 0)
-
-            FullDict[FullDictKey]['age'][np.where(np.isnan(FullDict[FullDictKey]['age']) == True)] = 0.
-
-            whereStars = np.where((FullDict[FullDictKey]['type'] == 4)&\
-                                  (FullDict[FullDictKey]['type'] >= 0.))[0]
-
             whereGas = np.where(FullDict[FullDictKey]['type'] == 0)[0]
 
-            NGasCells = len(FullDict[FullDictKey]['type'][whereGas])
-            NStarsCells = len(FullDict[FullDictKey]['type'][whereStars])
-            NtotCells = NGasCells + NStarsCells
-
-            #Percentage in stars
-            percentageCells = (float(NStarsCells)/(float(NtotCells)))*100.
 
 
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -383,23 +336,23 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
             xdataCells = np.log10(FullDict[FullDictKey]['rho_rhomean'][whereGas])
             ydataCells = np.log10(FullDict[FullDictKey]['T'][whereGas])
-            massCells = np.log10(FullDict[FullDictKey]['mass'][whereGas]) #10^10Msol -> Msol
-            weightDataCells = np.log10(FullDict[FullDictKey][weightKey][whereGas]) * massCells
+            massCells = FullDict[FullDictKey]['mass'][whereGas]
+            weightDataCells = FullDict[FullDictKey][weightKey][whereGas] * massCells
 
-            xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
-            ydataCellsNotNaNorInf = np.where((np.isinf(ydataCells)==False) & (np.isnan(ydataCells)==False))[0]
-            weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
-            massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
+            # xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
+            # ydataCellsNotNaNorInf = np.where((np.isinf(ydataCells)==False) & (np.isnan(ydataCells)==False))[0]
+            # weightDataCellsNotNaNorInf = np.where((np.isinf(weightDataCells)==False) & (np.isnan(weightDataCells)==False))[0]
+            # massCellsNotNaNorInf = np.where((np.isinf(massCells)==False) & (np.isnan(massCells)==False))[0]
+            #
+            # where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
+            # weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
+            #
+            # whereData = np.array(reduce(np.intersect1d,where_list))
 
-            where_list = [xdataCellsNotNaNorInf.tolist(),ydataCellsNotNaNorInf.tolist(),\
-            weightDataCellsNotNaNorInf.tolist(),massCellsNotNaNorInf.tolist()]
-
-            whereData = np.array(reduce(np.intersect1d,where_list))
-
-            xdataCells = xdataCells[whereData]
-            ydataCells = ydataCells[whereData]
-            massCells  = massCells[whereData]
-            weightDataCells = weightDataCells[whereData]
+            # xdataCells = xdataCells[whereData]
+            # ydataCells = ydataCells[whereData]
+            # massCells  = massCells[whereData]
+            # weightDataCells = weightDataCells[whereData]
 
             if (weightKey == 'mass'):
                 finalHistCells,xedgeCells,yedgeCells=np.histogram2d(xdataCells,ydataCells,bins=Nbins,weights=massCells)
@@ -409,9 +362,11 @@ for snap in TRACERSPARAMS['phasesSnaps']:
 
                 finalHistCells = histCells/mhistCells
 
-            finalHistCells = finalHistCells.T
             finalHistCells[finalHistCells==0.0] = np.nan
             finalHistCells = np.log10(finalHistCells)
+            finalHistCells = finalHistCells.T
+
+            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
             img1 = currentAx.pcolormesh(xcells, ycells, finalHistCells, cmap=colourmap,vmin=zmin,vmax=zmax, rasterized=True)
             #
