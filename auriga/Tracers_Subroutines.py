@@ -1489,7 +1489,7 @@ def flatten_wrt_T(dataDict,snapRange,TRACERSPARAMS):
     return flattened_dict
 #------------------------------------------------------------------------------#
 
-def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
+def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix):
 
     flattened_dict = {}
     snapRange = [xx for xx in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)]
@@ -1534,6 +1534,12 @@ def flatten_wrt_time(targetT,dataDict,TRACERSPARAMS,saveParams):
     # for key,dict in flattened_dict.items():
     #     tmp = delete_nan_inf_axis(dict,axis=0)
     #     final_dict.update({key : tmp})
+
+    savePath = DataSavepath + f"_T{targetT}_flat-wrt-time"+ DataSavepathSuffix
+
+    print("\n" + f": Saving flat data as: "+ savePath)
+
+    hdf5_save(savePath,flattened_dict)
 
     return flattened_dict
 #------------------------------------------------------------------------------#

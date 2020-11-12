@@ -44,13 +44,16 @@ dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
 snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
 
+loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
+
+FlatDataDict = hdf5_load(loadPath)
 ################################################################################
 ##                           Definitions                                    ####
 ################################################################################
 #------------------------------------------------------------------------------#
-#                        Get id trid prid data
+#                    Get id trid prid data from where Cells
 #------------------------------------------------------------------------------#
-def _get_id(dataDict,whereEntries):
+def _get_id_prid_trid_where(dataDict,whereEntries):
 
     id = dataDict['id'][whereEntries]
 
@@ -60,6 +63,25 @@ def _get_id(dataDict,whereEntries):
     trid = dataDict['trid'][prid_ind]
 
     return {'id': id, 'prid': prid, 'trid' : trid}
+#------------------------------------------------------------------------------#
+#                    Get id data from single trid
+#------------------------------------------------------------------------------#
+
+def _get_id_from_single_trid(dataDict,trid):
+
+    prid_ind = np.where(dataDict['trid']==trid)
+    prid = dataDict['prid'][prid_ind]
+
+    id = np.where(dataDict['id']==prid)
+
+    return id
+#------------------------------------------------------------------------------#
+#
+#------------------------------------------------------------------------------#
+
+def flat_analyse(FlatDataDict):
+
+    return
 #------------------------------------------------------------------------------#
 #               Analyse log10(T) and snap specfifc statistics
 #------------------------------------------------------------------------------#
@@ -78,7 +100,7 @@ def _inner_analysis(dataDict):
 
     gas = {}
     whereGas = np.where(dataDict['type']==0)[0]
-    tmp = _get_id(dataDict,whereGas)
+    tmp = _get_id_prid_trid_where(dataDict,whereGas)
     gas.update(tmp)
     gasdata = (100.*(np.shape(gas['trid'])[0]/NtracersAll))
     gas.update({'data' : gasdata})
@@ -90,7 +112,7 @@ def _inner_analysis(dataDict):
 
     halo0 = {}
     wherehalo0 = np.where(SubHalo[whereGas]==int(TRACERSPARAMS['haloID']))[0]
-    tmp = _get_id(dataDict,wherehalo0)
+    tmp = _get_id_prid_trid_where(dataDict,wherehalo0)
     halo0.update(tmp)
     halo0data = (100.*(np.shape(halo0['trid'])[0]/Ntracers))
     halo0.update({'data' : halo0data})
@@ -98,7 +120,7 @@ def _inner_analysis(dataDict):
 
     unbound = {}
     whereunbound = np.where(SubHalo[whereGas]==-1)[0]
-    tmp = _get_id(dataDict,whereunbound)
+    tmp = _get_id_prid_trid_where(dataDict,whereunbound)
     unbound.update(tmp)
     unbounddata = (100.*(np.shape(unbound['trid'])[0]/Ntracers))
     unbound.update({'data' : unbounddata})
@@ -107,7 +129,7 @@ def _inner_analysis(dataDict):
     otherHalo = {}
     whereotherHalo = np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
         &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==False)) [0]
-    tmp = _get_id(dataDict,whereotherHalo)
+    tmp = _get_id_prid_trid_where(dataDict,whereotherHalo)
     otherHalo.update(tmp)
     otherHalodata = (100.*(np.shape(otherHalo['trid'])[0]/Ntracers))
     otherHalo.update({'data' : otherHalodata})
@@ -116,7 +138,7 @@ def _inner_analysis(dataDict):
     noHalo = {}
     wherenoHalo = np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
         &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==True))[0]
-    tmp = _get_id(dataDict,wherenoHalo)
+    tmp = _get_id_prid_trid_where(dataDict,wherenoHalo)
     noHalo.update(tmp)
     noHalodata = (100.*(np.shape(noHalo['trid'])[0]/Ntracers))
     noHalo.update({'data' : noHalodata})
@@ -124,7 +146,7 @@ def _inner_analysis(dataDict):
 
     stars = {}
     wherestars = np.where((dataDict['age']>=0)&(dataDict['type']==4))[0]
-    tmp = _get_id(dataDict,wherestars)
+    tmp = _get_id_prid_trid_where(dataDict,wherestars)
     stars.update(tmp)
     starsdata = (100.*(np.shape(stars['trid'])[0]/NtracersAll))
     stars.update({'data' : starsdata})
@@ -132,7 +154,7 @@ def _inner_analysis(dataDict):
 
     wind = {}
     wherewind = np.where((dataDict['age']<0)&(dataDict['type']==4))[0]
-    tmp = _get_id(dataDict,wherewind)
+    tmp = _get_id_prid_trid_where(dataDict,wherewind)
     wind.update(tmp)
     winddata = (100.*(np.shape(wind['trid'])[0]/NtracersAll))
     wind.update({'data' : winddata})
@@ -140,7 +162,7 @@ def _inner_analysis(dataDict):
 
     ism = {}
     whereism = np.where((dataDict['sfr']>0)&(dataDict['R']<=25.))[0]
-    tmp = _get_id(dataDict,whereism)
+    tmp = _get_id_prid_trid_where(dataDict,whereism)
     ism.update(tmp)
     ismdata = (100.*(np.shape(ism['trid'])[0]/Ntracers))
     ism.update({'data' : ismdata})
@@ -149,7 +171,7 @@ def _inner_analysis(dataDict):
 
     inflow = {}
     whereinflow = np.where(dataDict['vrad'][whereGas]<0.)[0]
-    tmp = _get_id(dataDict,whereinflow)
+    tmp = _get_id_prid_trid_where(dataDict,whereinflow)
     inflow.update(tmp)
     inflowdata = (100.*(np.shape(inflow['trid'])[0]/Ntracers))
     inflow.update({'data' : inflowdata})
@@ -157,7 +179,7 @@ def _inner_analysis(dataDict):
 
     outflow = {}
     whereoutflow = np.where(dataDict['vrad'][whereGas]>0.)[0]
-    tmp = _get_id(dataDict,whereoutflow)
+    tmp = _get_id_prid_trid_where(dataDict,whereoutflow)
     outflow.update(tmp)
     outflowdata = (100.*(np.shape(outflow['trid'])[0]/Ntracers))
     outflow.update({'data' : outflowdata})
@@ -165,7 +187,7 @@ def _inner_analysis(dataDict):
 
     aboveZ = {}
     whereaboveZ = np.where(dataDict['gz'][whereGas]>(0.75))[0]
-    tmp = _get_id(dataDict,whereaboveZ)
+    tmp = _get_id_prid_trid_where(dataDict,whereaboveZ)
     aboveZ.update(tmp)
     aboveZdata = (100.*(np.shape(aboveZ['trid'])[0]/Ntracers))
     aboveZ.update({'data' : aboveZdata})
@@ -173,7 +195,7 @@ def _inner_analysis(dataDict):
 
     belowZ = {}
     wherebelowZ = np.where(dataDict['gz'][whereGas]<(0.75))[0]
-    tmp = _get_id(dataDict,wherebelowZ)
+    tmp = _get_id_prid_trid_where(dataDict,wherebelowZ)
     belowZ.update(tmp)
     belowZdata = (100.*(np.shape(belowZ['trid'])[0]/Ntracers))
     belowZ.update({'data' : belowZdata})
@@ -181,7 +203,7 @@ def _inner_analysis(dataDict):
 
     heating = {}
     whereheating = np.where(np.isnan(dataDict['theat'][whereGas])==False)[0]
-    tmp = _get_id(dataDict,whereheating)
+    tmp = _get_id_prid_trid_where(dataDict,whereheating)
     heating.update(tmp)
     heatingdata = (100.*(np.shape(heating['trid'])[0]/Ntracers))
     heating.update({'data' : heatingdata})
@@ -189,7 +211,7 @@ def _inner_analysis(dataDict):
 
     cooling = {}
     wherecooling = np.where(np.isnan(dataDict['tcool'][whereGas])==False)[0]
-    tmp = _get_id(dataDict,wherecooling)
+    tmp = _get_id_prid_trid_where(dataDict,wherecooling)
     cooling.update(tmp)
     coolingdata = (100.*(np.shape(cooling['trid'])[0]/Ntracers))
     cooling.update({'data' : coolingdata})
@@ -230,6 +252,17 @@ def fullData_analyse(dataDict,Tlst,snapsRange):
 
     outDF = pd.concat(dflist, axis=0, join='outer',sort=False, ignore_index=True)
     return out, outDF
+#------------------------------------------------------------------------------#
+#                        Get id trid prid data
+#------------------------------------------------------------------------------#
+
+
+    prid_ind = np.where(dataDict[key]['trid'] == trid)
+    prid = dataDict[key]['prid'][prid_ind]
+    cell_ind = np.where(dataDict[key]['id'] == prid)
+
+    dataDict[key][''][cell_ind] >=<! cond
+
 ################################################################################
 ##                           MAIN PROGRAM                                   ####
 ################################################################################
