@@ -17,7 +17,7 @@ ageUniverse = 13.77 #[Gyr]
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 DataSavepathSuffix = f".h5"
-
+singleVals = ["T","Snap","Lookback"]
 #==============================================================================#
 #       Chemical Properties
 #==============================================================================#
@@ -105,8 +105,8 @@ def _inner_analysis(dataDict):
     out.update({"%Unbound": unbound})
 
     otherHalo = {}
-    whereotherHalo = np.where(SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
-        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==False))[0]
+    whereotherHalo = np.where((SubHalo[whereGas]!=int(TRACERSPARAMS['haloID']))\
+        &(SubHalo[whereGas]!=-1)&(np.isnan(SubHalo[whereGas])==False)) [0]
     tmp = _get_id(dataDict,whereotherHalo)
     otherHalo.update(tmp)
     otherHalodata = (100.*(np.shape(otherHalo['trid'])[0]/Ntracers))
@@ -148,7 +148,7 @@ def _inner_analysis(dataDict):
 
 
     inflow = {}
-    whereinflow = np.where((dataDict['sfr']>0)&(dataDict['R']<=25.))[0]
+    whereinflow = np.where(dataDict['vrad'][whereGas]<0.)[0]
     tmp = _get_id(dataDict,whereinflow)
     inflow.update(tmp)
     inflowdata = (100.*(np.shape(inflow['trid'])[0]/Ntracers))
@@ -164,20 +164,20 @@ def _inner_analysis(dataDict):
     out.update({"%Outflow": outflow})
 
     aboveZ = {}
-    whereaboveZ = np.where(dataDict['gz'][whereGas]>=(1./3.)*Zsolar)[0]
+    whereaboveZ = np.where(dataDict['gz'][whereGas]>(0.75))[0]
     tmp = _get_id(dataDict,whereaboveZ)
     aboveZ.update(tmp)
     aboveZdata = (100.*(np.shape(aboveZ['trid'])[0]/Ntracers))
     aboveZ.update({'data' : aboveZdata})
-    out.update({"%Above1/3(Z_solar)": aboveZ})
+    out.update({"%Above3/4(Z_solar)": aboveZ})
 
     belowZ = {}
-    wherebelowZ = np.where(dataDict['gz'][whereGas]<=(1./3.)*Zsolar)[0]
+    wherebelowZ = np.where(dataDict['gz'][whereGas]<(0.75))[0]
     tmp = _get_id(dataDict,wherebelowZ)
     belowZ.update(tmp)
     belowZdata = (100.*(np.shape(belowZ['trid'])[0]/Ntracers))
     belowZ.update({'data' : belowZdata})
-    out.update({"%Below1/3(Z_solar)": belowZ})
+    out.update({"%Below3/4(Z_solar)": belowZ})
 
     heating = {}
     whereheating = np.where(np.isnan(dataDict['theat'][whereGas])==False)[0]
@@ -195,7 +195,6 @@ def _inner_analysis(dataDict):
     cooling.update({'data' : coolingdata})
     out.update({"%Cooling": cooling})
 
-    out.update({"T": T})
     out.update({'Lookback' : dataDict['Lookback']})
 
     return  out
@@ -203,16 +202,204 @@ def _inner_analysis(dataDict):
 #               Analyse statistics for all T and snaps
 #------------------------------------------------------------------------------#
 def fullData_analyse(dataDict,Tlst,snapsRange):
+    dflist = []
+    out ={}
     for T in Tlst:
         Tkey = f"T{T}"
+        print(Tkey)
+        tmp = {}
         for ii, snap in enumerate(snapsRange):
-            FullKey = (Tkey , f"{int(snap)})
+            print(f"{int(snap)}")
+            FullKey = (Tkey , f"{int(snap)}")
             snapdataDict = dataDict[FullKey]
             outinner  = _inner_analysis(snapdataDict)
-        out.update({FullKey : outinner})
-    return out
+            outinner.update({"T": T})
+            outinner.update({"Snap": int(snap)})
+
+            for key, value in outinner.items():
+                if (key == "T"):
+                    tmp.update({"T" : value})
+                elif (key == "Lookback"):
+                    tmp.update({"Lookback" : value})
+                elif (key == "Snap"):
+                    tmp.update({"Snap" : value})
+                else:
+                    tmp.update({key : value["data"]})
+            dflist.append(pd.DataFrame.from_dict(tmp))
+            out.update({FullKey : outinner})
+
+    outDF = pd.concat(dflist, axis=0, join='outer',sort=False, ignore_index=True)
+    return out, outDF
 ################################################################################
 ##                           MAIN PROGRAM                                   ####
 ################################################################################
 print("Analyse Data!")
-statsDict = fullData_analyse(dataDict,Tlst,snapsRange)
+#------------------------------------------------------------------------------#
+#               Analyse statistics for all T and snaps
+#------------------------------------------------------------------------------#
+statsDict, statsDF = fullData_analyse(dataDict,Tlst,snapsRange)
+
+#Add Stats of medians and percentiles
+tmplist = []
+for T in Tlst:
+     tmp = Statistics_hdf5_load(T,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
+     df = pd.DataFrame(tmp).astype('float64')
+     tmplist.append(df)
+tmpDF = pd.concat(tmplist, axis=0, join='outer',sort=False, ignore_index=True)
+finalDF = pd.concat([statsDF,tmpDF], axis=1, join='outer',sort=False)
+
+#Sort Column Order
+cols = list(finalDF.columns.values)
+for item in singleVals:
+    cols.remove(item)
+cols = singleVals + cols
+finalDF = finalDF[cols]
+finalDF = finalDF.astype({"Snap" : int32, "T": float64})
+
+#Save
+savePath = DataSavepath + "_Statistics-Table.csv"
+
+print("\n"+f"Saving Stats table .csv as {savePath}")
+
+finalDF.to_csv(savePath,index=False)
+
+# #------------------------------------------------------------------------------#
+# #               Analyse Tracers Continuously Exhibiting Feature
+# #                   Since SnapMin
+# #------------------------------------------------------------------------------#
+# final = []
+# for param in statsDict[(f"T{Tlst[0]}", f"{int(TRACERSPARAMS['snapMin'])}")].keys():
+#     if param not in singleVals:
+#         outer = []
+#         for T in Tlst:
+#             key = (f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")
+#             trids = statsDict[key][param]['trid']
+#             ntracers = np.shape(trids)[0]
+#             tmp = []
+#             lookback = []
+#             for ii, snap in enumerate(snapsRange):
+#                 key = (f"T{T}", f"{int(snap)}")
+#                 currentTrids = statsDict[key][param]['trid']
+#
+#                 intersectTrids = np.intersect1d(currentTrids,trids)
+#                 if (ntracers >0 ):
+#                     percentage = (100.*np.shape(intersectTrids)[0]/ntracers)
+#                 else:
+#                     percentage = 0.
+#                 tmp.append(percentage)
+#                 lookback.append(statsDict[key]['Lookback'][0])
+#
+#             Tdat = [float(T) for snap in snapsRange]
+#             outer.append(pd.DataFrame({f"T" : Tdat, "Snap" : snapsRange, "Lookback" : np.array(lookback), param : np.array(tmp)}))
+#         final.append(pd.concat(outer,axis=0, join='outer', ignore_index=True))
+# continuousDF = pd.concat(final, axis=1, join='outer',sort=False)
+# continuousDF = continuousDF.loc[:,~continuousDF.columns.duplicated()]
+#
+# savePath = DataSavepath + f"_Continuous-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
+#
+# print("\n"+f"Saving Stats table .csv as {savePath}")
+#
+# continuousDF.to_csv(savePath,index=False)
+#
+# #------------------------------------------------------------------------------#
+# #               Analyse Tracers Moving from Gas to Gas, ISM, Wind, Stars
+# #------------------------------------------------------------------------------#
+# final = []
+# for T in Tlst:
+#     key = (f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")
+#     trids = statsDict[key]['%Gas']['trid']
+#     ntracers = np.shape(trids)[0]
+#     outer = []
+#     for param in ['%Gas','%Stars','%ISM', '%Wind']:
+#         tmp = []
+#         lookback = []
+#         for ii, snap in enumerate(snapsRange):
+#             key = (f"T{T}", f"{int(snap)}")
+#             currentTrids = statsDict[key][param]['trid']
+#
+#             intersectTrids = np.intersect1d(currentTrids,trids)
+#             if (ntracers >0 ):
+#                 percentage = (100.*np.shape(intersectTrids)[0]/ntracers)
+#             else:
+#                 percentage = 0.
+#             tmp.append(percentage)
+#             lookback.append(statsDict[key]['Lookback'][0])
+#
+#         Tdat = [float(T) for snap in snapsRange]
+#         outer.append(pd.DataFrame({f"T" : Tdat, "Snap" : snapsRange, "Lookback" : np.array(lookback), param : np.array(tmp)}))
+#     final.append(pd.concat(outer,axis=1, join='outer'))
+# gasDF = pd.concat(final, axis=0, join='outer',sort=False, ignore_index=True)
+# gasDF = gasDF.loc[:,~gasDF.columns.duplicated()]
+#
+# savePath = DataSavepath + f"_Gas-phase-change-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
+#
+# print("\n"+f"Saving Stats table .csv as {savePath}")
+#
+# gasDF.to_csv(savePath,index=False)
+#
+# #------------------------------------------------------------------------------#
+# #               Analyse Tracers moving from OtherHalo/Unbound/IGM Gas to ISM
+# #------------------------------------------------------------------------------#
+#
+# otherHalo = []
+# noHalo = []
+# unbound = []
+# halo0ISM = []
+# halo0NonISM = []
+# for T in Tlst:
+#     tridsGas = statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Gas']['trid']
+#     tridsISM = statsDict[(f"T{T}", f"{int(snapsRange[-1])}")]['%ISM']['trid']
+#     gastoISMintersectTrids = np.intersect1d(tridsGas,tridsISM)
+#     # tridsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['trid']
+#     # _, trid_ind, _ = np.intersect1d(tridsStart,gastoISMintersectTrids, return_indices = True)
+#     # pridsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['prid'][trid_ind]
+#     # idsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['id']
+#     # _, id_ind, _ = np.intersect1d(pridsStart,idsStart, return_indices = True)
+#     # RStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['R'][id_ind]
+#     # SubHaloIDStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['SubHaloID'][id_ind]
+#         #------------------------------------------------------------------------------#
+#         #               Analyse Tracers moving from otherHalo Gas to ISM
+#         #------------------------------------------------------------------------------#
+#
+#     otherHaloStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%OtherHalo']['trid'],gastoISMintersectTrids)
+#     otherHaloToISMPercentage = 100.* (np.shape(otherHaloStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
+#     otherHalo.append(float(otherHaloToISMPercentage))
+#         #------------------------------------------------------------------------------#
+#         #               Analyse Tracers moving from IGM Gas to ISM
+#         #------------------------------------------------------------------------------#
+#
+#     noHaloStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%NoHalo']['trid'],gastoISMintersectTrids)
+#     noHaloToISMPercentage = 100.* (np.shape(noHaloStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
+#     noHalo.append(float(noHaloToISMPercentage))
+#
+#         #------------------------------------------------------------------------------#
+#         #               Analyse Tracers moving from Unbound Gas to ISM
+#         #------------------------------------------------------------------------------#
+#
+#     UnboundStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Unbound']['trid'],gastoISMintersectTrids)
+#     UnboundToISMPercentage = 100.* (np.shape(UnboundStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
+#     unbound.append(float(UnboundToISMPercentage))
+#
+#         #------------------------------------------------------------------------------#
+#         #               Analyse Tracers moving from Halo 0 ISM Gas back to ISM
+#         #------------------------------------------------------------------------------#
+#
+#     Halo0Start = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Halo0']['trid'],gastoISMintersectTrids)
+#     Halo0ISMStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%ISM']['trid'],Halo0Start)
+#     Halo0ISMToISMPercentage = 100.* (np.shape(Halo0ISMStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
+#     halo0ISM.append(float(Halo0ISMToISMPercentage))
+#         #------------------------------------------------------------------------------#
+#
+#         #               Analyse Tracers moving from Halo 0 NON-ISM Gas back to ISM
+#         #------------------------------------------------------------------------------#
+#     Halo0NonISMStart = np.where(np.isin(gastoISMintersectTrids,statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%ISM']['trid'])==False)[0]
+#     Halo0NonISMToISMPercentage = 100.* (np.shape(Halo0NonISMStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
+#     halo0NonISM.append(float(Halo0NonISMToISMPercentage))
+# gasToismDF = pd.DataFrame({"T" : np.array(Tlst).astype('float64'), "%OtherHalo-To-ISM" : otherHalo, "%NoHalo-To-ISM" : noHalo,\
+#  "%Unbound-To-ISM" : unbound, "%Halo0-ISM-To-ISM" : halo0ISM, "%Halo0-NonISM-To-ISM" : halo0NonISM })
+#
+# savePath = DataSavepath + f"_Gas-to-ISM-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
+#
+# print("\n"+f"Saving Stats table .csv as {savePath}")
+#
+# gasToismDF.to_csv(savePath,index=False)
