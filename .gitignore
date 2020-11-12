@@ -1,5 +1,5 @@
 ###Ignore proprietary dirs###
-
+*/1314459/*
 ###Ignore Files of given Type: ###
 
 ###Output Data###
@@ -10,6 +10,12 @@
 *.png
 *.jpg
 *.pdf
+
+###Zip###
+*.zip
+
+###Video###
+*.mp4
 
 ###Compiled Files###
 *.o
