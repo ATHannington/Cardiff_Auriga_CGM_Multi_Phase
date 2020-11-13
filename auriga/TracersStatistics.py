@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 
 import const as c
 from gadget import *
@@ -13,7 +14,10 @@ from random import sample
 import math
 
 ageUniverse = 13.77 #[Gyr]
-
+xsize = 20.
+ysize = 10.
+DPI = 250
+colourmapMain = "viridis"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 DataSavepathSuffix = f".h5"
@@ -44,9 +48,13 @@ dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
 snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
 
-loadPath = DataSavepath + f"_flat-wrt-time"+ DataSavepathSuffix
+FlatDataDict = {}
+for T in Tlst:
+    loadPath = DataSavepath + f"_T{T}_flat-wrt-time"+ DataSavepathSuffix
 
-FlatDataDict = hdf5_load(loadPath)
+    tmp = hdf5_load(loadPath)
+    tmp[f"T{T}"].update({'Ntracers' : np.shape(tmp[f"T{T}"]['type'])[1]})
+    FlatDataDict.update(tmp)
 ################################################################################
 ##                           Definitions                                    ####
 ################################################################################
@@ -67,21 +75,168 @@ def _get_id_prid_trid_where(dataDict,whereEntries):
 #                    Get id data from single trid
 #------------------------------------------------------------------------------#
 
-def _get_id_from_single_trid(dataDict,trid):
-
-    prid_ind = np.where(dataDict['trid']==trid)
-    prid = dataDict['prid'][prid_ind]
-
-    id = np.where(dataDict['id']==prid)
-
-    return id
 #------------------------------------------------------------------------------#
 #
 #------------------------------------------------------------------------------#
 
-def flat_analyse(FlatDataDict):
+def flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERSPARAMS):
 
-    return
+    gas = []
+    heating = []
+    cooling = []
+    aboveZ = []
+    belowZ = []
+    inflow = []
+    outflow = []
+    halo0 = []
+    unbound = []
+    otherHalo = []
+    noHalo = []
+    stars = []
+    wind = []
+    ism = []
+
+    preselectInd = np.where(snapsRange < int(TRACERSPARAMS['selectSnap']))[0]
+    postselectInd = np.where(snapsRange > int(TRACERSPARAMS['selectSnap']))[0]
+    for T in Tlst:
+        Tkey = f"T{T}"
+        print(Tkey)
+
+
+        data = FlatDataDict[Tkey]
+        ntracers = FlatDataDict[Tkey]['Ntracers']
+
+        print("Gas")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['type'][preselectInd,:] == 0)
+        gaspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['type'][postselectInd,:] == 0)
+        gaspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        gas.append([gaspre,gaspost])
+
+        print("Heating & Cooling")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+        coolingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+        heatingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+        heatingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+        coolingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        cooling.append([coolingpre,coolingpost])
+        heating.append([heatingpre,heatingpost])
+
+        print("AboveZ")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['gz'][preselectInd,:] >  0.75)
+        aboveZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['gz'][postselectInd,:] >  0.75)
+        aboveZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        aboveZ.append([aboveZpre,aboveZpost])
+
+        print("BelowZ")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['gz'][preselectInd,:] <  0.75)
+        belowZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['gz'][postselectInd,:] <  0.75)
+        belowZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        belowZ.append([belowZpre,belowZpost])
+
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['vrad'][preselectInd,:] < 0.0)
+        inflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['vrad'][postselectInd,:] <  0.0)
+        inflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        inflow.append([inflowpre,inflowpost])
+
+        print("Outflow")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['vrad'][preselectInd,:] > 0.0)
+        outflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['vrad'][postselectInd,:] >  0.0)
+        outflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        outflow.append([outflowpre,outflowpost])
+
+        print("Inflow")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == int(TRACERSPARAMS['haloID']))
+        halo0pre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] ==int(TRACERSPARAMS['haloID']))
+        halo0post = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        halo0.append([halo0pre,halo0post])
+
+        print("Unbound")
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == -1)
+        unboundpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] == -1)
+        unboundpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        unbound.append([unboundpre,unboundpost])
+
+        print("OtherHalo")
+        rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+        (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
+        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == False))
+        otherHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+        (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
+        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == False))
+        otherHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        otherHalo.append([otherHalopre,otherHalopost])
+
+        print("NoHalo")
+        rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+        (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
+        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == True))
+        noHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+        (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
+        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == True))
+        noHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        noHalo.append([noHalopre,noHalopost])
+
+        print("Stars")
+        rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
+        (FlatDataDict[Tkey]['age'][preselectInd,:] >= 0.))
+        starspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
+        (FlatDataDict[Tkey]['age'][postselectInd,:] >= 0.))
+        starspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        stars.append([starspre,starspost])
+
+        print("Wind")
+        rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
+        (FlatDataDict[Tkey]['age'][preselectInd,:] < 0.))
+        windpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
+        (FlatDataDict[Tkey]['age'][postselectInd,:] < 0.))
+        windpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        wind.append([windpre,windpost])
+
+        print("ISM")
+        rowspre, colspre = np.where((FlatDataDict[Tkey]['R'][preselectInd,:] <= 25.0)&\
+        (FlatDataDict[Tkey]['sfr'][preselectInd,:] > 0.))
+        ismpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        rowspost, colspost = np.where((FlatDataDict[Tkey]['R'][postselectInd,:] <= 25.0)&\
+        (FlatDataDict[Tkey]['sfr'][postselectInd,:] > 0.))
+        ismpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        ism.append([ismpre,ismpost])
+
+    out = {"%Gas": {"Pre-Selection" : np.array(gas)[:,0],"Post-Selection" : np.array(gas)[:,1]} , \
+    "%Halo0": {"Pre-Selection" : np.array(halo0)[:,0],"Post-Selection" : np.array(halo0)[:,1]} , \
+    "%Unbound": {"Pre-Selection" : np.array(unbound)[:,0],"Post-Selection" : np.array(unbound)[:,1]} , \
+    "%OtherHalo": {"Pre-Selection" : np.array(otherHalo)[:,0],"Post-Selection" : np.array(otherHalo)[:,1]} , \
+    "%NoHalo": {"Pre-Selection" : np.array(noHalo)[:,0],"Post-Selection" : np.array(noHalo)[:,1]} , \
+    "%Stars": {"Pre-Selection" : np.array(stars)[:,0],"Post-Selection" : np.array(stars)[:,1]} , \
+    "%Wind": {"Pre-Selection" : np.array(wind)[:,0],"Post-Selection" : np.array(wind)[:,1]} , \
+    "%ISM": {"Pre-Selection" : np.array(ism)[:,0],"Post-Selection" : np.array(ism)[:,1]} , \
+    "%Inflow": {"Pre-Selection" : np.array(inflow)[:,0],"Post-Selection" : np.array(inflow)[:,1]} , \
+    "%Outflow": {"Pre-Selection" : np.array(outflow)[:,0],"Post-Selection" : np.array(outflow)[:,1]} , \
+    "%Above3/4(Z_solar)": {"Pre-Selection" : np.array(aboveZ)[:,0],"Post-Selection" : np.array(aboveZ)[:,1]} , \
+    "%Below3/4(Z_solar)": {"Pre-Selection" : np.array(belowZ)[:,0],"Post-Selection" : np.array(belowZ)[:,1]} , \
+    "%Heating": {"Pre-Selection" : np.array(heating)[:,0],"Post-Selection" : np.array(heating)[:,1]} , \
+    "%Cooling": {"Pre-Selection" : np.array(cooling)[:,0],"Post-Selection" : np.array(cooling)[:,1]} }
+
+    dict_of_df = {k: pd.DataFrame(v) for k,v in out.items()}
+    df1 = pd.concat(dict_of_df, axis=1)
+
+    df2 = pd.DataFrame({"T" : Tlst})
+    df = pd.concat([df2,df1], axis=1, join='outer',sort=False)
+    df = df.set_index('T')
+    return df
 #------------------------------------------------------------------------------#
 #               Analyse log10(T) and snap specfifc statistics
 #------------------------------------------------------------------------------#
@@ -223,7 +378,7 @@ def _inner_analysis(dataDict):
 #------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 #------------------------------------------------------------------------------#
-def fullData_analyse(dataDict,Tlst,snapsRange):
+def fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange):
     dflist = []
     out ={}
     for T in Tlst:
@@ -252,16 +407,6 @@ def fullData_analyse(dataDict,Tlst,snapsRange):
 
     outDF = pd.concat(dflist, axis=0, join='outer',sort=False, ignore_index=True)
     return out, outDF
-#------------------------------------------------------------------------------#
-#                        Get id trid prid data
-#------------------------------------------------------------------------------#
-
-
-    prid_ind = np.where(dataDict[key]['trid'] == trid)
-    prid = dataDict[key]['prid'][prid_ind]
-    cell_ind = np.where(dataDict[key]['id'] == prid)
-
-    dataDict[key][''][cell_ind] >=<! cond
 
 ################################################################################
 ##                           MAIN PROGRAM                                   ####
@@ -270,7 +415,7 @@ print("Analyse Data!")
 #------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 #------------------------------------------------------------------------------#
-statsDict, statsDF = fullData_analyse(dataDict,Tlst,snapsRange)
+statsDict, statsDF = fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange)
 
 #Add Stats of medians and percentiles
 tmplist = []
@@ -296,6 +441,52 @@ print("\n"+f"Saving Stats table .csv as {savePath}")
 
 finalDF.to_csv(savePath,index=False)
 
+lookbackData = []
+
+for snap in snapsRange:
+    lookbackData.append(dataDict[(f"T{Tlst[0]}", f"{int(snap)}")]['Lookback'][0])
+    if (int(snap) == int(TRACERSPARAMS['selectSnap'])):
+        selectTime = abs( dataDict[(f"T{Tlst[0]}", f"{int(snap)}")]['Lookback'][0] - ageUniverse)
+lookbackData = np.array(lookbackData)
+
+timeAvDF = flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERSPARAMS)
+
+
+
+#Save
+savePath = DataSavepath + "_Flat-Statistics-Table.csv"
+
+print("\n"+f"Saving Stats table .csv as {savePath}")
+
+timeAvDF.to_csv(savePath,index=False)
+
+
+
+#-------------------------------------------------------------------------------#
+#       Plot!!
+#-------------------------------------------------------------------------------#
+cmap = matplotlib.cm.get_cmap(colourmapMain)
+colour = [cmap(float(ii+1)/float(len(Tlst))) for ii in range(len(Tlst))]
+
+ax = timeAvDF.T.plot.bar(rot=0,figsize = (xsize,ysize),color=colour)
+ax.legend(loc='upper right',title="Log10(T) [K]")
+plt.xticks(rotation=30,ha='right')
+plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
+"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=12)
+
+
+ax.yaxis.set_minor_locator(AutoMinorLocator())
+ax.tick_params(which='both')
+plt.grid(which='both',axis='y')
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.90, bottom = 0.15)
+
+opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Stats-Bars.pdf"
+plt.savefig(opslaan, dpi = DPI, transparent = False)
+print(opslaan)
+plt.close()
 # #------------------------------------------------------------------------------#
 # #               Analyse Tracers Continuously Exhibiting Feature
 # #                   Since SnapMin
