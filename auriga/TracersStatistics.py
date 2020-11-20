@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   #For suppressing plotting on clusters
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.ticker import AutoMinorLocator
 
 import const as c
@@ -14,7 +15,7 @@ from random import sample
 import math
 
 ageUniverse = 13.77 #[Gyr]
-xsize = 20.
+xsize = 30.
 ysize = 10.
 DPI = 250
 colourmapMain = "viridis"
@@ -87,6 +88,7 @@ def flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERS
     aboveZ = []
     belowZ = []
     inflow = []
+    statflow = []
     outflow = []
     halo0 = []
     unbound = []
@@ -114,45 +116,80 @@ def flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERS
         gas.append([gaspre,gaspost])
 
         print("Heating & Cooling")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd[:-2],:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
         coolingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
         heatingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:][:-2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
         heatingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
         coolingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
         cooling.append([coolingpre,coolingpost])
         heating.append([heatingpre,heatingpost])
 
-        print("AboveZ")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['gz'][preselectInd,:] >  0.75)
+        print("Z")
+        data = FlatDataDict[Tkey]['gz'][preselectInd,:]
+        weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
+        zPreDat = []
+        for (dat,wei) in zip(data.T,weights.T):
+            zPreDat.append(weightedperc(dat, wei, 50,"Z-Pre"))
+        zPreDat = np.array(zPreDat)
+
+        data = FlatDataDict[Tkey]['gz'][postselectInd,:]
+        weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
+        zPostDat = []
+        for (dat,wei) in zip(data.T,weights.T):
+            zPostDat.append(weightedperc(dat, wei, 50,"Z-Post"))
+        zPostDat = np.array(zPostDat)
+
+        colspre = np.where(zPreDat>  0.75)[0]
         aboveZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['gz'][postselectInd,:] >  0.75)
+        colspost = np.where(zPostDat >  0.75)[0]
         aboveZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
         aboveZ.append([aboveZpre,aboveZpost])
 
-        print("BelowZ")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['gz'][preselectInd,:] <  0.75)
+        colspre = np.where(zPreDat<  0.75)[0]
         belowZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['gz'][postselectInd,:] <  0.75)
+        colspost = np.where(zPostDat <  0.75)[0]
         belowZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
         belowZ.append([belowZpre,belowZpost])
 
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['vrad'][preselectInd,:] < 0.0)
+        print("Radial-Flow")
+        data = FlatDataDict[Tkey]['vrad'][preselectInd,:]
+        weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
+        vradPreDat = []
+        for (dat,wei) in zip(data.T,weights.T):
+            vradPreDat.append(weightedperc(dat, wei, 50,"Vrad-Pre"))
+        vradPreDat = np.array(vradPreDat)
+
+        data = FlatDataDict[Tkey]['vrad'][postselectInd,:]
+        weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
+        vradPostDat = []
+        for (dat,wei) in zip(data.T,weights.T):
+            vradPostDat.append(weightedperc(dat, wei, 50,"Vrad-Post"))
+        vradPostDat = np.array(vradPostDat)
+
+        epsilon = 50.
+
+        colspre = np.where(vradPreDat < 0.0 - epsilon)[0]
         inflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['vrad'][postselectInd,:] <  0.0)
+        colspost = np.where(vradPostDat <  0.0 - epsilon)[0]
         inflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
         inflow.append([inflowpre,inflowpost])
 
-        print("Outflow")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['vrad'][preselectInd,:] > 0.0)
+        colspre = np.where((vradPreDat >= 0.0 - epsilon)&(vradPreDat <= 0.0 + epsilon))[0]
+        statflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+        colspost = np.where((vradPostDat >= 0.0 - epsilon)&(vradPostDat <= 0.0 + epsilon))[0]
+        statflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+        statflow.append([statflowpre,statflowpost])
+
+        colspre = np.where(vradPreDat > 0.0 + epsilon)[0]
         outflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['vrad'][postselectInd,:] >  0.0)
+        colspost = np.where(vradPostDat >  0.0 + epsilon)[0]
         outflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
         outflow.append([outflowpre,outflowpost])
 
-        print("Inflow")
+        print("Halo0")
         rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == int(TRACERSPARAMS['haloID']))
         halo0pre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
         rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] ==int(TRACERSPARAMS['haloID']))
@@ -224,6 +261,7 @@ def flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERS
     "%Wind": {"Pre-Selection" : np.array(wind)[:,0],"Post-Selection" : np.array(wind)[:,1]} , \
     "%ISM": {"Pre-Selection" : np.array(ism)[:,0],"Post-Selection" : np.array(ism)[:,1]} , \
     "%Inflow": {"Pre-Selection" : np.array(inflow)[:,0],"Post-Selection" : np.array(inflow)[:,1]} , \
+    "%Radially-Static": {"Pre-Selection" : np.array(statflow)[:,0],"Post-Selection" : np.array(statflow)[:,1]} , \
     "%Outflow": {"Pre-Selection" : np.array(outflow)[:,0],"Post-Selection" : np.array(outflow)[:,1]} , \
     "%Above3/4(Z_solar)": {"Pre-Selection" : np.array(aboveZ)[:,0],"Post-Selection" : np.array(aboveZ)[:,1]} , \
     "%Below3/4(Z_solar)": {"Pre-Selection" : np.array(belowZ)[:,0],"Post-Selection" : np.array(belowZ)[:,1]} , \
@@ -469,24 +507,98 @@ cmap = matplotlib.cm.get_cmap(colourmapMain)
 colour = [cmap(float(ii+1)/float(len(Tlst))) for ii in range(len(Tlst))]
 
 ax = timeAvDF.T.plot.bar(rot=0,figsize = (xsize,ysize),color=colour)
-ax.legend(loc='upper right',title="Log10(T) [K]")
-plt.xticks(rotation=30,ha='right')
+ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+plt.xticks(rotation=30,ha='right',fontsize=13)
 plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
 "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=12)
+r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
 
+
+plt.annotate(text="Ever Matched Feature", xy=(0.25,0.02), xytext=(0.25,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.05,0.01), xytext=(0.49,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="Median Matched Feature", xy=(0.60,0.02), xytext=(0.60,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.51,0.01), xytext=(0.825,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="+/-2 Time-steps Matched Feature", xy=(0.85,0.02), xytext=(0.85,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.835,0.01), xytext=(1.00,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+fig.transFigure
 
 ax.yaxis.set_minor_locator(AutoMinorLocator())
 ax.tick_params(which='both')
 plt.grid(which='both',axis='y')
-
+plt.ylabel('% of Tracers Selected Following Feature')
 plt.tight_layout()
-plt.subplots_adjust(top=0.90, bottom = 0.15)
+plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+
 
 opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Stats-Bars.pdf"
 plt.savefig(opslaan, dpi = DPI, transparent = False)
 print(opslaan)
 plt.close()
+
+################################################################################
+#       split Plot
+###############################################################################
+
+# cols = timeAvDF.columns.values
+# preDF = timeAvDF[cols[::2].tolist()]
+# postDF = timeAvDF[cols[1::2].tolist()]
+#
+# fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), sharey=True)
+#
+# preDF.T.plot.bar(rot=0,ax=ax[0],color=colour)
+# postDF.T.plot.bar(rot=0,ax=ax[1],color=colour)
+#
+# ax[0].set_title("Pre-Selection",fontsize=14)
+# ax[1].set_title("Post-Selection",fontsize=14)
+# ax[0].legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+# ax[1].legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+# plt.setp(ax[0].get_xticklabels(), rotation=30, ha='right',fontsize = 13)
+# plt.setp(ax[1].get_xticklabels(), rotation=30, ha='right',fontsize = 13)
+#
+# fig.suptitle(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
+# "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+# r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
+#
+# ax[0].annotate(text="Ever Matched Feature", xy=(0.125,0.02), xytext=(0.125,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[0].annotate(text="", xy=(0.05,0.01), xytext=(0.41,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# ax[0].annotate(text="Median Matched Feature", xy=(0.425,0.02), xytext=(0.425,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[0].annotate(text="", xy=(0.42,0.01), xytext=(0.435,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# ax[0].annotate(text="+/-2 Time-steps Matched Feature", xy=(0.45,0.02), xytext=(0.45,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[0].annotate(text="", xy=(0.44,0.01), xytext=(0.5,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# ax[1].annotate(text="Ever Matched Feature", xy=(0.58,0.02), xytext=(0.58,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[1].annotate(text="", xy=(0.55,0.01), xytext=(0.735,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# ax[1].annotate(text="Median Matched Feature", xy=(0.825,0.02), xytext=(0.825,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[1].annotate(text="", xy=(0.74,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# ax[1].annotate(text="+/-2 Time-steps Matched Feature", xy=(0.89,0.02), xytext=(0.89,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+# ax[1].annotate(text="", xy=(0.875,0.01), xytext=(1.0,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+#
+# fig.transFigure
+#
+#
+# ax[0].yaxis.set_minor_locator(AutoMinorLocator())
+# ax[1].yaxis.set_minor_locator(AutoMinorLocator())
+# plt.tick_params(which='both')
+# ax[0].grid(which='both',axis='y')
+# ax[1].grid(which='both',axis='y')
+# ax[0].set_ylabel('% of Tracers Selected Following Feature',fontsize = 13)
+# ax[1].set_ylabel('% of Tracers Selected Following Feature',fontsize = 13)
+#
+#
+# plt.tight_layout()
+# plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+#
+# opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Pre&Post-Stats-Bars.pdf"
+# plt.savefig(opslaan, dpi = DPI, transparent = False)
+# print(opslaan)
+# plt.close()
+
 # #------------------------------------------------------------------------------#
 # #               Analyse Tracers Continuously Exhibiting Feature
 # #                   Since SnapMin

@@ -35,7 +35,7 @@ FullDataPathSuffix = f".h5"
 lazyLoadBool = True
 
 #Number of cores to run on:
-n_processes = 4
+n_processes = 2
 
 #Save types, which when combined with saveparams define what data is saved.
 #   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
