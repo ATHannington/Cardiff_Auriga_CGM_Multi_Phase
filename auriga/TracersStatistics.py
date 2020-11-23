@@ -541,64 +541,98 @@ plt.close()
 #       split Plot
 ###############################################################################
 
-# cols = timeAvDF.columns.values
-# preDF = timeAvDF[cols[::2].tolist()]
-# postDF = timeAvDF[cols[1::2].tolist()]
-#
-# fig, ax = plt.subplots(nrows=1, ncols=2, figsize = (xsize,ysize), sharey=True)
-#
-# preDF.T.plot.bar(rot=0,ax=ax[0],color=colour)
-# postDF.T.plot.bar(rot=0,ax=ax[1],color=colour)
-#
-# ax[0].set_title("Pre-Selection",fontsize=14)
-# ax[1].set_title("Post-Selection",fontsize=14)
-# ax[0].legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
-# ax[1].legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
-# plt.setp(ax[0].get_xticklabels(), rotation=30, ha='right',fontsize = 13)
-# plt.setp(ax[1].get_xticklabels(), rotation=30, ha='right',fontsize = 13)
-#
-# fig.suptitle(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
-# "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-# r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
-#
-# ax[0].annotate(text="Ever Matched Feature", xy=(0.125,0.02), xytext=(0.125,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[0].annotate(text="", xy=(0.05,0.01), xytext=(0.41,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# ax[0].annotate(text="Median Matched Feature", xy=(0.425,0.02), xytext=(0.425,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[0].annotate(text="", xy=(0.42,0.01), xytext=(0.435,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# ax[0].annotate(text="+/-2 Time-steps Matched Feature", xy=(0.45,0.02), xytext=(0.45,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[0].annotate(text="", xy=(0.44,0.01), xytext=(0.5,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# ax[1].annotate(text="Ever Matched Feature", xy=(0.58,0.02), xytext=(0.58,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[1].annotate(text="", xy=(0.55,0.01), xytext=(0.735,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# ax[1].annotate(text="Median Matched Feature", xy=(0.825,0.02), xytext=(0.825,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[1].annotate(text="", xy=(0.74,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# ax[1].annotate(text="+/-2 Time-steps Matched Feature", xy=(0.89,0.02), xytext=(0.89,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-# ax[1].annotate(text="", xy=(0.875,0.01), xytext=(1.0,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-#
-# fig.transFigure
-#
-#
-# ax[0].yaxis.set_minor_locator(AutoMinorLocator())
-# ax[1].yaxis.set_minor_locator(AutoMinorLocator())
-# plt.tick_params(which='both')
-# ax[0].grid(which='both',axis='y')
-# ax[1].grid(which='both',axis='y')
-# ax[0].set_ylabel('% of Tracers Selected Following Feature',fontsize = 13)
-# ax[1].set_ylabel('% of Tracers Selected Following Feature',fontsize = 13)
-#
-#
-# plt.tight_layout()
-# plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
-#
-# opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Pre&Post-Stats-Bars.pdf"
-# plt.savefig(opslaan, dpi = DPI, transparent = False)
-# print(opslaan)
-# plt.close()
+cols = timeAvDF.columns.values
+preDF = timeAvDF[cols[::2].tolist()]
+postDF = timeAvDF[cols[1::2].tolist()]
 
+newcols = {}
+for name in cols[::2]:
+    newcols.update({name : name[0]})
+
+preDF = preDF.rename(columns=newcols)
+
+newcols = {}
+for name in cols[1::2]:
+    newcols.update({name : name[0]})
+postDF = postDF.rename(columns=newcols)
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
+
+preDF.T.plot.bar(rot=0,ax=ax,color=colour)
+
+ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+plt.xticks(rotation=90,ha='right',fontsize=13)
+plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre Selection at {selectTime:3.2f} Gyr" +\
+"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
+
+
+plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="Ever Matched Feature", xy=(0.20,0.02), xytext=(0.20,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.10,0.01), xytext=(0.55,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.55,0.25), xytext=(0.55,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="Median Matched Feature", xy=(0.62,0.02), xytext=(0.62,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.56,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.85,0.25), xytext=(0.85,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.85,0.03), xytext=(0.85,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.86,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+fig.transFigure
+
+ax.yaxis.set_minor_locator(AutoMinorLocator())
+ax.tick_params(which='both')
+plt.grid(which='both',axis='y')
+plt.ylabel('% of Tracers Selected Following Feature')
+plt.tight_layout()
+plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+
+opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Pre-Stats-Bars.pdf"
+plt.savefig(opslaan, dpi = DPI, transparent = False)
+print(opslaan)
+plt.close()
+
+
+
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
+
+postDF.T.plot.bar(rot=0,ax=ax,color=colour)
+
+ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+plt.xticks(rotation=90,ha='right',fontsize=13)
+plt.title(f"Percentage of Tracers Ever Meeting Criterion Post Selection at {selectTime:3.2f} Gyr" +\
+"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
+
+plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="Ever Matched Feature", xy=(0.20,0.02), xytext=(0.20,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.10,0.01), xytext=(0.55,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.55,0.25), xytext=(0.55,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="Median Matched Feature", xy=(0.62,0.02), xytext=(0.62,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.56,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.85,0.25), xytext=(0.85,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.85,0.03), xytext=(0.85,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+plt.annotate(text="", xy=(0.86,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+fig.transFigure
+
+ax.yaxis.set_minor_locator(AutoMinorLocator())
+ax.tick_params(which='both')
+plt.grid(which='both',axis='y')
+plt.ylabel('% of Tracers Selected Following Feature')
+plt.tight_layout()
+plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+
+opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Post-Stats-Bars.pdf"
+plt.savefig(opslaan, dpi = DPI, transparent = False)
+print(opslaan)
+plt.close()
 # #------------------------------------------------------------------------------#
 # #               Analyse Tracers Continuously Exhibiting Feature
 # #                   Since SnapMin
