@@ -506,6 +506,8 @@ timeAvDF.to_csv(savePath,index=False)
 cmap = matplotlib.cm.get_cmap(colourmapMain)
 colour = [cmap(float(ii+1)/float(len(Tlst))) for ii in range(len(Tlst))]
 
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), sharey=True)
+
 ax = timeAvDF.T.plot.bar(rot=0,figsize = (xsize,ysize),color=colour)
 ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
 plt.xticks(rotation=30,ha='right',fontsize=13)
