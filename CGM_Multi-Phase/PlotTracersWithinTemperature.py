@@ -66,17 +66,6 @@ tage = abs(tage - ageUniverse)
 for T in TRACERSPARAMS['targetTLst']:
     print("")
     print(f"Starting T{T} analysis")
-    key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
-
-    whereGas = np.where(dataDict[key]['type']==0)[0]
-    data = dataDict[key]['T'][whereGas]
-
-    whereSelect = np.where( (data>=1.*10**(T-TRACERSPARAMS['deltaT'])) & \
-    (data<=1.*10**(T+TRACERSPARAMS['deltaT'])) )
-
-    selectedCells = dataDict[key]['id'][whereSelect]
-
-    ParentsIndices = np.where(np.isin(dataDict[key]['prid'],selectedCells))
 
     tmpXdata = []
     tmpYdata = []
@@ -86,9 +75,6 @@ for T in TRACERSPARAMS['targetTLst']:
     rangeSet= [snapRangeLow,snapRangeHi]
 
     for snapRange in rangeSet:
-        key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
-        SelectedTracers = dataDict[key]['trid'][ParentsIndices]
-
         for snap in snapRange:
             key = (f"T{T}",f"{int(snap)}")
 
@@ -96,29 +82,15 @@ for T in TRACERSPARAMS['targetTLst']:
 
             data = dataDict[key]['T'][whereGas]
 
-            whereTrids = np.where(np.isin(dataDict[key]['trid'],SelectedTracers))
-            Parents = dataDict[key]['prid'][whereTrids]
-
-            whereCells = np.where(np.isin(dataDict[key]['id'][whereGas],Parents))
-
-            data = data[whereCells]
-
             selected = np.where(
             (data>=1.*10**(T-TRACERSPARAMS['deltaT'])) & \
             (data<=1.*10**(T+TRACERSPARAMS['deltaT'])) )
 
-            selectedData = data[selected]
+            ParentsIndices= np.where(np.isin(dataDict[key]['prid'],dataDict[key]['id'][selected]))
 
-            selectedIDs = dataDict[key]['id'][whereGas]
-            selectedIDs = selectedIDs[selected]
+            trids = dataDict[key]['trid'][ParentsIndices]
 
-            selectedCellsIndices = np.where(np.isin(dataDict[key]['prid'],selectedIDs))
-
-            finalTrids = dataDict[key]['trid'][selectedCellsIndices]
-
-            SelectedTracers = finalTrids
-
-            nTracers = len(finalTrids)
+            nTracers = len(trids)
 
             #Append the data from this snapshot to a temporary list
             tmpXdata.append(dataDict[key]['Lookback'][0])
@@ -201,7 +173,7 @@ for ii in range(len(Tlst)):
     currentAx.set_ylabel(r"Percentage Tracers Still at $ T = 10^{%05.2f \pm %05.2f} K$"%(T , TRACERSPARAMS['deltaT']),fontsize=10)
     currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
-    fig.suptitle(f"Percentage Tracers Still at Selection Temperature " +\
+    fig.suptitle(f"Percentage Tracers Within Selection Temperature Range " +\
     r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
     "\n" + r" selected at $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
     f" and selected at {vline[0]:3.2f} Gyr", fontsize=12)
@@ -218,7 +190,7 @@ axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.90, wspace = 0.005)
-opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"+f"_PersistantTemperature.pdf"
+opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"+f"_WithinTemperature.pdf"
 plt.savefig(opslaan, dpi = DPI, transparent = False)
 print(opslaan)
 plt.close()
