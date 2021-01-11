@@ -54,7 +54,7 @@ print("")
 
 #Save types, which when combined with saveparams define what data is saved.
 #   This is intended to be the string equivalent of the percentiles.
-saveTypes= [str(percentile) for percentile in TRACERSPARAMS['percentiles']]
+saveTypes= ["_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]
 
 #Entered parameters to be saved from
 #   n_H, B, R, T

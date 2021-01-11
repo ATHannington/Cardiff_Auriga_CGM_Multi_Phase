@@ -1438,11 +1438,12 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
             #           else we want to append to it, not create a new entry or overwrite the old one
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS['percentiles']:
+                saveKey = f"{k}_{percentile:2.2f}%"
                 stat = weightedperc(data=v, weights=Cells['mass'],perc=percentile,key=whereErrorKey)
-                if (f"{k}{percentile:2.2%}" not in statsData.keys()):
-                    statsData.update({f"{k}{percentile:2.2%}": stat})
+                if (saveKey not in statsData.keys()):
+                    statsData.update({saveKey: stat})
                 else:
-                    statsData[f"{k}{percentile:2.2%}"] = np.append(statsData[f"{k}{percentile:2.2%}"],stat)
+                    statsData[saveKey] = np.append(statsData[saveKey],stat)
         #------------------------------------------------------------------------------#
     #       Save stats as .csv files for a given temperature
     #------------------------------------------------------------------------------#

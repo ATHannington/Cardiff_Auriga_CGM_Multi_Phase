@@ -123,9 +123,9 @@ for analysisParam in saveParams:
         colour = cmap(float(ii+1)/float(len(Tlst)))
 
 
-        loadPercentilesTypes = [analysisParam+str(percentile) for percentile in TRACERSPARAMS['percentiles']]
-        LO = analysisParam + str(min(TRACERSPARAMS['percentiles']))
-        UP = analysisParam + str(max(TRACERSPARAMS['percentiles']))
+        loadPercentilesTypes = [analysisParam + "_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]
+        LO = analysisParam + "_" + str(min(TRACERSPARAMS['percentiles'])) + "%"
+        UP = analysisParam + "_" + str(max(TRACERSPARAMS['percentiles'])) + "%"
         median = analysisParam + '50.00%'
 
         if (analysisParam in logParameters):
