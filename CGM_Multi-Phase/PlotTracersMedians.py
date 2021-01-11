@@ -122,9 +122,11 @@ for analysisParam in saveParams:
         cmap = matplotlib.cm.get_cmap(colourmapMain)
         colour = cmap(float(ii+1)/float(len(Tlst)))
 
-        LO = analysisParam + 'LO'
-        UP = analysisParam + 'UP'
-        median = analysisParam +'median'
+
+        loadPercentilesTypes = [analysisParam+str(percentile) for percentile in TRACERSPARAMS['percentiles']]
+        LO = analysisParam + str(min(TRACERSPARAMS['percentiles']))
+        UP = analysisParam + str(max(TRACERSPARAMS['percentiles']))
+        median = analysisParam + '50.00%'
 
         if (analysisParam in logParameters):
             for k, v in plotData.items():
@@ -147,8 +149,11 @@ for analysisParam in saveParams:
         else:
             currentAx = ax[ii]
 
-        currentAx.fill_between(tage,plotData[UP],plotData[LO],\
-        facecolor=colour,alpha=opacityPercentiles,interpolate=False)
+        midPercentile = math.floor(len(loadPercentilesTypes)/2.)
+        percentilesPairs = zip(loadPercentilesTypes[:midPercentile],loadPercentilesTypes[midPercentile+1:])
+        for (LO, UP) in percentilesPairs:
+            currentAx.fill_between(tage,plotData[UP],plotData[LO],\
+            facecolor=colour,alpha=opacityPercentiles,interpolate=False)
         currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
 
         currentAx.axvline(x=vline, c='red')

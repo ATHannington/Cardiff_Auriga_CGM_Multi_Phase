@@ -37,9 +37,6 @@ lazyLoadBool = True
 #Number of cores to run on:
 n_processes = 2
 
-#Save types, which when combined with saveparams define what data is saved.
-#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
-saveTypes= ['median','UP','LO']
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -54,6 +51,10 @@ for key,value in TRACERSPARAMS.items():
     print(f"{key}: {value}")
 
 print("")
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be the string equivalent of the percentiles.
+saveTypes= [str(percentile) for percentile in TRACERSPARAMS['percentiles']]
 
 #Entered parameters to be saved from
 #   n_H, B, R, T

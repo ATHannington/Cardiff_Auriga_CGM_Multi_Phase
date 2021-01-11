@@ -100,4 +100,4 @@ TracerPlot(dataDict,tridData,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix=f".h5", Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'],\
 boxsize = TRACERSPARAMS['boxsize'], boxlos = TRACERSPARAMS['boxlos'],\
 pixres = TRACERSPARAMS['pixres'], pixreslos = TRACERSPARAMS['pixreslos'],\
-MaxSubset= subset )
+numThreads=6,MaxSubset= subset )

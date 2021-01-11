@@ -1049,7 +1049,7 @@ def LoadTracersParameters(TracersParamsPath):
 
     #Convert Dictionary items to (mostly) floats
     for key, value in TRACERSPARAMS.items():
-        if ((key == 'targetTLst')or(key == 'phasesSnaps')or(key == 'Axes')):
+        if ((key == 'targetTLst')or(key == 'phasesSnaps')or(key == 'Axes')or(key == 'percentiles')):
             #Convert targetTLst to list of floats
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
@@ -1430,28 +1430,20 @@ def save_statistics(Cells, targetT, snapNumber, TRACERSPARAMS, saveParams, DataS
             whereErrorKey = f"{k}"
             #For the data keys we wanted saving (saveParams), this is where we generate the data to match the
             #   combined keys in saveKeys.
-            #       We are saving the key (k) + median, UP, or LO in a new dict, statsData
+            #       We are saving the key "{k}{percentile:2.2%}" in a new dict, statsData
             #           This effectively flattens and processes the data dict in one go
             #
             #   We have separate statements key not in keys and else.
             #       This is because if key does not exist yet in statsData, we want to create a new entry in statsData
             #           else we want to append to it, not create a new entry or overwrite the old one
             # whereGas = np.where(FullDict[key]['type'] == 0)
-            if ((f"{k}median" not in statsData.keys()) or (f"{k}UP" not in statsData.keys()) or (f"{k}LO" not in statsData.keys())):
-                statsData.update({f"{k}median": \
-                weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey)})
-                statsData.update({f"{k}UP": \
-                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey)})
-                statsData.update({f"{k}LO": \
-                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey)})
-            else:
-                statsData[f"{k}median"] = np.append(statsData[f"{k}median"],\
-                weightedperc(data=v, weights=Cells['mass'],perc=50.,key=whereErrorKey))
-                statsData[f"{k}UP"] = np.append(statsData[f"{k}UP"],\
-                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileUP'],key=whereErrorKey))
-                statsData[f"{k}LO"] = np.append(statsData[f"{k}LO"],\
-                weightedperc(data=v, weights=Cells['mass'],perc=TRACERSPARAMS['percentileLO'],key=whereErrorKey))
-    #------------------------------------------------------------------------------#
+            for percentile in TRACERSPARAMS['percentiles']:
+                stat = weightedperc(data=v, weights=Cells['mass'],perc=percentile,key=whereErrorKey)
+                if (f"{k}{percentile:2.2%}" not in statsData.keys()):
+                    statsData.update({f"{k}{percentile:2.2%}": stat})
+                else:
+                    statsData[f"{k}{percentile:2.2%}"] = np.append(statsData[f"{k}{percentile:2.2%}"],stat)
+        #------------------------------------------------------------------------------#
     #       Save stats as .csv files for a given temperature
     #------------------------------------------------------------------------------#
 
