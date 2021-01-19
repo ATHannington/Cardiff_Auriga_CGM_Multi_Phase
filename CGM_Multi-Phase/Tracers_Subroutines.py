@@ -1563,7 +1563,7 @@ def delete_nan_inf_axis(dict,axis=0):
 #------------------------------------------------------------------------------#
 def PlotProjections(snapGas,snapNumber,targetT,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
-boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\
+boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 50,\
 CMAP=None, numThreads=4):
 
     print(f"[@T{targetT} @{int(snapNumber)}]: Starting Projections Video Plots!")
@@ -1800,7 +1800,7 @@ CMAP=None, numThreads=4):
 #------------------------------------------------------------------------------#
 def TracerPlot(Cells,tridDict,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
-boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 200,\
+boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 50,\
 CMAP=None, numThreads=16, MaxSubset=100):
 
     if(CMAP == None):
