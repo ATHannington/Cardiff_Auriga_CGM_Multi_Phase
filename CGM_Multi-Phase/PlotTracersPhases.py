@@ -33,7 +33,7 @@ ageUniverse = 13.77 #[Gyr]
 TracersParamsPath = 'TracersParams.csv'
 
 colourmap="inferno_r"
-colourmapMain = "viridis"
+colourmapMain = "plasma"
 
 #Paramters to weight the 2D hist by
 weightKeys = ['mass','tcool','gz']
@@ -381,7 +381,7 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             currentAx.set_xlim(xmin,xmax)
 
             cmap = matplotlib.cm.get_cmap(colourmapMain)
-            colour = cmap(float(ii+1)/float(len(Tlst)))
+            colour = cmap(float(ii)/float(len(Tlst)))
 
             plot_patch = matplotlib.patches.Patch(color=colour)
             plot_label = r"$T = 10^{%3.2f} K$"%(float(T))

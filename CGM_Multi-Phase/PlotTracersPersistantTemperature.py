@@ -26,7 +26,7 @@ DPI = 250
 
 ageUniverse = 13.77 #[Gyr]
 
-colourmapMain = "viridis"
+colourmapMain = "plasma"
 
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
@@ -171,7 +171,7 @@ for ii in range(len(Tlst)):
     plotXdata = Xdata[f"T{temp}"]
 
     cmap = matplotlib.cm.get_cmap(colourmapMain)
-    colour = cmap(float(ii+1)/float(len(Tlst)))
+    colour = cmap(float(ii)/float(len(Tlst)))
     colourTracers = "tab:gray"
 
     datamin = 0.0

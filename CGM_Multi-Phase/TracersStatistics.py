@@ -18,7 +18,7 @@ ageUniverse = 13.77 #[Gyr]
 xsize = 30.
 ysize = 10.
 DPI = 250
-colourmapMain = "viridis"
+colourmapMain = "plasma"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 DataSavepathSuffix = f".h5"
@@ -504,7 +504,7 @@ timeAvDF.to_csv(savePath,index=False)
 #       Plot!!
 #-------------------------------------------------------------------------------#
 cmap = matplotlib.cm.get_cmap(colourmapMain)
-colour = [cmap(float(ii+1)/float(len(Tlst))) for ii in range(len(Tlst))]
+colour = [cmap(float(ii)/float(len(Tlst))) for ii in range(len(Tlst))]
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), sharey=True)
 

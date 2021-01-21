@@ -32,7 +32,7 @@ lineStylePercentiles = "-."
 
 ageUniverse = 13.77 #[Gyr]
 
-colourmapMain = "viridis"
+colourmapMain = "plasma"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -120,7 +120,7 @@ for analysisParam in saveParams:
         #Get a colour for median and percentiles for a given temperature
         #   Have fiddled to move colours away from extremes of the colormap
         cmap = matplotlib.cm.get_cmap(colourmapMain)
-        colour = cmap(float(ii+1)/float(len(Tlst)))
+        colour = cmap(float(ii)/float(len(Tlst)))
 
 
         loadPercentilesTypes = [analysisParam + "_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]

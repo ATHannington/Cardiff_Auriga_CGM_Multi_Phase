@@ -31,6 +31,7 @@ selectWidth = 4
 selectlinecolour = "black"
 percentileLO = 1.0
 percentileUP = 99.0
+colourmapMain = 'plasma'
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
@@ -154,7 +155,7 @@ for dataKey in saveParams:
                 continue
 
             #Select a Temperature specific colour from colourmap
-            cmap = matplotlib.cm.get_cmap('viridis')
+            cmap = matplotlib.cm.get_cmap(colourmapMain)
             if (int(snap) == int(TRACERSPARAMS['selectSnap']) ):
                 colour = selectColour
                 lineStyle = selectStyle
@@ -163,7 +164,7 @@ for dataKey in saveParams:
                 hlinecolour = selectlinecolour
             else:
                 sRange = int(min(TRACERSPARAMS['finalSnap']+1, TRACERSPARAMS['snapMax']+1)) - int(TRACERSPARAMS['snapMin'])
-                colour = cmap(((float(jj)+1.0)/(sRange)))
+                colour = cmap(((float(jj))/(sRange)))
                 lineStyle = "-"
                 linewidth = 2
                 linecolour = 'w'
