@@ -35,7 +35,7 @@ FullDataPathSuffix = f".h5"
 lazyLoadBool = True
 
 #Number of cores to run on:
-n_processes = 2
+n_processes = 3
 
 #==============================================================================#
 #       Prepare for analysis
@@ -110,60 +110,47 @@ omegabaryon0 = 0.048
 
 
 if __name__=="__main__":
-    kk = 0
-    #Loop over target temperatures
-    for targetT in TRACERSPARAMS['targetTLst']:
 
-        #Store number of target temperatures
-        NTemps = float(len(TRACERSPARAMS['targetTLst']))
-        #Calculate percentage complete as a function of Temperatures
-        #   Aside: I did try to implement a total percentage complete, but combinatorix ='(
-        percentage = (float(kk)/NTemps)*100.0
-        print("")
-        print(f"{percentage:0.02f}%")
-        #Increment percentage complete counter
-        kk+=1
-
-        TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = \
-        tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
-        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool,SUBSET=None)
+    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = \
+    tracer_selection_snap_analysis(TRACERSPARAMS,HaloID,\
+    elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+    saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool,SUBSET=None)
 
 
-        snapRange = [zz for zz in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['finalSnap'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
+    snapRange = [zz for zz in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['finalSnap'])+1,int(TRACERSPARAMS['snapMax'])+1), 1)]
 
-        #Loop over snaps from snapMin to snapmax, taking the finalSnap (the final snap) as the endpoint if snapMax is greater
+    #Loop over snaps from snapMin to snapmax, taking the finalSnap (the final snap) as the endpoint if snapMax is greater
 
 
-        #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-        #   MAIN ANALYSIS
-        #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-        print("\n" + f"Starting MULTIPROCESSING type Analysis!")
-        #Setup arguments combinations for parallel processing pool
-        print("\n" + f"Sorting multi-core arguments!")
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+    #   MAIN ANALYSIS
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+    print("\n" + f"Starting MULTIPROCESSING type Analysis!")
+    #Setup arguments combinations for parallel processing pool
+    print("\n" + f"Sorting multi-core arguments!")
 
-        args_default = [targetT,TRACERSPARAMS,HaloID,TracersTFC,\
-        elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-        saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool]
+    args_default = [TRACERSPARAMS,HaloID,TracersTFC,\
+    elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+    saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool]
 
-        args_list = [[snap]+args_default for snap in snapRange]
+    args_list = [[snap]+args_default for snap in snapRange]
 
-        #Open multiprocesssing pool
+    #Open multiprocesssing pool
 
-        print("\n" + f"Opening {n_processes} core Pool!")
-        pool = mp.Pool(processes=n_processes)
+    print("\n" + f"Opening {n_processes} core Pool!")
+    pool = mp.Pool(processes=n_processes)
 
-        #Compute Snap analysis
-        output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
+    #Compute Snap analysis
+    output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
 
-        pool.close()
-        pool.join()
-        #Close multiprocesssing pool
-        print(f"Closing core Pool!")
-
-        # print("\n" + f"Starting SERIAL type Analysis!")
-        # for snap in snapRange:
-        #     out = snap_analysis(snap,targetT,TRACERSPARAMS,HaloID,TracersTFC,\
-        #     elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-        #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
-        #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+    pool.close()
+    pool.join()
+    #Close multiprocesssing pool
+    print(f"Closing core Pool!")
+    #
+    # print("\n" + f"Starting SERIAL type Analysis!")
+    # for snap in snapRange:
+    #     out = snap_analysis(snap,TRACERSPARAMS,HaloID,TracersTFC,\
+    #     elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
+    #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
+    #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
