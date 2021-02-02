@@ -36,15 +36,17 @@ colourmap="inferno_r"
 colourmapMain = "plasma"
 
 #Paramters to weight the 2D hist by
-weightKeys = ['mass','tcool','gz']
-zlimDict = {'mass': {'zmin':4.0,'zmax':9.0},'tcool': {'zmin':-5.0,'zmax':4.0},'gz': {'zmin':-2.0,'zmax':2.0}}
+weightKeys = ['mass','tcool','gz','tcool_tff']
+logparams = ['mass','tcool','gz','tcool_tff']
+zlimDict = {'mass': {'zmin':4.0,'zmax':9.0},'tcool': {'zmin':-5.0,'zmax':4.0},'gz': {'zmin':-2.0,'zmax':2.0},'tcool_tff': {'zmin':-6.0,'zmax':4.0}}
 ymin = 3.5 #[Log10 T]
 ymax = 7.5 #[Log10 T]
 xmin = 1.0 #[Log10 rho_rhomean]
 xmax = 7.0 #[Log10 rho_rhomean]
 labelDict={'mass' : r'Log10 Mass per pixel [$M/M_{\odot}$]',\
- 'gz':r'Log10 Average Metallicity per pixel $Z/Z_{\odot}$',\
+ 'gz':r'Log10 Average Metallicity per pixel [$Z/Z_{\odot}$]',\
  'tcool': r'Log10 Cooling Time per pixel [$Gyr$]',\
+ 'tcool_tff' : r'Cooling Time over Free Fall Time',\
  }
 
 #==============================================================================#
@@ -218,7 +220,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             finalHistCells = histCells/mhistCells
 
         finalHistCells[finalHistCells==0.0] = np.nan
-        finalHistCells = np.log10(finalHistCells)
+        if (weightKey in logparams):
+            finalHistCells = np.log10(finalHistCells)
         finalHistCells = finalHistCells.T
 
         xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
@@ -277,7 +280,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
             finalHistTracers = histTracers/mhistTracers
 
         finalHistTracers[finalHistTracers==0.0] = np.nan
-        finalHistTracers = np.log10(finalHistTracers)
+        if (weightKey in logparams):
+            finalHistTracers = np.log10(finalHistTracers)
         finalHistTracers = finalHistTracers.T
 
         xtracers, ytracers = np.meshgrid(xedgeTracers, yedgeTracers)
@@ -364,7 +368,8 @@ for snap in TRACERSPARAMS['phasesSnaps']:
                 finalHistCells = histCells/mhistCells
 
             finalHistCells[finalHistCells==0.0] = np.nan
-            finalHistCells = np.log10(finalHistCells)
+            if (weightKey in logparams):
+                finalHistCells = np.log10(finalHistCells)
             finalHistCells = finalHistCells.T
 
             xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)

@@ -799,13 +799,14 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Radius [kpc]
     snapGas.data['R'] =  (np.linalg.norm(snapGas.data['pos'], axis=1)) #[Kpc]
 
-    #Radial Velocity [km s^-1]
     KpcTokm = 1e3*c.parsec*1e-5
+    #Radial Velocity [km s^-1]
     snapGas.data['vrad'] = (snapGas.pos*KpcTokm*snapGas.vel).sum(axis=1)
     snapGas.data['vrad'] /= snapGas.data['R']*KpcTokm
 
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
+
     snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * snapGas.data['dens']) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2) #[Gyrs]
     snapGas.data['theat'] = snapGas.data['tcool'].copy()
 
@@ -830,6 +831,7 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
     #Load in Star Formation Rate
     tmp = snapGas.data['sfr']
 
+
     #Specific Angular Momentum [kpc km s^-1]
     snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
 
@@ -842,18 +844,26 @@ def CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,element
 
     snapGas.data['P_tot'] = snapGas.data['P_thermal'] + snapGas.data['P_magnetic']
 
+    snapGas.data['Pthermal_Pmagnetic'] = snapGas.data['P_thermal']/ snapGas.data['P_magnetic']
+
     #Kinetic "Pressure" [P/k_B K cm^-3]
     snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
 
     #Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
     snapGas.data['csound'] = sqrt(((5./3.)*c.KB * snapGas.data['T'])/(meanweight*c.amu*1e5))
 
+
     # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
     snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
 
-    #Free Fall time [Gyrs]
-    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* c.G  * snapGas.data['dens'])) * (1./GyrToSeconds)
+    rsort = np.argsort(snapGas.data['R'][whereGas])
+    runsort = np.argsort(rsort)
 
+    rhosorted = (3.* np.cumsum(snapGas.data['mass'][whereGas][rsort]) )/(4. * pi * (snapGas.data['R'][whereGas][rsort])**3)
+    rho = rhosorted[runsort]
+
+    #Free Fall time [Gyrs]
+    snapGas.data['tff'] = sqrt(( 3. * pi )/(32.* ((c.G*c.msol)/((1e3*c.parsec)**3)  * rho))) * (1./GyrToSeconds)
     #Cooling time over free fall time
     snapGas.data['tcool_tff'] = snapGas.data['tcool']/snapGas.data['tff']
     del tmp
@@ -1657,7 +1667,7 @@ CMAP=None, numThreads=4):
     fontsizeTitle = 18
 
     #DPI Controlled by user as lower res needed for videos #
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), dpi = DPI, sharex="col", sharey="row")
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), sharex="col", sharey="row")
 
     #Add overall figure plot
     TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\
@@ -1780,14 +1790,14 @@ CMAP=None, numThreads=4):
 
     # print("snapnum")
     #Pad snapnum with zeroes to enable easier video making
-    fig.subplots_adjust(wspace=0.0,hspace=0.0)
+    fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.80)
     # fig.tight_layout()
 
     SaveSnapNumber = str(snapNumber).zfill(4);
     savePath = DataSavepath + f"_T{targetT}_Quad_Plot_{int(SaveSnapNumber)}.png"
 
     print(f"[@T{targetT} @{int(snapNumber)}]: Save {savePath}")
-    plt.savefig(savePath, dpi = DPI, transparent = False)
+    plt.savefig(savePath, transparent = False)
     plt.close()
 
     print(f"[@T{targetT} @{int(snapNumber)}]: ...done!")
@@ -1800,7 +1810,7 @@ CMAP=None, numThreads=4):
 #------------------------------------------------------------------------------#
 def TracerPlot(Cells,tridDict,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
-boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 50,\
+boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 100,\
 CMAP=None, numThreads=16, MaxSubset=100):
 
     if(CMAP == None):
@@ -2003,7 +2013,7 @@ CMAP=None, numThreads=16, MaxSubset=100):
 
             print(f"[@T{targetT} @{int(snapNumber)}]: Plot...")
             #DPI Controlled by user as lower res needed for videos #
-            fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi = DPI)
+            fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize))
 
             #Add overall figure plot
             TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\
@@ -2117,14 +2127,14 @@ CMAP=None, numThreads=16, MaxSubset=100):
 
 
             #Pad snapnum with zeroes to enable easier video making
-            fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.85)
+            fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.80)
             # fig.tight_layout()
 
             SaveSnapNumber = str(snapNumber).zfill(4);
             savePath = DataSavepath + f"_T{targetT}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
 
             print(f"[@T{targetT} @{int(snapNumber)}]: Save {savePath}")
-            plt.savefig(savePath, dpi = DPI, transparent = False)
+            plt.savefig(savePath, transparent = False)
             plt.close()
 
             print(f"[@T{targetT} @{int(snapNumber)}]: ...Tracer Plot done!")

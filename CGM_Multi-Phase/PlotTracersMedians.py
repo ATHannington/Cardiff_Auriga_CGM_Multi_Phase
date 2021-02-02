@@ -36,7 +36,7 @@ colourmapMain = "plasma"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 
-logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
+logParameters = ['dens','rho_rhomean','csound','T','n_H','B','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','Pthermal_Pmagnetic','tcool','theat','tcross','tff','tcool_tff']
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'n_H':r'$n_H$ [$cm^{-3}$]', 'B':r'|B| [$\mu G$]',\
@@ -46,6 +46,7 @@ ylabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'P_magnetic':r'$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]',\
  'P_kinetic': r'$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]',\
  'P_tot': r'$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]',\
+ 'Pthermal_Pmagnetic' : r'$P_{thermal}/P_{magnetic}$',\
  'tcool': r'Cooling Time [$Gyr$]',\
  'theat': r'Heating Time [$Gyr$]',\
  'tcross': r'Sound Crossing Cell Time [$Gyr$]',\
