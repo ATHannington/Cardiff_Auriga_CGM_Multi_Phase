@@ -85,6 +85,8 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
+    del snap
+
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
 
@@ -155,7 +157,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 def tracer_selection_snap_analysis(TRACERSPARAMS,HaloID,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,\
-lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True):
+lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,TFCbool=True,loadonlyhalo=True):
 
     print("")
     print("***")
@@ -224,6 +226,8 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     #Calculate New Parameters and Load into memory others we want to track
     snapGas = CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 
+    del snap
+
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
 
@@ -240,34 +244,39 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = PadNonEntries(snapGas,snapNumber)
 
-    #--------------------------------------------------------------------------#
-    ####                    SELECTION                                        ###
-    #--------------------------------------------------------------------------#
-    print(f"[@{int(snapNumber)}]: Setting Selection Condition!")
+    if (TFCbool == True):
+        #--------------------------------------------------------------------------#
+        ####                    SELECTION                                        ###
+        #--------------------------------------------------------------------------#
+        print(f"[@{int(snapNumber)}]: Setting Selection Condition!")
 
-    #Get Cell data and Cell IDs from tracers based on condition
-    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,TRACERSPARAMS,saveParams,saveTracersOnly,snapNumber=snapNumber)
+        #Get Cell data and Cell IDs from tracers based on condition
+        TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(snapGas, snapTracers,TRACERSPARAMS,saveParams,saveTracersOnly,snapNumber=snapNumber)
 
-    # #Add snap data to temperature specific dictionary
-    # print(f"Adding (T{targetT},{int(snap)}) to Dict")
-    # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
-    if (saveTracers is True):
-        for targetT in TRACERSPARAMS['targetTLst']:
-            for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
-                key = (f"T{targetT}",f"{rin}R{rout}")
+        # #Add snap data to temperature specific dictionary
+        # print(f"Adding (T{targetT},{int(snap)}) to Dict")
+        # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
+        if (saveTracers is True):
+            for targetT in TRACERSPARAMS['targetTLst']:
+                for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+                    key = (f"T{targetT}",f"{rin}R{rout}")
 
-                out = {(f"T{targetT}",f"{rin}R{rout}",f"{int(snapNumber)}"): {'trid': TracersTFC[key]}}
+                    out = {(f"T{targetT}",f"{rin}R{rout}",f"{int(snapNumber)}"): {'trid': TracersTFC[key]}}
 
-                savePath = DataSavepath + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"+ FullDataPathSuffix
+                    savePath = DataSavepath + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"+ FullDataPathSuffix
 
-                print("\n" + f"[@{int(snapNumber)} @T{targetT} @{rin}R{rout}]: Saving Tracers ID ('trid') data as: "+ savePath)
+                    print("\n" + f"[@{int(snapNumber)} @T{targetT} @{rin}R{rout}]: Saving Tracers ID ('trid') data as: "+ savePath)
 
-                hdf5_save(savePath,out)
-
-    # #SUBSET
-    # if (SUBSET is not None):
-    #     print(f"[@{int(snapNumber)} @T{targetT}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
-    #     TracersTFC = TracersTFC[:SUBSET]
+                    hdf5_save(savePath,out)
+    else:
+        TracersTFC = None
+        CellsTFC = None
+        CellIDsTFC = None
+        ParentsTFC = None
+        # #SUBSET
+        # if (SUBSET is not None):
+        #     print(f"[@{int(snapNumber)} @T{targetT}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
+        #     TracersTFC = TracersTFC[:SUBSET]
 
     return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
 #------------------------------------------------------------------------------#

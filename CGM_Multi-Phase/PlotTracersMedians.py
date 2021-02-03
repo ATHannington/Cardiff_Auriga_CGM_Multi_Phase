@@ -23,7 +23,7 @@ import math
 
 xsize = 10.
 ysize = 12.
-DPI = 250
+DPI = 100
 
 #Set style options
 opacityPercentiles = 0.25
@@ -68,6 +68,7 @@ saveParams = TRACERSPARAMS['saveParams'] #['T','R','n_H','B','vrad','gz','L','P_
 
 DataSavepathSuffix = f".h5"
 
+saveHalo = (TRACERSPARAMS['savepath'].split('/'))[-2]
 
 print("Loading data!")
 
@@ -79,7 +80,9 @@ dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 tage = []
 for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap'])+1),1):
     minTemp = TRACERSPARAMS['targetTLst'][0]
-    key = (f"T{minTemp}", f"{int(snap)}")
+    minrin = TRACERSPARAMS['Rinner'][0]
+    minrout = TRACERSPARAMS['Router'][0]
+    key = (f"T{minTemp}",f"{minrin}R{minrout}", f"{int(snap)}")
 
     tage.append(dataDict[key]['Lookback'][0])
 
@@ -95,108 +98,110 @@ tage = abs(tage - ageUniverse)
 for analysisParam in saveParams:
     print("")
     print(f"Starting {analysisParam} Sub-plots!")
-
-    fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
-    yminlist = []
-    ymaxlist = []
     #Create a plot for each Temperature
-    for ii in range(len(Tlst)):
+    for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+        print(f"{rin}R{rout}")
 
-        #Temperature specific load path
-        plotData = Statistics_hdf5_load(Tlst[ii],DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
+        fig, ax = plt.subplots(nrows=len(Tlst), ncols=1 ,sharex=True, figsize = (xsize,ysize), dpi = DPI)
+        yminlist = []
+        ymaxlist = []
+        for ii in range(len(Tlst)):
+            print(f"T{Tlst[ii]}")
+            #Temperature specific load path
+            plotData = Statistics_hdf5_load(Tlst[ii],rin,rout,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-        snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
-        selectionSnap = np.where(snapsRange==int(TRACERSPARAMS['selectSnap']))
+            snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)])
+            selectionSnap = np.where(snapsRange==int(TRACERSPARAMS['selectSnap']))
 
-        vline = tage[selectionSnap]
+            vline = tage[selectionSnap]
 
-        #Get number of temperatures
-        NTemps = float(len(Tlst))
+            #Get number of temperatures
+            NTemps = float(len(Tlst))
 
-        #Get temperature
-        temp = TRACERSPARAMS['targetTLst'][ii]
+            #Get temperature
+            temp = TRACERSPARAMS['targetTLst'][ii]
 
-        #Select a Temperature specific colour from colourmap
+            #Select a Temperature specific colour from colourmap
 
-        #Get a colour for median and percentiles for a given temperature
-        #   Have fiddled to move colours away from extremes of the colormap
-        cmap = matplotlib.cm.get_cmap(colourmapMain)
-        colour = cmap(float(ii)/float(len(Tlst)))
+            #Get a colour for median and percentiles for a given temperature
+            #   Have fiddled to move colours away from extremes of the colormap
+            cmap = matplotlib.cm.get_cmap(colourmapMain)
+            colour = cmap(float(ii)/float(len(Tlst)))
 
 
-        loadPercentilesTypes = [analysisParam + "_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]
-        LO = analysisParam + "_" + str(min(TRACERSPARAMS['percentiles'])) + "%"
-        UP = analysisParam + "_" + str(max(TRACERSPARAMS['percentiles'])) + "%"
-        median = analysisParam + "_" + '50.00%'
+            loadPercentilesTypes = [analysisParam + "_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]
+            LO = analysisParam + "_" + str(min(TRACERSPARAMS['percentiles'])) + "%"
+            UP = analysisParam + "_" + str(max(TRACERSPARAMS['percentiles'])) + "%"
+            median = analysisParam + "_" + '50.00%'
 
-        if (analysisParam in logParameters):
-            for k, v in plotData.items():
-                plotData.update({k : np.log10(v)})
+            if (analysisParam in logParameters):
+                for k, v in plotData.items():
+                    plotData.update({k : np.log10(v)})
 
-        ymin = np.nanmin(plotData[LO])
-        ymax = np.nanmax(plotData[UP])
-        yminlist.append(ymin)
-        ymaxlist.append(ymax)
+            ymin = np.nanmin(plotData[LO])
+            ymax = np.nanmax(plotData[UP])
+            yminlist.append(ymin)
+            ymaxlist.append(ymax)
 
-        if ((np.isinf(ymin)==True) or (np.isinf(ymax)==True) or (np.isnan(ymin)==True) or (np.isnan(ymax)==True)):
+            if ((np.isinf(ymin)==True) or (np.isinf(ymax)==True) or (np.isnan(ymin)==True) or (np.isnan(ymax)==True)):
+                print("Data All Inf/NaN! Skipping entry!")
+                continue
+            print("")
+            print("Sub-Plot!")
+
+
+            if (len(Tlst)==1):
+                currentAx = ax
+            else:
+                currentAx = ax[ii]
+
+            midPercentile = math.floor(len(loadPercentilesTypes)/2.)
+            percentilesPairs = zip(loadPercentilesTypes[:midPercentile],loadPercentilesTypes[midPercentile+1:])
+            for (LO, UP) in percentilesPairs:
+                currentAx.fill_between(tage,plotData[UP],plotData[LO],\
+                facecolor=colour,alpha=opacityPercentiles,interpolate=False)
+            currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+
+            currentAx.axvline(x=vline, c='red')
+
+            currentAx.xaxis.set_minor_locator(AutoMinorLocator())
+            currentAx.yaxis.set_minor_locator(AutoMinorLocator())
+            currentAx.tick_params(which='both')
+
+            currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
+
+            plot_patch = matplotlib.patches.Patch(color=colour)
+            plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
+            currentAx.legend(handles=[plot_patch], labels=[plot_label],loc='upper right')
+
+            fig.suptitle(f"Cells Containing Tracers selected by: " +\
+            "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+            r" and $%05.2f \leq R \leq %05.2f kpc $"%(rin, rout) +\
+            "\n" + f" and selected at {vline[0]:3.2f} Gyr"+\
+            f" weighted by mass" \
+            , fontsize=12)
+
+
+
+        #Only give 1 x-axis a label, as they sharex
+        if (len(Tlst)==1):
+            axis0 = ax
+        else:
+            axis0 = ax[len(Tlst)-1]
+
+        axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
+        finalymin = np.nanmin(yminlist)
+        finalymax = np.nanmax(ymaxlist)
+        if ((np.isinf(finalymin)==True) or (np.isinf(finalymax)==True) or (np.isnan(finalymin)==True) or (np.isnan(finalymax)==True)):
             print("Data All Inf/NaN! Skipping entry!")
             continue
-        print("")
-        print("Sub-Plot!")
-
-
-        if (len(Tlst)==1):
-            currentAx = ax
-        else:
-            currentAx = ax[ii]
-
-        midPercentile = math.floor(len(loadPercentilesTypes)/2.)
-        percentilesPairs = zip(loadPercentilesTypes[:midPercentile],loadPercentilesTypes[midPercentile+1:])
-        for (LO, UP) in percentilesPairs:
-            currentAx.fill_between(tage,plotData[UP],plotData[LO],\
-            facecolor=colour,alpha=opacityPercentiles,interpolate=False)
-        currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
-
-        currentAx.axvline(x=vline, c='red')
-
-        currentAx.xaxis.set_minor_locator(AutoMinorLocator())
-        currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-        currentAx.tick_params(which='both')
-
-        currentAx.set_ylabel(ylabel[analysisParam],fontsize=10)
-
-        plot_patch = matplotlib.patches.Patch(color=colour)
-        plot_label = r"$T = 10^{%3.2f} K$"%(float(temp))
-        currentAx.legend(handles=[plot_patch], labels=[plot_label],loc='upper right')
-
-        fig.suptitle(f"Cells Containing Tracers selected by: " +\
-        "\n"+ r"$T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-        r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']) +\
-        "\n" + f" and selected at {vline[0]:3.2f} Gyr"+\
-        f" weighted by mass" \
-        , fontsize=12)
-
-
-
-    #Only give 1 x-axis a label, as they sharex
-    if (len(Tlst)==1):
-        axis0 = ax
-    else:
-        axis0 = ax[len(Tlst)-1]
-
-    axis0.set_xlabel(r"Age of Universe [$Gyrs$]",fontsize=10)
-    finalymin = np.nanmin(yminlist)
-    finalymax = np.nanmax(ymaxlist)
-    if ((np.isinf(finalymin)==True) or (np.isinf(finalymax)==True) or (np.isnan(finalymin)==True) or (np.isnan(finalymax)==True)):
-        print("Data All Inf/NaN! Skipping entry!")
-        continue
-    finalymin = math.floor(finalymin)
-    finalymax = math.ceil(finalymax)
-    custom_ylim = (finalymin,finalymax)
-    plt.setp(ax, ylim=custom_ylim)
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.90, hspace=0.0)
-    opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_Medians.pdf"
-    plt.savefig(opslaan, dpi = DPI, transparent = False)
-    print(opslaan)
-    plt.close()
+        finalymin = math.floor(finalymin)
+        finalymax = math.ceil(finalymax)
+        custom_ylim = (finalymin,finalymax)
+        plt.setp(ax, ylim=custom_ylim)
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.90, hspace=0.0)
+        opslaan = "./" + saveHalo + "/" + f"{int(rin)}R{int(rout)}" + "/"+ f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"+analysisParam+f"_Medians.pdf"
+        plt.savefig(opslaan, dpi = DPI, transparent = False)
+        print(opslaan)
+        plt.close()
