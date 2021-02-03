@@ -34,7 +34,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
 
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-    snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,2,3,4,5], lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapGas  = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
 
 
@@ -115,7 +115,7 @@ saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,la
         for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
             key = (f"T{targetT}",f"{rin}R{rout}")
             TracersSelect = TracersTFC[key]
-            
+
             print(f"[@{snapNumber} @{rin}R{rout} @T{targetT}]:  Get Cells From Tracers!")
             #Select Cells which have the tracers from the selection snap in them
             TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(snapGas, snapTracers,TracersSelect,saveParams,saveTracersOnly,snapNumber)
@@ -173,7 +173,7 @@ lazyLoadBool=True,SUBSET=None,snapNumber=None,saveTracers=True,loadonlyhalo=True
 
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-    snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,2,3,4,5], lazy_load=lazyLoadBool, subfind = snap_subfind)
+    snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
     snapGas  = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
 
 
@@ -1645,8 +1645,8 @@ def delete_nan_inf_axis(dict,axis=0):
 #------------------------------------------------------------------------------#
 def PlotProjections(snapGas,snapNumber,targetT,rin,rout,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
-boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 50,\
-CMAP=None, numThreads=4):
+boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 100,\
+CMAP=None, numThreads=2):
 
     print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Starting Projections Video Plots!")
 
@@ -1883,7 +1883,7 @@ CMAP=None, numThreads=4):
 def TracerPlot(Cells,tridDict,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
 boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 100,\
-CMAP=None, numThreads=16, MaxSubset=100):
+CMAP=None, numThreads=4, MaxSubset=100):
 
     if(CMAP == None):
         cmap = plt.get_cmap("inferno")
@@ -1928,7 +1928,7 @@ CMAP=None, numThreads=16, MaxSubset=100):
 
         # load in the gas particles mass and position only for HaloID 0.
         #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-        snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,2,3,4,5], lazy_load=lazyLoadBool, subfind = snap_subfind)
+        snap     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,1,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
         snapGas  = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], lazy_load=lazyLoadBool, subfind = snap_subfind)
 
 
