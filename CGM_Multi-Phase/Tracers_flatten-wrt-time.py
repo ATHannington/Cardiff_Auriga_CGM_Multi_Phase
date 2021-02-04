@@ -21,7 +21,7 @@ TracersParamsPath = 'TracersParams.csv'
 singleValueParams = ['Lookback','Ntracers','Snap']
 
 #Number of cores to run on:
-n_processes = 4
+n_processes = 3
 
 DataSavepathSuffix = f".h5"
 #==============================================================================#
@@ -36,28 +36,41 @@ for param in singleValueParams:
 
 DataSavepathSuffix = f".h5"
 
-print("Loading data!")
 
-dataDict = {}
 
-dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
 
-print("Flattening wrt time!")
+if __name__=="__main__":
+    print("Flattening wrt time!")
+    for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+        print(f"{rin}R{rout}")
+        print("\n" + f"Sorting multi-core arguments!")
 
-print("\n" + f"Sorting multi-core arguments!")
 
-args_default = [dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix]
-args_list = [[T]+args_default for T in TRACERSPARAMS['targetTLst']]
+        print("Loading data!")
+        args_list = []
 
-#Open multiprocesssing pool
+        args_default = [rin,rout,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix]
+        for targetT in TRACERSPARAMS['targetTLst']:
+            dataDict = {}
+            for snap in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1), int(TRACERSPARAMS['finalSnap']+1)),1):
+                loadPath = DataSavepath + f"_T{targetT}_{rin}R{rout}_{int(snap)}"+ DataSavepathSuffix
+                data = hdf5_load(loadPath)
+                dataDict.update(data)
+            args_list.append([targetT , dataDict]+args_default)
 
-print("\n" + f"Opening {n_processes} core Pool!")
-pool = mp.Pool(processes=n_processes)
+        #Open multiprocesssing pool
+        # flatten_wrt_time(4.0,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix)
+        print("\n" + f"Opening {n_processes} core Pool!")
+        pool = mp.Pool(processes=n_processes)
+        print("Pool opened!")
+        print("Analysis!")
 
-#Compute Snap analysis
-_ = [pool.apply_async(flatten_wrt_time,args=args) for args in args_list]
+        #Compute Snap analysis
+        _ = [pool.apply_async(flatten_wrt_time,args=args) for args in args_list]
 
-pool.close()
-pool.join()
-#Close multiprocesssing pool
-print(f"Closing core Pool!")
+        print("Analysis done!")
+
+        pool.close()
+        pool.join()
+        #Close multiprocesssing pool
+        print(f"Closing core Pool!")

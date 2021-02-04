@@ -1573,14 +1573,14 @@ def flatten_wrt_T(dataDict,snapRange,TRACERSPARAMS,rin,rout):
     return flattened_dict
 #------------------------------------------------------------------------------#
 
-def flatten_wrt_time(targetT,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix):
+def flatten_wrt_time(targetT,dataDict,rin,rout,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix):
 
     flattened_dict = {}
     snapRange = [xx for xx in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax'])+1,int(TRACERSPARAMS['finalSnap'])+1),1)]
 
     tmp = {}
     newkey = (f"T{targetT}",f"{rin}R{rout}")
-    key = (f"T{targetT}",f"{rin}R{rout}",f"{int(TRACERSPARAMS['selectSnap'])}")
+    key = (f"T{targetT}",f"{rin}R{rout}", f"{int(TRACERSPARAMS['selectSnap'])}")
     print(f"Starting {newkey} analysis!")
     TracerOrder = dataDict[key]['trid']
     for snap in snapRange:
@@ -1625,7 +1625,7 @@ def flatten_wrt_time(targetT,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSave
 
     hdf5_save(savePath,flattened_dict)
 
-    return flattened_dict
+    return None
 #------------------------------------------------------------------------------#
 def delete_nan_inf_axis(dict,axis=0):
     """
