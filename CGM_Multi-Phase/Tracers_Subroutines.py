@@ -1892,7 +1892,7 @@ CMAP=None, numThreads=2):
 def TracerPlot(Cells,tridDict,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix, Axes=[0,1],zAxis=[2],\
 boxsize = 400., boxlos = 20.,pixres = 0.2,pixreslos = 4, DPI = 100,\
-CMAP=None, numThreads=4, MaxSubset=100):
+CMAP=None, numThreads=4, MaxSubset=100,lazyLoadBool = True):
 
     if(CMAP == None):
         cmap = plt.get_cmap("inferno")
@@ -1924,7 +1924,7 @@ CMAP=None, numThreads=4, MaxSubset=100):
 
     omegabaryon0 = 0.048
 
-
+    HaloID = int(TRACERSPARAMS['haloID'])
 
     for snapNumber in range(int(TRACERSPARAMS['snapMin']),min(int(TRACERSPARAMS['snapMax']+1),int(TRACERSPARAMS['finalSnap']+1))):
         #--------------------------#
@@ -1963,7 +1963,7 @@ CMAP=None, numThreads=4, MaxSubset=100):
         tmp = snapGas.data['vol']
         del tmp
 
-        print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
+        print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
 
         #Centre the simulation on HaloID 0
         snap  = SetCentre(snap=snap,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
@@ -2027,66 +2027,24 @@ CMAP=None, numThreads=4, MaxSubset=100):
         #           Grab positions of Tracer Subset
         #
         #==============================================================================#
-        for targetT in TRACERSPARAMS['targetTLst']:
-            print("")
-            print(f"Starting T{targetT} {rin}R{rout} analysis")
+        for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+            print(f"{rin}R{rout}")
+            for targetT in TRACERSPARAMS['targetTLst']:
+                print("")
+                print(f"Starting T{targetT} {rin}R{rout} analysis")
 
-            selectkey = (f"T{targetT}",f"{rin}R{rout}",f"{int(TRACERSPARAMS['selectSnap'])}")
+                selectkey = (f"T{targetT}",f"{rin}R{rout}",f"{int(TRACERSPARAMS['selectSnap'])}")
 
-            whereGas = np.where(Cells[selectkey]['type']==0)[0]
-            subset = min(len(tridDict[selectkey]),MaxSubset)
-            SelectedTracers1 = random.sample(tridDict[selectkey].tolist(), subset)
-            SelectedTracers1 = np.array(SelectedTracers1)
-
-
-            print("\n" + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Selecting {int(subset)} subset of Tracers Positions...")
-            #Select new subset for first snap
-            #   Use old subset for all others
-            key = (f"T{targetT}",f"{rin}R{rout}",f"{int(snapNumber)}")
-
-            whereGas = np.where(Cells[key]['type']==0)[0]
-
-            posData, _, _ = GetIndividualCellFromTracer(Tracers=Cells[key]['trid'],\
-                Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
-                Data=Cells[key]['pos'][whereGas],NullEntry=nullEntry)
-
-            posData = np.array(posData)
-
-        #------------------------------------------------------------------------------#
-            #PLOTTING TIME
-
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Tracer Plot...")
+                whereGas = np.where(Cells[selectkey]['type']==0)[0]
+                subset = min(len(tridDict[selectkey]),MaxSubset)
+                SelectedTracers1 = random.sample(tridDict[selectkey].tolist(), subset)
+                SelectedTracers1 = np.array(SelectedTracers1)
 
 
-            # load in the subfind group files
-            tmpsnap_subfind = load_subfind(int(TRACERSPARAMS['selectSnap']),dir=TRACERSPARAMS['simfile'])
-
-            # load in the gas particles mass and position only for HaloID 0.
-            #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-            tmpsnapGas     = gadget_readsnap(int(TRACERSPARAMS['selectSnap']), TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = tmpsnap_subfind)
-
-            #Redshift
-            tmpredshift = tmpsnapGas.redshift        #z
-            aConst = 1. / (1. + tmpredshift)   #[/]
-
-            #[0] to remove from numpy array for purposes of plot title
-            tmplookback = tmpsnapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
-            selecttage = abs(tmplookback - ageUniverse)
-
-            print(f"[@T{targetT}] @{rin}R{rout} @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
-
-            aspect = "equal"
-            fontsize = 12
-            fontsizeTitle = 16
-
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
-
-            nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
-
-
-            OldPosDict = {}
-            for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
-                key = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap)}")
+                print("\n" + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Selecting {int(subset)} subset of Tracers Positions...")
+                #Select new subset for first snap
+                #   Use old subset for all others
+                key = (f"T{targetT}",f"{rin}R{rout}",f"{int(snapNumber)}")
 
                 whereGas = np.where(Cells[key]['type']==0)[0]
 
@@ -2094,151 +2052,195 @@ CMAP=None, numThreads=4, MaxSubset=100):
                     Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
                     Data=Cells[key]['pos'][whereGas],NullEntry=nullEntry)
 
-                data = {key : posData}
-                OldPosDict.update(data)
+                posData = np.array(posData)
 
-            # NullEntry= [np.nan,np.nan,np.nan]
-            # tmpOldPosDict= {}
-            # for key, dict in OldPosDict.items():
-            #     tmp = {}
-            #     for k, v in dict.items():
-            #         if (k=="pos"):
-            #             vOutOfRange = np.where((v[:,zAxis[0]]>(float(boxlos)/2.))&(v[:,zAxis[0]]<(-1.*float(boxlos)/2.)))
-            #             v[vOutOfRange] = NullEntry
-            #
-            #         tmp.update({k : v})
-            #
-            #     tmpOldPosDict.update({key : tmp})
-            #
-            # OldPosDict = tmpOldPosDict
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
+            #------------------------------------------------------------------------------#
+                #PLOTTING TIME
 
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot...")
-            #DPI Controlled by user as lower res needed for videos #
-            fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize))
-
-            #Add overall figure plot
-            TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\
-            "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<"+f"{AxesLabels[zAxis[0]]}-axis"+r"<"+f"{float(boxlos)/2.} kpc" +\
-            "\n" + f"Subset of {int(subset)} Tracers selected at " + r"$t_{Age Universe}=$" + f"{selecttage:0.03f} Gyrs" + " as being at " +\
-            "\n"+r"$T = 10^{%5.2f \pm %5.2f} K$"%(targetT,TRACERSPARAMS['deltaT'])+\
-            r" and $ %5.2f < R < %5.2f Kpc$"%(rin,rout)
-
-            fig.suptitle(TITLE, fontsize=fontsizeTitle)
-
-            # cmap = plt.get_cmap(CMAP)
-            cmap.set_bad(color="grey")
-
-            #-----------#
-            # Plot Temperature #
-            #-----------#
-
-            ###
-            #   Select 10% of subset to have a colour, the rest to be white
-            ###
-            # cmapTracers = matplotlib.cm.get_cmap("nipy_spectral")
-            # colourTracers = []
-            # cwhite = (1.,1.,1.,1.)
-            # cblack = (0.,0.,0.,1.)
-            # for ii in range(0,int(subset+1)):
-            #     if (ii % 5 == 0):
-            #         colour = cblack
-            #     else:
-            #         colour = cwhite
-            #     colourTracers.append(colour)
-            #
-            # colourTracers = np.array(colourTracers)
-
-            colour = "white"
-
-            ax1 = axes
-
-            pcm1 = ax1.pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']),\
-            vmin=1e4,vmax=1e7,\
-            norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
-
-            sizeMultiply= 25
-            sizeConst = 10
-
-            whereInRange = np.where((posData[:,zAxis[0]]<=(float(boxlos)/2.))&(posData[:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
-            posDataInRange = posData[whereInRange]
-            # colourInRange = colourTracers[whereInRange]
-            #
-            # colourTracers = colourTracers.tolist()
-            # colourInRange = colourInRange.tolist()
-
-            sizeData = np.array([(sizeMultiply*(xx+(float(boxlos)/2.))/float(boxlos))+sizeConst  for xx in posDataInRange[:,zAxis[0]]])
-
-            ax1.scatter(posDataInRange[:,Axes[0]],posDataInRange[:,Axes[1]],s=sizeData,c=colour,marker='o')#colourInRange,marker='o')
-
-            if (int(snapNumber) == int(TRACERSPARAMS['selectSnap'])):
-                innerCircle = matplotlib.patches.Circle(xy=(0,0),radius = float(rin), facecolor = 'none', edgecolor="green", linewidth = 5, linestyle="-.")
-                outerCircle = matplotlib.patches.Circle(xy=(0,0),radius = float(rout), facecolor = 'none', edgecolor="green", linewidth = 5, linestyle="-.")
-                ax1.add_patch(innerCircle)
-                ax1.add_patch(outerCircle)
-
-            minSnap = int(snapNumber) - min(int(nOldSnaps),3)
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Tracer Plot...")
 
 
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot Tails...")
-            jj=1
-            for snap in range(int(minSnap+1),snapNumber+1):
-                key1 = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap-1)}")
-                key2 = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap)}")
-                if (snap != int(snapNumber)):
-                    pos1 = OldPosDict[key1]
-                    pos2 = OldPosDict[key2]
-                else:
-                    pos1 = OldPosDict[key1]
-                    pos2 = posData
+                # load in the subfind group files
+                tmpsnap_subfind = load_subfind(int(TRACERSPARAMS['selectSnap']),dir=TRACERSPARAMS['simfile'])
 
-                whereInRange = np.where((pos1[:,zAxis[0]]<=(float(boxlos)/2.))&(pos1[:,zAxis[0]]>=(-1.*float(boxlos)/2.))\
-                &(pos2[:,zAxis[0]]<=(float(boxlos)/2.))&(pos2[:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+                # load in the gas particles mass and position only for HaloID 0.
+                #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+                tmpsnapGas     = gadget_readsnap(int(TRACERSPARAMS['selectSnap']), TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0], lazy_load=True, subfind = tmpsnap_subfind)
 
-                pathData = np.array([pos1[whereInRange],pos2[whereInRange]])
-                ntails = np.shape(pos1[whereInRange])[0]
-                alph = float(jj)/float(max(1,min(int(nOldSnaps),3))+1.)
-                jj +=1
+                #Redshift
+                tmpredshift = tmpsnapGas.redshift        #z
+                aConst = 1. / (1. + tmpredshift)   #[/]
 
-                for ii in range(0,int(ntails)):
-                    ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c=colour,alpha=alph)#colourTracers[ii],alpha=alph)
+                #[0] to remove from numpy array for purposes of plot title
+                tmplookback = tmpsnapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[0] #[Gyrs]
+                selecttage = abs(tmplookback - ageUniverse)
 
+                print(f"[@T{targetT}] @{rin}R{rout} @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...finished Plot Tails!")
+                aspect = "equal"
+                fontsize = 12
+                fontsizeTitle = 16
 
-            xmin = np.nanmin(proj_T['x'])
-            xmax = np.nanmax(proj_T['x'])
-            ymin = np.nanmin(proj_T['y'])
-            ymax = np.nanmax(proj_T['y'])
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Loading Old Tracer Subset Data...")
 
-            ax1.set_ylim(ymin=ymin,ymax=ymax)
-            ax1.set_xlim(xmin=xmin,xmax=xmax)
-
-            ax1.set_title(f'Temperature Projection',fontsize=fontsize)
-            cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
-            fig.colorbar(pcm1, cax = cax1, orientation = 'vertical').set_label(label=r'$T$ [$K$]',size=fontsize, weight="bold")
-            cax1.yaxis.set_ticks_position("left")
-            cax1.yaxis.set_label_position("left")
-            cax1.yaxis.label.set_color("white")
-            cax1.tick_params(axis="y", colors="white",labelsize=fontsize)
-
-            ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
-            ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
-            ax1.set_aspect(aspect)
+                nOldSnaps = int(snapNumber) - int(TRACERSPARAMS['snapMin'])
 
 
+                OldPosDict = {}
+                for snap in range(int(TRACERSPARAMS['snapMin']),int(snapNumber)):
+                    key = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap)}")
 
-            #Pad snapnum with zeroes to enable easier video making
-            fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.80)
-            # fig.tight_layout()
+                    whereGas = np.where(Cells[key]['type']==0)[0]
 
-            SaveSnapNumber = str(snapNumber).zfill(4);
-            savePath = DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+                    posData, _, _ = GetIndividualCellFromTracer(Tracers=Cells[key]['trid'],\
+                        Parents=Cells[key]['prid'],CellIDs=Cells[key]['id'][whereGas],SelectedTracers=SelectedTracers1,\
+                        Data=Cells[key]['pos'][whereGas],NullEntry=nullEntry)
 
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Save {savePath}")
-            plt.savefig(savePath, transparent = False)
-            plt.close()
+                    data = {key : posData}
+                    OldPosDict.update(data)
 
-            print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...Tracer Plot done!")
+                # NullEntry= [np.nan,np.nan,np.nan]
+                # tmpOldPosDict= {}
+                # for key, dict in OldPosDict.items():
+                #     tmp = {}
+                #     for k, v in dict.items():
+                #         if (k=="pos"):
+                #             vOutOfRange = np.where((v[:,zAxis[0]]>(float(boxlos)/2.))&(v[:,zAxis[0]]<(-1.*float(boxlos)/2.)))
+                #             v[vOutOfRange] = NullEntry
+                #
+                #         tmp.update({k : v})
+                #
+                #     tmpOldPosDict.update({key : tmp})
+                #
+                # OldPosDict = tmpOldPosDict
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...finished Loading Old Tracer Subset Data!")
+
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot...")
+                #DPI Controlled by user as lower res needed for videos #
+                fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize))
+
+                #Add overall figure plot
+                TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\
+                "\n" + f"Projections within {-1.*float(boxlos)/2.}"+r"<"+f"{AxesLabels[zAxis[0]]}-axis"+r"<"+f"{float(boxlos)/2.} kpc" +\
+                "\n" + f"Subset of {int(subset)} Tracers selected at " + r"$t_{Age Universe}=$" + f"{selecttage:0.03f} Gyrs" + " as being at " +\
+                "\n"+r"$T = 10^{%5.2f \pm %5.2f} K$"%(targetT,TRACERSPARAMS['deltaT'])+\
+                r" and $ %5.2f < R < %5.2f Kpc$"%(rin,rout)
+
+                fig.suptitle(TITLE, fontsize=fontsizeTitle)
+
+                # cmap = plt.get_cmap(CMAP)
+                cmap.set_bad(color="grey")
+
+                #-----------#
+                # Plot Temperature #
+                #-----------#
+
+                ###
+                #   Select 10% of subset to have a colour, the rest to be white
+                ###
+                # cmapTracers = matplotlib.cm.get_cmap("nipy_spectral")
+                # colourTracers = []
+                # cwhite = (1.,1.,1.,1.)
+                # cblack = (0.,0.,0.,1.)
+                # for ii in range(0,int(subset+1)):
+                #     if (ii % 5 == 0):
+                #         colour = cblack
+                #     else:
+                #         colour = cwhite
+                #     colourTracers.append(colour)
+                #
+                # colourTracers = np.array(colourTracers)
+
+                colour = "white"
+
+                ax1 = axes
+
+                pcm1 = ax1.pcolormesh(proj_T['x'], proj_T['y'], np.transpose(proj_T['grid']/proj_dens['grid']),\
+                vmin=1e4,vmax=1e7,\
+                norm =  matplotlib.colors.LogNorm(), cmap = cmap, rasterized = True)
+
+                sizeMultiply= 25
+                sizeConst = 10
+
+                whereInRange = np.where((posData[:,zAxis[0]]<=(float(boxlos)/2.))&(posData[:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+                posDataInRange = posData[whereInRange]
+                # colourInRange = colourTracers[whereInRange]
+                #
+                # colourTracers = colourTracers.tolist()
+                # colourInRange = colourInRange.tolist()
+
+                sizeData = np.array([(sizeMultiply*(xx+(float(boxlos)/2.))/float(boxlos))+sizeConst  for xx in posDataInRange[:,zAxis[0]]])
+
+                ax1.scatter(posDataInRange[:,Axes[0]],posDataInRange[:,Axes[1]],s=sizeData,c=colour,marker='o')#colourInRange,marker='o')
+
+                if (int(snapNumber) == int(TRACERSPARAMS['selectSnap'])):
+                    innerCircle = matplotlib.patches.Circle(xy=(0,0),radius = float(rin), facecolor = 'none', edgecolor="green", linewidth = 5, linestyle="-.")
+                    outerCircle = matplotlib.patches.Circle(xy=(0,0),radius = float(rout), facecolor = 'none', edgecolor="green", linewidth = 5, linestyle="-.")
+                    ax1.add_patch(innerCircle)
+                    ax1.add_patch(outerCircle)
+
+                minSnap = int(snapNumber) - min(int(nOldSnaps),3)
+
+
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot Tails...")
+                jj=1
+                for snap in range(int(minSnap+1),snapNumber+1):
+                    key1 = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap-1)}")
+                    key2 = (f"T{targetT}",f"{rin}R{rout}",f"{int(snap)}")
+                    if (snap != int(snapNumber)):
+                        pos1 = OldPosDict[key1]
+                        pos2 = OldPosDict[key2]
+                    else:
+                        pos1 = OldPosDict[key1]
+                        pos2 = posData
+
+                    whereInRange = np.where((pos1[:,zAxis[0]]<=(float(boxlos)/2.))&(pos1[:,zAxis[0]]>=(-1.*float(boxlos)/2.))\
+                    &(pos2[:,zAxis[0]]<=(float(boxlos)/2.))&(pos2[:,zAxis[0]]>=(-1.*float(boxlos)/2.)))
+
+                    pathData = np.array([pos1[whereInRange],pos2[whereInRange]])
+                    ntails = np.shape(pos1[whereInRange])[0]
+                    alph = float(jj)/float(max(1,min(int(nOldSnaps),3))+1.)
+                    jj +=1
+
+                    for ii in range(0,int(ntails)):
+                        ax1.plot(pathData[:,ii,Axes[0]],pathData[:,ii,Axes[1]],c=colour,alpha=alph)#colourTracers[ii],alpha=alph)
+
+
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...finished Plot Tails!")
+
+                xmin = np.nanmin(proj_T['x'])
+                xmax = np.nanmax(proj_T['x'])
+                ymin = np.nanmin(proj_T['y'])
+                ymax = np.nanmax(proj_T['y'])
+
+                ax1.set_ylim(ymin=ymin,ymax=ymax)
+                ax1.set_xlim(xmin=xmin,xmax=xmax)
+
+                ax1.set_title(f'Temperature Projection',fontsize=fontsize)
+                cax1 = inset_axes(ax1,width="5%",height="95%",loc='right')
+                fig.colorbar(pcm1, cax = cax1, orientation = 'vertical').set_label(label=r'$T$ [$K$]',size=fontsize, weight="bold")
+                cax1.yaxis.set_ticks_position("left")
+                cax1.yaxis.set_label_position("left")
+                cax1.yaxis.label.set_color("white")
+                cax1.tick_params(axis="y", colors="white",labelsize=fontsize)
+
+                ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
+                ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
+                ax1.set_aspect(aspect)
+
+
+
+                #Pad snapnum with zeroes to enable easier video making
+                fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.80)
+                # fig.tight_layout()
+
+                SaveSnapNumber = str(snapNumber).zfill(4);
+                savePath = DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Save {savePath}")
+                plt.savefig(savePath, transparent = False)
+                plt.close()
+
+                print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...Tracer Plot done!")
 
     return

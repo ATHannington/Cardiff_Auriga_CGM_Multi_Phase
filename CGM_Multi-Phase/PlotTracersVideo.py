@@ -51,17 +51,19 @@ boxlos = TRACERSPARAMS['boxlos']
 zAxis = int(TRACERSPARAMS['zAxis'][0])
 #Loop over temperatures in targetTLst and grab Temperature specific subset of tracers in zAxis LOS range at selectionSnap
 tridData = {}
-for T in TRACERSPARAMS['targetTLst']:
-    print("")
-    print(f"T{T}")
-    #Grab the data for tracers in projection LOS volume
-    key = (f"T{T}",f"{int(TRACERSPARAMS['selectSnap'])}")
-    whereGas = np.where(dataDict[key]['type']==0)
-    whereInRange = np.where((dataDict[key]['pos'][whereGas][:,zAxis]<=(float(boxlos)/2.))&(dataDict[key]['pos'][whereGas][:,zAxis]>=(-1.*float(boxlos)/2.)))
-    pridsIndices = np.where(np.isin(dataDict[key]['prid'][whereGas],dataDict[key]['id'][whereGas][whereInRange]))[0]
-    trids = dataDict[key]['trid'][whereGas][pridsIndices]
+for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+    print(f"{rin}R{rout}")
+    for T in TRACERSPARAMS['targetTLst']:
+        print("")
+        print(f"T{T}")
+        #Grab the data for tracers in projection LOS volume
+        key = (f"T{T}",f"{rin}R{rout}",f"{int(TRACERSPARAMS['selectSnap'])}")
+        whereGas = np.where(dataDict[key]['type']==0)
+        whereInRange = np.where((dataDict[key]['pos'][whereGas][:,zAxis]<=(float(boxlos)/2.))&(dataDict[key]['pos'][whereGas][:,zAxis]>=(-1.*float(boxlos)/2.)))
+        pridsIndices = np.where(np.isin(dataDict[key]['prid'][whereGas],dataDict[key]['id'][whereGas][whereInRange]))[0]
+        trids = dataDict[key]['trid'][whereGas][pridsIndices]
 
-    tridData.update({key: trids})
+        tridData.update({key: trids})
 
 #==============================================================================#
 #   Get Data within range of z-axis LOS common between ALL time-steps
@@ -100,4 +102,4 @@ TracerPlot(dataDict,tridData,TRACERSPARAMS, DataSavepath,\
 FullDataPathSuffix=f".h5", Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'],\
 boxsize = TRACERSPARAMS['boxsize'], boxlos = TRACERSPARAMS['boxlos'],\
 pixres = TRACERSPARAMS['pixres'], pixreslos = TRACERSPARAMS['pixreslos'],\
-numThreads=6,MaxSubset= subset )
+numThreads=2,MaxSubset= subset )
