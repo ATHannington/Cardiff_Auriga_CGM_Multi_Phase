@@ -17,12 +17,13 @@ import math
 ageUniverse = 13.77 #[Gyr]
 xsize = 30.
 ysize = 10.
-DPI = 250
+DPI = 100
 colourmapMain = "plasma"
 #Input parameters path:
 TracersParamsPath = 'TracersParams.csv'
 DataSavepathSuffix = f".h5"
-singleVals = ["T","Snap","Lookback"]
+singleVals = ["Rinner","Router","T","Snap","Lookback"]
+
 #==============================================================================#
 #       Chemical Properties
 #==============================================================================#
@@ -41,6 +42,8 @@ omegabaryon0 = 0.048
 #Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
+saveHalo = (TRACERSPARAMS['savepath'].split('/'))[-2]
+
 print("Loading data!")
 
 dataDict = {}
@@ -51,11 +54,12 @@ snapsRange = np.array([ xx for xx in range(int(TRACERSPARAMS['snapMin']), min(in
 
 FlatDataDict = {}
 for T in Tlst:
-    loadPath = DataSavepath + f"_T{T}_flat-wrt-time"+ DataSavepathSuffix
-
-    tmp = hdf5_load(loadPath)
-    tmp[f"T{T}"].update({'Ntracers' : np.shape(tmp[f"T{T}"]['type'])[1]})
-    FlatDataDict.update(tmp)
+    for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+        loadPath = DataSavepath + f"_T{T}_{rin}R{rout}_flat-wrt-time"+ DataSavepathSuffix
+        key = (f"T{T}",f"{rin}R{rout}")
+        tmp = hdf5_load(loadPath)
+        tmp[key].update({'Ntracers' : np.shape(tmp[key]['type'])[1]})
+        FlatDataDict.update(tmp)
 ################################################################################
 ##                           Definitions                                    ####
 ################################################################################
@@ -97,188 +101,256 @@ def flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERS
     stars = []
     wind = []
     ism = []
+    ptherm = []
+    pmag = []
+    tcool = []
+    tff = []
 
+    out = {}
     preselectInd = np.where(snapsRange < int(TRACERSPARAMS['selectSnap']))[0]
     postselectInd = np.where(snapsRange > int(TRACERSPARAMS['selectSnap']))[0]
-    for T in Tlst:
-        Tkey = f"T{T}"
-        print(Tkey)
+    for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+        dfdat = {}
+        for T in Tlst:
+            Tkey = (f"T{T}",f"{rin}R{rout}")
+            print(Tkey)
+
+            if len(dfdat.keys())>0:
+                val = dfdat['T']
+                Tval = val + [T]
+
+                val = dfdat['Rinner']
+                rinval = val + [rin]
+
+                val = dfdat['Router']
+                routval = val + [rout]
+
+                dfdat.update({'T': Tval,'Rinner': rinval, 'Router' : routval})
+            else:
+                dfdat.update({'T': [T],'Rinner': [rin], 'Router' : [rout]})
+
+            data = FlatDataDict[Tkey]
+            ntracers = FlatDataDict[Tkey]['Ntracers']
+
+            print("Gas")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['type'][preselectInd,:] == 0)
+            gaspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['type'][postselectInd,:] == 0)
+            gaspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            gas.append([gaspre,gaspost])
+
+            print("Heating & Cooling")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd[:-2],:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+            coolingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
+            heatingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:][:-2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+            heatingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
+            coolingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            cooling.append([coolingpre,coolingpost])
+            heating.append([heatingpre,heatingpost])
+
+            print("Pthermal_Pmagnetic 1 ")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['Pthermal_Pmagnetic'][preselectInd[:-2],:] > 1.)
+            pthermpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['Pthermal_Pmagnetic'][postselectInd,:][:2]> 1.)
+            pthermpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['Pthermal_Pmagnetic'][preselectInd,:][:-2]< 1. )
+            pmagpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['Pthermal_Pmagnetic'][postselectInd,:][:2]< 1. )
+            pmagpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            ptherm.append([pthermpre,pthermpost])
+            pmag.append([pmagpre,pmagpost])
+
+            print("tcool_tff 10 ")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['tcool_tff'][preselectInd[:-2],:] > 10.)
+            tcoolpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['tcool_tff'][postselectInd,:][:2]> 10.)
+            tcoolpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['tcool_tff'][preselectInd,:][:-2]< 10. )
+            tffpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['tcool_tff'][postselectInd,:][:2]< 10. )
+            tffpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            tcool.append([pthermpre,pthermpost])
+            tff.append([tffpre,tffpost])
 
 
-        data = FlatDataDict[Tkey]
-        ntracers = FlatDataDict[Tkey]['Ntracers']
+            print("Z")
+            data = FlatDataDict[Tkey]['gz'][preselectInd,:]
+            weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
+            zPreDat = []
+            for (dat,wei) in zip(data.T,weights.T):
+                zPreDat.append(weightedperc(dat, wei, 50,"Z-Pre"))
+            zPreDat = np.array(zPreDat)
 
-        print("Gas")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['type'][preselectInd,:] == 0)
-        gaspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['type'][postselectInd,:] == 0)
-        gaspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        gas.append([gaspre,gaspost])
+            data = FlatDataDict[Tkey]['gz'][postselectInd,:]
+            weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
+            zPostDat = []
+            for (dat,wei) in zip(data.T,weights.T):
+                zPostDat.append(weightedperc(dat, wei, 50,"Z-Post"))
+            zPostDat = np.array(zPostDat)
 
-        print("Heating & Cooling")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd[:-2],:]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
-        coolingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]> 10.**(float(T) + float(TRACERSPARAMS['deltaT'])))
-        heatingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['T'][preselectInd,:][:-2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
-        heatingpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['T'][postselectInd,:][:2]< 10.**(float(T) - float(TRACERSPARAMS['deltaT'])))
-        coolingpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        cooling.append([coolingpre,coolingpost])
-        heating.append([heatingpre,heatingpost])
+            colspre = np.where(zPreDat>  0.75)[0]
+            aboveZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            colspost = np.where(zPostDat >  0.75)[0]
+            aboveZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            aboveZ.append([aboveZpre,aboveZpost])
 
-        print("Z")
-        data = FlatDataDict[Tkey]['gz'][preselectInd,:]
-        weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
-        zPreDat = []
-        for (dat,wei) in zip(data.T,weights.T):
-            zPreDat.append(weightedperc(dat, wei, 50,"Z-Pre"))
-        zPreDat = np.array(zPreDat)
+            colspre = np.where(zPreDat<  0.75)[0]
+            belowZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            colspost = np.where(zPostDat <  0.75)[0]
+            belowZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            belowZ.append([belowZpre,belowZpost])
 
-        data = FlatDataDict[Tkey]['gz'][postselectInd,:]
-        weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
-        zPostDat = []
-        for (dat,wei) in zip(data.T,weights.T):
-            zPostDat.append(weightedperc(dat, wei, 50,"Z-Post"))
-        zPostDat = np.array(zPostDat)
+            print("Radial-Flow")
+            data = FlatDataDict[Tkey]['vrad'][preselectInd,:]
+            weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
+            vradPreDat = []
+            for (dat,wei) in zip(data.T,weights.T):
+                vradPreDat.append(weightedperc(dat, wei, 50,"Vrad-Pre"))
+            vradPreDat = np.array(vradPreDat)
 
-        colspre = np.where(zPreDat>  0.75)[0]
-        aboveZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        colspost = np.where(zPostDat >  0.75)[0]
-        aboveZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        aboveZ.append([aboveZpre,aboveZpost])
+            data = FlatDataDict[Tkey]['vrad'][postselectInd,:]
+            weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
+            vradPostDat = []
+            for (dat,wei) in zip(data.T,weights.T):
+                vradPostDat.append(weightedperc(dat, wei, 50,"Vrad-Post"))
+            vradPostDat = np.array(vradPostDat)
 
-        colspre = np.where(zPreDat<  0.75)[0]
-        belowZpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        colspost = np.where(zPostDat <  0.75)[0]
-        belowZpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        belowZ.append([belowZpre,belowZpost])
+            epsilon = 50.
 
-        print("Radial-Flow")
-        data = FlatDataDict[Tkey]['vrad'][preselectInd,:]
-        weights = FlatDataDict[Tkey]['mass'][preselectInd,:]
-        vradPreDat = []
-        for (dat,wei) in zip(data.T,weights.T):
-            vradPreDat.append(weightedperc(dat, wei, 50,"Vrad-Pre"))
-        vradPreDat = np.array(vradPreDat)
+            colspre = np.where(vradPreDat < 0.0 - epsilon)[0]
+            inflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            colspost = np.where(vradPostDat <  0.0 - epsilon)[0]
+            inflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            inflow.append([inflowpre,inflowpost])
 
-        data = FlatDataDict[Tkey]['vrad'][postselectInd,:]
-        weights = FlatDataDict[Tkey]['mass'][postselectInd,:]
-        vradPostDat = []
-        for (dat,wei) in zip(data.T,weights.T):
-            vradPostDat.append(weightedperc(dat, wei, 50,"Vrad-Post"))
-        vradPostDat = np.array(vradPostDat)
+            colspre = np.where((vradPreDat >= 0.0 - epsilon)&(vradPreDat <= 0.0 + epsilon))[0]
+            statflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            colspost = np.where((vradPostDat >= 0.0 - epsilon)&(vradPostDat <= 0.0 + epsilon))[0]
+            statflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            statflow.append([statflowpre,statflowpost])
 
-        epsilon = 50.
+            colspre = np.where(vradPreDat > 0.0 + epsilon)[0]
+            outflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            colspost = np.where(vradPostDat >  0.0 + epsilon)[0]
+            outflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            outflow.append([outflowpre,outflowpost])
 
-        colspre = np.where(vradPreDat < 0.0 - epsilon)[0]
-        inflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        colspost = np.where(vradPostDat <  0.0 - epsilon)[0]
-        inflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        inflow.append([inflowpre,inflowpost])
+            print("Halo0")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == int(TRACERSPARAMS['haloID']))
+            halo0pre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] ==int(TRACERSPARAMS['haloID']))
+            halo0post = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            halo0.append([halo0pre,halo0post])
 
-        colspre = np.where((vradPreDat >= 0.0 - epsilon)&(vradPreDat <= 0.0 + epsilon))[0]
-        statflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        colspost = np.where((vradPostDat >= 0.0 - epsilon)&(vradPostDat <= 0.0 + epsilon))[0]
-        statflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        statflow.append([statflowpre,statflowpost])
+            print("Unbound")
+            rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == -1)
+            unboundpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] == -1)
+            unboundpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            unbound.append([unboundpre,unboundpost])
 
-        colspre = np.where(vradPreDat > 0.0 + epsilon)[0]
-        outflowpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        colspost = np.where(vradPostDat >  0.0 + epsilon)[0]
-        outflowpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        outflow.append([outflowpre,outflowpost])
+            print("OtherHalo")
+            rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+            (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
+            (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == False))
+            otherHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+            (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
+            (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == False))
+            otherHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            otherHalo.append([otherHalopre,otherHalopost])
 
-        print("Halo0")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == int(TRACERSPARAMS['haloID']))
-        halo0pre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] ==int(TRACERSPARAMS['haloID']))
-        halo0post = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        halo0.append([halo0pre,halo0post])
+            print("NoHalo")
+            rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+            (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
+            (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == True))
+            noHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
+            (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
+            (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == True))
+            noHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            noHalo.append([noHalopre,noHalopost])
 
-        print("Unbound")
-        rowspre, colspre = np.where(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] == -1)
-        unboundpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] == -1)
-        unboundpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        unbound.append([unboundpre,unboundpost])
+            print("Stars")
+            rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
+            (FlatDataDict[Tkey]['age'][preselectInd,:] >= 0.))
+            starspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
+            (FlatDataDict[Tkey]['age'][postselectInd,:] >= 0.))
+            starspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            stars.append([starspre,starspost])
 
-        print("OtherHalo")
-        rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
-        (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
-        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == False))
-        otherHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
-        (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
-        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == False))
-        otherHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        otherHalo.append([otherHalopre,otherHalopost])
+            print("Wind")
+            rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
+            (FlatDataDict[Tkey]['age'][preselectInd,:] < 0.))
+            windpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
+            (FlatDataDict[Tkey]['age'][postselectInd,:] < 0.))
+            windpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            wind.append([windpre,windpost])
 
-        print("NoHalo")
-        rowspre, colspre = np.where((FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
-        (FlatDataDict[Tkey]['SubHaloID'][preselectInd,:] != -1 ) &\
-        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][preselectInd,:]) == True))
-        noHalopre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where((FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] !=int(TRACERSPARAMS['haloID']))&\
-        (FlatDataDict[Tkey]['SubHaloID'][postselectInd,:] != -1 ) &\
-        (np.isnan(FlatDataDict[Tkey]['SubHaloID'][postselectInd,:]) == True))
-        noHalopost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        noHalo.append([noHalopre,noHalopost])
+            print("ISM")
+            rowspre, colspre = np.where((FlatDataDict[Tkey]['R'][preselectInd,:] <= 25.0)&\
+            (FlatDataDict[Tkey]['sfr'][preselectInd,:] > 0.))
+            ismpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
+            rowspost, colspost = np.where((FlatDataDict[Tkey]['R'][postselectInd,:] <= 25.0)&\
+            (FlatDataDict[Tkey]['sfr'][postselectInd,:] > 0.))
+            ismpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
+            ism.append([ismpre,ismpost])
 
-        print("Stars")
-        rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
-        (FlatDataDict[Tkey]['age'][preselectInd,:] >= 0.))
-        starspre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
-        (FlatDataDict[Tkey]['age'][postselectInd,:] >= 0.))
-        starspost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        stars.append([starspre,starspost])
+        outinner = {\
+        "Rinner" : dfdat['Rinner'] ,\
+        "Router" : dfdat['Router'] ,\
+        "T" : dfdat['T'] ,\
+        # "%Gas": {"Pre-Selection" : np.array(gas)[:,0],"Post-Selection" : np.array(gas)[:,1]} , \
+        "%Halo0": {"Pre-Selection" : np.array(halo0)[:,0],"Post-Selection" : np.array(halo0)[:,1]} , \
+        "%Unbound": {"Pre-Selection" : np.array(unbound)[:,0],"Post-Selection" : np.array(unbound)[:,1]} , \
+        "%OtherHalo": {"Pre-Selection" : np.array(otherHalo)[:,0],"Post-Selection" : np.array(otherHalo)[:,1]} , \
+        "%NoHalo": {"Pre-Selection" : np.array(noHalo)[:,0],"Post-Selection" : np.array(noHalo)[:,1]} , \
+        "%Stars": {"Pre-Selection" : np.array(stars)[:,0],"Post-Selection" : np.array(stars)[:,1]} , \
+        "%Wind": {"Pre-Selection" : np.array(wind)[:,0],"Post-Selection" : np.array(wind)[:,1]} , \
+        "%ISM": {"Pre-Selection" : np.array(ism)[:,0],"Post-Selection" : np.array(ism)[:,1]} , \
+        "%Inflow": {"Pre-Selection" : np.array(inflow)[:,0],"Post-Selection" : np.array(inflow)[:,1]} , \
+        "%Radially-Static": {"Pre-Selection" : np.array(statflow)[:,0],"Post-Selection" : np.array(statflow)[:,1]} , \
+        "%Outflow": {"Pre-Selection" : np.array(outflow)[:,0],"Post-Selection" : np.array(outflow)[:,1]} , \
+        "%Above3/4(Z_solar)": {"Pre-Selection" : np.array(aboveZ)[:,0],"Post-Selection" : np.array(aboveZ)[:,1]} , \
+        "%Below3/4(Z_solar)": {"Pre-Selection" : np.array(belowZ)[:,0],"Post-Selection" : np.array(belowZ)[:,1]} , \
+        "%Heating": {"Pre-Selection" : np.array(heating)[:,0],"Post-Selection" : np.array(heating)[:,1]} , \
+        "%Cooling": {"Pre-Selection" : np.array(cooling)[:,0],"Post-Selection" : np.array(cooling)[:,1]},\
 
-        print("Wind")
-        rowspre, colspre = np.where((FlatDataDict[Tkey]['type'][preselectInd,:] == 4)&\
-        (FlatDataDict[Tkey]['age'][preselectInd,:] < 0.))
-        windpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where((FlatDataDict[Tkey]['type'][postselectInd,:] == 4)&\
-        (FlatDataDict[Tkey]['age'][postselectInd,:] < 0.))
-        windpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        wind.append([windpre,windpost])
+        "%(Ptherm_Pmagn)Above1": {"Pre-Selection" : np.array(ptherm)[:,0],"Post-Selection" : np.array(ptherm)[:,1]},\
+        "%(Ptherm_Pmagn)Below1": {"Pre-Selection" : np.array(pmag)[:,0],"Post-Selection" : np.array(pmag)[:,1]},\
 
-        print("ISM")
-        rowspre, colspre = np.where((FlatDataDict[Tkey]['R'][preselectInd,:] <= 25.0)&\
-        (FlatDataDict[Tkey]['sfr'][preselectInd,:] > 0.))
-        ismpre = 100.* float(np.shape(np.unique(colspre))[0])/float(ntracers)
-        rowspost, colspost = np.where((FlatDataDict[Tkey]['R'][postselectInd,:] <= 25.0)&\
-        (FlatDataDict[Tkey]['sfr'][postselectInd,:] > 0.))
-        ismpost = 100.* float(np.shape(np.unique(colspost))[0])/float(ntracers)
-        ism.append([ismpre,ismpost])
+        "%(tcool_tff)Above10": {"Pre-Selection" : np.array(tcool)[:,0],"Post-Selection" : np.array(tcool)[:,1]},\
+        "%(tcool_tff)Below10": {"Pre-Selection" : np.array(tff)[:,0],"Post-Selection" : np.array(tff)[:,1]} }
 
-    out = {"%Gas": {"Pre-Selection" : np.array(gas)[:,0],"Post-Selection" : np.array(gas)[:,1]} , \
-    "%Halo0": {"Pre-Selection" : np.array(halo0)[:,0],"Post-Selection" : np.array(halo0)[:,1]} , \
-    "%Unbound": {"Pre-Selection" : np.array(unbound)[:,0],"Post-Selection" : np.array(unbound)[:,1]} , \
-    "%OtherHalo": {"Pre-Selection" : np.array(otherHalo)[:,0],"Post-Selection" : np.array(otherHalo)[:,1]} , \
-    "%NoHalo": {"Pre-Selection" : np.array(noHalo)[:,0],"Post-Selection" : np.array(noHalo)[:,1]} , \
-    "%Stars": {"Pre-Selection" : np.array(stars)[:,0],"Post-Selection" : np.array(stars)[:,1]} , \
-    "%Wind": {"Pre-Selection" : np.array(wind)[:,0],"Post-Selection" : np.array(wind)[:,1]} , \
-    "%ISM": {"Pre-Selection" : np.array(ism)[:,0],"Post-Selection" : np.array(ism)[:,1]} , \
-    "%Inflow": {"Pre-Selection" : np.array(inflow)[:,0],"Post-Selection" : np.array(inflow)[:,1]} , \
-    "%Radially-Static": {"Pre-Selection" : np.array(statflow)[:,0],"Post-Selection" : np.array(statflow)[:,1]} , \
-    "%Outflow": {"Pre-Selection" : np.array(outflow)[:,0],"Post-Selection" : np.array(outflow)[:,1]} , \
-    "%Above3/4(Z_solar)": {"Pre-Selection" : np.array(aboveZ)[:,0],"Post-Selection" : np.array(aboveZ)[:,1]} , \
-    "%Below3/4(Z_solar)": {"Pre-Selection" : np.array(belowZ)[:,0],"Post-Selection" : np.array(belowZ)[:,1]} , \
-    "%Heating": {"Pre-Selection" : np.array(heating)[:,0],"Post-Selection" : np.array(heating)[:,1]} , \
-    "%Cooling": {"Pre-Selection" : np.array(cooling)[:,0],"Post-Selection" : np.array(cooling)[:,1]} }
+        for key, value in outinner.items():
+            if ((key == 'T')or(key == 'Rinner')or(key == 'Router')):
+                if (key in list(out.keys())):
+                    val = out[key]
+                    val = val + value
+                    out.update({key : val})
+                else:
+                    out.update({key : value})
+            else:
+                tmp = {}
+                for k, v in value.items():
+                    tmp.update({k : v})
+                out.update({key : tmp})
+
 
     dict_of_df = {k: pd.DataFrame(v) for k,v in out.items()}
     df1 = pd.concat(dict_of_df, axis=1)
 
-    df2 = pd.DataFrame({"T" : Tlst})
-    df = pd.concat([df2,df1], axis=1, join='outer',sort=False)
-    df = df.set_index('T')
+    df = df1.set_index('T')
     return df
 #------------------------------------------------------------------------------#
 #               Analyse log10(T) and snap specfifc statistics
 #------------------------------------------------------------------------------#
-def _inner_analysis(dataDict):
+def _inner_analysis(dataDict,TRACERSPARAMS):
 
     out = {}
 
@@ -410,38 +482,121 @@ def _inner_analysis(dataDict):
     cooling.update({'data' : coolingdata})
     out.update({"%Cooling": cooling})
 
+    ptherm = {}
+    whereptherm = np.where(dataDict['Pthermal_Pmagnetic'][whereGas]>1.)[0]
+    tmp = _get_id_prid_trid_where(dataDict,whereptherm)
+    ptherm.update(tmp)
+    pthermdata = (100.*(np.shape(ptherm['trid'])[0]/Ntracers))
+    ptherm.update({'data' : pthermdata})
+    out.update({"%(Pthermal_Pmagnetic)Above1": ptherm})
+
+    pmag = {}
+    wherepmag = np.where(dataDict['Pthermal_Pmagnetic'][whereGas]<1.)[0]
+    tmp = _get_id_prid_trid_where(dataDict,wherepmag)
+    pmag.update(tmp)
+    pmagdata = (100.*(np.shape(pmag['trid'])[0]/Ntracers))
+    pmag.update({'data' : pmagdata})
+    out.update({"%(Pthermal_Pmagnetic)Below1": pmag})
+
+    tcool = {}
+    wheretcool = np.where(dataDict['tcool_tff'][whereGas]>10.)[0]
+    tmp = _get_id_prid_trid_where(dataDict,wheretcool)
+    tcool.update(tmp)
+    tcooldata = (100.*(np.shape(tcool['trid'])[0]/Ntracers))
+    tcool.update({'data' : tcooldata})
+    out.update({"%(tcool_tff)Above10": tcool})
+
+    tff = {}
+    wheretff = np.where(dataDict['tcool_tff'][whereGas]<10.)[0]
+    tmp = _get_id_prid_trid_where(dataDict,wheretff)
+    tff.update(tmp)
+    tffdata = (100.*(np.shape(tff['trid'])[0]/Ntracers))
+    tff.update({'data' : tffdata})
+    out.update({"%(tcool_tff)Below10": tff})
+
+
     out.update({'Lookback' : dataDict['Lookback']})
 
     return  out
 #------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 #------------------------------------------------------------------------------#
-def fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange):
+def fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange,TRACERSPARAMS):
     dflist = []
     out ={}
-    for T in Tlst:
-        Tkey = f"T{T}"
-        print(Tkey)
-        tmp = {}
-        for ii, snap in enumerate(snapsRange):
-            print(f"{int(snap)}")
-            FullKey = (Tkey , f"{int(snap)}")
-            snapdataDict = dataDict[FullKey]
-            outinner  = _inner_analysis(snapdataDict)
-            outinner.update({"T": T})
-            outinner.update({"Snap": int(snap)})
+    for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+        for T in Tlst:
+            Tkey = (f"T{T}",f"{rin}R{rout}")
+            print(Tkey)
+            tmp = {}
+            for ii, snap in enumerate(snapsRange):
+                print(f"{int(snap)}")
+                FullKey = (f"T{T}",f"{rin}R{rout}",f"{int(snap)}")
+                snapdataDict = dataDict[FullKey]
+                outinner  = _inner_analysis(snapdataDict,TRACERSPARAMS)
+                outinner.update({"T": T})
+                outinner.update({"Snap": int(snap)})
+                outinner.update({"Rinner": rin})
+                outinner.update({"Router": rout})
 
-            for key, value in outinner.items():
-                if (key == "T"):
-                    tmp.update({"T" : value})
-                elif (key == "Lookback"):
-                    tmp.update({"Lookback" : value})
-                elif (key == "Snap"):
-                    tmp.update({"Snap" : value})
-                else:
-                    tmp.update({key : value["data"]})
+                for key, value in outinner.items():
+                    if (key == "T"):
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({"T" : val})
+                        else:
+                            tmp.update({"T" : [float(value)]})
+                    elif (key == "Lookback"):
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({"Lookback" : val})
+                        else:
+                            tmp.update({"Lookback" : [float(value)]})
+                    elif (key == "Snap"):
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({"Snap" : val})
+                        else:
+                            tmp.update({"Snap" : [float(value)]})
+                    elif (key == "Rinner"):
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({"Rinner" : val})
+                        else:
+                            tmp.update({"Rinner" : [float(value)]})
+                    elif (key == "Router"):
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({"Router" : val})
+                        else:
+                            tmp.update({"Router" : [float(value)]})
+                    else:
+                        value= value["data"]
+                        if (isinstance(value, np.ndarray)): value= value[0]
+                        if (isinstance(value, list)): value= value[0]
+                        if (key in list(tmp.keys())):
+                            val = tmp[key]
+                            val = val + [value]
+                            tmp.update({key : val})
+                        else:
+                            tmp.update({key : [float(value)]})
+                out.update({FullKey : outinner})
             dflist.append(pd.DataFrame.from_dict(tmp))
-            out.update({FullKey : outinner})
 
     outDF = pd.concat(dflist, axis=0, join='outer',sort=False, ignore_index=True)
     return out, outDF
@@ -453,14 +608,17 @@ print("Analyse Data!")
 #------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 #------------------------------------------------------------------------------#
-statsDict, statsDF = fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange)
+statsDict, statsDF = fullData_analyse_tracer_averages(dataDict,Tlst,snapsRange,TRACERSPARAMS)
+
+
 
 #Add Stats of medians and percentiles
 tmplist = []
-for T in Tlst:
-     tmp = Statistics_hdf5_load(T,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
-     df = pd.DataFrame(tmp).astype('float64')
-     tmplist.append(df)
+for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+    for T in Tlst:
+         tmp = Statistics_hdf5_load(T,rin,rout,DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
+         df = pd.DataFrame(tmp).astype('float64')
+         tmplist.append(df)
 tmpDF = pd.concat(tmplist, axis=0, join='outer',sort=False, ignore_index=True)
 finalDF = pd.concat([statsDF,tmpDF], axis=1, join='outer',sort=False)
 
@@ -470,7 +628,7 @@ for item in singleVals:
     cols.remove(item)
 cols = singleVals + cols
 finalDF = finalDF[cols]
-finalDF = finalDF.astype({"Snap" : int32, "T": float64})
+finalDF = finalDF.astype({"Snap" : int32, "T": float64, 'Rinner': float64, 'Router': float64})
 
 #Save
 savePath = DataSavepath + "_Statistics-Table.csv"
@@ -482,9 +640,9 @@ finalDF.to_csv(savePath,index=False)
 lookbackData = []
 
 for snap in snapsRange:
-    lookbackData.append(dataDict[(f"T{Tlst[0]}", f"{int(snap)}")]['Lookback'][0])
+    lookbackData.append(dataDict[(f"T{Tlst[0]}",f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}" ,f"{int(snap)}")]['Lookback'][0])
     if (int(snap) == int(TRACERSPARAMS['selectSnap'])):
-        selectTime = abs( dataDict[(f"T{Tlst[0]}", f"{int(snap)}")]['Lookback'][0] - ageUniverse)
+        selectTime = abs( dataDict[(f"T{Tlst[0]}",f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}" , f"{int(snap)}")]['Lookback'][0] - ageUniverse)
 lookbackData = np.array(lookbackData)
 
 timeAvDF = flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERSPARAMS)
@@ -492,7 +650,7 @@ timeAvDF = flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,
 
 
 #Save
-savePath = DataSavepath + "_Flat-Statistics-Table.csv"
+savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
 
 print("\n"+f"Saving Stats table .csv as {savePath}")
 
@@ -503,275 +661,145 @@ timeAvDF.to_csv(savePath,index=False)
 #-------------------------------------------------------------------------------#
 #       Plot!!
 #-------------------------------------------------------------------------------#
-cmap = matplotlib.cm.get_cmap(colourmapMain)
-colour = [cmap(float(ii)/float(len(Tlst))) for ii in range(len(Tlst))]
+for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), sharey=True)
+    plotDF = timeAvDF.loc[(timeAvDF['Rinner'] == rin)[0]&(timeAvDF['Router'] == rout)[0]]
 
-ax = timeAvDF.T.plot.bar(rot=0,figsize = (xsize,ysize),color=colour)
-ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
-plt.xticks(rotation=30,ha='right',fontsize=13)
-plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
-"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
+    cmap = matplotlib.cm.get_cmap(colourmapMain)
+    colour = [cmap(float(ii)/float(len(Tlst))) for ii in range(len(Tlst))]
 
+    # fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), sharey=True)
+    #
+    # ax = plotDF.T.plot.bar(rot=0,figsize = (xsize,ysize),color=colour)
+    # ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+    # plt.xticks(rotation=30,ha='right',fontsize=13)
+    # plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre and Post Selection at {selectTime:3.2f} Gyr" +\
+    # "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+    # r" and $%05.2f \leq R \leq %05.2f kpc $"%(rin, rout), fontsize=16)
+    #
+    #
+    # plt.annotate(text="Ever Matched Feature", xy=(0.25,0.02), xytext=(0.25,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    # plt.annotate(text="", xy=(0.05,0.01), xytext=(0.49,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    #
+    # plt.annotate(text="Median Matched Feature", xy=(0.60,0.02), xytext=(0.60,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    # plt.annotate(text="", xy=(0.51,0.01), xytext=(0.825,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    #
+    # plt.annotate(text="+/-2 Time-steps Matched Feature", xy=(0.85,0.02), xytext=(0.85,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    # plt.annotate(text="", xy=(0.835,0.01), xytext=(1.00,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    # fig.transFigure
+    #
+    # ax.yaxis.set_minor_locator(AutoMinorLocator())
+    # ax.tick_params(which='both')
+    # plt.grid(which='both',axis='y')
+    # plt.ylabel('% of Tracers Selected Following Feature')
+    # plt.tight_layout()
+    # plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+    #
+    #
+    # opslaan = "./" + saveHalo + "/" + f"{int(rin)}R{int(rout)}" + "/"+ f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Stats-Bars.pdf"
+    # plt.savefig(opslaan, dpi = DPI, transparent = False)
+    # print(opslaan)
+    # plt.close()
 
-plt.annotate(text="Ever Matched Feature", xy=(0.25,0.02), xytext=(0.25,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.05,0.01), xytext=(0.49,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    ################################################################################
+    #       split Plot
+    ###############################################################################
 
-plt.annotate(text="Median Matched Feature", xy=(0.60,0.02), xytext=(0.60,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.51,0.01), xytext=(0.825,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    cols = plotDF.columns.values
+    preDF = plotDF[cols[::2].tolist()]
+    postDF = plotDF[cols[1::2].tolist()]
 
-plt.annotate(text="+/-2 Time-steps Matched Feature", xy=(0.85,0.02), xytext=(0.85,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.835,0.01), xytext=(1.00,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-fig.transFigure
+    newcols = {}
+    for name in cols[::2]:
+        newcols.update({name : name[0]})
 
-ax.yaxis.set_minor_locator(AutoMinorLocator())
-ax.tick_params(which='both')
-plt.grid(which='both',axis='y')
-plt.ylabel('% of Tracers Selected Following Feature')
-plt.tight_layout()
-plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+    preDF = preDF.rename(columns=newcols)
+    preDF = preDF.drop(columns = 'Rinner')
+    preDF.columns = preDF.columns.droplevel(1)
 
+    newcols = {}
+    for name in cols[1::2]:
+        newcols.update({name : name[0]})
 
-opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Stats-Bars.pdf"
-plt.savefig(opslaan, dpi = DPI, transparent = False)
-print(opslaan)
-plt.close()
+    postDF = postDF.rename(columns=newcols)
+    postDF = postDF.drop(columns = 'Router')
+    postDF.columns = postDF.columns.droplevel(1)
 
-################################################################################
-#       split Plot
-###############################################################################
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
 
-cols = timeAvDF.columns.values
-preDF = timeAvDF[cols[::2].tolist()]
-postDF = timeAvDF[cols[1::2].tolist()]
+    preDF.T.plot.bar(rot=0,ax=ax,color=colour)
 
-newcols = {}
-for name in cols[::2]:
-    newcols.update({name : name[0]})
-
-preDF = preDF.rename(columns=newcols)
-
-newcols = {}
-for name in cols[1::2]:
-    newcols.update({name : name[0]})
-postDF = postDF.rename(columns=newcols)
-
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
-
-preDF.T.plot.bar(rot=0,ax=ax,color=colour)
-
-ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
-plt.xticks(rotation=90,ha='right',fontsize=13)
-plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre Selection at {selectTime:3.2f} Gyr" +\
-"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
-
-
-plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="Ever Matched Feature", xy=(0.20,0.02), xytext=(0.20,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.10,0.01), xytext=(0.55,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.55,0.25), xytext=(0.55,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
-
-plt.annotate(text="Median Matched Feature", xy=(0.62,0.02), xytext=(0.62,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.56,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.85,0.25), xytext=(0.85,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
-
-plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.85,0.03), xytext=(0.85,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.86,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
-
-fig.transFigure
-
-ax.yaxis.set_minor_locator(AutoMinorLocator())
-ax.tick_params(which='both')
-plt.grid(which='both',axis='y')
-plt.ylabel('% of Tracers Selected Following Feature')
-plt.tight_layout()
-plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
-
-opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Pre-Stats-Bars.pdf"
-plt.savefig(opslaan, dpi = DPI, transparent = False)
-print(opslaan)
-plt.close()
+    ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+    plt.xticks(rotation=90,ha='right',fontsize=13)
+    plt.title(f"Percentage of Tracers Ever Meeting Criterion Pre Selection at {selectTime:3.2f} Gyr" +\
+    "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+    r" and $%05.2f \leq R \leq %05.2f kpc $"%(rin, rout), fontsize=16)
 
 
+    plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="Ever Matched Feature", xy=(0.17,0.02), xytext=(0.17,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.10,0.01), xytext=(0.45,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.47,0.25), xytext=(0.47,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+    plt.annotate(text="Median Matched Feature", xy=(0.48,0.02), xytext=(0.48,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.48,0.01), xytext=(0.66,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.66,0.25), xytext=(0.66,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+    plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.75,0.03), xytext=(0.75,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.67,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+    fig.transFigure
+
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.tick_params(which='both')
+    plt.grid(which='both',axis='y')
+    plt.ylabel('% of Tracers Selected Following Feature')
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+
+    opslaan = "./" + saveHalo + "/" + f"{int(rin)}R{int(rout)}" + "/"+ f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
+    plt.savefig(opslaan, dpi = DPI, transparent = False)
+    print(opslaan)
+    plt.close()
 
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
 
-postDF.T.plot.bar(rot=0,ax=ax,color=colour)
 
-ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
-plt.xticks(rotation=90,ha='right',fontsize=13)
-plt.title(f"Percentage of Tracers Ever Meeting Criterion Post Selection at {selectTime:3.2f} Gyr" +\
-"\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
-r" and $%05.2f \leq R \leq %05.2f kpc $"%(TRACERSPARAMS['Rinner'], TRACERSPARAMS['Router']), fontsize=16)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (int(xsize/2.),ysize), sharey=True)
 
-plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="Ever Matched Feature", xy=(0.20,0.02), xytext=(0.20,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.10,0.01), xytext=(0.55,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.55,0.25), xytext=(0.55,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+    postDF.T.plot.bar(rot=0,ax=ax,color=colour)
 
-plt.annotate(text="Median Matched Feature", xy=(0.62,0.02), xytext=(0.62,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.56,0.01), xytext=(0.85,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.85,0.25), xytext=(0.85,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+    ax.legend(loc='upper right',title="Log10(T) [K]",fontsize=13)
+    plt.xticks(rotation=90,ha='right',fontsize=13)
+    plt.title(f"Percentage of Tracers Ever Meeting Criterion Post Selection at {selectTime:3.2f} Gyr" +\
+    "\n"+ r"selected by $T = 10^{n \pm %05.2f} K$"%(TRACERSPARAMS['deltaT']) +\
+    r" and $%05.2f \leq R \leq %05.2f kpc $"%(rin, rout), fontsize=16)
 
-plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.85,0.03), xytext=(0.85,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
-plt.annotate(text="", xy=(0.86,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
-plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
 
-fig.transFigure
+    plt.annotate(text="", xy=(0.10,0.25), xytext=(0.10,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="Ever Matched Feature", xy=(0.17,0.02), xytext=(0.17,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.10,0.01), xytext=(0.45,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.47,0.25), xytext=(0.47,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
 
-ax.yaxis.set_minor_locator(AutoMinorLocator())
-ax.tick_params(which='both')
-plt.grid(which='both',axis='y')
-plt.ylabel('% of Tracers Selected Following Feature')
-plt.tight_layout()
-plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+    plt.annotate(text="Median Matched Feature", xy=(0.48,0.02), xytext=(0.48,0.02), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.48,0.01), xytext=(0.66,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.66,0.25), xytext=(0.66,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
 
-opslaan = f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{TRACERSPARAMS['Rinner']}R{TRACERSPARAMS['Router']}_Post-Stats-Bars.pdf"
-plt.savefig(opslaan, dpi = DPI, transparent = False)
-print(opslaan)
-plt.close()
-# #------------------------------------------------------------------------------#
-# #               Analyse Tracers Continuously Exhibiting Feature
-# #                   Since SnapMin
-# #------------------------------------------------------------------------------#
-# final = []
-# for param in statsDict[(f"T{Tlst[0]}", f"{int(TRACERSPARAMS['snapMin'])}")].keys():
-#     if param not in singleVals:
-#         outer = []
-#         for T in Tlst:
-#             key = (f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")
-#             trids = statsDict[key][param]['trid']
-#             ntracers = np.shape(trids)[0]
-#             tmp = []
-#             lookback = []
-#             for ii, snap in enumerate(snapsRange):
-#                 key = (f"T{T}", f"{int(snap)}")
-#                 currentTrids = statsDict[key][param]['trid']
-#
-#                 intersectTrids = np.intersect1d(currentTrids,trids)
-#                 if (ntracers >0 ):
-#                     percentage = (100.*np.shape(intersectTrids)[0]/ntracers)
-#                 else:
-#                     percentage = 0.
-#                 tmp.append(percentage)
-#                 lookback.append(statsDict[key]['Lookback'][0])
-#
-#             Tdat = [float(T) for snap in snapsRange]
-#             outer.append(pd.DataFrame({f"T" : Tdat, "Snap" : snapsRange, "Lookback" : np.array(lookback), param : np.array(tmp)}))
-#         final.append(pd.concat(outer,axis=0, join='outer', ignore_index=True))
-# continuousDF = pd.concat(final, axis=1, join='outer',sort=False)
-# continuousDF = continuousDF.loc[:,~continuousDF.columns.duplicated()]
-#
-# savePath = DataSavepath + f"_Continuous-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
-#
-# print("\n"+f"Saving Stats table .csv as {savePath}")
-#
-# continuousDF.to_csv(savePath,index=False)
-#
-# #------------------------------------------------------------------------------#
-# #               Analyse Tracers Moving from Gas to Gas, ISM, Wind, Stars
-# #------------------------------------------------------------------------------#
-# final = []
-# for T in Tlst:
-#     key = (f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")
-#     trids = statsDict[key]['%Gas']['trid']
-#     ntracers = np.shape(trids)[0]
-#     outer = []
-#     for param in ['%Gas','%Stars','%ISM', '%Wind']:
-#         tmp = []
-#         lookback = []
-#         for ii, snap in enumerate(snapsRange):
-#             key = (f"T{T}", f"{int(snap)}")
-#             currentTrids = statsDict[key][param]['trid']
-#
-#             intersectTrids = np.intersect1d(currentTrids,trids)
-#             if (ntracers >0 ):
-#                 percentage = (100.*np.shape(intersectTrids)[0]/ntracers)
-#             else:
-#                 percentage = 0.
-#             tmp.append(percentage)
-#             lookback.append(statsDict[key]['Lookback'][0])
-#
-#         Tdat = [float(T) for snap in snapsRange]
-#         outer.append(pd.DataFrame({f"T" : Tdat, "Snap" : snapsRange, "Lookback" : np.array(lookback), param : np.array(tmp)}))
-#     final.append(pd.concat(outer,axis=1, join='outer'))
-# gasDF = pd.concat(final, axis=0, join='outer',sort=False, ignore_index=True)
-# gasDF = gasDF.loc[:,~gasDF.columns.duplicated()]
-#
-# savePath = DataSavepath + f"_Gas-phase-change-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
-#
-# print("\n"+f"Saving Stats table .csv as {savePath}")
-#
-# gasDF.to_csv(savePath,index=False)
-#
-# #------------------------------------------------------------------------------#
-# #               Analyse Tracers moving from OtherHalo/Unbound/IGM Gas to ISM
-# #------------------------------------------------------------------------------#
-#
-# otherHalo = []
-# noHalo = []
-# unbound = []
-# halo0ISM = []
-# halo0NonISM = []
-# for T in Tlst:
-#     tridsGas = statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Gas']['trid']
-#     tridsISM = statsDict[(f"T{T}", f"{int(snapsRange[-1])}")]['%ISM']['trid']
-#     gastoISMintersectTrids = np.intersect1d(tridsGas,tridsISM)
-#     # tridsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['trid']
-#     # _, trid_ind, _ = np.intersect1d(tridsStart,gastoISMintersectTrids, return_indices = True)
-#     # pridsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['prid'][trid_ind]
-#     # idsStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['id']
-#     # _, id_ind, _ = np.intersect1d(pridsStart,idsStart, return_indices = True)
-#     # RStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['R'][id_ind]
-#     # SubHaloIDStart = dataDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['SubHaloID'][id_ind]
-#         #------------------------------------------------------------------------------#
-#         #               Analyse Tracers moving from otherHalo Gas to ISM
-#         #------------------------------------------------------------------------------#
-#
-#     otherHaloStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%OtherHalo']['trid'],gastoISMintersectTrids)
-#     otherHaloToISMPercentage = 100.* (np.shape(otherHaloStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
-#     otherHalo.append(float(otherHaloToISMPercentage))
-#         #------------------------------------------------------------------------------#
-#         #               Analyse Tracers moving from IGM Gas to ISM
-#         #------------------------------------------------------------------------------#
-#
-#     noHaloStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%NoHalo']['trid'],gastoISMintersectTrids)
-#     noHaloToISMPercentage = 100.* (np.shape(noHaloStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
-#     noHalo.append(float(noHaloToISMPercentage))
-#
-#         #------------------------------------------------------------------------------#
-#         #               Analyse Tracers moving from Unbound Gas to ISM
-#         #------------------------------------------------------------------------------#
-#
-#     UnboundStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Unbound']['trid'],gastoISMintersectTrids)
-#     UnboundToISMPercentage = 100.* (np.shape(UnboundStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
-#     unbound.append(float(UnboundToISMPercentage))
-#
-#         #------------------------------------------------------------------------------#
-#         #               Analyse Tracers moving from Halo 0 ISM Gas back to ISM
-#         #------------------------------------------------------------------------------#
-#
-#     Halo0Start = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%Halo0']['trid'],gastoISMintersectTrids)
-#     Halo0ISMStart = np.intersect1d(statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%ISM']['trid'],Halo0Start)
-#     Halo0ISMToISMPercentage = 100.* (np.shape(Halo0ISMStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
-#     halo0ISM.append(float(Halo0ISMToISMPercentage))
-#         #------------------------------------------------------------------------------#
-#
-#         #               Analyse Tracers moving from Halo 0 NON-ISM Gas back to ISM
-#         #------------------------------------------------------------------------------#
-#     Halo0NonISMStart = np.where(np.isin(gastoISMintersectTrids,statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['%ISM']['trid'])==False)[0]
-#     Halo0NonISMToISMPercentage = 100.* (np.shape(Halo0NonISMStart)[0]/statsDict[(f"T{T}", f"{int(TRACERSPARAMS['snapMin'])}")]['TracersFull']['data'][0])
-#     halo0NonISM.append(float(Halo0NonISMToISMPercentage))
-# gasToismDF = pd.DataFrame({"T" : np.array(Tlst).astype('float64'), "%OtherHalo-To-ISM" : otherHalo, "%NoHalo-To-ISM" : noHalo,\
-#  "%Unbound-To-ISM" : unbound, "%Halo0-ISM-To-ISM" : halo0ISM, "%Halo0-NonISM-To-ISM" : halo0NonISM })
-#
-# savePath = DataSavepath + f"_Gas-to-ISM-snap{int(TRACERSPARAMS['snapMin'])}" +"_Statistics-Table.csv"
-#
-# print("\n"+f"Saving Stats table .csv as {savePath}")
-#
-# gasToismDF.to_csv(savePath,index=False)
+    plt.annotate(text="+/-2 Time-steps \n Matched Feature", xy=(0.75,0.03), xytext=(0.75,0.03), textcoords=fig.transFigure, annotation_clip =False, fontsize=14)
+    plt.annotate(text="", xy=(0.67,0.01), xytext=(0.95,0.01), arrowprops=dict(arrowstyle='<->'), xycoords=fig.transFigure, annotation_clip =False)
+    plt.annotate(text="", xy=(0.95,0.25), xytext=(0.95,0.05), arrowprops=dict(arrowstyle='-'), xycoords=fig.transFigure, annotation_clip =False)
+
+    fig.transFigure
+
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.tick_params(which='both')
+    plt.grid(which='both',axis='y')
+    plt.ylabel('% of Tracers Selected Following Feature')
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.90, bottom = 0.25, left=0.10, right=0.95)
+
+    opslaan = "./" + saveHalo + "/" + f"{int(rin)}R{int(rout)}" + "/"+ f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
+    plt.savefig(opslaan, dpi = DPI, transparent = False)
+    print(opslaan)
+    plt.close()
