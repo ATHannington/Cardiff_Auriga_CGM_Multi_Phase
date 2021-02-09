@@ -1748,7 +1748,7 @@ CMAP=None, numThreads=2):
     fontsizeTitle = 18
 
     #DPI Controlled by user as lower res needed for videos #
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), sharex="col", sharey="row")
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize = (xsize,ysize), dpi=DPI, sharex=True, sharey=True)
 
     #Add overall figure plot
     TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\
@@ -1778,7 +1778,7 @@ CMAP=None, numThreads=2):
 
     ax1.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize = fontsize)
     # ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
-    ax1.set_aspect(aspect)
+    # ax1.set_aspect(aspect)
 
     #Fudge the tick labels...
     plt.sca(ax1)
@@ -1805,7 +1805,7 @@ CMAP=None, numThreads=2):
     cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
     # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
-    ax2.set_aspect(aspect)
+    # ax2.set_aspect(aspect)
 
     #Fudge the tick labels...
     plt.sca(ax2)
@@ -1834,7 +1834,7 @@ CMAP=None, numThreads=2):
     ax3.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     ax3.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
 
-    ax3.set_aspect(aspect)
+    # ax3.set_aspect(aspect)
 
     #Fudge the tick labels...
     plt.sca(ax3)
@@ -1862,7 +1862,7 @@ CMAP=None, numThreads=2):
 
     # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
     ax4.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
-    ax4.set_aspect(aspect)
+    # ax4.set_aspect(aspect)
 
     #Fudge the tick labels...
     plt.sca(ax4)
@@ -1871,7 +1871,7 @@ CMAP=None, numThreads=2):
 
     # print("snapnum")
     #Pad snapnum with zeroes to enable easier video making
-    fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.80)
+    fig.subplots_adjust(wspace=0.0,hspace=0.0,top=0.90)
     # fig.tight_layout()
 
     SaveSnapNumber = str(snapNumber).zfill(4);
@@ -2117,7 +2117,7 @@ CMAP=None, numThreads=4, MaxSubset=100,lazyLoadBool = True):
 
                 print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot...")
                 #DPI Controlled by user as lower res needed for videos #
-                fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize))
+                fig, axes = plt.subplots(nrows=1, ncols=1, figsize = (xsize,ysize), dpi=DPI)
 
                 #Add overall figure plot
                 TITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} " + " " + r"$t_{Age Universe}=$" + f"{tage:0.03f} Gyrs" +\

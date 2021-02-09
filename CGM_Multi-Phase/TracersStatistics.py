@@ -648,7 +648,6 @@ lookbackData = np.array(lookbackData)
 timeAvDF = flat_analyse_time_averages(FlatDataDict,Tlst,snapsRange,lookbackData,TRACERSPARAMS)
 
 
-
 #Save
 savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
 
