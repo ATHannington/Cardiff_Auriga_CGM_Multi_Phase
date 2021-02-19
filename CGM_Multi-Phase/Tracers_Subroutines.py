@@ -853,38 +853,38 @@ def CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,el
     rhomean = 3. * (snapGas.omega0 * (1.+snapGas.redshift)**3) * (snapGas.hubbleparam * 100.*1e5/(c.parsec*1e6))**2 / ( 8. * pi * c.G)
 
     #Mean weight [amu]
-    meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne*snapGas.gmet[whereGas,0][0] )
+    meanweight = sum(snapGas.gmet[whereGas,0:9][0], axis = 1) / ( sum(snapGas.gmet[whereGas,0:9][0]/elements_mass[0:9], axis = 1) + snapGas.ne[whereGas]*snapGas.gmet[whereGas,0][0] )
 
     #3./2. N KB
     Tfac = ((3./2.) * c.KB) / (meanweight * c.amu)
 
-    snapGas.data['dens'] = (snapGas.rho / (c.parsec*1e6)**3) * c.msol * 1e10 #[g cm^-3]
+    snapGas.data['dens'] = (snapGas.rho[whereGas] / (c.parsec*1e6)**3) * c.msol * 1e10 #[g cm^-3]
     gasX = snapGas.gmet[whereGas,0][0]
 
     #Temperature = U / (3/2 * N KB) [K]
-    snapGas.data['T'] = (snapGas.u*1e10) / (Tfac) # K
-    snapGas.data['n_H'] = snapGas.data['dens']/ c.amu * gasX # cm^-3
-    snapGas.data['rho_rhomean']  = snapGas.data['dens']/ (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
-    snapGas.data['Tdens'] = snapGas.data['T'] * snapGas.data['rho_rhomean']
+    snapGas.data['T'] = (snapGas.u[whereGas]*1e10) / (Tfac) # K
+    snapGas.data['n_H'] = snapGas.data['dens'][whereGas]/ c.amu * gasX # cm^-3
+    snapGas.data['rho_rhomean']  = snapGas.data['dens'][whereGas]/ (rhomean * omegabaryon0/snapGas.omega0) # rho / <rho>
+    snapGas.data['Tdens'] = snapGas.data['T'][whereGas] * snapGas.data['rho_rhomean'][whereGas]
 
     bfactor = 1e6*(np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6)) * (1e5 / (c.parsec * 1e6)) #[microGauss]
 
     #Magnitude of Magnetic Field [micro Guass]
-    snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'] * bfactor), axis=1)
+    snapGas.data['B'] = np.linalg.norm((snapGas.data['bfld'][whereGas] * bfactor), axis=1)
 
     #Radius [kpc]
-    snapGas.data['R'] =  (np.linalg.norm(snapGas.data['pos'], axis=1)) #[Kpc]
+    snapGas.data['R'] =  (np.linalg.norm(snapGas.data['pos'][whereGas], axis=1)) #[Kpc]
     snap.data['R'] =  (np.linalg.norm(snap.data['pos'], axis=1)) #[Kpc]
 
     KpcTokm = 1e3*c.parsec*1e-5
     #Radial Velocity [km s^-1]
-    snapGas.data['vrad'] = (snapGas.pos*KpcTokm*snapGas.vel).sum(axis=1)
-    snapGas.data['vrad'] /= snapGas.data['R']*KpcTokm
+    snapGas.data['vrad'] = (snapGas.pos[whereGas]*KpcTokm*snapGas.vel[whereGas]).sum(axis=1)
+    snapGas.data['vrad'] /= snapGas.data['R'][whereGas]*KpcTokm
 
     #Cooling time [Gyrs]
     GyrToSeconds = 365.25*24.*60.*60.*1e9
 
-    snapGas.data['tcool'] = (snapGas.data['u'] * 1e10 * snapGas.data['dens']) / (GyrToSeconds * snapGas.data['gcol'] * snapGas.data['n_H']**2) #[Gyrs]
+    snapGas.data['tcool'] = (snapGas.data['u'][whereGas] * 1e10 * snapGas.data['dens'][whereGas]) / (GyrToSeconds * snapGas.data['gcol'][whereGas] * snapGas.data['n_H'][whereGas]**2) #[Gyrs]
     snapGas.data['theat'] = snapGas.data['tcool'].copy()
 
     coolingGas = np.where(snapGas.data['tcool']<0.0)
@@ -902,7 +902,7 @@ def CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,el
 
 
     #Load in metallicity
-    snapGas.data['gz'] = snapGas.data['gz']/Zsolar
+    snapGas.data['gz'] = snapGas.data['gz'][whereGas]/Zsolar
     #Load in Metals
     tmp = snapGas.data['gmet']
     #Load in Star Formation Rate
@@ -910,28 +910,28 @@ def CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,el
 
 
     #Specific Angular Momentum [kpc km s^-1]
-    snapGas.data['L'] = sqrt((cross(snapGas.data['pos'], snapGas.data['vel'])**2.).sum(axis=1))
+    snapGas.data['L'] = sqrt((cross(snapGas.data['pos'][whereGas], snapGas.data['vel'][whereGas])**2.).sum(axis=1))
 
-    ndens = snapGas.data['dens']/ (meanweight * c.amu)
+    ndens = snapGas.data['dens'][whereGas]/ (meanweight * c.amu)
     #Thermal Pressure : P/k_B = n T [$ # K cm^-3]
     snapGas.data['P_thermal'] = ndens*snapGas.T
 
     #Magnetic Pressure [P/k_B K cm^-3]
-    snapGas.data['P_magnetic'] = ((snapGas.data['B']*1e-6) **2)/( 8. * pi * c.KB)
+    snapGas.data['P_magnetic'] = ((snapGas.data['B'][whereGas]*1e-6) **2)/( 8. * pi * c.KB)
 
-    snapGas.data['P_tot'] = snapGas.data['P_thermal'] + snapGas.data['P_magnetic']
+    snapGas.data['P_tot'] = snapGas.data['P_thermal'][whereGas] + snapGas.data['P_magnetic'][whereGas]
 
-    snapGas.data['Pthermal_Pmagnetic'] = snapGas.data['P_thermal']/ snapGas.data['P_magnetic']
+    snapGas.data['Pthermal_Pmagnetic'] = snapGas.data['P_thermal'][whereGas]/ snapGas.data['P_magnetic'][whereGas]
 
     #Kinetic "Pressure" [P/k_B K cm^-3]
-    snapGas.data['P_kinetic'] = (snapGas.rho / (c.parsec*1e6)**3) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
+    snapGas.data['P_kinetic'] = (snapGas.rho[whereGas] / (c.parsec*1e6)**3) * 1e10 * c.msol *(1./c.KB) * (np.linalg.norm(snapGas.data['vel'][whereGas]*1e5, axis=1))**2
 
     #Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
-    snapGas.data['csound'] = sqrt(((5./3.)*c.KB * snapGas.data['T'])/(meanweight*c.amu*1e5))
+    snapGas.data['csound'] = sqrt(((5./3.)*c.KB * snapGas.data['T'][whereGas])/(meanweight*c.amu*1e5))
 
 
     # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
-    snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'])**(1./3.) /snapGas.data['csound']
+    snapGas.data['tcross'] = (KpcTokm*1e3/GyrToSeconds) * (snapGas.data['vol'][whereGas])**(1./3.) /snapGas.data['csound'][whereGas]
 
     rsort = np.argsort(snap.data['R'])
     runsort = np.argsort(rsort)
@@ -944,9 +944,10 @@ def CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,el
 
     whereGasStars = np.where(np.isin(snap.type,[0,4])==True)
     snapGas.data['tff'] = snap.data['tff'][whereGasStars].copy()
+    snapGas.data['tff'] = snapGas.data['tff'][whereGas]
 
     #Cooling time over free fall time
-    snapGas.data['tcool_tff'] = snapGas.data['tcool']/snapGas.data['tff'][whereGas]
+    snapGas.data['tcool_tff'] = snapGas.data['tcool'][whereGas]/snapGas.data['tff'][whereGas]
     del tmp
 
     return snapGas
