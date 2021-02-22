@@ -141,8 +141,8 @@ for dataKey in saveParams:
                 #Percentage in stars
                 percentage = (float(NStars)/(float(Ntot)))*100.
 
-                data = dataDict[dictkey][dataKey]
-                weights = dataDict[dictkey]['mass']
+                data = dataDict[dictkey][dataKey][whereGas]
+                weights = dataDict[dictkey]['mass'][whereGas]
 
                 if dataKey in logParameters:
                     data = np.log10(data)

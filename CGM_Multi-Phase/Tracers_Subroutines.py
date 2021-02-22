@@ -912,9 +912,9 @@ def CalculateTrackedParameters(snapGas,snap,elements,elements_Z,elements_mass,el
     #Specific Angular Momentum [kpc km s^-1]
     snapGas.data['L'] = sqrt((cross(snapGas.data['pos'][whereGas], snapGas.data['vel'][whereGas])**2.).sum(axis=1))
 
-    ndens = snapGas.data['dens'][whereGas]/ (meanweight * c.amu)
+    snapGas.data['ndens'] = snapGas.data['dens'][whereGas]/ (meanweight * c.amu)
     #Thermal Pressure : P/k_B = n T [$ # K cm^-3]
-    snapGas.data['P_thermal'] = ndens*snapGas.T
+    snapGas.data['P_thermal'] = snapGas.data['ndens']*snapGas.T
 
     #Magnetic Pressure [P/k_B K cm^-3]
     snapGas.data['P_magnetic'] = ((snapGas.data['B'][whereGas]*1e-6) **2)/( 8. * pi * c.KB)
