@@ -36,8 +36,9 @@ for param in singleValueParams:
 
 DataSavepathSuffix = f".h5"
 
-
-
+def err_catcher(arg):
+    raise Exception (f"Child Process died and gave error: {arg}")
+    return
 
 if __name__=="__main__":
     print("Flattening wrt time!")
@@ -66,7 +67,7 @@ if __name__=="__main__":
         print("Analysis!")
 
         #Compute Snap analysis
-        _ = [pool.apply_async(flatten_wrt_time,args=args) for args in args_list]
+        res = [pool.apply_async(flatten_wrt_time,args=args,error_callback=err_catcher) for args in args_list]
 
         print("Analysis done!")
 
@@ -74,3 +75,7 @@ if __name__=="__main__":
         pool.join()
         #Close multiprocesssing pool
         print(f"Closing core Pool!")
+        print(f"Final Error checks")
+        success = [result.successful() for result in res]
+        assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
+        print("Done! End of Post-Processing :)")

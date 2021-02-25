@@ -107,7 +107,9 @@ omegabaryon0 = 0.048
 #==============================================================================#
 #       MAIN PROGRAM
 #==============================================================================#
-
+def err_catcher(arg):
+    raise Exception (f"Child Process died and gave error: {arg}")
+    return
 
 if __name__=="__main__":
 
@@ -141,12 +143,16 @@ if __name__=="__main__":
     pool = mp.Pool(processes=n_processes)
 
     #Compute Snap analysis
-    output_list = [pool.apply_async(snap_analysis,args=args) for args in args_list]
+    output_list = [pool.apply_async(snap_analysis,args=args,error_callback=err_catcher) for args in args_list]
 
     pool.close()
     pool.join()
     #Close multiprocesssing pool
     print(f"Closing core Pool!")
+    print(f"Final Error checks")
+    success = [result.successful() for result in output_list]
+    assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
+    print("Done! End of Analysis :)")
     #
     # print("\n" + f"Starting SERIAL type Analysis!")
     # for snap in snapRange:

@@ -1,6 +1,6 @@
-simfile /home/universe/spxfv/Auriga/level4_MHD_reruns/halo_13/output/                             # Set path to simulation data
-savepath /home/universe/c1838736/Tracers/V9-0/halo_13/                        # Set path to save data
-saveParams "rho_rhomean,dens,T,R,n_H,B,vrad,gz,P_thermal,P_magnetic,P_kinetic,P_tot,Pthermal_Pmagnetic,tcool,theat,tff,tcool_tff"
+simfile /home/universe/spxfv/Auriga/level4_MHD_reruns/halo_L8/output/                             # Set path to simulation data
+savepath /home/universe/c1838736/Tracers/V9-1/halo_L8/                        # Set path to save data
+saveParams "rho_rhomean,ndens,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,Pthermal_Pmagnetic,tcool,theat,tff,tcool_tff"
 saveTracersOnly "sfr,age"                                                 # Optional Tracer only (no stats in .csv) parameters to be saved. nCannot guarantee that all Plotting and post-processing are independent of these. Will attempt to ensure any necessary parameters are stored in ESSENTIALS
 saveEssentials "FoFHaloID,SubHaloID,Lookback,Ntracers,Snap,id,prid,trid,type,mass,pos"                #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
 finalSnap 251                                                                    # Max number of snapshots in simulation
@@ -14,7 +14,7 @@ deltaT 0.25                                                                     
 Rinner "25.0, 75.0, 125.0"                                                       # Inner Radius of selection kpc
 Router "75.0, 125.0, 175.0"                                                      # Outer Radius of selection kpc
 Axes "0,2"                                                                       # Axis for Plots 0 = x, 1 = y, 2 = z whichever is not chosen will be used as line of sight axis
-QuadPlotBool 1                                                                   # "Boolean" for whether to plot QUAD plot. 0 = False, 1 = True
+QuadPlotBool 1                                                                  # "Boolean" for whether to plot QUAD plot. 0 = False, 1 = True
 boxsize 700                                                                      # Plots box size (+/- boxsize/2 kpc on each edge)
 boxlos 20                                                                        # Plots Line of sight box size (+/- boxlos/2 kpc centred on galaxy centre)
 pixres 0.2                                                                       # Pixel Resolution in plane of Plot
