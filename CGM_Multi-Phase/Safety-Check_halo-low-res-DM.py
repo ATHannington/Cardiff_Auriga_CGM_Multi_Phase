@@ -11,7 +11,7 @@ from Tracers_Subroutines import *
 
 baseLoadPath = "/home/universe/spxfv/Auriga/level4_MHD_reruns/"
 
-haloes = ['L1','L8','5','6','9','13','17','23','24','26','28']
+haloes = ['L10','L3','L2','L5','L6','L7','L9']#['L1','L8','5','6','9','13','17','23','24','26','28']
 
 snapMin = 200
 snapMax = 251
@@ -59,7 +59,7 @@ alltest = np.all(truthy)
 print("***")
 print(f"All Haloes Safe? = {alltest}")
 if alltest == False:
-    locbadHaloes = np.where(alltest == False)[0]
+    locbadHaloes = np.where(np.array(truthy) == False)[0]
     badHaloes = np.array(haloes)[locbadHaloes]
     print(f"WARNING! Haloes {badHaloes} are contaminated!")
 else:
