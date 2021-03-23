@@ -11,7 +11,7 @@ from Tracers_Subroutines import *
 
 baseLoadPath = "/home/universe/spxfv/Auriga/level4_MHD_reruns/"
 
-haloes = ['L10','L3','L2','L5','L6','L7','L9']#['L1','L8','5','6','9','13','17','23','24','26','28']
+haloes = ['L9']#['L10','L3','L2','L5','L6','L7','L9']#['L1','L8','5','6','9','13','17','23','24','26','28']
 
 snapMin = 200
 snapMax = 251
@@ -25,7 +25,7 @@ print(f"|    Snap Numbers:         |")
 print(f"|         {int(snapMin)} - {int(snapMax)}        |")
 print("|                          |")
 print("----------------------------")
-r_vir = 250
+r_vir = 200#250
 print("")
 truthy = []
 for halo in haloes:

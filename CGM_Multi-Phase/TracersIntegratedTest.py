@@ -13,7 +13,6 @@ from gadget import gadget_readsnap
 from gadget_subfind import load_subfind, sum
 from Tracers_Subroutines import *
 from random import sample
-from numba import jit
 import pytest
 
 
@@ -42,11 +41,8 @@ FullDataPathSuffix = f".h5"
 lazyLoadBool = True
 
 #Number of cores to run on:
-n_processes = 4
+n_processes = 2
 
-#Save types, which when combined with saveparams define what data is saved.
-#   This is intended to be 'median', 'UP' (upper quartile), and 'LO' (lower quartile)
-saveTypes= ['median','UP','LO']
 #==============================================================================#
 #       Prepare for analysis
 #==============================================================================#
@@ -61,6 +57,10 @@ for key,value in TRACERSPARAMS.items():
     print(f"{key}: {value}")
 
 print("")
+
+#Save types, which when combined with saveparams define what data is saved.
+#   This is intended to be the string equivalent of the percentiles.
+saveTypes= ["_" + str(percentile)+ "%" for percentile in TRACERSPARAMS['percentiles']]
 
 #Entered parameters to be saved from
 #   n_H, B, R, T
@@ -96,7 +96,7 @@ for param in saveParams:
         saveKeys.append(param+TYPE)
 
 #Select Halo of interest:
-#   0 is the most ive:
+#   0 is the most massive:
 HaloID = int(TRACERSPARAMS['haloID'])
 #==============================================================================#
 #       Chemical Properties
@@ -113,6 +113,12 @@ omegabaryon0 = 0.048
 #==============================================================================#
 #       MAIN PROGRAM
 #==============================================================================#
+def err_catcher(arg):
+    raise Exception (f"Child Process died and gave error: {arg}")
+    return
+#==============================================================================#
+#       MAIN PROGRAM
+#==============================================================================#
 #==============================================================================#
 #                                                                              #
 #                       PREPARE SAMPLE DATA                                    #
@@ -126,18 +132,26 @@ if (len(TRACERSPARAMS['targetTLst'])>1):
 targetT = TRACERSPARAMS['targetTLst'][0]
 
 TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers = \
-tracer_selection_snap_analysis(targetT,TRACERSPARAMS,HaloID,\
+tracer_selection_snap_analysis(TRACERSPARAMS,HaloID,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
 saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,\
 lazyLoadBool=lazyLoadBool,SUBSET=None,snapNumber=TRACERSPARAMS['selectSnap'],saveTracers=False,loadonlyhalo=True)
 
-TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['selectSnap'])
+TFCkey0 = list(TracersTFC.keys())[0]
+CellsTFC, CellIDsTFC, ParentsTFC = CellsTFC[TFCkey0], CellIDsTFC[TFCkey0], ParentsTFC[TFCkey0]
 
-output_dict = snap_analysis(TRACERSPARAMS['snapMin'],targetT,TRACERSPARAMS,HaloID,TracersTFC,\
+output_dict = snap_analysis(TRACERSPARAMS['snapMin'],TRACERSPARAMS,HaloID,TracersTFC,\
 elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool=True)
+saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
 
 out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = output_dict["out"], output_dict["TracersCFT"], output_dict["CellsCFT"], output_dict["CellIDsCFT"], output_dict["ParentsCFT"]
+
+TracersTFC = TracersTFC[TFCkey0]
+
+TracersCFTinit, CellsCFTinit, CellIDsCFTinit, ParentsCFTinit = GetCellsFromTracers(snapGas, snapTracers,TracersTFC,saveParams,saveTracersOnly,snapNumber=TRACERSPARAMS['selectSnap'])
+
+CFTkey0 = list(TracersCFT.keys())[0]
+out, TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = out[CFTkey0], TracersCFT[CFTkey0], CellsCFT[CFTkey0], CellIDsCFT[CFTkey0], ParentsCFT[CFTkey0]
 
 FullDict.update(out)
 
