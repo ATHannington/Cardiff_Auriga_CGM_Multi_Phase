@@ -29,7 +29,7 @@ exceptionsParams = ['trid','prid']
 #       USER DEFINED PARAMETERS
 #==============================================================================#
 #Input parameters path:
-TracersParamsPath = 'TracersParams_UnitTest.csv'
+TracersParamsPath = 'TracersParams_Test.csv'
 
 #File types for data save.
 #   Mini: small median and percentiles data

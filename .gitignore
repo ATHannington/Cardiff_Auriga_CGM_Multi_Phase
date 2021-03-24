@@ -31,3 +31,10 @@
 
 ###Executable###
 run
+
+###pycache###
+*__pycache__*
+*.pytest_cache*
+
+###ipynb###
+*.ipynb_checkpoints*
