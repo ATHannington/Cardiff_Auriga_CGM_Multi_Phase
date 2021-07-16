@@ -11,24 +11,27 @@ n_t = 20
 n_n = 10
 
 delta_t = 1
-n_t= int(n_t * delta_t)
+n_t = int(n_t * delta_t)
 
-n_n = int((n_n/2)+1)
+n_n = int((n_n / 2) + 1)
 
 print(f"n_t = {n_t}")
 print(f"n_n = {n_n}")
 
 pi = 3.141596
 
-x = [i for i in np.arange(0,n_t,delta_t)]
+x = [i for i in np.arange(0, n_t, delta_t)]
 
-def sin_func(x,l,a):
-    y = [a*np.sin(2*pi*val/l) for val in x]
+
+def sin_func(x, l, a):
+    y = [a * np.sin(2 * pi * val / l) for val in x]
     return y
 
-def lin_func(x,m,c):
-    y = [m*val + c for val in x]
+
+def lin_func(x, m, c):
+    y = [m * val + c for val in x]
     return y
+
 
 def DTW(M):
     """
@@ -48,32 +51,38 @@ def DTW(M):
 
     elements = range(np.shape(M)[0])
 
-    iterator = combinations_with_replacement(elements,r=2)
-    D = np.zeros((np.shape(M)[0],np.shape(M)[0]))
+    iterator = combinations_with_replacement(elements, r=2)
+    D = np.zeros((np.shape(M)[0], np.shape(M)[0]))
 
     for pair in iterator:
 
-            ii = pair[0]
-            jj = pair[1]
+        ii = pair[0]
+        jj = pair[1]
 
-            x = M[ii]
-            y = M[jj]
+        x = M[ii]
+        y = M[jj]
 
-            distance, path = fastdtw(x,y,dist=euclidean)
+        distance, path = fastdtw(x, y, dist=euclidean)
 
-            D[ii,jj] = distance
-            D[jj,ii] = distance
+        D[ii, jj] = distance
+        D[jj, ii] = distance
 
     D_compressed = squareform(D)
 
     return D_compressed
 
-sin_dat = np.array([sin_func(x,l,100.) for l in np.arange(0.25*n_t*1,0.25*n_t*n_n,0.25*n_t*1)])
-lin_dat = np.array([lin_func(x,m,0.) for m in np.arange(1,n_n,1)])
+
+sin_dat = np.array(
+    [
+        sin_func(x, l, 100.0)
+        for l in np.arange(0.25 * n_t * 1, 0.25 * n_t * n_n, 0.25 * n_t * 1)
+    ]
+)
+lin_dat = np.array([lin_func(x, m, 0.0) for m in np.arange(1, n_n, 1)])
 
 print(f"np.shape(sin_dat) = {np.shape(sin_dat)}")
 print(f"np.shape(lin_dat) = {np.shape(lin_dat)}")
-M = np.concatenate((sin_dat,lin_dat),axis=0)
+M = np.concatenate((sin_dat, lin_dat), axis=0)
 print(f"np.shape(M) = {np.shape(M)}")
 
 start = time.time()

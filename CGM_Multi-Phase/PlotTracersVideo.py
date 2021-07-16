@@ -9,7 +9,8 @@ Known Bugs:
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')   #For suppressing plotting on clusters
+
+matplotlib.use("Agg")  # For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
 from matplotlib.ticker import AutoMinorLocator
@@ -23,51 +24,63 @@ import math
 from functools import reduce
 
 subset = 100
-ageUniverse = 13.77 #[Gyr]
+ageUniverse = 13.77  # [Gyr]
 
-TracersParamsPath = 'TracersParams.csv'
-singleValueParams = ['Lookback','Ntracers','Snap']
+TracersParamsPath = "TracersParams.csv"
+singleValueParams = ["Lookback", "Ntracers", "Snap"]
 DataSavepathSuffix = f".h5"
-#==============================================================================#
+# ==============================================================================#
 
-#Load Analysis Setup Data
+# Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
 
-dataParams = TRACERSPARAMS['saveParams'] + TRACERSPARAMS['saveTracersOnly'] + TRACERSPARAMS['saveEssentials']
+dataParams = (
+    TRACERSPARAMS["saveParams"]
+    + TRACERSPARAMS["saveTracersOnly"]
+    + TRACERSPARAMS["saveEssentials"]
+)
 
 for param in singleValueParams:
     dataParams.remove(param)
 
 print("Loading data!")
 
-dataDict = FullDict_hdf5_load(DataSavepath,TRACERSPARAMS,DataSavepathSuffix)
+dataDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
-#==============================================================================#
+# ==============================================================================#
 #   Get Data within range of z-axis LOS
-#==============================================================================#
+# ==============================================================================#
 print("Getting Tracer Data!")
 
-boxlos = TRACERSPARAMS['boxlos']
-zAxis = int(TRACERSPARAMS['zAxis'][0])
-#Loop over temperatures in targetTLst and grab Temperature specific subset of tracers in zAxis LOS range at selectionSnap
+boxlos = TRACERSPARAMS["boxlos"]
+zAxis = int(TRACERSPARAMS["zAxis"][0])
+# Loop over temperatures in targetTLst and grab Temperature specific subset of tracers in zAxis LOS range at selectionSnap
 tridData = {}
-for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     print(f"{rin}R{rout}")
-    for T in TRACERSPARAMS['targetTLst']:
+    for T in TRACERSPARAMS["targetTLst"]:
         print("")
         print(f"T{T}")
-        #Grab the data for tracers in projection LOS volume
-        key = (f"T{T}",f"{rin}R{rout}",f"{int(TRACERSPARAMS['selectSnap'])}")
-        whereGas = np.where(dataDict[key]['type']==0)
-        whereInRange = np.where((dataDict[key]['pos'][whereGas][:,zAxis]<=(float(boxlos)/2.))&(dataDict[key]['pos'][whereGas][:,zAxis]>=(-1.*float(boxlos)/2.)))
-        pridsIndices = np.where(np.isin(dataDict[key]['prid'][whereGas],dataDict[key]['id'][whereGas][whereInRange]))[0]
-        trids = dataDict[key]['trid'][whereGas][pridsIndices]
+        # Grab the data for tracers in projection LOS volume
+        key = (f"T{T}", f"{rin}R{rout}", f"{int(TRACERSPARAMS['selectSnap'])}")
+        whereGas = np.where(dataDict[key]["type"] == 0)
+        whereInRange = np.where(
+            (dataDict[key]["pos"][whereGas][:, zAxis] <= (float(boxlos) / 2.0))
+            & (dataDict[key]["pos"][whereGas][:, zAxis] >= (-1.0 * float(boxlos) / 2.0))
+        )
+        pridsIndices = np.where(
+            np.isin(
+                dataDict[key]["prid"][whereGas],
+                dataDict[key]["id"][whereGas][whereInRange],
+            )
+        )[0]
+        trids = dataDict[key]["trid"][whereGas][pridsIndices]
 
         tridData.update({key: trids})
 
-#==============================================================================#
+# ==============================================================================#
 #   Get Data within range of z-axis LOS common between ALL time-steps
-#==============================================================================#
+# ==============================================================================#
 #
 # trid_list = []
 # for subDict in dataDict.values():
@@ -94,12 +107,22 @@ for (rin,rout) in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
 # for entry in intersectList:
 #     assert np.shape(entry) == np.shape(oldIntersect)
 
-#==============================================================================#
+# ==============================================================================#
 #   Get Data within range of z-axis LOS common between ALL time-steps
-#==============================================================================#
+# ==============================================================================#
 
-TracerPlot(dataDict,tridData,TRACERSPARAMS, DataSavepath,\
-FullDataPathSuffix=f".h5", Axes=TRACERSPARAMS['Axes'], zAxis=TRACERSPARAMS['zAxis'],\
-boxsize = TRACERSPARAMS['boxsize'], boxlos = TRACERSPARAMS['boxlos'],\
-pixres = TRACERSPARAMS['pixres'], pixreslos = TRACERSPARAMS['pixreslos'],\
-numThreads=2,MaxSubset= subset )
+TracerPlot(
+    dataDict,
+    tridData,
+    TRACERSPARAMS,
+    DataSavepath,
+    FullDataPathSuffix=f".h5",
+    Axes=TRACERSPARAMS["Axes"],
+    zAxis=TRACERSPARAMS["zAxis"],
+    boxsize=TRACERSPARAMS["boxsize"],
+    boxlos=TRACERSPARAMS["boxlos"],
+    pixres=TRACERSPARAMS["pixres"],
+    pixreslos=TRACERSPARAMS["pixreslos"],
+    numThreads=2,
+    MaxSubset=subset,
+)
