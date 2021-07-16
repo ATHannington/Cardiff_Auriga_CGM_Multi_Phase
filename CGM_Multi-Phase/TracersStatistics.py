@@ -86,7 +86,7 @@ omegabaryon0 = 0.048
 # ==============================================================================#
 
 # Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 saveHalo = (TRACERSPARAMS["savepath"].split("/"))[-2]
 
@@ -94,7 +94,7 @@ print("Loading data!")
 
 dataDict = {}
 
-dataDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
+dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
 snapsRange = np.array(
     [
@@ -286,14 +286,14 @@ def flat_analyse_time_averages(
             weights = FlatDataDict[Tkey]["mass"][preselectInd, :]
             zPreDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                zPreDat.append(weightedperc(dat, wei, 50, "Z-Pre"))
+                zPreDat.append(weighted_percentile(dat, wei, 50, "Z-Pre"))
             zPreDat = np.array(zPreDat)
 
             data = FlatDataDict[Tkey]["gz"][postselectInd, :]
             weights = FlatDataDict[Tkey]["mass"][postselectInd, :]
             zPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                zPostDat.append(weightedperc(dat, wei, 50, "Z-Post"))
+                zPostDat.append(weighted_percentile(dat, wei, 50, "Z-Post"))
             zPostDat = np.array(zPostDat)
 
             colspre = np.where(zPreDat > 0.75)[0]
@@ -317,14 +317,14 @@ def flat_analyse_time_averages(
             weights = FlatDataDict[Tkey]["mass"][preselectInd, :]
             vradPreDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                vradPreDat.append(weightedperc(dat, wei, 50, "Vrad-Pre"))
+                vradPreDat.append(weighted_percentile(dat, wei, 50, "Vrad-Pre"))
             vradPreDat = np.array(vradPreDat)
 
             data = FlatDataDict[Tkey]["vrad"][postselectInd, :]
             weights = FlatDataDict[Tkey]["mass"][postselectInd, :]
             vradPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                vradPostDat.append(weightedperc(dat, wei, 50, "Vrad-Post"))
+                vradPostDat.append(weighted_percentile(dat, wei, 50, "Vrad-Post"))
             vradPostDat = np.array(vradPostDat)
 
             epsilon = 50.0
@@ -761,7 +761,7 @@ def _inner_analysis(dataDict, TRACERSPARAMS):
 # ------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 # ------------------------------------------------------------------------------#
-def fullData_analyse_tracer_averages(dataDict, Tlst, snapsRange, TRACERSPARAMS):
+def full_data_analyse_tracer_averages(dataDict, Tlst, snapsRange, TRACERSPARAMS):
     dflist = []
     out = {}
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
@@ -861,7 +861,7 @@ print("Analyse Data!")
 # ------------------------------------------------------------------------------#
 #               Analyse statistics for all T and snaps
 # ------------------------------------------------------------------------------#
-statsDict, statsDF = fullData_analyse_tracer_averages(
+statsDict, statsDF = full_data_analyse_tracer_averages(
     dataDict, Tlst, snapsRange, TRACERSPARAMS
 )
 
@@ -870,7 +870,7 @@ statsDict, statsDF = fullData_analyse_tracer_averages(
 tmplist = []
 for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     for T in Tlst:
-        tmp = Statistics_hdf5_load(
+        tmp = statistics_hdf5_load(
             T, rin, rout, DataSavepath, TRACERSPARAMS, DataSavepathSuffix
         )
         df = pd.DataFrame(tmp).astype("float64")

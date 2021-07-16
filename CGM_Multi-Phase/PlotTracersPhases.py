@@ -21,7 +21,6 @@ import h5py
 import multiprocessing as mp
 from functools import reduce
 
-
 Nbins = 250
 xsize = 20.0
 ysize = 10.0
@@ -80,7 +79,7 @@ n_processes = 4
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
 # Save as .csv
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 print("")
 print("Loaded Analysis Parameters:")
@@ -101,7 +100,6 @@ saveParams = TRACERSPARAMS[
 ]  # ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','csound','tcross','tff','tcool_tff']
 
 saveHalo = (TRACERSPARAMS["savepath"].split("/"))[-2]
-
 
 print("")
 print("Saved Parameters in this Analysis:")
@@ -231,7 +229,7 @@ for snap in TRACERSPARAMS["phasesSnaps"]:
 
     snapGasFinalDict.update({f"{int(snap)}": snapGas.data})
 
-FullDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, FullDataPathSuffix)
+FullDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, FullDataPathSuffix)
 snapRange = [
     snap
     for snap in range(
@@ -290,7 +288,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             ydataCells = np.log10(snapGasFinalDict[key]["T"][whereCellsGas])
             massCells = snapGasFinalDict[key]["mass"][whereCellsGas]
             weightDataCells = (
-                snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
+                    snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
             )
 
             # xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
@@ -372,7 +370,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             ydataTracers = np.log10(TracersFinalDict[tkey]["T"][whereTracersGas])
             massTracers = TracersFinalDict[tkey]["mass"][whereTracersGas]
             weightDataTracers = (
-                TracersFinalDict[tkey][weightKey][whereTracersGas] * massTracers
+                    TracersFinalDict[tkey][weightKey][whereTracersGas] * massTracers
             )
 
             # xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]
@@ -461,12 +459,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plt.subplots_adjust(top=0.90, hspace=0.01)
 
             opslaan = (
-                "./"
-                + saveHalo
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
+                    "./"
+                    + saveHalo
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
@@ -594,12 +592,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plt.subplots_adjust(top=0.90, hspace=0.01)
 
             opslaan = (
-                "./"
-                + saveHalo
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
+                    "./"
+                    + saveHalo
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)

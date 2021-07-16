@@ -21,26 +21,27 @@ import math
 import random
 from itertools import combinations, chain
 
+
 # ==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 # ==============================================================================#
 def snap_analysis(
-    snapNumber,
-    TRACERSPARAMS,
-    HaloID,
-    TracersTFC,
-    elements,
-    elements_Z,
-    elements_mass,
-    elements_solar,
-    Zsolar,
-    omegabaryon0,
-    saveParams,
-    saveTracersOnly,
-    DataSavepath,
-    FullDataPathSuffix,
-    MiniDataPathSuffix,
-    lazyLoadBool=True,
+        snapNumber,
+        TRACERSPARAMS,
+        HaloID,
+        TracersTFC,
+        elements,
+        elements_Z,
+        elements_mass,
+        elements_solar,
+        Zsolar,
+        omegabaryon0,
+        saveParams,
+        saveTracersOnly,
+        DataSavepath,
+        FullDataPathSuffix,
+        MiniDataPathSuffix,
+        lazyLoadBool=True,
 ):
     print("")
     print(f"[@{int(snapNumber)}]: Starting Snap {snapNumber}")
@@ -77,7 +78,7 @@ def snap_analysis(
     )
 
     # Load Cell IDs - avoids having to turn lazy_load off...
-    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    # But ensures 'id' is loaded into memory before halo_only_gas_select is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
     tmp = snap.data["id"]
@@ -98,10 +99,10 @@ def snap_analysis(
     print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
 
     # Centre the simulation on HaloID 0
-    snap = SetCentre(
+    snap = set_centre(
         snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     )
-    snapGas = SetCentre(
+    snapGas = set_centre(
         snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     )
 
@@ -122,7 +123,7 @@ def snap_analysis(
     snapGas.hrgm *= 1e10  # [Msol]
 
     # Calculate New Parameters and Load into memory others we want to track
-    snapGas = CalculateTrackedParameters(
+    snapGas = calculate_tracked_parameters(
         snapGas,
         snap,
         elements,
@@ -137,24 +138,23 @@ def snap_analysis(
     del snap
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-    snapGas = PadNonEntries(snapGas, snapNumber)
+    snapGas = pad_non_entries(snapGas, snapNumber)
 
     # Select only gas in High Res Zoom Region
-    snapGas = HighResOnlyGasSelect(snapGas, snapNumber)
+    snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
     # Find Halo=HaloID data for only selection snapshot. This ensures the
     # selected tracers are originally in the Halo, but allows for tracers
     # to leave (outflow) or move inwards (inflow) from Halo.
 
     # Assign SubHaloID and FoFHaloIDs
-    snapGas = HaloIDfinder(snapGas, snap_subfind, snapNumber)
+    snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber)
 
     if snapNumber == int(TRACERSPARAMS["selectSnap"]):
-
-        snapGas = HaloOnlyGasSelect(snapGas, snap_subfind, HaloID, snapNumber)
+        snapGas = halo_only_gas_select(snapGas, snap_subfind, HaloID, snapNumber)
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-    snapGas = PadNonEntries(snapGas, snapNumber)
+    snapGas = pad_non_entries(snapGas, snapNumber)
     ###
     ##  Selection   ##
     ###
@@ -171,7 +171,7 @@ def snap_analysis(
                 f"[@{snapNumber} @{rin}R{rout} @T{targetT}]:  Get Cells From Tracers!"
             )
             # Select Cells which have the tracers from the selection snap in them
-            TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = GetCellsFromTracers(
+            TracersCFT, CellsCFT, CellIDsCFT, ParentsCFT = get_cells_from_tracers(
                 snapGas,
                 snapTracers,
                 TracersSelect,
@@ -186,9 +186,9 @@ def snap_analysis(
             out = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): CellsCFT}
 
             savePath = (
-                DataSavepath
-                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}"
-                + FullDataPathSuffix
+                    DataSavepath
+                    + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}"
+                    + FullDataPathSuffix
             )
 
             print(
@@ -212,12 +212,11 @@ def snap_analysis(
             )
 
             if (
-                (TRACERSPARAMS["QuadPlotBool"] == True)
-                & (targetT == int(TRACERSPARAMS["targetTLst"][0]))
-                & (rin == TRACERSPARAMS["Rinner"][0])
+                    (TRACERSPARAMS["QuadPlotBool"] == True)
+                    & (targetT == int(TRACERSPARAMS["targetTLst"][0]))
+                    & (rin == TRACERSPARAMS["Rinner"][0])
             ):
-
-                PlotProjections(
+                plot_projections(
                     snapGas,
                     snapNumber,
                     targetT,
@@ -260,27 +259,26 @@ def snap_analysis(
 #       PRE-MAIN ANALYSIS CODE
 # ==============================================================================#
 def tracer_selection_snap_analysis(
-    TRACERSPARAMS,
-    HaloID,
-    elements,
-    elements_Z,
-    elements_mass,
-    elements_solar,
-    Zsolar,
-    omegabaryon0,
-    saveParams,
-    saveTracersOnly,
-    DataSavepath,
-    FullDataPathSuffix,
-    MiniDataPathSuffix,
-    lazyLoadBool=True,
-    SUBSET=None,
-    snapNumber=None,
-    saveTracers=True,
-    TFCbool=True,
-    loadonlyhalo=True,
+        TRACERSPARAMS,
+        HaloID,
+        elements,
+        elements_Z,
+        elements_mass,
+        elements_solar,
+        Zsolar,
+        omegabaryon0,
+        saveParams,
+        saveTracersOnly,
+        DataSavepath,
+        FullDataPathSuffix,
+        MiniDataPathSuffix,
+        lazyLoadBool=True,
+        SUBSET=None,
+        snapNumber=None,
+        saveTracers=True,
+        TFCbool=True,
+        loadonlyhalo=True,
 ):
-
     print("")
     print("***")
     print(f"From {TRACERSPARAMS['simfile']} :")
@@ -324,7 +322,7 @@ def tracer_selection_snap_analysis(
     )
 
     # Load Cell IDs - avoids having to turn lazy_load off...
-    # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+    # But ensures 'id' is loaded into memory before halo_only_gas_select is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
     tmp = snap.data["id"]
@@ -345,10 +343,10 @@ def tracer_selection_snap_analysis(
     print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
 
     # Centre the simulation on HaloID 0
-    snap = SetCentre(
+    snap = set_centre(
         snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     )
-    snapGas = SetCentre(
+    snapGas = set_centre(
         snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     )
 
@@ -369,7 +367,7 @@ def tracer_selection_snap_analysis(
     snapGas.hrgm *= 1e10  # [Msol]
 
     # Calculate New Parameters and Load into memory others we want to track
-    snapGas = CalculateTrackedParameters(
+    snapGas = calculate_tracked_parameters(
         snapGas,
         snap,
         elements,
@@ -384,20 +382,19 @@ def tracer_selection_snap_analysis(
     del snap
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-    snapGas = PadNonEntries(snapGas, snapNumber)
+    snapGas = pad_non_entries(snapGas, snapNumber)
 
-    snapGas = HighResOnlyGasSelect(snapGas, snapNumber)
+    snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
     # Assign SubHaloID and FoFHaloIDs
-    snapGas = HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
+    snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
 
     ### Exclude values outside halo 0 ###
     if loadonlyhalo is True:
-
-        snapGas = HaloOnlyGasSelect(snapGas, snap_subfind, HaloID, snapNumber)
+        snapGas = halo_only_gas_select(snapGas, snap_subfind, HaloID, snapNumber)
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-    snapGas = PadNonEntries(snapGas, snapNumber)
+    snapGas = pad_non_entries(snapGas, snapNumber)
 
     if TFCbool == True:
         # --------------------------------------------------------------------------#
@@ -406,7 +403,7 @@ def tracer_selection_snap_analysis(
         print(f"[@{int(snapNumber)}]: Setting Selection Condition!")
 
         # Get Cell data and Cell IDs from tracers based on condition
-        TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = GetTracersFromCells(
+        TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = get_tracers_from_cells(
             snapGas,
             snapTracers,
             TRACERSPARAMS,
@@ -421,7 +418,7 @@ def tracer_selection_snap_analysis(
         if saveTracers is True:
             for targetT in TRACERSPARAMS["targetTLst"]:
                 for (rin, rout) in zip(
-                    TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]
+                        TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]
                 ):
                     key = (f"T{targetT}", f"{rin}R{rout}")
 
@@ -432,9 +429,9 @@ def tracer_selection_snap_analysis(
                     }
 
                     savePath = (
-                        DataSavepath
-                        + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"
-                        + FullDataPathSuffix
+                            DataSavepath
+                            + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"
+                            + FullDataPathSuffix
                     )
 
                     print(
@@ -477,7 +474,7 @@ def tracer_selection_snap_analysis(
 #     # load tracers data
 #
 #     #Load Cell IDs - avoids having to turn lazy_load off...
-#     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+#     # But ensures 'id' is loaded into memory before halo_only_gas_select is called
 #     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
 #     #   Be in memory so taking the subset would be skipped.
 #     tmp = snapGas.data['id']
@@ -491,7 +488,7 @@ def tracer_selection_snap_analysis(
 #     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 #
 #     #Centre the simulation on HaloID 0
-#     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
+#     snapGas  = set_centre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber = snapNumber)
 #
 #     #--------------------------#
 #     ##    Units Conversion    ##
@@ -505,27 +502,27 @@ def tracer_selection_snap_analysis(
 #     snapGas.hrgm *= 1e10 #[Msol]
 #
 #     #Calculate New Parameters and Load into memory others we want to track
-#     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
+#     snapGas = calculate_tracked_parameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0, snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-#     snapGas = PadNonEntries(snapGas,snapNumber)
+#     snapGas = pad_non_entries(snapGas,snapNumber)
 #
 #     #Select only gas in High Res Zoom Region
-#     snapGas = HighResOnlyGasSelect(snapGas,snapNumber)
+#     snapGas = high_res_only_gas_select(snapGas,snapNumber)
 #
 #     #Find Halo=HaloID data for only selection snapshot. This ensures the
 #     #selected tracers are originally in the Halo, but allows for tracers
 #     #to leave (outflow) or move inwards (inflow) from Halo.
 #
 #     #Assign SubHaloID and FoFHaloIDs
-#     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber)
+#     snapGas = halo_id_finder(snapGas,snap_subfind,snapNumber)
 #
 #     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
 #
-#         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
+#         snapGas = halo_only_gas_select(snapGas,snap_subfind,HaloID,snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-#     snapGas = PadNonEntries(snapGas,snapNumber)
+#     snapGas = pad_non_entries(snapGas,snapNumber)
 #     ###
 #     ##  Selection   ##
 #     ###
@@ -556,7 +553,7 @@ def tracer_selection_snap_analysis(
 #     print(f"[@{int(snapNumber)} @T{targetT}]: Selected!")
 #     print(f"[@{int(snapNumber)} @T{targetT}]: Entering save Cells...")
 #
-#     CellsCFT = t3000_saveCellsData(snapGas,snapNumber,saveParams,saveTracersOnly)
+#     CellsCFT = t3000_save_cells_data(snapGas,snapNumber,saveParams,saveTracersOnly)
 #     # #Add snap data to temperature specific dictionary
 #     # print(f"Adding (T{targetT},{int(snap)}) to Dict")
 #     # FullDict.update({(f"T{targetT}",f"{int(snap)}"): CellsCFT})
@@ -596,7 +593,7 @@ def tracer_selection_snap_analysis(
 #     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
 #     snapGas     = gadget_readsnap(snapNumber, TRACERSPARAMS['simfile'], hdf5=True, loadonlytype = [0,4], loadonlyhalo=HaloID, lazy_load=lazyLoadBool, subfind = snap_subfind)
 #     #Load Cell IDs - avoids having to turn lazy_load off...
-#     # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+#     # But ensures 'id' is loaded into memory before halo_only_gas_select is called
 #     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
 #     #   Be in memory so taking the subset would be skipped.
 #     tmp = snapGas.data['id']
@@ -610,7 +607,7 @@ def tracer_selection_snap_analysis(
 #     print(f"[@{int(snapNumber)} @T{targetT}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 #
 #     #Centre the simulation on HaloID 0
-#     snapGas  = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
+#     snapGas  = set_centre(snap=snapGas,snap_subfind=snap_subfind,HaloID=HaloID,snapNumber=snapNumber)
 #
 #     #--------------------------#
 #     ##    Units Conversion    ##
@@ -624,24 +621,24 @@ def tracer_selection_snap_analysis(
 #     snapGas.hrgm *= 1e10 #[Msol]
 #
 #     #Calculate New Parameters and Load into memory others we want to track
-#     snapGas = CalculateTrackedParameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
+#     snapGas = calculate_tracked_parameters(snapGas,elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-#     snapGas = PadNonEntries(snapGas,snapNumber)
+#     snapGas = pad_non_entries(snapGas,snapNumber)
 #
 #     #Select only gas in High Res Zoom Region
-#     snapGas = HighResOnlyGasSelect(snapGas,snapNumber)
+#     snapGas = high_res_only_gas_select(snapGas,snapNumber)
 #
 #     #Assign SubHaloID and FoFHaloIDs
-#     snapGas = HaloIDfinder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
+#     snapGas = halo_id_finder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
 #
 #     ### Exclude values outside halo 0 ###
 #     if (loadonlyhalo is True):
 #
-#         snapGas = HaloOnlyGasSelect(snapGas,snap_subfind,HaloID,snapNumber)
+#         snapGas = halo_only_gas_select(snapGas,snap_subfind,HaloID,snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-#     snapGas = PadNonEntries(snapGas,snapNumber)
+#     snapGas = pad_non_entries(snapGas,snapNumber)
 #
 #     #--------------------------------------------------------------------------#
 #     ####                    SELECTION                                        ###
@@ -692,12 +689,12 @@ def tracer_selection_snap_analysis(
 # #------------------------------------------------------------------------------#
 
 
-def GetTracersFromCells(
-    snapGas, snapTracers, TRACERSPARAMS, saveParams, saveTracersOnly, snapNumber
+def get_tracers_from_cells(
+        snapGas, snapTracers, TRACERSPARAMS, saveParams, saveTracersOnly, snapNumber
 ):
     """
     Select the Cells which meet the conditional where Cond. Select from these cells
-    those which ALSO contain tracers. Pass this to saveTracerData to select the
+    those which ALSO contain tracers. Pass this to save_tracer_data to select the
     data from these cells (as defined by which data is requested to be saved in
     saveParams and saveTracersOnly).
 
@@ -719,12 +716,12 @@ def GetTracersFromCells(
 
             Cond = np.where(
                 (
-                    snapGas.data["T"][whereGas]
-                    >= 1.0 * 10 ** (targetT - TRACERSPARAMS["deltaT"])
+                        snapGas.data["T"][whereGas]
+                        >= 1.0 * 10 ** (targetT - TRACERSPARAMS["deltaT"])
                 )
                 & (
-                    snapGas.data["T"][whereGas]
-                    <= 1.0 * 10 ** (targetT + TRACERSPARAMS["deltaT"])
+                        snapGas.data["T"][whereGas]
+                        <= 1.0 * 10 ** (targetT + TRACERSPARAMS["deltaT"])
                 )
                 & (snapGas.data["R"][whereGas] >= rin)
                 & (snapGas.data["R"][whereGas] <= rout)
@@ -748,7 +745,7 @@ def GetTracersFromCells(
             Ntracers = int(len(Tracers))
             print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-            Cells = saveTracerData(
+            Cells = save_tracer_data(
                 snapGas,
                 Tracers,
                 Parents,
@@ -770,12 +767,12 @@ def GetTracersFromCells(
 
 
 # ------------------------------------------------------------------------------#
-def GetCellsFromTracers(
-    snapGas, snapTracers, Tracers, saveParams, saveTracersOnly, snapNumber
+def get_cells_from_tracers(
+        snapGas, snapTracers, Tracers, saveParams, saveTracersOnly, snapNumber
 ):
     """
     Get the IDs and data from cells containing the Tracers passed in in Tracers.
-    Pass the indices of these cells to saveTracerData for adjusting the entries of Cells
+    Pass the indices of these cells to save_tracer_data for adjusting the entries of Cells
     by which cells contain tracers.
     Will return an entry for EACH tracer, which will include duplicates of certain
     Cells where more than one tracer is contained.
@@ -827,7 +824,7 @@ def GetCellsFromTracers(
     Ntracers = int(len(TracersCFT))
     print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
-    Cells = saveCellsData(
+    Cells = save_cells_data(
         snapGas,
         TracersCFT,
         Parents,
@@ -843,16 +840,16 @@ def GetCellsFromTracers(
 
 
 # ------------------------------------------------------------------------------#
-def saveTracerData(
-    snapGas,
-    Tracers,
-    Parents,
-    CellIDs,
-    CellsIndices,
-    Ntracers,
-    snapNumber,
-    saveParams,
-    saveTracersOnly,
+def save_tracer_data(
+        snapGas,
+        Tracers,
+        Parents,
+        CellIDs,
+        CellsIndices,
+        Ntracers,
+        snapNumber,
+        saveParams,
+        saveTracersOnly,
 ):
     """
     Save the requested data from the Tracers' Cells data. Only saves the cells
@@ -860,7 +857,7 @@ def saveTracerData(
     """
     print(f"[@{snapNumber}]: Saving Tracer Data!")
 
-    # assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
+    # assert np.shape(CellsIndices)[0] == Ntracers,"[@save_cells_data]: Fewer CellsIndices than Tracers!!"
     # Select the data for Cells that meet Cond which contain tracers
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
@@ -913,16 +910,16 @@ def saveTracerData(
 # ------------------------------------------------------------------------------#
 
 
-def saveCellsData(
-    snapGas,
-    Tracers,
-    Parents,
-    CellIDs,
-    CellsIndices,
-    Ntracers,
-    snapNumber,
-    saveParams,
-    saveTracersOnly,
+def save_cells_data(
+        snapGas,
+        Tracers,
+        Parents,
+        CellIDs,
+        CellsIndices,
+        Ntracers,
+        snapNumber,
+        saveParams,
+        saveTracersOnly,
 ):
     """
     Save the requested data from the Tracers' Cells data. Should save an entry for every Tracer,
@@ -934,7 +931,7 @@ def saveCellsData(
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
 
-    # assert np.shape(CellsIndices)[0] == Ntracers,"[@saveCellsData]: Fewer CellsIndices than Tracers!!"
+    # assert np.shape(CellsIndices)[0] == Ntracers,"[@save_cells_data]: Fewer CellsIndices than Tracers!!"
 
     Cells = {}
     for key in saveParams:
@@ -982,8 +979,7 @@ def saveCellsData(
     return Cells
 
 
-def t3000_saveCellsData(snapGas, snapNumber, saveParams, saveTracersOnly):
-
+def t3000_save_cells_data(snapGas, snapNumber, saveParams, saveTracersOnly):
     print(f"[@{snapNumber}]: Saving Cell Data!")
 
     Ncells = len(snapGas.data["id"])
@@ -1030,7 +1026,7 @@ def t3000_saveCellsData(snapGas, snapNumber, saveParams, saveTracersOnly):
 # ------------------------------------------------------------------------------#
 ##  FvdV weighted percentile code:
 # ------------------------------------------------------------------------------#
-def weightedperc(data, weights, perc, key):
+def weighted_percentile(data, weights, perc, key):
     """
     Find the weighted Percentile of the data.
     Returns a zero value and warning if all Data (or all weights) are NaN
@@ -1080,7 +1076,7 @@ def weightedperc(data, weights, perc, key):
 # ------------------------------------------------------------------------------#
 
 
-def SetCentre(snap, snap_subfind, HaloID, snapNumber):
+def set_centre(snap, snap_subfind, HaloID, snapNumber):
     """
     Set centre of simulation box to centre on Halo HaloID.
     Set velocities to be centred on the median velocity of this halo.
@@ -1104,16 +1100,16 @@ def SetCentre(snap, snap_subfind, HaloID, snapNumber):
 
 
 # ------------------------------------------------------------------------------#
-def CalculateTrackedParameters(
-    snapGas,
-    snap,
-    elements,
-    elements_Z,
-    elements_mass,
-    elements_solar,
-    Zsolar,
-    omegabaryon0,
-    snapNumber,
+def calculate_tracked_parameters(
+        snapGas,
+        snap,
+        elements,
+        elements_Z,
+        elements_mass,
+        elements_solar,
+        Zsolar,
+        omegabaryon0,
+        snapNumber,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1123,29 +1119,29 @@ def CalculateTrackedParameters(
     whereGas = np.where(snapGas.type == 0)
     # Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = (
-        3.0
-        * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3 + snapGas.omegalambda)
-        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-        / (8.0 * pi * c.G)
+            3.0
+            * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3 + snapGas.omegalambda)
+            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
+            / (8.0 * pi * c.G)
     )
     rhomean = (
-        3.0
-        * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3)
-        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-        / (8.0 * pi * c.G)
+            3.0
+            * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3)
+            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
+            / (8.0 * pi * c.G)
     )
 
     # Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
-        sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
-        + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
+            sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
+            + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
     )
 
     # 3./2. N KB
     Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
 
     snapGas.data["dens"] = (
-        (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
+            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
     )  # [g cm^-3]
     gasX = snapGas.gmet[whereGas, 0][0]
 
@@ -1153,16 +1149,16 @@ def CalculateTrackedParameters(
     snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
     snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / c.amu * gasX  # cm^-3
     snapGas.data["rho_rhomean"] = snapGas.data["dens"][whereGas] / (
-        rhomean * omegabaryon0 / snapGas.omega0
+            rhomean * omegabaryon0 / snapGas.omega0
     )  # rho / <rho>
     snapGas.data["Tdens"] = (
-        snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
+            snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
     )
 
     bfactor = (
-        1e6
-        * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
-        * (1e5 / (c.parsec * 1e6))
+            1e6
+            * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
+            * (1e5 / (c.parsec * 1e6))
     )  # [microGauss]
 
     # Magnitude of Magnetic Field [micro Guass]
@@ -1177,7 +1173,7 @@ def CalculateTrackedParameters(
     KpcTokm = 1e3 * c.parsec * 1e-5
     # Radial Velocity [km s^-1]
     snapGas.data["vrad"] = (
-        snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
+            snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
     ).sum(axis=1)
     snapGas.data["vrad"] /= snapGas.data["R"][whereGas] * KpcTokm
 
@@ -1185,12 +1181,12 @@ def CalculateTrackedParameters(
     GyrToSeconds = 365.25 * 24.0 * 60.0 * 60.0 * 1e9
 
     snapGas.data["tcool"] = (
-        snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
-    ) / (
-        GyrToSeconds
-        * snapGas.data["gcol"][whereGas]
-        * snapGas.data["n_H"][whereGas] ** 2
-    )  # [Gyrs]
+                                    snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
+                            ) / (
+                                    GyrToSeconds
+                                    * snapGas.data["gcol"][whereGas]
+                                    * snapGas.data["n_H"][whereGas] ** 2
+                            )  # [Gyrs]
     snapGas.data["theat"] = snapGas.data["tcool"].copy()
 
     coolingGas = np.where(snapGas.data["tcool"] < 0.0)
@@ -1215,7 +1211,7 @@ def CalculateTrackedParameters(
     # Specific Angular Momentum [kpc km s^-1]
     snapGas.data["L"] = sqrt(
         (
-            cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
+                cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
         ).sum(axis=1)
     )
 
@@ -1225,24 +1221,24 @@ def CalculateTrackedParameters(
 
     # Magnetic Pressure [P/k_B K cm^-3]
     snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
-        8.0 * pi * c.KB
+            8.0 * pi * c.KB
     )
 
     snapGas.data["P_tot"] = (
-        snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
+            snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
     )
 
     snapGas.data["Pthermal_Pmagnetic"] = (
-        snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
+            snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
     )
 
     # Kinetic "Pressure" [P/k_B K cm^-3]
     snapGas.data["P_kinetic"] = (
-        (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
-        * 1e10
-        * c.msol
-        * (1.0 / c.KB)
-        * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
+            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
+            * 1e10
+            * c.msol
+            * (1.0 / c.KB)
+            * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
     )
 
     # Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
@@ -1252,16 +1248,16 @@ def CalculateTrackedParameters(
 
     # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
     snapGas.data["tcross"] = (
-        (KpcTokm * 1e3 / GyrToSeconds)
-        * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
-        / snapGas.data["csound"][whereGas]
+            (KpcTokm * 1e3 / GyrToSeconds)
+            * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
+            / snapGas.data["csound"][whereGas]
     )
 
     rsort = np.argsort(snap.data["R"])
     runsort = np.argsort(rsort)
 
     rhosorted = (3.0 * np.cumsum(snap.data["mass"][rsort])) / (
-        4.0 * pi * (snap.data["R"][rsort]) ** 3
+            4.0 * pi * (snap.data["R"][rsort]) ** 3
     )
     rho = rhosorted[runsort]
 
@@ -1276,7 +1272,7 @@ def CalculateTrackedParameters(
 
     # Cooling time over free fall time
     snapGas.data["tcool_tff"] = (
-        snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
+            snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
     )
     del tmp
 
@@ -1284,7 +1280,7 @@ def CalculateTrackedParameters(
 
 
 # ------------------------------------------------------------------------------#
-def HaloOnlyGasSelect(snapGas, snap_subfind, Halo=0, snapNumber=None):
+def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
     """
     Select only the snapGas entries associated with Sub Halo number Halo
     and unbound (-1).
@@ -1316,7 +1312,7 @@ def HaloOnlyGasSelect(snapGas, snap_subfind, Halo=0, snapNumber=None):
 
 
 # ------------------------------------------------------------------------------#
-def HighResOnlyGasSelect(snapGas, snapNumber):
+def high_res_only_gas_select(snapGas, snapNumber):
     """
     Grab only snapGas entries for gas where high res gas mass (hrgm)
     is greater than 90% of the cell mass. This defines the cosmological
@@ -1341,7 +1337,7 @@ def HighResOnlyGasSelect(snapGas, snapNumber):
 
 
 # ------------------------------------------------------------------------------#
-def HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
+def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
     """
     Assign a unique ID value to each SubFind SubHalo --> SubHaloID
     Assign a unique ID value to each FoF Halo --> FoFHaloID
@@ -1435,11 +1431,11 @@ def HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
             # Some Sanity checks. There should be 1 index pair for each subhalo, +1 for upper and lower bounds...
             assert len(lower) == (
-                nshUP + 1 - nshLO
-            ), "[@HaloIDfinder]: Lower selection list has fewer entries than number of subhaloes!"
+                    nshUP + 1 - nshLO
+            ), "[@halo_id_finder]: Lower selection list has fewer entries than number of subhaloes!"
             assert len(upper) == (
-                nshUP + 1 - nshLO
-            ), "[@HaloIDfinder]: Upper selection list has fewer entries than number of subhaloes!"
+                    nshUP + 1 - nshLO
+            ), "[@halo_id_finder]: Upper selection list has fewer entries than number of subhaloes!"
 
             # Loop over the index pairs, and assign all bound material (that is, all material apart from the end of slty to flty final pair)
             #  a subhalo number
@@ -1460,7 +1456,7 @@ def HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             if lower[0] == upper[-1]:
                 whereSelectSHFoF = whereType[0][lower[0]]
             else:
-                whereSelectSHFoF = whereType[0][lower[0] : upper[-1]]
+                whereSelectSHFoF = whereType[0][lower[0]: upper[-1]]
 
             snapGas.data["FoFHaloID"][whereSelectSHFoF] = fofhalo
 
@@ -1469,7 +1465,7 @@ def HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             if lower[-1] == upper[-1]:
                 continue
             else:
-                whereSelectSHunassigned = whereType[0][lower[-1] : upper[-1]]
+                whereSelectSHunassigned = whereType[0][lower[-1]: upper[-1]]
 
             snapGas.data["SubHaloID"][whereSelectSHunassigned] = -1
 
@@ -1477,8 +1473,7 @@ def HaloIDfinder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
 
 # ------------------------------------------------------------------------------#
-def LoadTracersParameters(TracersParamsPath):
-
+def load_tracers_parameters(TracersParamsPath):
     TRACERSPARAMS = pd.read_csv(
         TracersParamsPath,
         delimiter=" ",
@@ -1492,23 +1487,23 @@ def LoadTracersParameters(TracersParamsPath):
     # Convert Dictionary items to (mostly) floats
     for key, value in TRACERSPARAMS.items():
         if (
-            (key == "targetTLst")
-            or (key == "phasesSnaps")
-            or (key == "Axes")
-            or (key == "percentiles")
-            or (key == "Rinner")
-            or (key == "Router")
+                (key == "targetTLst")
+                or (key == "phasesSnaps")
+                or (key == "Axes")
+                or (key == "percentiles")
+                or (key == "Rinner")
+                or (key == "Router")
         ):
             # Convert targetTLst to list of floats
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
             TRACERSPARAMS.update({key: lst2})
         elif (
-            (key == "saveParams")
-            or (key == "saveTracersOnly")
-            or (key == "saveEssentials")
-            or (key == "dtwParams")
-            or (key == "dtwlogParams")
+                (key == "saveParams")
+                or (key == "saveTracersOnly")
+                or (key == "saveEssentials")
+                or (key == "dtwParams")
+                or (key == "dtwlogParams")
         ):
             # Convert targetTLst to list of floats
             lst = value.split(",")
@@ -1539,8 +1534,8 @@ def LoadTracersParameters(TracersParamsPath):
 
     # This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
     DataSavepath = (
-        TRACERSPARAMS["savepath"]
-        + f"Data_selectSnap{int(TRACERSPARAMS['selectSnap'])}_targetT{Tstr}"
+            TRACERSPARAMS["savepath"]
+            + f"Data_selectSnap{int(TRACERSPARAMS['selectSnap'])}_targetT{Tstr}"
     )
 
     return TRACERSPARAMS, DataSavepath, Tlst
@@ -1549,10 +1544,9 @@ def LoadTracersParameters(TracersParamsPath):
 # ------------------------------------------------------------------------------#
 
 
-def GetIndividualCellFromTracer(
-    Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+def get_individual_cell_from_tracer(
+        Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
-
     if np.shape(np.shape(Data))[0] == 1:
         dimension = 1
         NullEntry = np.nan
@@ -1580,7 +1574,7 @@ def GetIndividualCellFromTracer(
         )
     else:
         print(
-            f"[@GetIndividualCellFromTracer]: dimension not 1 or 3! dataBlank Failure!"
+            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure!"
         )
         assert True == False
 
@@ -1647,7 +1641,7 @@ def GetIndividualCellFromTracer(
 # ------------------------------------------------------------------------------#
 
 
-def GetIndividualCell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
+def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     if np.shape(np.shape(Data))[0] == 1:
         dimension = 1
         NullEntry = np.nan
@@ -1668,7 +1662,7 @@ def GetIndividualCell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
         )
     else:
         print(
-            f"[@GetIndividualCellFromTracer]: dimension not 1 or 3! dataBlank Failure!"
+            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure!"
         )
         assert True == False
 
@@ -1790,18 +1784,17 @@ def hdf5_load(path):
 # ------------------------------------------------------------------------------#
 
 
-def FullDict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
-
+def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
     FullDict = {}
     for snap in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
-        1,
+            int(TRACERSPARAMS["snapMin"]),
+            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+            1,
     ):
         for targetT in TRACERSPARAMS["targetTLst"]:
             for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 loadPath = (
-                    path + f"_T{targetT}_{rin}R{rout}_{int(snap)}" + FullDataPathSuffix
+                        path + f"_T{targetT}_{rin}R{rout}_{int(snap)}" + FullDataPathSuffix
                 )
                 data = hdf5_load(loadPath)
                 FullDict.update(data)
@@ -1812,20 +1805,19 @@ def FullDict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
 # ------------------------------------------------------------------------------#
 
 
-def Statistics_hdf5_load(targetT, rin, rout, path, TRACERSPARAMS, MiniDataPathSuffix):
-
+def statistics_hdf5_load(targetT, rin, rout, path, TRACERSPARAMS, MiniDataPathSuffix):
     # Load data in {(T#, snap#):{k:v}} form
     nested = {}
     for snap in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
-        1,
+            int(TRACERSPARAMS["snapMin"]),
+            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+            1,
     ):
         # Temperature specific load path
         loadPath = (
-            path
-            + f"_T{targetT}_{rin}R{rout}_{int(snap)}_Statistics"
-            + MiniDataPathSuffix
+                path
+                + f"_T{targetT}_{rin}R{rout}_{int(snap)}_Statistics"
+                + MiniDataPathSuffix
         )
         data = hdf5_load(loadPath)
         nested.update(data)
@@ -1844,7 +1836,7 @@ def Statistics_hdf5_load(targetT, rin, rout, path, TRACERSPARAMS, MiniDataPathSu
 # ------------------------------------------------------------------------------#
 
 
-def PadNonEntries(snapGas, snapNumber):
+def pad_non_entries(snapGas, snapNumber):
     """
     Subroutine to pad all stars and gas entries in snapGas to have same first dimension size.
     So stars only data -> stars data + NGas x None
@@ -1872,7 +1864,7 @@ def PadNonEntries(snapGas, snapNumber):
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
                         print(
-                            "[@ GAS @PadNonEntries 1D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
+                            "[@ GAS @pad_non_entries 1D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
                         )
                         print(f"Key: {key}")
                         print(f"shape: {np.shape(paddedValues)}")
@@ -1885,14 +1877,14 @@ def PadNonEntries(snapGas, snapNumber):
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
                         print(
-                            "[@ STARS @PadNonEntries 1D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
+                            "[@ STARS @pad_non_entries 1D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
                         )
                         print(f"Key: {key}")
                         print(f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] != (NTot):
                     print(
-                        "[@ ELSE @PadNonEntries 1D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
+                        "[@ ELSE @pad_non_entries 1D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
                     )
                     print(f"Key: {key}")
                     print(f"shape: {np.shape(value)}")
@@ -1907,7 +1899,7 @@ def PadNonEntries(snapGas, snapNumber):
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
                         print(
-                            "[@ GAS @PadNonEntries 2D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
+                            "[@ GAS @pad_non_entries 2D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
                         )
                         print(f"Key: {key}")
                         print(f"shape: {np.shape(paddedValues)}")
@@ -1920,14 +1912,14 @@ def PadNonEntries(snapGas, snapNumber):
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
                         print(
-                            "[@ STARS @PadNonEntries 2D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
+                            "[@ STARS @pad_non_entries 2D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
                         )
                         print(f"Key: {key}")
                         print(f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] != NTot:
                     print(
-                        "[@ ELSE @PadNonEntries 2D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
+                        "[@ ELSE @pad_non_entries 2D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
                     )
                     print(f"Key: {key}")
                     print(f"shape: {np.shape(value)}")
@@ -1939,18 +1931,17 @@ def PadNonEntries(snapGas, snapNumber):
 
 
 def save_statistics(
-    Cells,
-    targetT,
-    rin,
-    rout,
-    snapNumber,
-    TRACERSPARAMS,
-    saveParams,
-    DataSavepath=None,
-    MiniDataPathSuffix=".csv",
-    saveBool=True,
+        Cells,
+        targetT,
+        rin,
+        rout,
+        snapNumber,
+        TRACERSPARAMS,
+        saveParams,
+        DataSavepath=None,
+        MiniDataPathSuffix=".csv",
+        saveBool=True,
 ):
-
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
     # ------------------------------------------------------------------------------#
@@ -1973,7 +1964,7 @@ def save_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = weightedperc(
+                stat = weighted_percentile(
                     data=v, weights=Cells["mass"], perc=percentile, key=whereErrorKey
                 )
                 if saveKey not in statsData.keys():
@@ -1987,9 +1978,9 @@ def save_statistics(
     if saveBool == True:
         # Generate our savepath
         savePath = (
-            DataSavepath
-            + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
-            + MiniDataPathSuffix
+                DataSavepath
+                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
+                + MiniDataPathSuffix
         )
         print(
             "\n"
@@ -2008,7 +1999,6 @@ def save_statistics(
 
 
 def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
-
     flattened_dict = {}
     for snap in snapRange:
         tmp = {}
@@ -2031,16 +2021,15 @@ def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
 
 
 def flatten_wrt_time(
-    targetT,
-    dataDict,
-    rin,
-    rout,
-    TRACERSPARAMS,
-    saveParams,
-    DataSavepath,
-    DataSavepathSuffix,
+        targetT,
+        dataDict,
+        rin,
+        rout,
+        TRACERSPARAMS,
+        saveParams,
+        DataSavepath,
+        DataSavepathSuffix,
 ):
-
     flattened_dict = {}
     snapRange = [
         xx
@@ -2065,7 +2054,7 @@ def flatten_wrt_time(
                     tracerData,
                     TracersReturned,
                     ParentsReturned,
-                ) = GetIndividualCellFromTracer(
+                ) = get_individual_cell_from_tracer(
                     Tracers=dataDict[key]["trid"],
                     Parents=dataDict[key]["prid"],
                     CellIDs=dataDict[key]["id"],
@@ -2100,7 +2089,7 @@ def flatten_wrt_time(
     #     final_dict.update({key : tmp})
 
     savePath = (
-        DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
+            DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
     )
 
     print("\n" + f": Saving flat data as: " + savePath)
@@ -2140,26 +2129,25 @@ def delete_nan_inf_axis(dict, axis=0):
 
 
 # ------------------------------------------------------------------------------#
-def PlotProjections(
-    snapGas,
-    snapNumber,
-    targetT,
-    rin,
-    rout,
-    TRACERSPARAMS,
-    DataSavepath,
-    FullDataPathSuffix,
-    Axes=[0, 1],
-    zAxis=[2],
-    boxsize=400.0,
-    boxlos=20.0,
-    pixres=0.2,
-    pixreslos=4,
-    DPI=100,
-    CMAP=None,
-    numThreads=2,
+def plot_projections(
+        snapGas,
+        snapNumber,
+        targetT,
+        rin,
+        rout,
+        TRACERSPARAMS,
+        DataSavepath,
+        FullDataPathSuffix,
+        Axes=[0, 1],
+        zAxis=[2],
+        boxsize=400.0,
+        boxlos=20.0,
+        pixres=0.2,
+        pixreslos=4,
+        DPI=100,
+        CMAP=None,
+        numThreads=2,
 ):
-
     print(
         f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Starting Projections Video Plots!"
     )
@@ -2172,7 +2160,7 @@ def PlotProjections(
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["x", "y", "z"]
 
-    # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
+    # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in set_centre)
     imgcent = [0.0, 0.0, 0.0]
 
     # --------------------------#
@@ -2320,17 +2308,17 @@ def PlotProjections(
 
     # Add overall figure plot
     TITLE = (
-        r"Redshift $(z) =$"
-        + f"{redshift:0.03f} "
-        + " "
-        + r"$t_{Age Universe}=$"
-        + f"{tage:0.03f} Gyrs"
-        + "\n"
-        + f"Projections within {-1.*float(boxlos)/2.}"
-        + r"<"
-        + f"{AxesLabels[zAxis[0]]}-axis"
-        + r"<"
-        + f"{float(boxlos)/2.} kpc"
+            r"Redshift $(z) =$"
+            + f"{redshift:0.03f} "
+            + " "
+            + r"$t_{Age Universe}=$"
+            + f"{tage:0.03f} Gyrs"
+            + "\n"
+            + f"Projections within {-1. * float(boxlos) / 2.}"
+            + r"<"
+            + f"{AxesLabels[zAxis[0]]}-axis"
+            + r"<"
+            + f"{float(boxlos) / 2.} kpc"
     )
     fig.suptitle(TITLE, fontsize=fontsizeTitle)
 
@@ -2504,25 +2492,24 @@ def PlotProjections(
 # ------------------------------------------------------------------------------#
 
 # ------------------------------------------------------------------------------#
-def TracerPlot(
-    Cells,
-    tridDict,
-    TRACERSPARAMS,
-    DataSavepath,
-    FullDataPathSuffix,
-    Axes=[0, 1],
-    zAxis=[2],
-    boxsize=400.0,
-    boxlos=20.0,
-    pixres=0.2,
-    pixreslos=4,
-    DPI=100,
-    CMAP=None,
-    numThreads=4,
-    MaxSubset=100,
-    lazyLoadBool=True,
+def tracer_plot(
+        Cells,
+        tridDict,
+        TRACERSPARAMS,
+        DataSavepath,
+        FullDataPathSuffix,
+        Axes=[0, 1],
+        zAxis=[2],
+        boxsize=400.0,
+        boxlos=20.0,
+        pixres=0.2,
+        pixreslos=4,
+        DPI=100,
+        CMAP=None,
+        numThreads=4,
+        MaxSubset=100,
+        lazyLoadBool=True,
 ):
-
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
     else:
@@ -2540,7 +2527,7 @@ def TracerPlot(
 
     nullEntry = [np.nan, np.nan, np.nan]
 
-    # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
+    # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in set_centre)
     imgcent = [0.0, 0.0, 0.0]
 
     # element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
@@ -2601,8 +2588,8 @@ def TracerPlot(
     HaloID = int(TRACERSPARAMS["haloID"])
 
     for snapNumber in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+            int(TRACERSPARAMS["snapMin"]),
+            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
     ):
         # --------------------------#
         ## Slices and Projections ##
@@ -2641,7 +2628,7 @@ def TracerPlot(
         )
 
         # Load Cell IDs - avoids having to turn lazy_load off...
-        # But ensures 'id' is loaded into memory before HaloOnlyGasSelect is called
+        # But ensures 'id' is loaded into memory before halo_only_gas_select is called
         #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
         #   Be in memory so taking the subset would be skipped.
         tmp = snap.data["id"]
@@ -2664,10 +2651,10 @@ def TracerPlot(
         )
 
         # Centre the simulation on HaloID 0
-        snap = SetCentre(
+        snap = set_centre(
             snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
         )
-        snapGas = SetCentre(
+        snapGas = set_centre(
             snap=snapGas,
             snap_subfind=snap_subfind,
             HaloID=HaloID,
@@ -2691,7 +2678,7 @@ def TracerPlot(
         snapGas.hrgm *= 1e10  # [Msol]
 
         # Calculate New Parameters and Load into memory others we want to track
-        snapGas = CalculateTrackedParameters(
+        snapGas = calculate_tracked_parameters(
             snapGas,
             snap,
             elements,
@@ -2704,7 +2691,7 @@ def TracerPlot(
         )
 
         # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
-        snapGas = PadNonEntries(snapGas, snapNumber)
+        snapGas = pad_non_entries(snapGas, snapNumber)
 
         # Redshift
         redshift = snapGas.redshift  # z
@@ -2789,7 +2776,7 @@ def TracerPlot(
 
                 whereGas = np.where(Cells[key]["type"] == 0)[0]
 
-                posData, _, _ = GetIndividualCellFromTracer(
+                posData, _, _ = get_individual_cell_from_tracer(
                     Tracers=Cells[key]["trid"],
                     Parents=Cells[key]["prid"],
                     CellIDs=Cells[key]["id"][whereGas],
@@ -2853,7 +2840,7 @@ def TracerPlot(
 
                     whereGas = np.where(Cells[key]["type"] == 0)[0]
 
-                    posData, _, _ = GetIndividualCellFromTracer(
+                    posData, _, _ = get_individual_cell_from_tracer(
                         Tracers=Cells[key]["trid"],
                         Parents=Cells[key]["prid"],
                         CellIDs=Cells[key]["id"][whereGas],
@@ -2891,26 +2878,26 @@ def TracerPlot(
 
                 # Add overall figure plot
                 TITLE = (
-                    r"Redshift $(z) =$"
-                    + f"{redshift:0.03f} "
-                    + " "
-                    + r"$t_{Age Universe}=$"
-                    + f"{tage:0.03f} Gyrs"
-                    + "\n"
-                    + f"Projections within {-1.*float(boxlos)/2.}"
-                    + r"<"
-                    + f"{AxesLabels[zAxis[0]]}-axis"
-                    + r"<"
-                    + f"{float(boxlos)/2.} kpc"
-                    + "\n"
-                    + f"Subset of {int(subset)} Tracers selected at "
-                    + r"$t_{Age Universe}=$"
-                    + f"{selecttage:0.03f} Gyrs"
-                    + " as being at "
-                    + "\n"
-                    + r"$T = 10^{%5.2f \pm %5.2f} K$"
-                    % (targetT, TRACERSPARAMS["deltaT"])
-                    + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+                        r"Redshift $(z) =$"
+                        + f"{redshift:0.03f} "
+                        + " "
+                        + r"$t_{Age Universe}=$"
+                        + f"{tage:0.03f} Gyrs"
+                        + "\n"
+                        + f"Projections within {-1. * float(boxlos) / 2.}"
+                        + r"<"
+                        + f"{AxesLabels[zAxis[0]]}-axis"
+                        + r"<"
+                        + f"{float(boxlos) / 2.} kpc"
+                        + "\n"
+                        + f"Subset of {int(subset)} Tracers selected at "
+                        + r"$t_{Age Universe}=$"
+                        + f"{selecttage:0.03f} Gyrs"
+                        + " as being at "
+                        + "\n"
+                        + r"$T = 10^{%5.2f \pm %5.2f} K$"
+                        % (targetT, TRACERSPARAMS["deltaT"])
+                        + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
@@ -3007,7 +2994,7 @@ def TracerPlot(
                 print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot Tails...")
                 jj = 1
                 for snap in range(int(minSnap + 1), snapNumber + 1):
-                    key1 = (f"T{targetT}", f"{rin}R{rout}", f"{int(snap-1)}")
+                    key1 = (f"T{targetT}", f"{rin}R{rout}", f"{int(snap - 1)}")
                     key2 = (f"T{targetT}", f"{rin}R{rout}", f"{int(snap)}")
                     if snap != int(snapNumber):
                         pos1 = OldPosDict[key1]
@@ -3068,8 +3055,8 @@ def TracerPlot(
 
                 SaveSnapNumber = str(snapNumber).zfill(4)
                 savePath = (
-                    DataSavepath
-                    + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+                        DataSavepath
+                        + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
                 )
 
                 print(

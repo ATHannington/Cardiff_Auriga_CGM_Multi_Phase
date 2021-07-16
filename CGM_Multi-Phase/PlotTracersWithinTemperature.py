@@ -35,16 +35,15 @@ TracersParamsPath = "TracersParams.csv"
 # ==============================================================================#
 
 # Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 DataSavepathSuffix = f".h5"
-
 
 print("Loading data!")
 
 dataDict = {}
 
-dataDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
+dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
 saveHalo = (TRACERSPARAMS["savepath"].split("/"))[-2]
 
@@ -54,9 +53,9 @@ Xdata = {}
 
 tage = []
 for snap in range(
-    int(TRACERSPARAMS["snapMin"]),
-    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-    1,
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+        1,
 ):
     minTemp = TRACERSPARAMS["targetTLst"][0]
     minrin = TRACERSPARAMS["Rinner"][0]
@@ -68,7 +67,6 @@ for snap in range(
 tage = np.array(tage)
 # t0 = np.nanmax(tage)
 tage = abs(tage - ageUniverse)
-
 
 for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     print(f"{rin}R{rout}")
@@ -147,13 +145,13 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             [
                 xx
                 for xx in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"]) + 1,
-                        int(TRACERSPARAMS["finalSnap"]) + 1,
-                    ),
-                    1,
-                )
+                int(TRACERSPARAMS["snapMin"]),
+                min(
+                    int(TRACERSPARAMS["snapMax"]) + 1,
+                    int(TRACERSPARAMS["finalSnap"]) + 1,
+                ),
+                1,
+            )
             ]
         )
         selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
@@ -233,13 +231,13 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace=0.005)
     opslaan = (
-        "./"
-        + saveHalo
-        + "/"
-        + f"{int(rin)}R{int(rout)}"
-        + "/"
-        + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-        + f"_WithinTemperature.pdf"
+            "./"
+            + saveHalo
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+            + f"_WithinTemperature.pdf"
     )
     plt.savefig(opslaan, dpi=DPI, transparent=False)
     print(opslaan)

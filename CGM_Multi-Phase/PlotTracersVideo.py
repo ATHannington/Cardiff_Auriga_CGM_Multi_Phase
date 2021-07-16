@@ -32,12 +32,12 @@ DataSavepathSuffix = f".h5"
 # ==============================================================================#
 
 # Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 dataParams = (
-    TRACERSPARAMS["saveParams"]
-    + TRACERSPARAMS["saveTracersOnly"]
-    + TRACERSPARAMS["saveEssentials"]
+        TRACERSPARAMS["saveParams"]
+        + TRACERSPARAMS["saveTracersOnly"]
+        + TRACERSPARAMS["saveEssentials"]
 )
 
 for param in singleValueParams:
@@ -45,7 +45,7 @@ for param in singleValueParams:
 
 print("Loading data!")
 
-dataDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
+dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
 # ==============================================================================#
 #   Get Data within range of z-axis LOS

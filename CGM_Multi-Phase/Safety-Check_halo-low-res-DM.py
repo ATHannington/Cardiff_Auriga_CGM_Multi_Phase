@@ -36,7 +36,6 @@ for halo in haloes:
     print(f"Starting halo {halo}")
     truthyInner = []
     for snapNumber in range(snapMin, snapMax + 1, 1):
-
         snap_subfind = load_subfind(snapNumber, dir=loadPath)
 
         snap = gadget_readsnap(
@@ -48,7 +47,7 @@ for halo in haloes:
             subfind=snap_subfind,
         )
 
-        snap = SetCentre(snap, snap_subfind, 0, snapNumber)
+        snap = set_centre(snap, snap_subfind, 0, snapNumber)
 
         whereLowResDM = np.where(np.isin(snap.data["type"], [2, 3]))[0]
         snap.pos *= 1e3  # [kpc]

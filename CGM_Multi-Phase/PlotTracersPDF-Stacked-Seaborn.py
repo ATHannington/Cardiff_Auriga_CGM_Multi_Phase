@@ -91,7 +91,7 @@ xlabel = {
 for entry in logParameters:
     xlabel[entry] = r"Log10 " + xlabel[entry]
 
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 saveParams = TRACERSPARAMS["saveParams"]
 
@@ -103,7 +103,7 @@ print("Loading data!")
 
 dataDict = {}
 
-dataDict = FullDict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
+dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
 for dataKey in saveParams:
     print(f"{dataKey}")
@@ -113,7 +113,7 @@ for dataKey in saveParams:
         for ii in range(len(Tlst)):
             print(f"T{Tlst[ii]}")
             # Temperature specific load path
-            plotData = Statistics_hdf5_load(
+            plotData = statistics_hdf5_load(
                 Tlst[ii], rin, rout, DataSavepath, TRACERSPARAMS, DataSavepathSuffix
             )
 
@@ -267,10 +267,10 @@ for dataKey in saveParams:
                     clip_on=False,
                 )
 
-                LO = weightedperc(
+                LO = weighted_percentile(
                     data=data, weights=weights, perc=percentileLO, key="LO"
                 )
-                UP = weightedperc(
+                UP = weighted_percentile(
                     data=data, weights=weights, perc=percentileUP, key="UP"
                 )
 
@@ -381,12 +381,12 @@ for dataKey in saveParams:
             plt.subplots_adjust(top=0.90, hspace=-0.25)
 
             opslaan = (
-                "./"
-                + saveHalo
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
+                    "./"
+                    + saveHalo
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)

@@ -10,8 +10,7 @@ from gadget_subfind import *
 from Tracers_Subroutines import CalculateTrackedParameters
 import multiprocessing as mp
 
-
-simfile = "/home/universe/spxfv/Auriga/level4_MHD_variants/halo_18_3000snaps/output/"  #'/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
+simfile = "/home/universe/spxfv/Auriga/level4_MHD_variants/halo_18_3000snaps/output/"  # '/home/universe/spxtd1-shared/ISOTOPES/output/' # set paths to simulation
 snapnum = 2500  # 127 # set snapshot to look at
 snap_start = 2500
 snap_end = 2999
@@ -46,7 +45,6 @@ zAxis = [x for x in posAxes if x not in Axes]
     Zsolar          : Solar metallicity
     omegabaryon0    : Omega Baryon 0 - Baryonic Fraction??
 """
-
 
 # element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
 elements = [
@@ -131,6 +129,8 @@ if (CMAP == "ATH") or (CMAP == "ath"):
     CMAP = ATH_ColourMap(ColourBins)
 else:
     CMAP = plt.get_cmap(CMAP, ColourBins)
+
+
 # ------------------------------------------------------------------------------#
 #          Set Centre to [0,0,0] centering on COM of Halo number HaloID
 #                   Where HaloID=0 is the biggest halo.
@@ -140,8 +140,8 @@ else:
 def SetCentre(snap, snap_subfind, HaloID):
     print("Centering!")
     HaloCentre = snap_subfind.data["fpos"][
-        HaloID, :
-    ]  # subfind has calculated its centre of mass for you
+                 HaloID, :
+                 ]  # subfind has calculated its centre of mass for you
     snap.data["pos"] = snap.data["pos"] - np.array(
         HaloCentre
     )  # use the subfind COM to centre the coordinates on the galaxy
@@ -155,13 +155,13 @@ def SetCentre(snap, snap_subfind, HaloID):
 
 
 def PlotHistogram(
-    snap,
-    snapnum,
-    Nbins=500,
-    Axes=[0, 1],
-    Range=[[-50, 50], [-50, 50]],
-    WeightsLabel="mass",
-    Normed=False,
+        snap,
+        snapnum,
+        Nbins=500,
+        Axes=[0, 1],
+        Range=[[-50, 50], [-50, 50]],
+        WeightsLabel="mass",
+        Normed=False,
 ):
     """
     Function for Histogram 2D plotting an individual SnapShot.
@@ -267,7 +267,7 @@ def HistogramMovieLoop(SimDirectory, NSnaps=127, Start=10):
 
         # Print percentage complete
         print(
-            f"{(float(ii + 1 - Start)/float(NSnaps - Start))*100.0 : 0.03f}",
+            f"{(float(ii + 1 - Start) / float(NSnaps - Start)) * 100.0 : 0.03f}",
             "% complete",
         )
         # Delete child snapper, to free up space and prevent data leakage
@@ -281,21 +281,20 @@ def HistogramMovieLoop(SimDirectory, NSnaps=127, Start=10):
 
 
 def PlotProjections(
-    snapGas,
-    snapnum,
-    snapDM=None,
-    snapStars=None,
-    Axes=[0, 1],
-    zAxis=[2],
-    boxsize=400.0,
-    boxlos=50.0,
-    pixres=1.0,
-    pixreslos=0.1,
-    Nbins=500,
-    DPI=500,
-    CMAP=None,
+        snapGas,
+        snapnum,
+        snapDM=None,
+        snapStars=None,
+        Axes=[0, 1],
+        zAxis=[2],
+        boxsize=400.0,
+        boxlos=50.0,
+        pixres=1.0,
+        pixreslos=0.1,
+        Nbins=500,
+        DPI=500,
+        CMAP=None,
 ):
-
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
     else:
@@ -316,22 +315,22 @@ def PlotProjections(
     whereGas = np.where(snapGas.type == 0)
     # Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = (
-        3.0
-        * (snapGas.omega0 * (1 + snapGas.redshift) ** 3.0 + snapGas.omegalambda)
-        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2.0
-        / (8.0 * pi * c.G)
+            3.0
+            * (snapGas.omega0 * (1 + snapGas.redshift) ** 3.0 + snapGas.omegalambda)
+            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2.0
+            / (8.0 * pi * c.G)
     )
     rhomean = (
-        3.0
-        * (snapGas.omega0 * (1 + snapGas.redshift) ** 3.0)
-        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2.0
-        / (8.0 * pi * c.G)
+            3.0
+            * (snapGas.omega0 * (1 + snapGas.redshift) ** 3.0)
+            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2.0
+            / (8.0 * pi * c.G)
     )
 
     # Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
-        sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
-        + snapGas.ne * snapGas.gmet[whereGas, 0][0]
+            sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
+            + snapGas.ne * snapGas.gmet[whereGas, 0][0]
     )
 
     # 3./2. R == 2./3. NA KB
@@ -344,14 +343,14 @@ def PlotProjections(
     snapGas.data["T"] = snapGas.u / Tfac  # K
     snapGas.data["n_H"] = gasdens / c.amu * gasX  # cm^-3
     snapGas.data["dens"] = gasdens / (
-        rhomean * omegabaryon0 / snapGas.omega0
+            rhomean * omegabaryon0 / snapGas.omega0
     )  # rho / <rho>
     snapGas.data["Tdens"] = snapGas.data["T"] * snapGas.data["dens"]
 
     bfactor = (
-        1e6
-        * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
-        * (1e5 / (c.parsec * 1e6))
+            1e6
+            * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
+            * (1e5 / (c.parsec * 1e6))
     )  # [microGauss]
 
     # Magnitude of Magnetic Field [micro Guass]
@@ -482,17 +481,17 @@ def PlotProjections(
 
     # Add overall figure plot
     TITLE = (
-        r"Redshift $(z) =$"
-        + f"{redshift:0.03f} "
-        + " "
-        + r"$t_{Lookback}=$"
-        + f"{lookback:0.03f} Gyrs"
-        + "\n"
-        + f"Projections within {-1.*float(boxlos)/2.}"
-        + r"<"
-        + f"{AxesLabels[zAxis[0]]}-axis"
-        + r"<"
-        + f"{float(boxlos)/2.} kpc"
+            r"Redshift $(z) =$"
+            + f"{redshift:0.03f} "
+            + " "
+            + r"$t_{Lookback}=$"
+            + f"{lookback:0.03f} Gyrs"
+            + "\n"
+            + f"Projections within {-1. * float(boxlos) / 2.}"
+            + r"<"
+            + f"{AxesLabels[zAxis[0]]}-axis"
+            + r"<"
+            + f"{float(boxlos) / 2.} kpc"
     )
     fig.suptitle(TITLE, fontsize=fontsizeTitle)
 
@@ -653,19 +652,18 @@ def PlotProjections(
 #               CURRENTLY ONLY DEFAULTS SUPPORTED
 # ------------------------------------------------------------------------------#
 def _projection_movie(
-    snapnum,
-    SimDirectory,
-    Axes,
-    zAxis,
-    boxsize,
-    boxlos,
-    pixres,
-    pixreslos,
-    Nbins,
-    DPI,
-    CMAP,
+        snapnum,
+        SimDirectory,
+        Axes,
+        zAxis,
+        boxsize,
+        boxlos,
+        pixres,
+        pixreslos,
+        Nbins,
+        DPI,
+        CMAP,
 ):
-
     print(f"Starting {snapnum}")
     # load in the subfind group files
     snap_subfind = load_subfind(snapnum, dir=SimDirectory)
@@ -702,19 +700,19 @@ def _projection_movie(
 
 
 def ProjectionMovieLoop(
-    SimDirectory,
-    Start,
-    End,
-    n_processes,
-    Axes,
-    zAxis,
-    boxsize,
-    boxlos,
-    pixres,
-    pixreslos,
-    Nbins,
-    DPI,
-    CMAP,
+        SimDirectory,
+        Start,
+        End,
+        n_processes,
+        Axes,
+        zAxis,
+        boxsize,
+        boxlos,
+        pixres,
+        pixreslos,
+        Nbins,
+        DPI,
+        CMAP,
 ):
     """
     Function for Histogram 2D plotting of a loop (Start to Nsnaps) snaps.

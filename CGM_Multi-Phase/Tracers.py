@@ -19,7 +19,6 @@ import multiprocessing as mp
 import sys
 import logging
 
-
 # ==============================================================================#
 #       USER DEFINED PARAMETERS
 # ==============================================================================#
@@ -44,7 +43,7 @@ n_processes = 2
 # Load in parameters from csv. This ensures reproducability!
 #   We save as a DataFrame, then convert to a dictionary, and take out nesting...
 # Save as .csv
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 print("")
 print("Loaded Analysis Parameters:")
@@ -154,6 +153,8 @@ elements_solar = [
 Zsolar = 0.0127
 
 omegabaryon0 = 0.048
+
+
 # ==============================================================================#
 #       MAIN PROGRAM
 # ==============================================================================#
@@ -163,7 +164,6 @@ def err_catcher(arg):
 
 
 if __name__ == "__main__":
-
     TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = tracer_selection_snap_analysis(
         TRACERSPARAMS,
         HaloID,
