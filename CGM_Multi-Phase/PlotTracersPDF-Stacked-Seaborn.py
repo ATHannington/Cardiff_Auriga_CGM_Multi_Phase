@@ -60,7 +60,8 @@ xlabel={'T': r'Temperature [$K$]', 'R': r'Radius [$kpc$]',\
  'tcool_tff' : r'Cooling Time over Free Fall Time',\
  'csound' : r'Sound Speed',\
  'rho_rhomean': r'Density over Average Universe Density',\
- 'dens' : r'Density [$g$ $cm^{-3}$]'}
+ 'dens' : r'Density [$g$ $cm^{-3}$]',\
+ 'ndens' : r'Number density [# $cm^{-3}$]'}
 
 for entry in logParameters:
     xlabel[entry] = r'Log10 '+ xlabel[entry]
