@@ -1574,7 +1574,7 @@ def get_individual_cell_from_tracer(
         )
     else:
         print(
-            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure!"
+            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
         )
         assert True == False
 
