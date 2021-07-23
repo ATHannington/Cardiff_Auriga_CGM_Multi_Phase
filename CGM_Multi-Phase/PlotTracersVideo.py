@@ -111,7 +111,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 #   Get Data within range of z-axis LOS common between ALL time-steps
 # ==============================================================================#
 
-TracerPlot(
+tracer_plot(
     dataDict,
     tridData,
     TRACERSPARAMS,
