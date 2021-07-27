@@ -1505,7 +1505,7 @@ def load_tracers_parameters(TracersParamsPath):
                 or (key == "dtwParams")
                 or (key == "dtwlogParams")
         ):
-            # Convert targetTLst to list of floats
+            # Convert targetTLst to list of strings
             lst = value.split(",")
             strlst = [str(item) for item in lst]
             TRACERSPARAMS.update({key: strlst})
@@ -1539,6 +1539,36 @@ def load_tracers_parameters(TracersParamsPath):
     )
 
     return TRACERSPARAMS, DataSavepath, Tlst
+
+
+# ------------------------------------------------------------------------------#
+def load_haloes_selected(HaloPathBase,SelectedHaloesPath):
+    SELECTEDHALOES = pd.read_csv(
+        SelectedHaloesPath,
+        delimiter=" ",
+        header=None,
+        usecols=[0, 1],
+        skipinitialspace=True,
+        index_col=0,
+        comment="#",
+    ).to_dict()[1]
+
+    HALOPATHS = {}
+    # Convert Dictionary items to (mostly) floats
+    for key, value in SELECTEDHALOES.items():
+        if (
+                (key == "selectedHaloes")
+        ):
+            # Convert targetTLst to list of floats
+            lst = value.split(",")
+            strlst = [str(item) for item in lst]
+            pathlst = [HaloPathBase + item  for item in strlst]
+            SELECTEDHALOES.update({key: strlst})
+            HALOPATHS.update({'haloPaths' :pathlst })
+        else:
+            raise Exception('None "selectedHaloes" data fields detected in ' + SelectedHaloesPath)
+
+    return SELECTEDHALOES['selectedHaloes'], HALOPATHS['haloPaths']
 
 
 # ------------------------------------------------------------------------------#
@@ -3070,3 +3100,89 @@ def tracer_plot(
                 )
 
     return
+
+def multi_halo_merge(  simList,
+                        haloPathList,
+                        FullDataPathSuffix,
+                        snapRange,
+                        Tlst,
+                        TracersParamsPath = "TracersParams.csv"
+                        ):
+    """
+        This function is designed to combine the data sets for multiple
+        Auriga simulation datasets from Tracer.py analysis.
+        NOTE: This is NOT the flatten_wrt_time version!
+
+        inputs:
+            simList: list [dtype = 'str']
+            haloPathList: list [dtype = 'str']
+            FullDataPathSuffix: str
+            snapRange: list [dtype = 'int']
+            Tlst: list [dtype = 'str']
+            TracersParamsPath: str
+
+        outputs:
+            mergedDict: dictionary
+                        keys = (
+                        f"T{T}",
+                        f"{rin}R{rout}",
+                        f"{int(snap)}",
+                        )
+            saveParams: list [dtype = 'str']
+    """
+    mergedDict = {}
+    saveParams = []
+    for sim,loadPath in zip(simList,haloPathList):
+        loadPath += '/'
+
+        TRACERSPARAMS, DataSavepath , _ = load_tracers_parameters(loadPath+TracersParamsPath)
+        saveParams += TRACERSPARAMS["saveParams"]
+
+        saveHalo = (sim.split("_"))[-1]
+        if 'L' in saveHalo:
+            saveHalo = saveHalo.split('L')[-1]
+            padFlag = True
+        else:
+            padFlag = False
+
+        print("")
+        print(f"Loading {sim} Data!")
+
+        dataDict = {}
+        print("LOAD")
+        dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, FullDataPathSuffix)
+
+        print("LOADED")
+
+        # Pad id, prid, and trid, with unique Auriga halo      #
+        # prefix. This should ensure there are no repeat id    #
+        # numbers.
+        print('PAD')
+        for selectKey in dataDict.keys():
+            for key in ['id','prid','trid']:
+                ## Add Halo Number plus one zero to start of every number ##
+                if padFlag is False:
+
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))))
+                else:
+
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + '0' + int(int(saveHalo) * 10 ** (1 + math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))))
+                # np.array([
+                #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
+                #])
+        print('PADDED')
+        print('MERGE')
+        for selectKey in dataDict.keys():
+            for key in dataDict[selectKey].keys():
+                if selectKey in list(mergedDict.keys()):
+                    if key in mergedDict[selectKey].keys():
+                        mergedDict[selectKey][key] = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=None)
+                    else:
+                        mergedDict[selectKey] = ({key : dataDict[selectKey][key]})
+                else:
+                    mergedDict.update({selectKey : dataDict[selectKey]})
+
+        print('MERGED')
+        print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+    saveParams = np.unique(np.array(saveParams)).tolist()
+    return mergedDict,saveParams
