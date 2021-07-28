@@ -133,7 +133,7 @@ tlookback = np.array(tlookback)
 
 
 
-tmpstatsData = {}
+statsData = {}
 for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     for ii in range(len(Tlst)):
         T = Tlst[ii]
@@ -141,7 +141,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         for snap in snapRange:
             selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
             dat = save_statistics(
-                    v,
+                    mergedDict[selectKey],
                     T,
                     rin,
                     rout,
@@ -152,28 +152,15 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     MiniDataPathSuffix=".csv",
                     saveBool=False
             )
-            if k in list(tmpstatsData.keys()) :
-
+            if key in list(statsData.keys()) :
                 for subkey,vals in dat.items():
-                    if subkey in list(tmpstatsData.keys()):
+                    if subkey in list(statsData[key].keys()):
 
-                        tmpstatsData[k][subkey] = np.concatenate((tmpstatsData[k][subkey],dat[subkey]),axis=None)
+                        statsData[key][subkey] = np.concatenate((statsData[key][subkey],dat[subkey]),axis=None)
                     else:
-                        tmpstatsData[k].update(dat)
+                        statsData[key].update({subkey : dat[subkey]})
             else:
-                tmpstatsData.update({k:dat})
-
-statsData = {}
-for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-    for ii in range(len(Tlst)):
-        key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
-        for snap in snapRange:
-            selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
-            if key in list(statsData.keys()):
-
-                statsData[key] = np.concatenate((statsData[key],tmpstatsData[selectKey]),axis=None)
-            else:
-                statsData.update({key : tmpstatsData[selectKey]})
+                statsData.update({key: dat})
 
 
 for analysisParam in saveParams:
