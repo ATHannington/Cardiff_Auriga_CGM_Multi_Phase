@@ -1970,7 +1970,7 @@ def save_statistics(
         saveParams,
         DataSavepath=None,
         MiniDataPathSuffix=".csv",
-        saveBool=True,
+        saveBool=True
 ):
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
@@ -3162,11 +3162,13 @@ def multi_halo_merge(  simList,
             for key in ['id','prid','trid']:
                 ## Add Halo Number plus one zero to start of every number ##
                 if padFlag is False:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))))
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + index))
                 else:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + '0' + int(int(saveHalo) * 10 ** (1 + math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))))
+                    dataDict[selectKey][key] = dataDict[selectKey][key] +  int(int(saveHalo) * 10 ** (1 + index)) + int(9*10**(3+index))
                 # np.array([
                 #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 #])

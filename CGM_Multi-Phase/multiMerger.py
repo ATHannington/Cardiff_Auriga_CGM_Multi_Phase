@@ -45,7 +45,7 @@ snapRange = [snap for snap in range(
         1)]
 #==============================================================================#
 #
-mergedDict =  multi_halo_merge(SELECTEDHALOES,
+mergedDict,saveParams =  multi_halo_merge(SELECTEDHALOES,
                             HALOPATHS,
                             DataSavepathSuffix,
                             snapRange,

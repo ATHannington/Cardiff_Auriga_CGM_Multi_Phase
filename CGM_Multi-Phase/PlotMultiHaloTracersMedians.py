@@ -106,7 +106,7 @@ snapRange = [snap for snap in range(
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
         1)]
 # ==============================================================================#
-mergedDict =  multi_halo_loader(SELECTEDHALOES,
+mergedDict, saveParams =  multi_halo_merge(SELECTEDHALOES,
                             HALOPATHS,
                             DataSavepathSuffix,
                             snapRange,
@@ -116,6 +116,65 @@ mergedDict =  multi_halo_loader(SELECTEDHALOES,
 # ==============================================================================#
 #           PLOT!!
 # ==============================================================================#
+tlookback = []
+for snap in range(
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+        1,
+):
+    minTemp = TRACERSPARAMS["targetTLst"][0]
+    minrin = TRACERSPARAMS["Rinner"][0]
+    minrout = TRACERSPARAMS["Router"][0]
+    key = (f"T{minTemp}", f"{minrin}R{minrout}", f"{int(snap)}")
+
+    tlookback.append(mergedDict[key]["Lookback"][0])
+
+tlookback = np.array(tlookback)
+
+
+
+tmpstatsData = {}
+for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+    for ii in range(len(Tlst)):
+        T = Tlst[ii]
+        key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
+        for snap in snapRange:
+            selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
+            dat = save_statistics(
+                    v,
+                    T,
+                    rin,
+                    rout,
+                    snapNumber=snap,
+                    TRACERSPARAMS=TRACERSPARAMS,
+                    saveParams = saveParams,
+                    DataSavepath=None,
+                    MiniDataPathSuffix=".csv",
+                    saveBool=False
+            )
+            if k in list(tmpstatsData.keys()) :
+
+                for subkey,vals in dat.items():
+                    if subkey in list(tmpstatsData.keys()):
+
+                        tmpstatsData[k][subkey] = np.concatenate((tmpstatsData[k][subkey],dat[subkey]),axis=None)
+                    else:
+                        tmpstatsData[k].update(dat)
+            else:
+                tmpstatsData.update({k:dat})
+
+statsData = {}
+for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+    for ii in range(len(Tlst)):
+        key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
+        for snap in snapRange:
+            selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
+            if key in list(statsData.keys()):
+
+                statsData[key] = np.concatenate((statsData[key],tmpstatsData[selectKey]),axis=None)
+            else:
+                statsData.update({key : tmpstatsData[selectKey]})
+
 
 for analysisParam in saveParams:
     print("")
@@ -137,18 +196,6 @@ for analysisParam in saveParams:
             print(f"T{Tlst[ii]}")
             T = float(Tlst[ii])
             # Temperature specific load path
-            plotData = save_statistics(
-                    mergedDict,
-                    T,
-                    rin,
-                    rout,
-                    TRACERSPARAMS,
-                    saveParams,
-                    snapNumber=-1,
-                    DataSavepath=None,
-                    MiniDataPathSuffix=".csv",
-                    saveBool=False,
-            )
 
             snapsRange = np.array(
                 [
@@ -165,7 +212,7 @@ for analysisParam in saveParams:
             )
             selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
 
-            vline = tage[selectionSnap]
+            vline = tlookback[selectionSnap]
 
             # Get number of temperatures
             NTemps = float(len(Tlst))
@@ -220,7 +267,7 @@ for analysisParam in saveParams:
             )
             for (LO, UP) in percentilesPairs:
                 currentAx.fill_between(
-                    tage,
+                    tlookback,
                     plotData[UP],
                     plotData[LO],
                     facecolor=colour,
@@ -228,7 +275,7 @@ for analysisParam in saveParams:
                     interpolate=False,
                 )
             currentAx.plot(
-                tage,
+                tlookback,
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
