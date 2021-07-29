@@ -2313,10 +2313,9 @@ def plot_projections(
     aConst = 1.0 / (1.0 + redshift)  # [/]
 
     # [0] to remove from numpy array for purposes of plot title
-    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
+    tlookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
         0
     ]  # [Gyrs]
-    tage = abs(lookback - ageUniverse)
     # ==============================================================================#
     #
     #           Quad Plot for standard video
@@ -2341,8 +2340,8 @@ def plot_projections(
             r"Redshift $(z) =$"
             + f"{redshift:0.03f} "
             + " "
-            + r"$t_{Age Universe}=$"
-            + f"{tage:0.03f} Gyrs"
+            + r"$t_{Lookback Time}=$"
+            + f"{tlookback :0.03f} Gyrs"
             + "\n"
             + f"Projections within {-1. * float(boxlos) / 2.}"
             + r"<"
@@ -2728,10 +2727,9 @@ def tracer_plot(
         aConst = 1.0 / (1.0 + redshift)  # [/]
 
         # [0] to remove from numpy array for purposes of plot title
-        lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
+        tlookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
             0
         ]  # [Gyrs]
-        tage = abs(lookback - ageUniverse)
         print(f"[@{int(snapNumber)}]: Slices and Projections!")
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
@@ -2843,12 +2841,11 @@ def tracer_plot(
                 aConst = 1.0 / (1.0 + tmpredshift)  # [/]
 
                 # [0] to remove from numpy array for purposes of plot title
-                tmplookback = tmpsnapGas.cosmology_get_lookback_time_from_a(
+                selectlookback = tmpsnapGas.cosmology_get_lookback_time_from_a(
                     np.array([aConst])
                 )[
                     0
                 ]  # [Gyrs]
-                selecttage = abs(tmplookback - ageUniverse)
 
                 print(
                     f"[@T{targetT}] @{rin}R{rout} @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
@@ -2911,8 +2908,8 @@ def tracer_plot(
                         r"Redshift $(z) =$"
                         + f"{redshift:0.03f} "
                         + " "
-                        + r"$t_{Age Universe}=$"
-                        + f"{tage:0.03f} Gyrs"
+                        + r"$t_{Lookback Time}=$"
+                        + f"{tlookback :0.03f} Gyrs"
                         + "\n"
                         + f"Projections within {-1. * float(boxlos) / 2.}"
                         + r"<"
@@ -2921,8 +2918,8 @@ def tracer_plot(
                         + f"{float(boxlos) / 2.} kpc"
                         + "\n"
                         + f"Subset of {int(subset)} Tracers selected at "
-                        + r"$t_{Age Universe}=$"
-                        + f"{selecttage:0.03f} Gyrs"
+                        + r"$t_{Lookback Time}=$"
+                        + f"{selectlookback :0.03f} Gyrs"
                         + " as being at "
                         + "\n"
                         + r"$T = 10^{%5.2f \pm %5.2f} K$"

@@ -261,13 +261,11 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                         f"{int(TRACERSPARAMS['selectSnap'])}",
                     )
                 ]["Lookback"][0]
-                - ageUniverse
             )
             currentTime = abs(
                 FullDict[(f"T{float(Tlst[0])}", f"{rin}R{rout}", f"{int(snap)}")][
                     "Lookback"
                 ][0]
-                - ageUniverse
             )
 
             fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(xsize, ysize), dpi=DPI)

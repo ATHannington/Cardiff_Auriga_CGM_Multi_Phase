@@ -104,7 +104,7 @@ dataDict = {}
 
 dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
-tage = []
+tlookback = []
 for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
@@ -115,10 +115,9 @@ for snap in range(
     minrout = TRACERSPARAMS["Router"][0]
     key = (f"T{minTemp}", f"{minrin}R{minrout}", f"{int(snap)}")
 
-    tage.append(dataDict[key]["Lookback"][0])
+    tlookback.append(dataDict[key]["Lookback"][0])
 
-tage = np.array(tage)
-tage = abs(tage - ageUniverse)
+tlookback = np.array(tlookback)
 
 # ==============================================================================#
 
@@ -160,7 +159,7 @@ for analysisParam in saveParams:
             )
             selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
 
-            vline = tage[selectionSnap]
+            vline = tlookback[selectionSnap]
 
             # Get number of temperatures
             NTemps = float(len(Tlst))
@@ -215,7 +214,7 @@ for analysisParam in saveParams:
             )
             for (LO, UP) in percentilesPairs:
                 currentAx.fill_between(
-                    tage,
+                    tlookback,
                     plotData[UP],
                     plotData[LO],
                     facecolor=colour,
@@ -223,7 +222,7 @@ for analysisParam in saveParams:
                     interpolate=False,
                 )
             currentAx.plot(
-                tage,
+                tlookback,
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
@@ -261,7 +260,7 @@ for analysisParam in saveParams:
         else:
             axis0 = ax[len(Tlst) - 1]
 
-        axis0.set_xlabel(r"Age of Universe [$Gyrs$]", fontsize=10)
+        axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
         if (

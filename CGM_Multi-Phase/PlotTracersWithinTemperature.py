@@ -51,7 +51,7 @@ print("Getting Tracer Data!")
 Ydata = {}
 Xdata = {}
 
-tage = []
+tlookback = []
 for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
@@ -62,11 +62,9 @@ for snap in range(
     minrout = TRACERSPARAMS["Router"][0]
     key = (f"T{minTemp}", f"{minrin}R{minrout}", f"{int(snap)}")
 
-    tage.append(dataDict[key]["Lookback"][0])
+    tlookback.append(dataDict[key]["Lookback"][0])
 
-tage = np.array(tage)
-# t0 = np.nanmax(tage)
-tage = abs(tage - ageUniverse)
+tlookback = np.array(tlookback)
 
 for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     print(f"{rin}R{rout}")
@@ -112,20 +110,17 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 tmpXdata.append(dataDict[key]["Lookback"][0])
                 tmpYdata.append(nTracers)
 
-        # Convert lookback time to universe age
-        # t0 = np.nanmax(tmpXdata)
-        tmpXdata = [abs(xx - ageUniverse) for xx in tmpXdata]
 
-        # Sort data by smallest Lookback time
+
         ind_sorted = np.argsort(tmpXdata)
-
         maxN = np.nanmax(tmpYdata)
         tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
         tmpYarray = np.array(tmpYarray)
         tmpXarray = np.array(tmpXdata)
+        tmpYarray = np.flip(np.take_along_axis(tmpYarray,ind_sorted,axis=0), axis=0)
+        tmpXarray = np.flip(np.take_along_axis(tmpXarray,ind_sorted,axis=0), axis=0)
 
-        tmpXarray = tmpXarray[ind_sorted]
-        tmpYarray = tmpYarray[ind_sorted]
+
 
         # Add the full list of snaps data to temperature dependent dictionary.
         Xdata.update({f"T{T}": tmpXarray})
@@ -156,7 +151,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         )
         selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
 
-        vline = tage[selectionSnap]
+        vline = tlookback [selectionSnap]
 
         T = TRACERSPARAMS["targetTLst"][ii]
 
@@ -187,11 +182,11 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
         currentAx.fill_between(
-            tage, tmpMinData, plotYdata, facecolor=colour, alpha=0.25, interpolate=False
+            tlookback , tmpMinData, plotYdata, facecolor=colour, alpha=0.25, interpolate=False
         )
 
         currentAx.plot(
-            tage,
+            tlookback ,
             plotYdata,
             label=r"$T = 10^{%3.0f} K$" % (float(temp)),
             color=colour,
@@ -226,7 +221,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     else:
         axis0 = ax[len(Tlst) - 1]
 
-    axis0.set_xlabel(r"Age of Universe [$Gyrs$]", fontsize=10)
+    axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace=0.005)
