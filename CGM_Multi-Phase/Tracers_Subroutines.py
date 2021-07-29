@@ -3206,6 +3206,10 @@ def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPa
                         MiniDataPathSuffix=".csv",
                         saveBool=False
                 )
+                #Fix values to arrays to remove concat error of 0D arrays
+                for key, val in dat.items():
+                    dat[key] = np.array([val])
+
                 if key in list(statsData.keys()) :
                     for subkey,vals in dat.items():
                         if subkey in list(statsData[key].keys()):
