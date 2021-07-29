@@ -131,35 +131,7 @@ for snap in range(
 tlookback = np.array(tlookback)
 
 
-
-statsData = {}
-for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-    for ii in range(len(Tlst)):
-        T = Tlst[ii]
-        key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
-        for snap in snapRange:
-            selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
-            dat = save_statistics(
-                    mergedDict[selectKey],
-                    T,
-                    rin,
-                    rout,
-                    snapNumber=snap,
-                    TRACERSPARAMS=TRACERSPARAMS,
-                    saveParams = saveParams,
-                    DataSavepath=None,
-                    MiniDataPathSuffix=".csv",
-                    saveBool=False
-            )
-            if key in list(statsData.keys()) :
-                for subkey,vals in dat.items():
-                    if subkey in list(statsData[key].keys()):
-
-                        statsData[key][subkey] = np.concatenate((statsData[key][subkey],dat[subkey]),axis=None)
-                    else:
-                        statsData[key].update({subkey : dat[subkey]})
-            else:
-                statsData.update({key: dat})
+statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 
 #==============================================================================#
 #                   Medians PLOT                                               #
@@ -178,3 +150,9 @@ persistant_temperature_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookb
 #==============================================================================#
 
 within_temperature_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+
+#==============================================================================#
+#                   Stacked PDF PLOT                                           #
+#==============================================================================#
+
+stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)

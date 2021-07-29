@@ -3175,7 +3175,7 @@ def multi_halo_merge(  simList,
             for key in dataDict[selectKey].keys():
                 if selectKey in list(mergedDict.keys()):
                     if key in mergedDict[selectKey].keys():
-                        mergedDict[selectKey][key] = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=None)
+                        mergedDict[selectKey][key] = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=0)
                     else:
                         mergedDict[selectKey] = ({key : dataDict[selectKey][key]})
                 else:
@@ -3185,3 +3185,34 @@ def multi_halo_merge(  simList,
         print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams
+
+def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPathSuffix = f".csv",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+    statsData = {}
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        for ii in range(len(Tlst)):
+            T = Tlst[ii]
+            key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
+            for snap in snapRange:
+                selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
+                dat = save_statistics(
+                        dataDict[selectKey],
+                        T,
+                        rin,
+                        rout,
+                        snapNumber=snap,
+                        TRACERSPARAMS=TRACERSPARAMS,
+                        saveParams = saveParams,
+                        DataSavepath=None,
+                        MiniDataPathSuffix=".csv",
+                        saveBool=False
+                )
+                if key in list(statsData.keys()) :
+                    for subkey,vals in dat.items():
+                        if subkey in list(statsData[key].keys()):
+
+                            statsData[key][subkey] = np.concatenate((statsData[key][subkey],dat[subkey]),axis=0)
+                        else:
+                            statsData[key].update({subkey : dat[subkey]})
+                else:
+                    statsData.update({key: dat})
+    return statsData

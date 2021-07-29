@@ -20,16 +20,16 @@ import h5py
 from Tracers_Subroutines import *
 import scipy.stats as stats
 
-Nbins = 100
-xsize = 12.0
-ysize = 10.0
+Nbins = 75
+xsize = 10.0
+ysize = 12.0
 DPI = 100
 
 ageUniverse = 13.77  # [Gyr]
+opacity = 0.75
 selectColour = "red"
-selectStyle = "-"
+selectStyle = "-."
 selectWidth = 4
-selectlinecolour = "black"
 percentileLO = 1.0
 percentileUP = 99.0
 colourmapMain = "plasma"
@@ -144,7 +144,7 @@ for dataKey in saveParams:
                 f"{rin}R{rout}",
                 f"{int(TRACERSPARAMS['selectSnap'])}",
             )
-            selectTime = abs(dataDict[selectKey]["Lookback"][0] - ageUniverse)
+            selectTime = abs(dataDict[selectKey]["Lookback"][0])
 
             xmaxlist = []
             xminlist = []
@@ -221,8 +221,6 @@ for dataKey in saveParams:
                     colour = selectColour
                     lineStyle = selectStyle
                     linewidth = selectWidth
-                    linecolour = selectlinecolour
-                    hlinecolour = selectlinecolour
                 else:
                     sRange = int(
                         min(
@@ -232,40 +230,9 @@ for dataKey in saveParams:
                     colour = cmap(((float(jj)) / (sRange)))
                     lineStyle = "-"
                     linewidth = 2
-                    linecolour = "w"
-                    hlinecolour = "blue"
 
                 tmpdict = {"x": data, "y": weights}
                 df = pd.DataFrame(tmpdict)
-                # Draw the densities in a few steps
-                sns.kdeplot(
-                    df["x"],
-                    weights=df["y"],
-                    ax=currentAx,
-                    bw_adjust=0.5,
-                    clip_on=False,
-                    fill=True,
-                    alpha=1,
-                    linewidth=1.5,
-                    color=colour,
-                )
-                sns.kdeplot(
-                    df["x"],
-                    weights=df["y"],
-                    ax=currentAx,
-                    clip_on=False,
-                    color=linecolour,
-                    lw=linewidth,
-                    linestyle=lineStyle,
-                    bw_adjust=0.5,
-                )
-                currentAx.axhline(
-                    y=0,
-                    lw=linewidth,
-                    linestyle=lineStyle,
-                    color=hlinecolour,
-                    clip_on=False,
-                )
 
                 LO = weighted_percentile(
                     data=data, weights=weights, perc=percentileLO, key="LO"
@@ -275,7 +242,31 @@ for dataKey in saveParams:
                 )
 
                 xmin = xminlist.append(LO)  # np.nanmin(data)
-                xmax = xmaxlist.append(UP)  # np.nanmax(data)
+                xmax = xmaxlist.append(UP)
+                # Draw the densities in a few steps
+                # ,
+                sns.kdeplot(
+                    df["x"],
+                    weights=df["y"],
+                    ax=currentAx,
+                    bw_adjust=0.5,
+                    clip = (xmin,xmax),
+                    alpha=opacity,
+                    fill=True,
+                    lw=linewidth,
+                    color=colour,
+                    linestyle=lineStyle,
+                    shade =True
+                )
+                currentAx.axhline(
+                    y=0,
+                    lw=linewidth,
+                    linestyle=lineStyle,
+                    color=colour,
+                    clip_on=False,
+                )
+
+ # np.nanmax(data)
 
                 # #            # # step = (xmax-xmin)/Nbins
                 # #
@@ -324,8 +315,8 @@ for dataKey in saveParams:
             #
             plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
             plt.text(
-                0.80,
-                0.90,
+                0.75,
+                0.95,
                 plot_label,
                 horizontalalignment="left",
                 verticalalignment="center",
@@ -335,10 +326,10 @@ for dataKey in saveParams:
                 fontsize=15,
             )
 
-            time_label = r"Age of Universe [Gyr]"
+            time_label = r"Lookback Time [Gyr]"
             plt.text(
                 0.10,
-                0.52,
+                0.475,
                 time_label,
                 horizontalalignment="center",
                 verticalalignment="center",
@@ -348,9 +339,9 @@ for dataKey in saveParams:
             )
             plt.arrow(
                 0.10,
-                0.50,
-                0.0,
-                -0.25,
+                0.525,
+                0.00,
+                +0.225,
                 fc="black",
                 ec="black",
                 width=0.005,

@@ -522,7 +522,7 @@ def within_temperature_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             tmpXarray = np.array(tmpXdata)
             tmpYarray = np.flip(np.take_along_axis(tmpYarray,ind_sorted,axis=0), axis=0)
             tmpXarray = np.flip(np.take_along_axis(tmpXarray,ind_sorted,axis=0), axis=0)
-            
+
             # Add the full list of snaps data to temperature dependent dictionary.
             Xdata.update({f"T{T}": tmpXarray})
             Ydata.update({f"T{T}": tmpYarray})
@@ -638,4 +638,298 @@ def within_temperature_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
+    return
+
+def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 75):
+
+    ageUniverse = 13.77  # [Gyr]
+    opacity = 0.75
+    selectColour = "red"
+    selectStyle = "-."
+    selectWidth = 4
+    percentileLO = 1.0
+    percentileUP = 99.0
+
+
+    import seaborn as sns
+    import scipy.stats as stats
+
+
+    # Entered parameters to be saved from
+    #   n_H, B, R, T
+    #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
+    # saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
+
+    logParameters = [
+        "dens",
+        "rho_rhomean",
+        "csound",
+        "T",
+        "n_H",
+        "B",
+        "gz",
+        "L",
+        "P_thermal",
+        "P_magnetic",
+        "P_kinetic",
+        "P_tot",
+        "Pthermal_Pmagnetic",
+        "tcool",
+        "theat",
+        "tcross",
+        "tff",
+        "tcool_tff",
+    ]
+    # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
+    xlabel = {
+        "T": r"Temperature [$K$]",
+        "R": r"Radius [$kpc$]",
+        "n_H": r"$n_H$ [$cm^{-3}$]",
+        "B": r"|B| [$\mu G$]",
+        "vrad": r"Radial Velocity [$km$ $s^{-1}$]",
+        "gz": r"Average Metallicity $Z/Z_{\odot}$",
+        "L": r"Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]",
+        "P_thermal": r"$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]",
+        "P_magnetic": r"$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]",
+        "P_kinetic": r"$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]",
+        "P_tot": r"$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]",
+        "Pthermal_Pmagnetic": r"$P_{thermal}/P_{magnetic}$",
+        "tcool": r"Cooling Time [$Gyr$]",
+        "theat": r"Heating Time [$Gyr$]",
+        "tcross": r"Sound Crossing Cell Time [$Gyr$]",
+        "tff": r"Free Fall Time [$Gyr$]",
+        "tcool_tff": r"Cooling Time over Free Fall Time",
+        "csound": r"Sound Speed",
+        "rho_rhomean": r"Density over Average Universe Density",
+        "dens": r"Density [$g$ $cm^{-3}$]",
+        "ndens": r"Number density [# $cm^{-3}$]",
+    }
+
+    for entry in logParameters:
+        xlabel[entry] = r"Log10 " + xlabel[entry]
+
+    for dataKey in saveParams:
+        print(f"{dataKey}")
+        # Create a plot for each Temperature
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+            print(f"{rin}R{rout}")
+            for ii in range(len(Tlst)):
+                print(f"T{Tlst[ii]}")
+
+                selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
+                # Temperature specific load path
+                plotData = statsData[selectKey]
+
+                # Get number of temperatures
+                NTemps = float(len(Tlst))
+
+                # Get temperature
+                T = TRACERSPARAMS["targetTLst"][ii]
+
+
+                selectKey = (
+                    f"T{T}",
+                    f"{rin}R{rout}",
+                    f"{int(TRACERSPARAMS['selectSnap'])}",
+                )
+                selectTime = abs(dataDict[selectKey]["Lookback"][0])
+
+                xmaxlist = []
+                xminlist = []
+                dataList = []
+                weightsList = []
+                snapRange = [
+                    xx
+                    for xx in range(
+                        int(TRACERSPARAMS["snapMin"]),
+                        int(
+                            min(
+                                TRACERSPARAMS["finalSnap"] + 1, TRACERSPARAMS["snapMax"] + 1
+                            )
+                        ),
+                    )
+                ]
+                sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+                fig, ax = plt.subplots(
+                    nrows=len(snapRange),
+                    ncols=1,
+                    figsize=(xsize, ysize),
+                    dpi=DPI,
+                    frameon=False,
+                    sharex=True,
+                )
+                # Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
+                for (jj, snap) in enumerate(snapRange):
+                    currentAx = ax[jj]
+                    dictkey = (f"T{T}", f"{rin}R{rout}", f"{int(snap)}")
+
+                    whereGas = np.where(dataDict[dictkey]["type"] == 0)
+
+                    dataDict[dictkey]["age"][
+                        np.where(np.isnan(dataDict[dictkey]["age"]) == True)
+                    ] = 0.0
+
+                    whereStars = np.where(
+                        (dataDict[dictkey]["type"] == 4) & (dataDict[dictkey]["age"] >= 0.0)
+                    )
+
+                    NGas = len(dataDict[dictkey]["type"][whereGas])
+                    NStars = len(dataDict[dictkey]["type"][whereStars])
+                    Ntot = NGas + NStars
+
+                    # Percentage in stars
+                    percentage = (float(NStars) / (float(Ntot))) * 100.0
+
+                    data = dataDict[dictkey][dataKey][whereGas]
+                    weights = dataDict[dictkey]["mass"][whereGas]
+
+                    if dataKey in logParameters:
+                        data = np.log10(data)
+
+                    wheredata = np.where(
+                        (np.isinf(data) == False) & ((np.isnan(data) == False))
+                    )[0]
+                    whereweights = np.where(
+                        (np.isinf(weights) == False) & ((np.isnan(weights) == False))
+                    )[0]
+                    whereFull = wheredata[np.where(np.isin(wheredata, whereweights))]
+                    data = data[whereFull]
+                    weights = weights[whereFull]
+
+                    dataList.append(data)
+                    weightsList.append(weights)
+
+                    if np.shape(data)[0] == 0:
+                        print("No Data! Skipping Entry!")
+                        continue
+
+                    # Select a Temperature specific colour from colourmap
+                    cmap = matplotlib.cm.get_cmap(colourmapMain)
+                    if int(snap) == int(TRACERSPARAMS["selectSnap"]):
+                        colour = selectColour
+                        lineStyle = selectStyle
+                        linewidth = selectWidth
+                    else:
+                        sRange = int(
+                            min(
+                                TRACERSPARAMS["finalSnap"] + 1, TRACERSPARAMS["snapMax"] + 1
+                            )
+                        ) - int(TRACERSPARAMS["snapMin"])
+                        colour = cmap(((float(jj)) / (sRange)))
+                        lineStyle = "-"
+                        linewidth = 2
+
+                    tmpdict = {"x": data, "y": weights}
+                    df = pd.DataFrame(tmpdict)
+
+                    LO = weighted_percentile(
+                        data=data, weights=weights, perc=percentileLO, key="LO"
+                    )
+                    UP = weighted_percentile(
+                        data=data, weights=weights, perc=percentileUP, key="UP"
+                    )
+
+                    xmin = xminlist.append(LO)  # np.nanmin(data)
+                    xmax = xmaxlist.append(UP)
+                    # Draw the densities in a few steps
+                    # ,
+                    sns.kdeplot(
+                        df["x"],
+                        weights=df["y"],
+                        ax=currentAx,
+                        bw_adjust=0.5,
+                        clip = (xmin,xmax),
+                        alpha=opacity,
+                        fill=True,
+                        lw=linewidth,
+                        color=colour,
+                        linestyle=lineStyle,
+                        shade =True
+                    )
+                    currentAx.axhline(
+                        y=0,
+                        lw=linewidth,
+                        linestyle=lineStyle,
+                        color=colour,
+                        clip_on=False,
+                    )
+
+                    currentAx.set_yticks([])
+                    currentAx.set_ylabel("")
+                    currentAx.set_xlabel(xlabel[dataKey], fontsize=15)
+                    sns.despine(bottom=True, left=True)
+
+
+
+                xmin = np.nanmin(xminlist)
+                xmax = np.nanmax(xmaxlist)
+
+                plt.xlim(xmin, xmax)
+                #
+                plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
+                plt.text(
+                    0.75,
+                    0.95,
+                    plot_label,
+                    horizontalalignment="left",
+                    verticalalignment="center",
+                    transform=fig.transFigure,
+                    wrap=True,
+                    bbox=dict(facecolor="blue", alpha=0.2),
+                    fontsize=15,
+                )
+
+                time_label = r"Lookback Time [Gyr]"
+                plt.text(
+                    0.10,
+                    0.475,
+                    time_label,
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    transform=fig.transFigure,
+                    wrap=True,
+                    fontsize=15,
+                )
+                plt.arrow(
+                    0.10,
+                    0.525,
+                    0.00,
+                    +0.225,
+                    fc="black",
+                    ec="black",
+                    width=0.005,
+                    transform=fig.transFigure,
+                    clip_on=False,
+                )
+                fig.transFigure
+
+                fig.suptitle(
+                    f"PDF of Cells Containing Tracers selected by: "
+                    + "\n"
+                    + r"$T = 10^{%05.2f \pm %05.2f} K$" % (T, TRACERSPARAMS["deltaT"])
+                    + r" and $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                    + "\n"
+                    + f" and selected at {selectTime:3.2f} Gyr"
+                    + f" weighted by mass"
+                    + "\n"
+                    + f"{percentileLO:3.2f}% to {percentileUP:3.2f}% Mass Weighted Percentiles Shown",
+                    fontsize=12,
+                )
+                # ax.axvline(x=vline, c='red')
+
+                plt.tight_layout()
+                plt.subplots_adjust(top=0.90, hspace=-0.25)
+
+                opslaan = (
+                        "./"
+                        + "MultiHalo"
+                        + "/"
+                        + f"{int(rin)}R{int(rout)}"
+                        + "/"
+                        + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
+                )
+                plt.savefig(opslaan, dpi=DPI, transparent=False)
+                print(opslaan)
+                plt.close()
+
     return
