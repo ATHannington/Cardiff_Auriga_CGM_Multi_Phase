@@ -3171,18 +3171,27 @@ def multi_halo_merge(  simList,
                 #])
         print('PADDED')
         print('MERGE')
+
         for selectKey in dataDict.keys():
+
             for key in dataDict[selectKey].keys():
                 if selectKey in list(mergedDict.keys()):
-                    if key in mergedDict[selectKey].keys():
-                        mergedDict[selectKey][key] = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=0)
+                    if key in list(mergedDict[selectKey].keys()):
+
+                        tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=0)
+
+                        mergedDict[selectKey].update({key:  tmp})
+
                     else:
-                        mergedDict[selectKey] = ({key : dataDict[selectKey][key]})
+
+                        mergedDict[selectKey].update({key : dataDict[selectKey][key]})
                 else:
-                    mergedDict.update({selectKey : dataDict[selectKey]})
+
+                    mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
 
         print('MERGED')
         print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams
 
@@ -3207,8 +3216,8 @@ def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPa
                         saveBool=False
                 )
                 #Fix values to arrays to remove concat error of 0D arrays
-                for key, val in dat.items():
-                    dat[key] = np.array([val])
+                for k, val in dat.items():
+                    dat[k] = np.array([val]).flatten()
 
                 if key in list(statsData.keys()) :
                     for subkey,vals in dat.items():
@@ -3219,4 +3228,5 @@ def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPa
                             statsData[key].update({subkey : dat[subkey]})
                 else:
                     statsData.update({key: dat})
+
     return statsData
