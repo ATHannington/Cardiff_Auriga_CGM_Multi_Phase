@@ -156,3 +156,9 @@ within_temperature_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,
 #==============================================================================#
 
 stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+
+#==============================================================================#
+#                   Phase Diagrams PLOT                                        #
+#==============================================================================#
+
+phases_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,snapRange,Tlst)

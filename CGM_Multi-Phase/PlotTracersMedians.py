@@ -240,7 +240,7 @@ for analysisParam in saveParams:
             plot_patch = matplotlib.patches.Patch(color=colour)
             plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
             currentAx.legend(
-                handles=[plot_patch], labels=[plot_label], loc="upper right"
+                handles=[plot_patch], labels=[plot_label], loc="upper right", facecolor='white', framealpha=1
             )
 
             fig.suptitle(
