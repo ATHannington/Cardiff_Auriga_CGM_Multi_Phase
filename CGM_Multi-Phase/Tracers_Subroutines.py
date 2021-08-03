@@ -2059,6 +2059,7 @@ def flatten_wrt_time(
         saveParams,
         DataSavepath,
         DataSavepathSuffix,
+        saveBool = True
 ):
     flattened_dict = {}
     snapRange = [
@@ -2122,14 +2123,56 @@ def flatten_wrt_time(
             DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
     )
 
-    print("\n" + f": Saving flat data as: " + savePath)
+    if saveBool == True:
+            print("\n" + f": Saving flat data as: " + savePath)
 
-    hdf5_save(savePath, flattened_dict)
+            hdf5_save(savePath, flattened_dict)
 
-    return None
-
+            return None
+    else:
+        return flattened_dict
 
 # ------------------------------------------------------------------------------#
+
+def multi_halo_flatten_wrt_time(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+
+    singleValueParams = ["Lookback", "Ntracers", "Snap"]
+
+    # Number of cores to run on:
+
+    flattenParams = saveParams.copy()
+    flattenParams += TRACERSPARAMS["saveTracersOnly"] + TRACERSPARAMS["saveEssentials"]
+    for param in singleValueParams:
+        flattenParams.remove(param)
+
+    flattenedDict = {}
+    print("Flattening wrt time!")
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"{rin}R{rout}")
+
+        for targetT in Tlst:
+            key = (f'T{targetT}',f'{rin}R{rout}')
+            print(key)
+            #Disable saving of dict and return flattened to parent process
+
+            out = flatten_wrt_time(targetT,dataDict,
+            rin,
+            rout,
+            TRACERSPARAMS,
+            flattenParams,
+            DataSavepath,
+            DataSavepathSuffix,
+            saveBool = False)
+            flattenedDict.update({key:out})
+
+        print("Done! End of Flattening wrt Time Post-Processing :)")
+    return flattenedDict
+
+
+#------------------------------------------------------------------------------#
+
+
 def delete_nan_inf_axis(dict, axis=0):
     """
     Delete any column of dict with entry NaN or Inf in row (axis).
