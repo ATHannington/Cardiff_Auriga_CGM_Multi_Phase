@@ -41,6 +41,10 @@ for param in singleValueParams:
 
 DataSavepathSuffix = f".h5"
 
+snapRange = [snap for snap in range(
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+        1)]
 
 def err_catcher(arg):
     raise Exception(f"Child Process died and gave error: {arg}")
@@ -61,8 +65,10 @@ if __name__ == "__main__":
             rout,
             TRACERSPARAMS,
             saveParams,
+            snapRange,
             DataSavepath,
             DataSavepathSuffix,
+            True #saveBool
         ]
         for targetT in TRACERSPARAMS["targetTLst"]:
             dataDict = {}

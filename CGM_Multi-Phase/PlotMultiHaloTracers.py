@@ -166,5 +166,4 @@ phases_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,snapRange,Tlst)
 #==============================================================================#
 #                   Bar Chart PLOT via flatten wrt time                        #
 #==============================================================================#
-
-flattenedDict = multi_halo_flatten_wrt_time(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+flattenedDict = multi_halo_flatten_wrt_time(mergedDict,TRACERSPARAMS=TRACERSPARAMS,saveParams=saveParams,tlookback=tlookback,snapRange=snapRange,Tlst=Tlst,DataSavepath=DataSavepath)

@@ -1572,101 +1572,231 @@ def load_haloes_selected(HaloPathBase,SelectedHaloesPath):
 
 
 # ------------------------------------------------------------------------------#
-
+#
+# def get_individual_cell_from_tracer(
+#         Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+# ):
+#     if np.shape(np.shape(Data))[0] == 1:
+#         dimension = 1
+#         NullEntry = np.nan
+#     else:
+#         dimension = 3
+#         NullEntry = [np.nan for dd in range(dimension)]
+#
+#     # Select which of the SelectedTracers are in Tracers from this snap
+#     SelectedTrids = np.where(np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
+#     # whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
+#     _, SelectedIndices, TridIndices = np.intersect1d(    SelectedTracers, Tracers, return_indices=True)
+#
+#     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
+#     pridBlank[SelectedIndices] = Parents[TridIndices]
+#
+#     SelectedPrids = pridBlank
+#
+#     if dimension == 1:
+#         dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+#     elif dimension == 3:
+#         dataBlank = np.full(
+#             shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+#         )
+#     else:
+#         print(
+#             f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+#         )
+#         assert True == False
+#
+#     parentsEqualsCellIDs = np.array_equal(Parents,CellIDs)
+#     if parentsEqualsCellIDs == False:
+#         for (ind, ID) in enumerate(SelectedPrids):
+#             if ID != -1:
+#                 value = np.where(np.isin(CellIDs, ID))[0]
+#                 if np.shape(value)[0] > 0:
+#                     dataBlank[ind] = Data[value]
+#     else:
+#         dataBlank = Data[np.where(np.isin(CellIDs,Parents))[0]]
+#     SelectedData = dataBlank
+#
+#     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+#     print("np.shape(SelectedTracers)",np.shape(SelectedTracers))
+#     print("np.shape(SelectedTrids)",np.shape(SelectedTrids))
+#     print("np.shape(SelectedPrids)",np.shape(SelectedPrids))
+#     print("np.shape(SelectedData)[0]",np.shape(SelectedData)[0])
+#     # #Select which of the SelectedTracers are in Tracers from this snap
+#     # TracersTruthy = np.isin(SelectedTracers,Tracers)
+#     # #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
+#     # #   Also add list of Tracer IDs trids to list for debugging purposes
+#     # TracersIndices = []
+#     # TracersReturned = []
+#     # ParentsReturned = []
+#     # for ind, tracer in enumerate(SelectedTracers):
+#     #     truthy = np.isin(Tracers,tracer)
+#     #     if np.any(truthy) == True:
+#     #         TracersIndices.append(np.where(truthy)[0])
+#     #         TracersReturned.append(Tracers[np.where(truthy)])
+#     #         ParentsReturned.append(Parents[np.where(truthy)])
+#     #     else:
+#     #         TracersIndices.append([np.nan])
+#     #
+#     # #If the tracer from SelectedTracers is in tracers, use the above indices to select its
+#     # #   parent, and from there its cell, then grab data.
+#     # #   If the tracer from SelectedTracers is not in tracers, put a nan value.
+#     # #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
+#     #
+#     # saveData = []
+#     # massData = []
+#     # for (ind, element) in zip(TracersIndices,TracersTruthy):
+#     #     if element == True:
+#     #         parent = Parents[ind]
+#     #         dataIndex = np.where(np.isin(CellIDs,parent))
+#     #         dataEntry = Data[dataIndex].tolist()
+#     #         if (np.shape(dataEntry)[0] == 0):
+#     #             dataEntry = NullEntry
+#     #         else:
+#     #             dataEntry = dataEntry[0]
+#     #         saveData.append(dataEntry)
+#     #     else:
+#     #         saveData.append(NullEntry)
+#     #
+#     # saveData = np.array(saveData).flatten()
+#     # TracersReturned = np.array(TracersReturned).flatten()
+#     # ParentsReturned = np.array(ParentsReturned).flatten()
+#     #
+#     # return saveData, TracersReturned, ParentsReturned
+#     return SelectedData, SelectedTrids, SelectedPrids
+# def get_individual_cell_from_tracer(
+#         Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+# ):
+#     if np.shape(np.shape(Data))[0] == 1:
+#         dimension = 1
+#         NullEntry = np.nan
+#     elif ((np.shape(np.shape(Data))[0] == 2)&((np.shape(Data)[0]==3)|(np.shape(Data)[1]==3))):
+#         dimension = 3
+#         NullEntry = [np.nan for dd in range(dimension)]
+#     else:
+#         raise Exception(f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!")
+#     # Select which of the SelectedTracers are in Tracers from this snap
+#     SelectedTrids = np.where(np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
+#
+#     # whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
+#     _, SelectedIndices, TridIndices = np.intersect1d(    SelectedTracers, Tracers, return_indices=True)
+#
+#     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
+#     pridBlank[SelectedIndices] = Parents[TridIndices]
+#
+#     SelectedPrids = pridBlank
+#     parentsEqualsCellIDs = np.array_equal(Parents,CellIDs)
+#     if parentsEqualsCellIDs == False:
+#         if dimension != 1:
+#             sig = f"(m),(n),(n,{dimension}),({dimension}),()->(m,{dimension})"
+#         else:
+#             sig = f"(m),(n),(n),(),()->(m)"
+#         vectorSelect = np.vectorize(_select_data_from_selected_prids,signature=sig)
+#
+#         dataBlank = vectorSelect(SelectedPrids,CellIDs,Data,NullEntry=NullEntry,dimension=dimension)
+#     else:
+#         dataBlank = Data[np.where(np.isin(CellIDs,Parents))[0]]
+#
+#     SelectedData = dataBlank
+#
+#     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+#
+#     return SelectedData, SelectedTrids, SelectedPrids
 
 def get_individual_cell_from_tracer(
         Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
+    """
+        Function to go from Tracers, Parents, CellIDs, Data
+        to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
+        [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
+        Selected Tracers is not in the CellIDs.
+        This should return a consistently ordered data set where we always Have
+        the data in the order of SelectedTracers and NaN's where that tracer
+        has been lost. This allows for a look over the individual tracer's
+        behaviour over time.
+
+        We use a FORTRAN90 numpy.f2py compiled script called where_duplicates
+        in this function. This function accepts two 1D arrays, a & b. a ought
+        to be of the same shape as SelectedTracers, and contain the Parent IDs
+        (prids). b ought to be of shape Data and contain the CellIDs.
+
+        The intention is that we return the intersect of a & b, WITH DUPLICATES.
+        That is, if a value is in a multiple times, it should return the
+        corresponding index and value of b for each of those instances of the
+        matching value. This is similar to numpy.intersect1d, but we include
+        duplicates. Hence the name, 'where_duplicates'.
+    """
+    # Import FORTRAN90 function
+    from where_duplicates import where_duplicates
+
+    # Set up a blank data array of shape and order SelectedTracers.
+    # Fill this with the relevant sized entry of NaN as if selecting from
+    # true data.
+    #
+    # E.G. Temperature is scaler => NullEntry == np.nan
+    # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
     if np.shape(np.shape(Data))[0] == 1:
         dimension = 1
         NullEntry = np.nan
-    else:
+        dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+    elif ((np.shape(np.shape(Data))[0] == 2)&((np.shape(Data)[0]==3)|(np.shape(Data)[1]==3))):
         dimension = 3
         NullEntry = [np.nan for dd in range(dimension)]
+        dataBlank = np.full(shape=(np.shape(SelectedTracers)[0],dimension), fill_value=NullEntry)
+    else:
+        raise Exception(f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!")
 
     # Select which of the SelectedTracers are in Tracers from this snap
     SelectedTrids = np.where(np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
-    # whereTrids = np.where(np.isin(Tracers,SelectedTracers)==True)[0]
-    _, SelectedIndices, TridIndices = np.intersect1d(
-        SelectedTracers, Tracers, return_indices=True
-    )
 
+    # Find the indices of Tracers included in SelectedTracers in this snap
+    # in the order, and shape, of SelectedTracers
+    _, SelectedIndices, TridIndices = np.intersect1d(    SelectedTracers, Tracers, return_indices=True)
+
+    # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
+    # values (order SelectedTracers) to have the corresponding Parent ID from
+    # Parents (order Tracers)
     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
     pridBlank[SelectedIndices] = Parents[TridIndices]
 
+    #Rename for clarity
     SelectedPrids = pridBlank
 
-    if dimension == 1:
-        dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
-    elif dimension == 3:
-        dataBlank = np.full(
-            shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
-        )
-    else:
-        print(
-            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
-        )
-        assert True == False
+    # Use our FORTRAN90 function as described above to return the
+    # selectedCellIDs (order SelectedTracers), with -1 where the Tracer's cell
+    # was not found in this snap. Return the Index of the CellID
+    # to selectedCellIDs match, -1 where Tracer's cell not in snap.
+    # This will allow for selection of Data with duplicates by
+    # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
+    selectedCellIDs, selectedDataIndices = where_duplicates(SelectedPrids,CellIDs)
 
-    ParentsEqualsCellIDs = np.all(Parents == CellIDs)
-    if ParentsEqualsCellIDs == False:
-        for (ind, ID) in enumerate(SelectedPrids):
-            if ID != -1:
-                value = np.where(np.isin(CellIDs, ID))[0]
-                if np.shape(value)[0] > 0:
-                    dataBlank[ind] = Data[value]
-    else:
-        dataBlank[SelectedIndices] = Data[TridIndices]
+    #Grab location of index of match of SelectedPrids with CellIDs.
+    whereIndexData = np.where(selectedDataIndices!=-1.)[0]
 
+    # Assign the non-blank data to the prepared NullEntry populated array
+    # of shape SelectedTracers. Again, this step is designed to
+    # copy duplicates of the data where a cell contains more than one tracer.
+    dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
+
+    #Rename for clarity
     SelectedData = dataBlank
 
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
 
-    # #Select which of the SelectedTracers are in Tracers from this snap
-    # TracersTruthy = np.isin(SelectedTracers,Tracers)
-    # #Grab the indices of the trid in Tracers if it is contained in SelectedTracers
-    # #   Also add list of Tracer IDs trids to list for debugging purposes
-    # TracersIndices = []
-    # TracersReturned = []
-    # ParentsReturned = []
-    # for ind, tracer in enumerate(SelectedTracers):
-    #     truthy = np.isin(Tracers,tracer)
-    #     if np.any(truthy) == True:
-    #         TracersIndices.append(np.where(truthy)[0])
-    #         TracersReturned.append(Tracers[np.where(truthy)])
-    #         ParentsReturned.append(Parents[np.where(truthy)])
-    #     else:
-    #         TracersIndices.append([np.nan])
-    #
-    # #If the tracer from SelectedTracers is in tracers, use the above indices to select its
-    # #   parent, and from there its cell, then grab data.
-    # #   If the tracer from SelectedTracers is not in tracers, put a nan value.
-    # #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
-    #
-    # saveData = []
-    # massData = []
-    # for (ind, element) in zip(TracersIndices,TracersTruthy):
-    #     if element == True:
-    #         parent = Parents[ind]
-    #         dataIndex = np.where(np.isin(CellIDs,parent))
-    #         dataEntry = Data[dataIndex].tolist()
-    #         if (np.shape(dataEntry)[0] == 0):
-    #             dataEntry = NullEntry
-    #         else:
-    #             dataEntry = dataEntry[0]
-    #         saveData.append(dataEntry)
-    #     else:
-    #         saveData.append(NullEntry)
-    #
-    # saveData = np.array(saveData).flatten()
-    # TracersReturned = np.array(TracersReturned).flatten()
-    # ParentsReturned = np.array(ParentsReturned).flatten()
-    #
-    # return saveData, TracersReturned, ParentsReturned
     return SelectedData, SelectedTrids, SelectedPrids
 
+# ------------------------------------------------------------------------------#
+# def _select_data_from_selected_prids(SelectedPrids,CellIDs,Data,NullEntry=np.nan,dimension=1):
+#     SelectedData = np.array([Data[np.where(CellIDs==ID)[0]].tolist()[0] if ((ID != -1)&(ID in CellIDs)) else NullEntry for (ind, ID) in enumerate(SelectedPrids)])
+#     if dimension != 1:
+#         SelectedData = SelectedData.reshape(-1,dimension)
+#     return SelectedData
 
 # ------------------------------------------------------------------------------#
 
@@ -1675,73 +1805,43 @@ def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     if np.shape(np.shape(Data))[0] == 1:
         dimension = 1
         NullEntry = np.nan
-    else:
+        dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+    elif ((np.shape(np.shape(Data))[0] == 2)&((np.shape(Data)[0]==3)|(np.shape(Data)[1]==3))):
         dimension = 3
         NullEntry = [np.nan for dd in range(dimension)]
+        dataBlank = np.full(shape=(np.shape(SelectedTracers)[0],dimension), fill_value=NullEntry)
+    else:
+        raise Exception(f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!")
 
         # Select which of the SelectedTracers are in Tracers from this snap
     SelectedCellsReturned = np.where(np.isin(SelectedCells, CellIDs), SelectedCells, -1)
-    # whereCells = np.where(np.isin(CellIDs,SelectedCells)==True)[0]
-    # _, SelectedIndices,CellIndices = np.intersect1d(SelectedCells,CellIDs,return_indices=True)
+    #
+    # for (ind, ID) in enumerate(SelectedCellsReturned):
+    #     if ID != -1:
+    #         value = np.where(np.isin(CellIDs, ID))[0]
+    #         if np.shape(value)[0] > 0:
+    #             dataBlank[ind] = Data[value]
+    #
+    # SelectedData = dataBlank
+    # assert np.shape(SelectedData)[0] == np.shape(SelectedCells)[0]
+    # assert np.shape(SelectedCellsReturned) == np.shape(SelectedCells)
 
-    if dimension == 1:
-        dataBlank = np.full(shape=np.shape(SelectedCells), fill_value=NullEntry)
-    elif dimension == 3:
-        dataBlank = np.full(
-            shape=(np.shape(SelectedCells)[0], dimension), fill_value=NullEntry
-        )
+
+    parentsEqualsCellIDs = np.array_equal(SelectedCells,CellIDs)
+    if parentsEqualsCellIDs == False:
+        selectedCellIDs, selectedDataIndices = where_duplicates(SelectedCells,CellIDs)
+
+        whereIndexData = np.where(selectedDataIndices!=-1.)[0]
+
+        dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
+
     else:
-        print(
-            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure!"
-        )
-        assert True == False
-
-    for (ind, ID) in enumerate(SelectedCellsReturned):
-        if ID != -1:
-            value = np.where(np.isin(CellIDs, ID))[0]
-            if np.shape(value)[0] > 0:
-                dataBlank[ind] = Data[value]
+        dataBlank = Data[np.where(np.isin(CellIDs,Parents))[0]]
 
     SelectedData = dataBlank
+
     assert np.shape(SelectedData)[0] == np.shape(SelectedCells)[0]
     assert np.shape(SelectedCellsReturned) == np.shape(SelectedCells)
-    #
-    #
-
-    #
-    # #Select which of the SelectedTracers are in Tracers from this snap
-    # CellsTruthy = np.isin(SelectedCells,CellIDs)
-    #
-    # #Grab the indices of the Cell CellIDs if it is contained in SelectedCells
-    # #   Also add list of Cell IDs to list for debugging purposes
-    # CellsIndices = []
-    # CellsReturned = []
-    # for ind, cell in enumerate(SelectedCells):
-    #     truthy = np.isin(CellIDs,cell)
-    #     if np.any(truthy) == True:
-    #         CellsIndices.append(np.where(truthy)[0])
-    #         CellsReturned.append(CellIDs[np.where(truthy)])
-    #     else:
-    #         CellsIndices.append([np.nan])
-    #
-    # #If the tracer from SelectedTracers is in tracers, use the above indices to select its
-    # #   parent, and from there its cell, then grab data.
-    # #   If the tracer from SelectedTracers is not in tracers, put a nan value.
-    # #   This will allow plotting of all tracers, keeping saveData a fixed shape == subset/SelectedTracers
-    # saveData = []
-    # for (ind, element) in zip(CellsIndices,CellsTruthy):
-    #     if element == True:
-    #         dataEntry = Data[ind].tolist()
-    #         if (np.shape(dataEntry)[0] == 0):
-    #             dataEntry = NullEntry
-    #         else:
-    #             dataEntry = dataEntry[0]
-    #         saveData.append(dataEntry)
-    #     else:
-    #         saveData.append(NullEntry)
-    #
-    # saveData = np.array(saveData).flatten()
-    # CellsReturned = np.array(CellsReturned).flatten()
 
     return SelectedData, SelectedCellsReturned
 
@@ -2048,7 +2148,106 @@ def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
 
 
 # ------------------------------------------------------------------------------#
+def flatten_wrt_time_speed_test(
+        targetT,
+        dataDict,
+        rin,
+        rout,
+        TRACERSPARAMS,
+        saveParams,
+        snapRange,
+        DataSavepath,
+        DataSavepathSuffix,
+        saveBool = True
+):
+    import time
 
+    flattened_dict = {}
+
+
+    tmp = {}
+    newkey = (f"T{targetT}", f"{rin}R{rout}")
+    key = (f"T{targetT}", f"{rin}R{rout}", f"{int(TRACERSPARAMS['selectSnap'])}")
+    print(f"Starting {newkey} analysis!")
+    TracerOrder = dataDict[key]["trid"]
+    snap = snapRange[0]
+    print(f"T{targetT} {rin}R{rout} Snap {snap}!")
+    key = (f"T{targetT}", f"{rin}R{rout}", f"{int(snap)}")
+    for k, v in dataDict[key].items():
+        if k in saveParams:
+            print('Start V1')
+
+            start = time.time()
+            (
+                tracerData,
+                TracersReturned,
+                ParentsReturned,
+            ) = get_individual_cell_from_tracer(
+                Tracers=dataDict[key]["trid"][:50000],
+                Parents=dataDict[key]["prid"][:50000],
+                CellIDs=dataDict[key]["id"],
+                SelectedTracers=TracerOrder[:50000],
+                Data=dataDict[key][k],
+            )
+            stop = time.time()
+            print(f'Elapsed = {stop-start} s')
+
+
+            print('Start V2 - F90')
+
+            start = time.time()
+            (
+                tracerData,
+                TracersReturned,
+                ParentsReturned,
+            ) = get_individual_cell_from_tracer_v2(
+                Tracers=dataDict[key]["trid"][:50000],
+                Parents=dataDict[key]["prid"][:50000],
+                CellIDs=dataDict[key]["id"],
+                SelectedTracers=TracerOrder[:50000],
+                Data=dataDict[key][k],
+            )
+            stop = time.time()
+            print(f'Elapsed = {stop-start} s')
+
+            if k == "trid":
+                tracerData = TracersReturned
+            elif k == "prid":
+                tracerData = ParentsReturned
+
+            if k in tmp.keys():
+                entry = tmp[k]
+                entry.append(tracerData)
+                tmp.update({k: entry})
+            else:
+                tmp.update({k: [tracerData]})
+                    # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
+
+    # print("To array!")
+    for k, v in tmp.items():
+        tmp.update({k: np.array(v)})
+        # print(f"k : {k} --> type(np.array(v)) : {type(np.array(v))} --> type(tmp[k]) {type(tmp[k])}")
+
+    flattened_dict.update({newkey: tmp})
+
+    # final_dict = {}
+    #
+    # for key,dict in flattened_dict.items():
+    #     tmp = delete_nan_inf_axis(dict,axis=0)
+    #     final_dict.update({key : tmp})
+
+    savePath = (
+            DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
+    )
+
+    if saveBool == True:
+            print("\n" + f": Saving flat data as: " + savePath)
+
+            hdf5_save(savePath, flattened_dict)
+
+            return None
+    else:
+        return flattened_dict
 
 def flatten_wrt_time(
         targetT,
@@ -2057,6 +2256,7 @@ def flatten_wrt_time(
         rout,
         TRACERSPARAMS,
         saveParams,
+        snapRange,
         DataSavepath,
         DataSavepathSuffix,
         saveBool = True
@@ -2106,11 +2306,10 @@ def flatten_wrt_time(
                     tmp.update({k: [tracerData]})
                 # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
 
-    # print("To array!")
+
     for k, v in tmp.items():
         tmp.update({k: np.array(v)})
-        # print(f"k : {k} --> type(np.array(v)) : {type(np.array(v))} --> type(tmp[k]) {type(tmp[k])}")
-
+        # print(f"k : {k} --> type(np.array(v)) : {type(np.array(v))} -->
     flattened_dict.update({newkey: tmp})
 
     # final_dict = {}
@@ -2121,8 +2320,8 @@ def flatten_wrt_time(
 
     savePath = (
             DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
-    )
-
+            )
+    print('Flat Keys = ', flattened_dict.keys())
     if saveBool == True:
             print("\n" + f": Saving flat data as: " + savePath)
 
@@ -2134,7 +2333,44 @@ def flatten_wrt_time(
 
 # ------------------------------------------------------------------------------#
 
-def multi_halo_flatten_wrt_time(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def multi_halo_flatten_wrt_time_speed_test(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,DataSavepathSuffix = f".h5",TracersParamsPath= "TracersParams.csv",TracersMasterParamsPath="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+
+    singleValueParams = ["Lookback", "Ntracers", "Snap"]
+
+    # Number of cores to run on:
+
+    flattenParams = saveParams.copy()
+    flattenParams += TRACERSPARAMS["saveTracersOnly"] + TRACERSPARAMS["saveEssentials"]
+    for param in singleValueParams:
+        flattenParams.remove(param)
+
+    flattenedDict = {}
+    print("Flattening wrt time!")
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"{rin}R{rout}")
+
+        for targetT in Tlst:
+            key = (f'T{targetT}',f'{rin}R{rout}')
+            print(key)
+            #Disable saving of dict and return flattened to parent process
+
+            out = flatten_wrt_time_speed_test(targetT,dataDict,
+            rin,
+            rout,
+            TRACERSPARAMS,
+            flattenParams,
+            snapRange,
+            DataSavepath,
+            DataSavepathSuffix,
+            saveBool = False)
+            flattenedDict.update({key:out})
+
+    print("Done! End of Flattening wrt Time Post-Processing :)")
+    return flattenedDict
+
+
+def multi_halo_flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
 
 
     singleValueParams = ["Lookback", "Ntracers", "Snap"]
@@ -2161,12 +2397,13 @@ def multi_halo_flatten_wrt_time(dataDict,statsData,TRACERSPARAMS,saveParams,tloo
             rout,
             TRACERSPARAMS,
             flattenParams,
+            snapRange,
             DataSavepath,
             DataSavepathSuffix,
             saveBool = False)
             flattenedDict.update({key:out})
 
-        print("Done! End of Flattening wrt Time Post-Processing :)")
+    print("Done! End of Flattening wrt Time Post-Processing :)")
     return flattenedDict
 
 
