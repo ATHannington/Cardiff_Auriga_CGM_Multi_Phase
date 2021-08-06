@@ -3475,6 +3475,115 @@ def multi_halo_merge(  simList,
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams
 
+def multi_halo_merge_flat_wrt_time(  simList,
+                        haloPathList,
+                        FullDataPathSuffix,
+                        snapRange,
+                        Tlst,
+                        TracersParamsPath = "TracersParams.csv"
+                        ):
+    """
+        This function is designed to combine the data sets for multiple
+        Auriga simulation datasets from Tracer.py analysis.
+        NOTE: THIS IS the flatten_wrt_time version!
+
+        inputs:
+            simList: list [dtype = 'str']
+            haloPathList: list [dtype = 'str']
+            FullDataPathSuffix: str
+            snapRange: list [dtype = 'int']
+            Tlst: list [dtype = 'str']
+            TracersParamsPath: str
+
+        outputs:
+            mergedDict: dictionary
+                        keys = (
+                        f"T{T}",
+                        f"{rin}R{rout}",
+                        f"{int(snap)}",
+                        )
+            saveParams: list [dtype = 'str']
+    """
+
+    mergedDict = {}
+    saveParams = []
+    for sim,loadPath in zip(simList,haloPathList):
+        loadPath += '/'
+
+        TRACERSPARAMS, DataSavepath , _ = load_tracers_parameters(loadPath+TracersParamsPath)
+        saveParams += TRACERSPARAMS["saveParams"]
+
+        saveHalo = (sim.split("_"))[-1]
+        if 'L' in saveHalo:
+            saveHalo = saveHalo.split('L')[-1]
+            padFlag = True
+        else:
+            padFlag = False
+
+        print("")
+        print(f"Loading {sim} Data!")
+
+
+        print("LOAD")
+        dataDict = {}
+        for T in Tlst:
+            for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+                loadPath = (
+                    DataSavepath + f"_T{T}_{rin}R{rout}_flat-wrt-time" + FullDataPathSuffix
+                )
+                key = (f"T{T}", f"{rin}R{rout}")
+                tmp = hdf5_load(loadPath)
+                dataDict.update(tmp)
+
+
+        print("LOADED")
+
+        # Pad id, prid, and trid, with unique Auriga halo      #
+        # prefix. This should ensure there are no repeat id    #
+        # numbers.
+        print('PAD')
+        for selectKey in dataDict.keys():
+            for key in ['id','prid','trid']:
+                ## Add Halo Number plus one zero to start of every number ##
+                if padFlag is False:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + index))
+                else:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+
+                    dataDict[selectKey][key] = dataDict[selectKey][key] +  int(int(saveHalo) * 10 ** (1 + index)) + int(9*10**(3+index))
+                # np.array([
+                #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
+                #])
+        print('PADDED')
+        print('MERGE')
+
+        for selectKey in dataDict.keys():
+
+            for key in dataDict[selectKey].keys():
+                if selectKey in list(mergedDict.keys()):
+                    if key in list(mergedDict[selectKey].keys()):
+
+                        #AXIS 0 now temporal axis, so concat on axis 1
+                        tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+
+                        mergedDict[selectKey].update({key:  tmp})
+
+                    else:
+
+                        mergedDict[selectKey].update({key : dataDict[selectKey][key]})
+                else:
+
+                    mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+
+        print('MERGED')
+        print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+
+    saveParams = np.unique(np.array(saveParams)).tolist()
+    return mergedDict,saveParams
+
+
 def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPathSuffix = f".csv",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
     statsData = {}
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):

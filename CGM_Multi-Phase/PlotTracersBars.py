@@ -213,24 +213,19 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapsRange, lookbackData, TRA
             gas.append([gaspre, gaspost])
 
             print("Heating & Cooling")
-            linT = 1.*10**(float(T)) #[k]
-            epsilonT = 1.*10**(float(T)+float(TRACERSPARAMS['deltaT'])) - linT #[k]
+            epsilonT = float(TRACERSPARAMS['deltaT'])#[k]
 
             #Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
-            rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:]-FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]
-                < (0-epsilonT)
-                )
+            rowspre, colspre = np.where(np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) > (epsilonT))
             #Calculate the number of these unique tracers compared to the total number
             coolingpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
 
-
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :] -
-                FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1]
-                < (0-epsilonT)
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                > (epsilonT)
                 )
 
             coolingpost = (
@@ -239,9 +234,9 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapsRange, lookbackData, TRA
 
 
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:]-
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]
-                > (0+epsilonT)
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
+                < (-1.*epsilonT)
             )
             heatingpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -249,9 +244,9 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapsRange, lookbackData, TRA
 
 
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :] -
-                FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1]
-                > (0+epsilonT)
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                < (-1.*epsilonT)
             )
             heatingpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -260,14 +255,12 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapsRange, lookbackData, TRA
 
             rowspre, colspre = np.where(
                 (
-                FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:]-
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd,:][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
                 <=(0+epsilonT)
                 )
                 &
                 (
-                FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:]-
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
                 >=(0-epsilonT)
                 )
             )
@@ -277,14 +270,14 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapsRange, lookbackData, TRA
 
             rowspost, colspost = np.where(
                 (
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :] -
-                FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][-1:]
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
                 <=(0.+epsilonT)
                 )
                 &
                 (
-                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :] -
-                FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][-1:]
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
                 >=(0.-epsilonT)
                 )
             )

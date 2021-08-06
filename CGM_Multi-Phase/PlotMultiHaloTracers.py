@@ -104,7 +104,10 @@ snapRange = [snap for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
         1)]
+
+
 # ==============================================================================#
+print("Load Non Time Flattened Data!")
 mergedDict, saveParams =  multi_halo_merge(SELECTEDHALOES,
                             HALOPATHS,
                             DataSavepathSuffix,
@@ -112,6 +115,27 @@ mergedDict, saveParams =  multi_halo_merge(SELECTEDHALOES,
                             Tlst,
                             TracersParamsPath
                             )
+print("Done!")
+
+selectionSnap = np.array(snapRange)[np.where(np.array(snapRange)== int(TRACERSPARAMS["selectSnap"]))[0]]
+selectTime = abs(
+        mergedDict[
+            (
+                f"T{Tlst[0]}",
+                f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
+                f"{int(selectionSnap)}",
+            )
+        ]["Lookback"][0]
+    )
+print("Load Time Flattened Data!")
+flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
+                            HALOPATHS,
+                            DataSavepathSuffix,
+                            snapRange,
+                            Tlst,
+                            TracersParamsPath
+                            )
+print("Done!")
 # ==============================================================================#
 #           PLOT!!
 # ==============================================================================#
@@ -143,13 +167,13 @@ medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,T
 #                   Persistent Temperature PLOT                                #
 #==============================================================================#
 
-persistant_temperature_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+persistant_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
 
 #==============================================================================#
 #                   Within Temperature PLOT                                    #
 #==============================================================================#
 
-within_temperature_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+within_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
 
 #==============================================================================#
 #                   Stacked PDF PLOT                                           #
@@ -161,9 +185,9 @@ stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRan
 #                   Phase Diagrams PLOT                                        #
 #==============================================================================#
 
-phases_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,snapRange,Tlst)
+phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 
 #==============================================================================#
-#                   Bar Chart PLOT via flatten wrt time                        #
+#                   Bar Chart PLOT                                             #
 #==============================================================================#
-flattenedDict = multi_halo_flatten_wrt_time(mergedDict,TRACERSPARAMS=TRACERSPARAMS,saveParams=saveParams,tlookback=tlookback,snapRange=snapRange,Tlst=Tlst,DataSavepath=DataSavepath)
+bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath)
