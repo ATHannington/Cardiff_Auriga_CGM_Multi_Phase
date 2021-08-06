@@ -127,15 +127,6 @@ selectTime = abs(
             )
         ]["Lookback"][0]
     )
-print("Load Time Flattened Data!")
-flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
-                            HALOPATHS,
-                            DataSavepathSuffix,
-                            snapRange,
-                            Tlst,
-                            TracersParamsPath
-                            )
-print("Done!")
 # ==============================================================================#
 #           PLOT!!
 # ==============================================================================#
@@ -186,7 +177,21 @@ stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRan
 #==============================================================================#
 
 phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
+#==============================================================================#
+#                   Load Flattened Data                                        #
+#==============================================================================#
 
+del mergedDict
+
+print("Load Time Flattened Data!")
+flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
+                            HALOPATHS,
+                            DataSavepathSuffix,
+                            snapRange,
+                            Tlst,
+                            TracersParamsPath
+                            )
+print("Done!")
 #==============================================================================#
 #                   Bar Chart PLOT                                             #
 #==============================================================================#
