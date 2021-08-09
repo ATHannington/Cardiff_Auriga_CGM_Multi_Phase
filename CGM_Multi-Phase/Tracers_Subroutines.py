@@ -2270,6 +2270,7 @@ def flatten_wrt_time(
             1,
         )
     ]
+    tmp = {}
 
     tmp = {}
     newkey = (f"T{targetT}", f"{rin}R{rout}")
@@ -2297,7 +2298,6 @@ def flatten_wrt_time(
                     tracerData = TracersReturned
                 elif k == "prid":
                     tracerData = ParentsReturned
-
                 if k in tmp.keys():
                     entry = tmp[k]
                     entry.append(tracerData)
@@ -2370,7 +2370,7 @@ def multi_halo_flatten_wrt_time_speed_test(dataDict,TRACERSPARAMS,saveParams,tlo
     return flattenedDict
 
 
-def multi_halo_flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def multi_halo_flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,loadParams=None,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
 
 
     singleValueParams = ["Lookback", "Ntracers", "Snap"]
@@ -3480,7 +3480,9 @@ def multi_halo_merge_flat_wrt_time(  simList,
                         FullDataPathSuffix,
                         snapRange,
                         Tlst,
-                        TracersParamsPath = "TracersParams.csv"
+                        TracersParamsPath = "TracersParams.csv",
+                        loadParams = None,
+                        dtwSubset = None
                         ):
     """
         This function is designed to combine the data sets for multiple
@@ -3504,6 +3506,7 @@ def multi_halo_merge_flat_wrt_time(  simList,
                         )
             saveParams: list [dtype = 'str']
     """
+    random.seed(1234)
 
     mergedDict = {}
     saveParams = []
@@ -3558,27 +3561,73 @@ def multi_halo_merge_flat_wrt_time(  simList,
                 #])
         print('PADDED')
         print('MERGE')
+        if loadParams is not None:
+            print('Loading loadParams ONLY! Discarding the rest of data')
+            print(f'loadParams = {loadParams}')
+            if dtwSubset is not None:
+                print('Loading dtwSubset ONLY! Discarding the rest of data')
+                print(f'dtwSubset = {dtwSubset} Data Points per halo, per time, per temperature, per radius.')
+                for selectKey in dataDict.keys():
 
-        for selectKey in dataDict.keys():
+                    typeLen = np.shape(dataDict[selectKey]['type'])[1]
 
-            for key in dataDict[selectKey].keys():
-                if selectKey in list(mergedDict.keys()):
-                    if key in list(mergedDict[selectKey].keys()):
+                    dtwSelect = random.sample([ ii for ii in range(0,typeLen,1)], k=dtwSubset)
 
-                        #AXIS 0 now temporal axis, so concat on axis 1
-                        tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+                    for key in dataDict[selectKey].keys():
+                        if key in loadParams:
+                            if selectKey in list(mergedDict.keys()):
+                                if key in list(mergedDict[selectKey].keys()):
 
-                        mergedDict[selectKey].update({key:  tmp})
+                                    #AXIS 0 now temporal axis, so concat on axis 1
+                                    tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key][:, dtwSelect]),axis=1)
 
+                                    mergedDict[selectKey].update({key:  tmp})
+
+                                else:
+
+                                    mergedDict[selectKey].update({key : dataDict[selectKey][key][:, dtwSelect]})
+                            else:
+
+                                mergedDict.update({selectKey : {key : dataDict[selectKey][key][:, dtwSelect]}})
+            else:
+                for selectKey in dataDict.keys():
+                    for key in dataDict[selectKey].keys():
+                        if key in loadParams:
+                            if selectKey in list(mergedDict.keys()):
+                                if key in list(mergedDict[selectKey].keys()):
+
+                                    #AXIS 0 now temporal axis, so concat on axis 1
+                                    tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+
+                                    mergedDict[selectKey].update({key:  tmp})
+
+                                else:
+
+                                    mergedDict[selectKey].update({key : dataDict[selectKey][key]})
+                            else:
+
+                                mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+        else:
+            for selectKey in dataDict.keys():
+
+                for key in dataDict[selectKey].keys():
+                    if selectKey in list(mergedDict.keys()):
+                        if key in list(mergedDict[selectKey].keys()):
+
+                            #AXIS 0 now temporal axis, so concat on axis 1
+                            tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+
+                            mergedDict[selectKey].update({key:  tmp})
+
+                        else:
+
+                            mergedDict[selectKey].update({key : dataDict[selectKey][key]})
                     else:
 
-                        mergedDict[selectKey].update({key : dataDict[selectKey][key]})
-                else:
-
-                    mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+                        mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
 
         print('MERGED')
-        print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+        print('debug',"mergedDict[selectKey]['trid']",mergedDict[selectKey]['trid'])
 
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams

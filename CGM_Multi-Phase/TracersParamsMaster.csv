@@ -20,6 +20,6 @@ boxlos 20                                                                       
 pixres 0.2                                                                       # Pixel Resolution in plane of Plot
 pixreslos 4                                                                      # Pixel Resolution in LOS of plot
 haloID 0                                                                         # Select SubHalo to select. Unbound in relevant FoF halo will also be selected
-dtwSubset 30000                                                                  #
+dtwSubset 1750                                                                  #
 dtwParams "T,R,dens,gz,P_tot,B,vrad"
 dtwlogParams "T,dens,gz,P_tot,B"

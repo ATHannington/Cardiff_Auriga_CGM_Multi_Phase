@@ -34,58 +34,8 @@ ageUniverse = 13.77  # [Gyr]
 
 colourmapMain = "plasma"
 
-def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
 
-
-    logParameters = [
-        "dens",
-        "rho_rhomean",
-        "csound",
-        "T",
-        "n_H",
-        "B",
-        "gz",
-        "L",
-        "P_thermal",
-        "P_magnetic",
-        "P_kinetic",
-        "P_tot",
-        "Pthermal_Pmagnetic",
-        "tcool",
-        "theat",
-        "tcross",
-        "tff",
-        "tcool_tff",
-    ]
-    # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
-    ylabel = {
-        "T": r"Temperature [$K$]",
-        "R": r"Radius [$kpc$]",
-        "n_H": r"$n_H$ [$cm^{-3}$]",
-        "B": r"|B| [$\mu G$]",
-        "vrad": r"Radial Velocity [$km$ $s^{-1}$]",
-        "gz": r"Average Metallicity $Z/Z_{\odot}$",
-        "L": r"Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]",
-        "P_thermal": r"$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]",
-        "P_magnetic": r"$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]",
-        "P_kinetic": r"$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]",
-        "P_tot": r"$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]",
-        "Pthermal_Pmagnetic": r"$P_{thermal}/P_{magnetic}$",
-        "tcool": r"Cooling Time [$Gyr$]",
-        "theat": r"Heating Time [$Gyr$]",
-        "tcross": r"Sound Crossing Cell Time [$Gyr$]",
-        "tff": r"Free Fall Time [$Gyr$]",
-        "tcool_tff": r"Cooling Time over Free Fall Time",
-        "csound": r"Sound Speed",
-        "rho_rhomean": r"Density over Average Universe Density",
-        "dens": r"Density [$g$ $cm^{-3}$]",
-        "ndens": r"Number density [# $cm^{-3}$]",
-    }
-
-    for entry in logParameters:
-        ylabel[entry] = r"Log10 " + ylabel[entry]
-
-    # ==============================================================================#
 
     for analysisParam in saveParams:
         print("")
@@ -640,7 +590,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         plt.close()
     return
 
-def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 75):
+def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 75):
 
     ageUniverse = 13.77  # [Gyr]
     opacity = 0.75
@@ -654,56 +604,8 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
     import seaborn as sns
     import scipy.stats as stats
 
+    xlabel = ylabel
 
-    # Entered parameters to be saved from
-    #   n_H, B, R, T
-    #   Hydrogen number density, |B-field|, Radius [kpc], Temperature [K]
-    # saveParams = ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
-
-    logParameters = [
-        "dens",
-        "rho_rhomean",
-        "csound",
-        "T",
-        "n_H",
-        "B",
-        "gz",
-        "L",
-        "P_thermal",
-        "P_magnetic",
-        "P_kinetic",
-        "P_tot",
-        "Pthermal_Pmagnetic",
-        "tcool",
-        "theat",
-        "tcross",
-        "tff",
-        "tcool_tff",
-    ]
-    # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
-    xlabel = {
-        "T": r"Temperature [$K$]",
-        "R": r"Radius [$kpc$]",
-        "n_H": r"$n_H$ [$cm^{-3}$]",
-        "B": r"|B| [$\mu G$]",
-        "vrad": r"Radial Velocity [$km$ $s^{-1}$]",
-        "gz": r"Average Metallicity $Z/Z_{\odot}$",
-        "L": r"Specific Angular Momentum[$kpc$ $km$ $s^{-1}$]",
-        "P_thermal": r"$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]",
-        "P_magnetic": r"$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]",
-        "P_kinetic": r"$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]",
-        "P_tot": r"$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]",
-        "Pthermal_Pmagnetic": r"$P_{thermal}/P_{magnetic}$",
-        "tcool": r"Cooling Time [$Gyr$]",
-        "theat": r"Heating Time [$Gyr$]",
-        "tcross": r"Sound Crossing Cell Time [$Gyr$]",
-        "tff": r"Free Fall Time [$Gyr$]",
-        "tcool_tff": r"Cooling Time over Free Fall Time",
-        "csound": r"Sound Speed",
-        "rho_rhomean": r"Density over Average Universe Density",
-        "dens": r"Density [$g$ $cm^{-3}$]",
-        "ndens": r"Number density [# $cm^{-3}$]",
-    }
 
     for entry in logParameters:
         xlabel[entry] = r"Log10 " + xlabel[entry]

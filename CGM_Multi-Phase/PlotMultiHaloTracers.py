@@ -40,6 +40,7 @@ SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
 logParameters = [
     "dens",
+    "ndens",
     "rho_rhomean",
     "csound",
     "T",
@@ -76,11 +77,11 @@ ylabel = {
     "theat": r"Heating Time [$Gyr$]",
     "tcross": r"Sound Crossing Cell Time [$Gyr$]",
     "tff": r"Free Fall Time [$Gyr$]",
-    "tcool_tff": r"Cooling Time over Free Fall Time",
-    "csound": r"Sound Speed",
-    "rho_rhomean": r"Density over Average Universe Density",
+    "tcool_tff": r"$t_{Cool}/t_{FreeFall}$",
+    "csound": r"Sound Speed [$km s^{-1}$]",
+    "rho_rhomean": r"$\rho / \langle \rho \rangle$",
     "dens": r"Density [$g$ $cm^{-3}$]",
-    "ndens": r"Number density [# $cm^{-3}$]",
+    "ndens": r"Number density [$cm^{-3}$]",
 }
 
 for entry in logParameters:
@@ -152,31 +153,37 @@ statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 #                   Medians PLOT                                               #
 #==============================================================================#
 
-medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
-
+medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+matplotlib.rc_file_defaults()
+plt.close('all')
 #==============================================================================#
 #                   Persistent Temperature PLOT                                #
 #==============================================================================#
 
 persistant_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
-
+matplotlib.rc_file_defaults()
+plt.close('all')
 #==============================================================================#
 #                   Within Temperature PLOT                                    #
 #==============================================================================#
 
 within_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
-
+matplotlib.rc_file_defaults()
+plt.close('all')
 #==============================================================================#
 #                   Stacked PDF PLOT                                           #
 #==============================================================================#
 
-stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
-
+stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+matplotlib.rc_file_defaults()
+plt.close('all')
 #==============================================================================#
 #                   Phase Diagrams PLOT                                        #
 #==============================================================================#
 
 phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
+matplotlib.rc_file_defaults()
+plt.close('all')
 #==============================================================================#
 #                   Load Flattened Data                                        #
 #==============================================================================#
@@ -196,3 +203,5 @@ print("Done!")
 #                   Bar Chart PLOT                                             #
 #==============================================================================#
 bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath)
+matplotlib.rc_file_defaults()
+plt.close('all')

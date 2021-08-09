@@ -17,12 +17,19 @@ from gadget import *
 from gadget_subfind import *
 import h5py
 from Tracers_Subroutines import *
-from random import sample
+from Tracers_MultiHaloPlottingTools import *
+import random
 import math
 
+# Input parameters path:
 TracersParamsPath = "TracersParams.csv"
-batch_limit = 1e5
+TracersMasterParamsPath = "TracersParamsMaster.csv"
+SelectedHaloesPath = "TracersSelectedHaloes.csv"
+
+batch_limit = 1e3
 printpercent = 1.0
+
+random.seed(1234)
 # ------------------------------------------------------------------------------#
 def DTW_prep(M):
     """
@@ -36,25 +43,41 @@ def DTW_prep(M):
     return iterator
 
 
+#
 # ==============================================================================#
 
 # Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = LoadTracersParameters(TracersParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
+
+# Load Halo Selection Data
+SELECTEDHALOES, HALOPATHS = load_haloes_selected(HaloPathBase = TRACERSPARAMS['savepath'] ,SelectedHaloesPath=SelectedHaloesPath)
+
+DataSavepathSuffix = f".h5"
+
+snapRange = [snap for snap in range(
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+        1)]
+
 
 dtwParams = TRACERSPARAMS["dtwParams"]
 logParams = TRACERSPARAMS["dtwlogParams"]
 
 dtwSubset = int(TRACERSPARAMS["dtwSubset"])
 
-DataSavepathSuffix = f".h5"
+loadParams = dtwParams + TRACERSPARAMS['saveEssentials']
 
-print("Loading data!")
-
-dataDict = {}
-
-loadPath = DataSavepath + f"_flat-wrt-time" + DataSavepathSuffix
-
-dataDict = hdf5_load(loadPath)
+print("Load Time Flattened Data!")
+dataDict , saveParams = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
+                            HALOPATHS,
+                            DataSavepathSuffix,
+                            snapRange,
+                            Tlst,
+                            TracersParamsPath,
+                            loadParams = loadParams,
+                            dtwSubset = dtwSubset
+                            )
+print("Done!")
 
 print(torch.__version__)
 
@@ -73,151 +96,131 @@ while True:
 
 print("last_batch_size", last_batch_size)
 print("multi_batch_limit", multi_batch_limit)
-tmpanalysisDict = {}
-tmptridDict = {}
-tmppridDict = {}
-for T in Tlst:
-    for analysisParam in dtwParams:
-        key = f"T{T}"
-        if analysisParam in logParams:
-            newkey = (f"T{T}", f"log10{analysisParam}")
-            tmpanalysisDict.update(
-                {newkey: np.log10(dataDict[key][analysisParam].T.copy())}
-            )
-        else:
-            newkey = (f"T{T}", f"{analysisParam}")
-            tmpanalysisDict.update({newkey: dataDict[key][analysisParam].T.copy()})
-
-        tmptridDict.update({newkey: dataDict[key]["trid"]})
-        tmppridDict.update({newkey: dataDict[key]["prid"]})
-
-analysisDict, whereDict = delete_nan_inf_axis(tmpanalysisDict, axis=1)
-
-del tmpanalysisDict
-
+analysisDict = {}
 tridDict = {}
 pridDict = {}
-for key, values in whereDict.items():
-    tridDict.update({key: tmptridDict[key][:, values].T})
-    pridDict.update({key: tmppridDict[key][:, values].T})
+for T in Tlst:
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        for analysisParam in dtwParams:
+            key = (f"T{T}",f"{rin}R{rout}")
+            if analysisParam in logParams:
+                newkey = (f"T{T}",f"{rin}R{rout}", f"log10{analysisParam}")
+                analysisDict.update(
+                    {newkey: np.log10(dataDict[key][analysisParam].T.copy())}
+                )
+            else:
+                newkey = (f"T{T}",f"{rin}R{rout}", f"{analysisParam}")
+                analysisDict.update({newkey: dataDict[key][analysisParam].T.copy()})
+
+            tridDict.update({newkey: dataDict[key]["trid"]})
+            pridDict.update({newkey: dataDict[key]["prid"]})
+
+analysisDict, whereDict = delete_nan_inf_axis(analysisDict, axis=1)
+
 
 del whereDict, tmppridDict, tmptridDict
 
+
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")
-    for analysisParam in dtwParams:
-        print(f"Starting T{T} {analysisParam} Analysis!")
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"\n *  {rin}R{rout}!  *")
+        for analysisParam in dtwParams:
+            print(f"Starting T{T} {rin}R{rout} {analysisParam} Analysis!")
 
-        print("Load M matrix...")
-        if analysisParam in logParams:
-            key = (f"T{T}", f"log10{analysisParam}")
-        else:
-            key = (f"T{T}", f"{analysisParam}")
-        Mtmp = analysisDict[key]
-        print("...Loaded M matrix!")
+            print("Load M matrix...")
+            if analysisParam in logParams:
+                key = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
+            else:
+                key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
 
-        maxSize = min(np.shape(Mtmp)[0], dtwSubset)
-        if maxSize < dtwSubset:
-            print("Taking full set of Tracers! No RAM issues!")
-        elif maxSize == dtwSubset:
-            print(f"Taking subset {maxSize} number of Tracers to prevent RAM overload!")
+            M = analysisDict[key].copy()
+            tridData = tridDict[key].T.copy()
+            pridData = pridDict[key].T.copy()
 
-        subset = tridDict[key][:maxSize, 0]
-        tridData = []
-        pridData = []
-        M = []
-        for (tracers, parents, Mrow) in zip(tridDict[key].T, pridDict[key].T, Mtmp.T):
-            whereSubset = np.where(np.isin(tracers, subset))[0]
-            tridData.append(tracers[whereSubset].T)
-            pridData.append(parents[whereSubset].T)
-            M.append(Mrow[whereSubset].T)
+            print("...Loaded M matrix!")
 
-        M = np.array(M).T
-        tridData = np.array(tridData).T
-        pridData = np.array(pridData).T
-        del Mtmp
+            print(f"Shape of M : {np.shape(M)}")
+            print(f"Shape of tridData : {np.shape(tridData)}")
+            print(f"Shape of pridData : {np.shape(pridData)}")
 
-        print(f"Shape of M : {np.shape(M)}")
-        print(f"Shape of tridData : {np.shape(tridData)}")
-        print(f"Shape of pridData : {np.shape(pridData)}")
+            print("Prep iterator!")
+            iterator = DTW_prep(M)
 
-        print("Prep iterator!")
-        iterator = DTW_prep(M)
+            print("Load DTW instance!")
+            dtw = nn.DataParallel(SoftDTW(use_cuda=True, gamma=1e-10, normalize=True))
 
-        print("Load DTW instance!")
-        dtw = nn.DataParallel(SoftDTW(use_cuda=True, gamma=1e-10, normalize=True))
+            print("Send M to Mtens cuda!")
+            Mtens = torch.tensor(M, device=cuda).view(np.shape(M)[0], np.shape(M)[1], 1)
+            print("Make blank list!")
+            out = []
+            print("Let's do the Time Warp...")
+            start = time.time()
 
-        print("Send M to Mtens cuda!")
-        Mtens = torch.tensor(M, device=cuda).view(np.shape(M)[0], np.shape(M)[1], 1)
-        print("Make blank list!")
-        out = []
-        print("Let's do the Time Warp...")
-        start = time.time()
+            percent = 0.0
+            start = time.time()
+            xlist = []
+            ylist = []
 
-        percent = 0.0
-        start = time.time()
-        xlist = []
-        ylist = []
+            for (xx, yy) in iterator:
+                xlist.append(xx)
+                ylist.append(yy)
+                percentage = float(xx) / float(np.shape(M)[0]) * 100.0
+                if percentage >= percent:
+                    print(f"{percentage:2.0f}%")
+                    percent += printpercent
+                if len(xlist) >= multi_batch_limit:
+                    # print("Time Warping!")
+                    x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
+                    y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
+                    out_tmp = dtw.forward(x, y)
+                    out_tmp = out_tmp.cpu().detach().numpy().tolist()
+                    out += out_tmp
+                    xlist = []
+                    ylist = []
 
-        for (xx, yy) in iterator:
-            xlist.append(xx)
-            ylist.append(yy)
-            percentage = float(xx) / float(np.shape(M)[0]) * 100.0
-            if percentage >= percent:
-                print(f"{percentage:2.0f}%")
-                percent += printpercent
-            if len(xlist) >= multi_batch_limit:
-                # print("Time Warping!")
-                x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
-                y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
-                out_tmp = dtw.forward(x, y)
-                out_tmp = out_tmp.cpu().detach().numpy().tolist()
-                out += out_tmp
-                xlist = []
-                ylist = []
+            print("Finishing up...")
+            x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
+            y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
+            out_tmp = dtw.forward(x, y)
+            out_tmp = out_tmp.cpu().detach().numpy().tolist()
+            out += out_tmp
 
-        print("Finishing up...")
-        x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
-        y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
-        out_tmp = dtw.forward(x, y)
-        out_tmp = out_tmp.cpu().detach().numpy().tolist()
-        out += out_tmp
+            end = time.time()
+            elapsed = end - start
+            print(f"Elapsed time in DTW = {elapsed}s")
 
-        end = time.time()
-        elapsed = end - start
-        print(f"Elapsed time in DTW = {elapsed}s")
+            D = np.array(out)
+            saveSubDict = {
+                "distance_matrix": D,
+                "trid": tridData,
+                "prid": pridData,
+                "data": M,
+            }
+            saveDict = {key: saveSubDict}
 
-        D = np.array(out)
-        saveSubDict = {
-            "distance_matrix": D,
-            "trid": tridData,
-            "prid": pridData,
-            "data": M,
-        }
-        saveDict = {key: saveSubDict}
+            if analysisParam in logParams:
+                savePath = (
+                    DataSavepath
+                    + f"_T{T}_{rin}R{rout}_log10{analysisParam}_DTW-distance"
+                    + DataSavepathSuffix
+                )
+                print(
+                    "\n"
+                    + f"[@T{T} {rin}R{rout} log10{analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "
+                    + savePath
+                )
 
-        if analysisParam in logParams:
-            savePath = (
-                DataSavepath
-                + f"_T{T}_log10{analysisParam}_DTW-distance"
-                + DataSavepathSuffix
-            )
-            print(
-                "\n"
-                + f"[@T{T} log10{analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "
-                + savePath
-            )
+            else:
+                savePath = (
+                    DataSavepath
+                    + f"_T{T}_{rin}R{rout}_{analysisParam}_DTW-distance"
+                    + DataSavepathSuffix
+                )
+                print(
+                    "\n"
+                    + f"[@T{T} {rin}R{rout} {analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "
+                    + savePath
+                )
 
-        else:
-            savePath = (
-                DataSavepath
-                + f"_T{T}_{analysisParam}_DTW-distance"
-                + DataSavepathSuffix
-            )
-            print(
-                "\n"
-                + f"[@T{T} {analysisParam}]: Saving Distance Matrix + Sampled Raw Data as: "
-                + savePath
-            )
-
-        hdf5_save(savePath, saveDict)
+            hdf5_save(savePath, saveDict)
