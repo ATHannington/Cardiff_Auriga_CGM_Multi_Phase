@@ -1042,7 +1042,7 @@ def _get_id_prid_trid_where(dataDict, whereEntries):
 
     return {"id": id, "prid": prid, "trid": trid}
 
-def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS):
+def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS,shortSnapRangeBool=False,shortSnapRangeNumber = None):
 
     gas = []
     heating = []
@@ -1097,14 +1097,22 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             ntracers = int(np.shape(whereGas)[0])
 
             print("Gas")
+
+            if ((shortSnapRangeBool is False)&(shortSnapRangeNumber is None)):
+                pre = preselectInd
+                post = postselectInd
+            else:
+                pre = preselectInd[-1*int(shortSnapRangeNumber):]
+                post = postselectInd[:int(shortSnapRangeNumber)]
+
             #Select where ANY tracer (gas or stars) meets condition PRIOR TO selection
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["type"][preselectInd, :] == 0
+                FlatDataDict[Tkey]["type"][pre, :] == 0
             )
             #Calculate the number of these unique tracers compared to the total number
             gaspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["type"][postselectInd, :] == 0
+                FlatDataDict[Tkey]["type"][post, :] == 0
             )
             gaspost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
             #Add data to internal database lists
@@ -1114,7 +1122,7 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             epsilonT = float(TRACERSPARAMS['deltaT'])#[k]
 
             #Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
-            rowspre, colspre = np.where(np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) > (epsilonT))
+            rowspre, colspre = np.where(np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) > (epsilonT))
             #Calculate the number of these unique tracers compared to the total number
             coolingpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -1122,7 +1130,7 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             rowspost, colspost = np.where(
                 np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
                 > (epsilonT)
                 )
 
@@ -1132,7 +1140,7 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
 
             rowspre, colspre = np.where(
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-
                 np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
                 < (-1.*epsilonT)
             )
@@ -1143,7 +1151,7 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             rowspost, colspost = np.where(
                 np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
                 < (-1.*epsilonT)
             )
             heatingpost = (
@@ -1153,12 +1161,12 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             rowspre, colspre = np.where(
                 (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd,:][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre,:][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
                 <=(0+epsilonT)
                 )
                 &
                 (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][preselectInd, :][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
                 >=(0-epsilonT)
                 )
             )
@@ -1169,13 +1177,13 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             rowspost, colspost = np.where(
                 (
                 np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
                 <=(0.+epsilonT)
                 )
                 &
                 (
                 np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][postselectInd, :][:1])
+                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
                 >=(0.-epsilonT)
                 )
             )
@@ -1190,21 +1198,21 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             #
             # print("Pthermal_Pmagnetic 1 ")
             # rowspre, colspre = np.where(
-            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][preselectInd, :][-2:] > 1.0
+            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][pre, :][-2:] > 1.0
             # )
             # pthermpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             # rowspost, colspost = np.where(
-            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][postselectInd, :][:2] > 1.0
+            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][post, :][:2] > 1.0
             # )
             # pthermpost = (
             #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             # )
             # rowspre, colspre = np.where(
-            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][preselectInd, :][-2:] < 1.0
+            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][pre, :][-2:] < 1.0
             # )
             # pmagpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             # rowspost, colspost = np.where(
-            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][postselectInd, :][:2] < 1.0
+            #     FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:,whereGas][post, :][:2] < 1.0
             # )
             # pmagpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             # ptherm.append([pthermpre, pthermpost])
@@ -1212,21 +1220,21 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             # print("tcool_tff 10 ")
             # rowspre, colspre = np.where(
-            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][preselectInd, :][-2:] > 10.0
+            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][pre, :][-2:] > 10.0
             # )
             # tcoolpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             # rowspost, colspost = np.where(
-            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][postselectInd, :][:2] > 10.0
+            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][post, :][:2] > 10.0
             # )
             # tcoolpost = (
             #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             # )
             # rowspre, colspre = np.where(
-            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][preselectInd, :][-2:] < 10.0
+            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][pre, :][-2:] < 10.0
             # )
             # tffpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             # rowspost, colspost = np.where(
-            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][postselectInd, :][:2] < 10.0
+            #     FlatDataDict[Tkey]["tcool_tff"][:,whereGas][post, :][:2] < 10.0
             # )
             # tffpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             # tcool.append([pthermpre, pthermpost])
@@ -1234,16 +1242,17 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             #
             print("Z")
             #Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
-            data = FlatDataDict[Tkey]["gz"][:,whereGas][preselectInd, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][preselectInd, :]
+
+            data = FlatDataDict[Tkey]["gz"][:,whereGas][pre, :]
+            weights = FlatDataDict[Tkey]["mass"][:,whereGas][pre, :]
             zPreDat = []
             #For each tracers, calculate the mass weighted average of specific parameter for all selected snapshots
             for (dat, wei) in zip(data.T, weights.T):
                 zPreDat.append(weighted_percentile(dat, wei, 50, "Z-Pre"))
             zPreDat = np.array(zPreDat)
 
-            data = FlatDataDict[Tkey]["gz"][:,whereGas][postselectInd, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][postselectInd, :]
+            data = FlatDataDict[Tkey]["gz"][:,whereGas][post, :]
+            weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
             zPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 zPostDat.append(weighted_percentile(dat, wei, 50, "Z-Post"))
@@ -1266,15 +1275,15 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             belowZ.append([belowZpre, belowZpost])
 
             print("Radial-Flow")
-            data = FlatDataDict[Tkey]["vrad"][:,whereGas][preselectInd, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][preselectInd, :]
+            data = FlatDataDict[Tkey]["vrad"][:,whereGas][pre, :]
+            weights = FlatDataDict[Tkey]["mass"][:,whereGas][pre, :]
             vradPreDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 vradPreDat.append(weighted_percentile(dat, wei, 50, "Vrad-Pre"))
             vradPreDat = np.array(vradPreDat)
 
-            data = FlatDataDict[Tkey]["vrad"][:,whereGas][postselectInd, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][postselectInd, :]
+            data = FlatDataDict[Tkey]["vrad"][:,whereGas][post, :]
+            weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
             vradPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 vradPostDat.append(weighted_percentile(dat, wei, 50, "Vrad-Post"))
@@ -1316,12 +1325,12 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Halo0")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :]
+                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :]
+                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0post = (
@@ -1331,13 +1340,13 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Unbound")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :] == -1
+                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] == -1
             )
             unboundpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :] == -1
+                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] == -1
             )
             unboundpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1347,22 +1356,22 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             print("OtherHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :]) == False)
+                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] != -1)
+                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]) == False)
             )
             otherHalopre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :]) == False)
+                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] != -1)
+                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]) == False)
             )
             otherHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1372,20 +1381,20 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             print("NoHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][preselectInd, :]) == True)
+                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] != -1)
+                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]) == True)
             )
             noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][postselectInd, :]) == True)
+                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] != -1)
+                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]) == True)
             )
             noHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1394,13 +1403,13 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Stars")
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["type"][preselectInd, :] == 4)
-                & (FlatDataDict[Tkey]["age"][preselectInd, :] >= 0.0)
+                (FlatDataDict[Tkey]["type"][pre, :] == 4)
+                & (FlatDataDict[Tkey]["age"][pre, :] >= 0.0)
             )
             starspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["type"][postselectInd, :] == 4)
-                & (FlatDataDict[Tkey]["age"][postselectInd, :] >= 0.0)
+                (FlatDataDict[Tkey]["type"][post, :] == 4)
+                & (FlatDataDict[Tkey]["age"][post, :] >= 0.0)
             )
             starspost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
@@ -1409,26 +1418,26 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Wind")
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["type"][preselectInd, :] == 4)
-                & (FlatDataDict[Tkey]["age"][preselectInd, :] < 0.0)
+                (FlatDataDict[Tkey]["type"][pre, :] == 4)
+                & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
             )
             windpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["type"][postselectInd, :] == 4)
-                & (FlatDataDict[Tkey]["age"][postselectInd, :] < 0.0)
+                (FlatDataDict[Tkey]["type"][post, :] == 4)
+                & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
             )
             windpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
             wind.append([windpre, windpost])
 
             print("ISM")
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][preselectInd, :] <= 25.0)
-                & (FlatDataDict[Tkey]["sfr"][preselectInd, :] > 0.0)
+                (FlatDataDict[Tkey]["R"][pre, :] <= 25.0)
+                & (FlatDataDict[Tkey]["sfr"][pre, :] > 0.0)
             )
             ismpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][postselectInd, :] <= 25.0)
-                & (FlatDataDict[Tkey]["sfr"][postselectInd, :] > 0.0)
+                (FlatDataDict[Tkey]["R"][post, :] <= 25.0)
+                & (FlatDataDict[Tkey]["sfr"][post, :] > 0.0)
             )
             ismpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
             ism.append([ismpre, ismpost])
@@ -1537,8 +1546,7 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
     df = df1.set_index("T")
     return df
 
-
-def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=False,shortSnapRangeNumber = None,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
     xsize = 30.0
     ysize = 10.0
     DPI = 100
@@ -1554,12 +1562,14 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
     print("Analyse Data!")
 
     timeAvDF = flat_analyse_time_averages(
-        FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS
+        FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS,shortSnapRangeBool=shortSnapRangeBool,shortSnapRangeNumber = shortSnapRangeNumber
     )
 
     # Save
-    savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
-
+    if  ((shortSnapRangeBool is False)&(shortSnapRangeNumber is None)):
+        savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
+    else:
+        savePath = DataSavepath + f"_Time-Averages-Statistics-Table_shortSnapRange-{int(shortSnapRangeNumber)}snaps.csv"
     print("\n" + f"Saving Stats table .csv as {savePath}")
 
     timeAvDF.to_csv(savePath, index=False)
@@ -1617,6 +1627,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             fontsize=16,
         )
 
+
         plt.annotate(
             text="",
             xy=(0.10, 0.25),
@@ -1636,15 +1647,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.54, 0.01),
+            xytext=(0.48, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.56, 0.25),
-            xytext=(0.56, 0.05),
+            xy=(0.50, 0.25),
+            xytext=(0.50, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1652,15 +1663,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="Median Matched Feature",
-            xy=(0.60, 0.02),
-            xytext=(0.60, 0.02),
+            xy=(0.54, 0.02),
+            xytext=(0.54, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=14,
         )
         plt.annotate(
             text="",
-            xy=(0.58, 0.01),
+            xy=(0.52, 0.01),
             xytext=(0.76, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
@@ -1708,15 +1719,24 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
         plt.subplots_adjust(top=0.90, bottom=0.25, left=0.10, right=0.95)
-
-        opslaan = (
-            "./"
-            + 'MultiHalo'
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
-        )
+        if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
+            opslaan = (
+                "./"
+                + 'MultiHalo'
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
+            )
+        else:
+            opslaan = (
+                "./"
+                + 'MultiHalo'
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
+            )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
@@ -1737,6 +1757,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             fontsize=16,
         )
 
+
         plt.annotate(
             text="",
             xy=(0.10, 0.25),
@@ -1756,15 +1777,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.54, 0.01),
+            xytext=(0.48, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.56, 0.25),
-            xytext=(0.56, 0.05),
+            xy=(0.50, 0.25),
+            xytext=(0.50, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1772,15 +1793,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="Median Matched Feature",
-            xy=(0.60, 0.02),
-            xytext=(0.60, 0.02),
+            xy=(0.54, 0.02),
+            xytext=(0.54, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=14,
         )
         plt.annotate(
             text="",
-            xy=(0.58, 0.01),
+            xy=(0.52, 0.01),
             xytext=(0.76, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
@@ -1794,7 +1815,6 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
         plt.annotate(
             text="+1 Snapshot Feature",
             xy=(0.80, 0.03),
@@ -1829,14 +1849,24 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.tight_layout()
         plt.subplots_adjust(top=0.90, bottom=0.25, left=0.10, right=0.95)
 
-        opslaan = (
-            "./"
-            + "MultiHalo"
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
-        )
+        if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
+            opslaan = (
+                "./"
+                + 'MultiHalo'
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
+            )
+        else:
+            opslaan = (
+                "./"
+                + 'MultiHalo'
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
+            )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()

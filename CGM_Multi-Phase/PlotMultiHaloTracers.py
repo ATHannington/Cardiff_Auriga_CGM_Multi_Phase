@@ -128,9 +128,7 @@ selectTime = abs(
             )
         ]["Lookback"][0]
     )
-# ==============================================================================#
-#           PLOT!!
-# ==============================================================================#
+
 tlookback = []
 for snap in range(
         int(TRACERSPARAMS["snapMin"]),
@@ -146,6 +144,9 @@ for snap in range(
 
 tlookback = np.array(tlookback)
 
+#==============================================================================#
+#          Stats!
+#==============================================================================#
 
 statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 
@@ -203,5 +204,9 @@ print("Done!")
 #                   Bar Chart PLOT                                             #
 #==============================================================================#
 bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath)
+matplotlib.rc_file_defaults()
+plt.close('all')
+
+bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=True,shortSnapRangeNumber=4)
 matplotlib.rc_file_defaults()
 plt.close('all')

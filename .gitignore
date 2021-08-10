@@ -3,9 +3,9 @@
 ###Ignore Files of given Type: ###
 
 ###Output Data###
-#*.csv
 *.exe
 *.h5
+*Data*.csv
 
 ###Output Images###
 *.png

@@ -3570,8 +3570,9 @@ def multi_halo_merge_flat_wrt_time(  simList,
                 for selectKey in dataDict.keys():
 
                     typeLen = np.shape(dataDict[selectKey]['type'])[1]
+                    subset = min(typeLen,dtwSubset)
 
-                    dtwSelect = random.sample([ ii for ii in range(0,typeLen,1)], k=dtwSubset)
+                    dtwSelect = random.sample([ ii for ii in range(0,typeLen,1)], k=subset)
 
                     for key in dataDict[selectKey].keys():
                         if key in loadParams:

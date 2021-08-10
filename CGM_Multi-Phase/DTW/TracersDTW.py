@@ -118,9 +118,6 @@ for T in Tlst:
 analysisDict, whereDict = delete_nan_inf_axis(analysisDict, axis=1)
 
 
-del whereDict, tmppridDict, tmptridDict
-
-
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
