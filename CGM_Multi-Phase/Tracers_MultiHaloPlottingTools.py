@@ -21,8 +21,8 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-xsize = 10.0
-ysize = 12.0
+xsize = 5.0
+ysize = 6.0
 DPI = 100
 
 # Set style options
@@ -591,7 +591,8 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
     return
 
 def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 75):
-
+    xsize = 5.0
+    ysize = 7.5
     ageUniverse = 13.77  # [Gyr]
     opacity = 0.75
     selectColour = "red"
@@ -600,12 +601,30 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
     percentileLO = 1.0
     percentileUP = 99.0
 
+    xlimDict = {
+        "T": {"xmin": 3.75, "xmax": 6.5},
+        "R": {"xmin": 0, "xmax": 250},
+        "n_H": {"xmin": -5.0, "xmax": 0.0},
+        "B": {"xmin": -6.0, "xmax": 2.0},
+        "vrad": {"xmin": -250.0, "xmax": 250.0},
+        "gz": {"xmin": -4.0, "xmax": 1.0},
+        "P_thermal": {"xmin": -1.0, "xmax": 7.0},
+        "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
+        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
+        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
+        "tcool": {"xmin": -6.0, "xmax": 3.0},
+        "tff": {"xmin": -3.0, "xmax": 1.0},
+        "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
+        "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
+        "dens": {"xmin": -30.0, "xmax": -22.0},
+        "ndens": {"xmin": -6.0, "xmax": 2.0},
+    }
 
     import seaborn as sns
     import scipy.stats as stats
 
     xlabel = ylabel
-
 
     for entry in logParameters:
         xlabel[entry] = r"Log10 " + xlabel[entry]
@@ -636,8 +655,8 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                 )
                 selectTime = abs(dataDict[selectKey]["Lookback"][0])
 
-                xmaxlist = []
-                xminlist = []
+                # xmaxlist = []
+                # xminlist = []
                 dataList = []
                 weightsList = []
                 snapRange = [
@@ -724,15 +743,16 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                     tmpdict = {"x": data, "y": weights}
                     df = pd.DataFrame(tmpdict)
 
-                    LO = weighted_percentile(
-                        data=data, weights=weights, perc=percentileLO, key="LO"
-                    )
-                    UP = weighted_percentile(
-                        data=data, weights=weights, perc=percentileUP, key="UP"
-                    )
-
-                    xmin = xminlist.append(LO)  # np.nanmin(data)
-                    xmax = xmaxlist.append(UP)
+                    # LO = weighted_percentile(
+                    #     data=data, weights=weights, perc=percentileLO, key="LO"
+                    # )
+                    # UP = weighted_percentile(
+                    #     data=data, weights=weights, perc=percentileUP, key="UP"
+                    # )
+                    #
+                    xmin = xminlist.append(xlimDict[dataKey]['xmin'])
+                    #xminlist.append(LO)
+                    xmax = xmaxlist.append(xlimDict[dataKey]['xmax'])
                     # Draw the densities in a few steps
                     # ,
                     sns.kdeplot(
@@ -849,8 +869,8 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
 
     from functools import reduce
 
-    xsize = 20.0
-    ysize = 10.0
+    xsize = 10.0
+    ysize = 5.0
     fontsize = 15
 
 
@@ -1547,8 +1567,8 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
     return df
 
 def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=False,shortSnapRangeNumber = None,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
-    xsize = 30.0
-    ysize = 10.0
+    xsize = 15.0
+    ysize = 5.0
     DPI = 100
     colourmapMain = "plasma"
     # Input parameters path:

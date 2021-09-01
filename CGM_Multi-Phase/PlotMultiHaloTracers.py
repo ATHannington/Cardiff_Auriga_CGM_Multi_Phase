@@ -21,8 +21,8 @@ from Tracers_MultiHaloPlottingTools import *
 from random import sample
 import math
 
-xsize = 10.0
-ysize = 12.0
+xsize = 5.0
+ysize = 6.0
 DPI = 100
 
 # Set style options
@@ -182,9 +182,9 @@ plt.close('all')
 #                   Phase Diagrams PLOT                                        #
 #==============================================================================#
 
-phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
-matplotlib.rc_file_defaults()
-plt.close('all')
+# phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
+# matplotlib.rc_file_defaults()
+# plt.close('all')
 #==============================================================================#
 #                   Load Flattened Data                                        #
 #==============================================================================#
@@ -207,6 +207,6 @@ bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange
 matplotlib.rc_file_defaults()
 plt.close('all')
 
-bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=True,shortSnapRangeNumber=4)
+bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=True,shortSnapRangeNumber=1)
 matplotlib.rc_file_defaults()
 plt.close('all')
