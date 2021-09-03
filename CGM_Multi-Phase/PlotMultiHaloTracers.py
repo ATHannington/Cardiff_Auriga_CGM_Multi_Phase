@@ -85,7 +85,7 @@ ylabel = {
 }
 
 for entry in logParameters:
-    ylabel[entry] = r"Log10 " + ylabel[entry]
+    ylabel[entry] = r"$Log_{10}$" + ylabel[entry]
 
 # ==============================================================================#
 

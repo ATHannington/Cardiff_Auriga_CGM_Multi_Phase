@@ -49,7 +49,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
-                nrows=len(Tlst), ncols=1, sharex=True, figsize=(xsize, ysize), dpi=DPI
+                nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
             )
             yminlist = []
             ymaxlist = []
@@ -141,7 +141,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 currentAx.plot(
                     tlookback,
                     plotData[median],
-                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                    label=r"$T = 10^{%3.2f} K$" % (float(temp)),
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
@@ -152,8 +152,6 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(which="both")
 
-                currentAx.set_ylabel(ylabel[analysisParam], fontsize=10)
-
                 plot_patch = matplotlib.patches.Patch(color=colour)
                 plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
                 currentAx.legend(
@@ -163,8 +161,8 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 fig.suptitle(
                     f"Cells Containing Tracers selected by: "
                     + "\n"
-                    + r"$T = 10^{n \pm %05.2f} K$" % (TRACERSPARAMS["deltaT"])
-                    + r" and $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                    + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                     + "\n"
                     + f" and selected at {vline[0]:3.2f} Gyr"
                     + f" weighted by mass",
@@ -174,10 +172,13 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             # Only give 1 x-axis a label, as they sharex
             if len(Tlst) == 1:
                 axis0 = ax
+                midax = ax
             else:
                 axis0 = ax[len(Tlst) - 1]
+                midax = ax[(len(Tlst)-1)//2]
 
             axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+            midax.set_ylabel(ylabel[analysisParam], fontsize=10)
             finalymin = np.nanmin(yminlist)
             finalymax = np.nanmax(ymaxlist)
             if (
@@ -192,8 +193,8 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             finalymax = math.ceil(finalymax)
             custom_ylim = (finalymin, finalymax)
             plt.setp(ax, ylim=custom_ylim)
-            plt.tight_layout()
-            plt.subplots_adjust(top=0.90, hspace=0.0)
+            plt.tight_layout(h_pad=0.0)
+            plt.subplots_adjust(top=0.875, hspace=0.0)
             opslaan = (
                     "./"
                     + 'MultiHalo'
@@ -306,7 +307,7 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=len(Tlst), ncols=1, sharex=True, figsize=(xsize, ysize), dpi=DPI
+            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
         )
 
         # Create a plot for each Temperature
@@ -373,18 +374,14 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
             currentAx.tick_params(which="both")
 
-            currentAx.set_ylabel(
-                r"Percentage Tracers Still at $ T = 10^{%05.2f \pm %05.2f} K$"
-                % (T, TRACERSPARAMS["deltaT"]),
-                fontsize=10,
-            )
+
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
             fig.suptitle(
                 f"Percentage Tracers Still at Selection Temperature "
-                + r"$T = 10^{n \pm %05.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -393,13 +390,18 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
             axis0 = ax
+            midax = ax
         else:
             axis0 = ax[len(Tlst) - 1]
+            midax = ax[(len(Tlst)-1)//2]
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
-
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.90, wspace=0.005)
+        midax.set_ylabel(
+            r"Percentage Tracers Still at $ T = 10^{%3.2f \pm %3.2f} K$"
+            % (T, TRACERSPARAMS["deltaT"]),
+            fontsize=10,
+        )
+        plt.tight_layout(h_pad=0.0)
         opslaan = (
                 "./"
                 + "MultiHalo"
@@ -482,7 +484,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=len(Tlst), ncols=1, sharex=True, figsize=(xsize, ysize), dpi=DPI
+            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
         )
 
         # Create a plot for each Temperature
@@ -539,7 +541,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             currentAx.plot(
                 tlookback ,
                 plotYdata,
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                label=r"$T = 10^{%3.2f} K$" % (float(temp)),
                 color=colour,
                 lineStyle="-",
             )
@@ -549,18 +551,13 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
             currentAx.tick_params(which="both")
 
-            currentAx.set_ylabel(
-                r"Percentage Tracers Still at $ T = 10^{%05.2f \pm %05.2f} K$"
-                % (T, TRACERSPARAMS["deltaT"]),
-                fontsize=10,
-            )
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
             fig.suptitle(
                 f"Percentage Tracers Within Selection Temperature Range "
-                + r"$T = 10^{n \pm %05.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -569,13 +566,19 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
             axis0 = ax
+            midax = ax
         else:
             axis0 = ax[len(Tlst) - 1]
+            midax = ax[(len(Tlst)-1)//2]
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+        midax.set_ylabel(
+            r"Percentage Tracers Still at $ T = 10^{%3.2f \pm %3.2f} K$"
+            % (T, TRACERSPARAMS["deltaT"]),
+            fontsize=10,
+        )
 
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.90, wspace=0.005)
+        plt.tight_layout(h_pad=0.0)
         opslaan = (
                 "./"
                 + "MultiHalo"
@@ -590,9 +593,9 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         plt.close()
     return
 
-def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 75):
+def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
     xsize = 5.0
-    ysize = 7.5
+    ysize = 10.0
     ageUniverse = 13.77  # [Gyr]
     opacity = 0.75
     selectColour = "red"
@@ -626,8 +629,7 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
 
     xlabel = ylabel
 
-    for entry in logParameters:
-        xlabel[entry] = r"Log10 " + xlabel[entry]
+    outofrangeNbins = 10
 
     for dataKey in saveParams:
         print(f"{dataKey}")
@@ -655,8 +657,8 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                 )
                 selectTime = abs(dataDict[selectKey]["Lookback"][0])
 
-                # xmaxlist = []
-                # xminlist = []
+                xmaxlist = []
+                xminlist = []
                 dataList = []
                 weightsList = []
                 snapRange = [
@@ -677,7 +679,7 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                     figsize=(xsize, ysize),
                     dpi=DPI,
                     frameon=False,
-                    sharex=True,
+                    sharex=True
                 )
                 # Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
                 for (jj, snap) in enumerate(snapRange):
@@ -750,24 +752,84 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                     #     data=data, weights=weights, perc=percentileUP, key="UP"
                     # )
                     #
-                    xmin = xminlist.append(xlimDict[dataKey]['xmin'])
-                    #xminlist.append(LO)
-                    xmax = xmaxlist.append(xlimDict[dataKey]['xmax'])
+
+                    xmin = xlimDict[dataKey]['xmin']
+                    xmax = xlimDict[dataKey]['xmax']
+
+                    ###############################
+                    ##### aggregate endpoints #####
+                    ###############################
+
+                    belowrangedf = df.loc[(df['x']<xmin)]
+                    inrangedf = df.loc[(df['x']>=xmin)&(df['x']<=xmax)]
+                    aboverangedf = df.loc[(df['x']>xmax)]
+
+                    ### Use a rolling window over the last outofrangePercentOfxRange % of data to attempt to create peaks in kdeplot at ends ###
+
+                    xmin0 = max(xmin*0.975,xmin*1.025)
+                    xmax0 = min(xmax*0.975,xmax*1.025)
+
+
+                    tmp = belowrangedf['y'].rolling(outofrangeNbins).sum().reset_index(drop=True).dropna()
+                    belowrangedf = pd.DataFrame({'x':np.linspace(xmin,xmin0,len(tmp)),'y':tmp})
+
+                    tmp = aboverangedf['y'].rolling(outofrangeNbins).sum().reset_index(drop=True).dropna()
+                    aboverangedf = pd.DataFrame({'x':np.linspace(xmax0,xmax,len(tmp)),'y':tmp})
+
+
+                    xminlist.append(xmin)
+                    xmaxlist.append(xmax)
                     # Draw the densities in a few steps
-                    # ,
-                    sns.kdeplot(
+                    ## MAIN KDE ##
+                    mainplot = sns.kdeplot(
                         df["x"],
                         weights=df["y"],
                         ax=currentAx,
-                        bw_adjust=0.5,
+                        bw_adjust=0.1,
                         clip = (xmin,xmax),
                         alpha=opacity,
                         fill=True,
                         lw=linewidth,
                         color=colour,
                         linestyle=lineStyle,
-                        shade =True
+                        shade =True,
+                        common_norm = True
                     )
+                    mainplotylim = mainplot.get_ylim()
+
+                    
+                    #Lower KDE
+                    if len(belowrangedf)>0 :
+                        sns.kdeplot(
+                            belowrangedf["x"],
+                            weights=belowrangedf["y"],
+                            ax=currentAx,
+                            bw_adjust=5,
+                            clip = (xmin,xmin0),
+                            alpha=opacity,
+                            fill=True,
+                            lw=linewidth,
+                            color=colour,
+                            linestyle=lineStyle,
+                            shade =True,
+                            common_norm = True
+                        )
+                    #Upper KDE
+                    if len(aboverangedf)>0 :
+                        sns.kdeplot(
+                            aboverangedf["x"],
+                            weights=aboverangedf["y"],
+                            ax=currentAx,
+                            bw_adjust=5,
+                            clip = (xmax0,xmax),
+                            alpha=opacity,
+                            fill=True,
+                            lw=linewidth,
+                            color=colour,
+                            linestyle=lineStyle,
+                            shade =True,
+                            common_norm = True
+                        )
                     currentAx.axhline(
                         y=0,
                         lw=linewidth,
@@ -778,7 +840,8 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
 
                     currentAx.set_yticks([])
                     currentAx.set_ylabel("")
-                    currentAx.set_xlabel(xlabel[dataKey], fontsize=15)
+                    currentAx.set_ylim(mainplotylim)
+                    currentAx.set_xlabel(xlabel[dataKey], fontsize=10)
                     sns.despine(bottom=True, left=True)
 
 
@@ -788,35 +851,35 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
 
                 plt.xlim(xmin, xmax)
                 #
-                plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
-                plt.text(
-                    0.75,
-                    0.95,
-                    plot_label,
-                    horizontalalignment="left",
-                    verticalalignment="center",
-                    transform=fig.transFigure,
-                    wrap=True,
-                    bbox=dict(facecolor="blue", alpha=0.2),
-                    fontsize=15,
-                )
+                # plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
+                # plt.text(
+                #     0.75,
+                #     0.95,
+                #     plot_label,
+                #     horizontalalignment="left",
+                #     verticalalignment="center",
+                #     transform=fig.transFigure,
+                #     wrap=True,
+                #     bbox=dict(facecolor="blue", alpha=0.2),
+                #     fontsize=10,
+                # )
 
-                time_label = r"Lookback Time [Gyr]"
+                time_label = r"Time [Gyr]"
                 plt.text(
-                    0.10,
-                    0.475,
+                    0.08,
+                    0.525,
                     time_label,
                     horizontalalignment="center",
                     verticalalignment="center",
                     transform=fig.transFigure,
                     wrap=True,
-                    fontsize=15,
+                    fontsize=10,
                 )
                 plt.arrow(
-                    0.10,
-                    0.525,
+                    0.08,
+                    0.500,
                     0.00,
-                    +0.225,
+                    -0.15,
                     fc="black",
                     ec="black",
                     width=0.005,
@@ -828,19 +891,17 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                 fig.suptitle(
                     f"PDF of Cells Containing Tracers selected by: "
                     + "\n"
-                    + r"$T = 10^{%05.2f \pm %05.2f} K$" % (T, TRACERSPARAMS["deltaT"])
-                    + r" and $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                    + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
+                    + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                     + "\n"
                     + f" and selected at {selectTime:3.2f} Gyr"
-                    + f" weighted by mass"
-                    + "\n"
-                    + f"{percentileLO:3.2f}% to {percentileUP:3.2f}% Mass Weighted Percentiles Shown",
+                    + f" weighted by mass",
                     fontsize=12,
                 )
                 # ax.axvline(x=vline, c='red')
 
                 plt.tight_layout()
-                plt.subplots_adjust(top=0.90, hspace=-0.25)
+                plt.subplots_adjust(top=0.90,bottom=0.05, hspace=-0.25)
 
                 opslaan = (
                         "./"
@@ -871,7 +932,7 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
 
     xsize = 10.0
     ysize = 5.0
-    fontsize = 15
+    fontsize = 10
 
 
     # Paramters to weight the 2D hist by
@@ -928,7 +989,7 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                 zmax = zlimDict[weightKey]["zmax"]
 
                 fig, ax = plt.subplots(
-                    nrows=1, ncols=int(len(Tlst)), figsize=(xsize * 2, ysize), dpi=DPI
+                    nrows=1, ncols=int(len(Tlst)), figsize=(xsize * 2, ysize), dpi=DPI,sharey=True,sharex=True
                 )
 
                 for (ii, T) in enumerate(Tlst):
@@ -1012,9 +1073,9 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                     cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
 
                     currentAx.set_title(
-                        r"$ 10^{%03.2f \pm %05.2f} K $ Tracers Data"
+                        r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
                         % (float(T), TRACERSPARAMS["deltaT"]),
-                        fontsize=fontsize,
+                        fontsize=12,
                     )
                     currentAx.set_aspect("auto")
 
@@ -1026,13 +1087,13 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                     + f" at {currentTime:3.2f} Gyr"
                     + "\n"
                     + f"Tracers Data, selected at {selectTime:3.2f} Gyr as being"
-                    + r" $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout)
+                    + r" $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                     + r" and temperatures "
-                    + r"$ 10^{n \pm %05.2f} K $" % (TRACERSPARAMS["deltaT"]),
-                    fontsize=fontsize,
+                    + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
+                    fontsize=12,
                 )
 
-                plt.subplots_adjust(top=0.90, hspace=0.01)
+                plt.tight_layout()
 
                 opslaan = (
                         "./"
@@ -1637,14 +1698,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         preDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        ax.legend(loc="upper left", title="Log10(T) [K]", fontsize=13)
-        plt.xticks(rotation=90, ha="right", fontsize=13)
+        legendLabels= [r'$T^{%3.2f}'%(temp) for temp in Tlst]
+        ax.legend(legendLabels,loc="upper left", title="T [K]", fontsize=10)
+        plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
             r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
             + "\n"
-            + r"selected by $T = 10^{n \pm %05.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout),
-            fontsize=16,
+            + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
+            fontsize=12,
         )
 
 
@@ -1662,7 +1724,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.20, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1687,7 +1749,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.54, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1712,7 +1774,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.80, 0.03),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1767,14 +1829,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         postDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        ax.legend(loc="upper left", title="Log10(T) [K]", fontsize=13)
-        plt.xticks(rotation=90, ha="right", fontsize=13)
+        legendLabels= [r'$T^{%3.2f}'%(temp) for temp in Tlst]
+        ax.legend(legendLabels,loc="upper left", title="T [K]", fontsize=10)
+        plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
             r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
             + "\n"
-            + r"selected by $T = 10^{n \pm %05.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%05.2f \leq R \leq %05.2f kpc $" % (rin, rout),
-            fontsize=16,
+            + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
+            fontsize=12,
         )
 
 
@@ -1792,7 +1855,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.20, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1817,7 +1880,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.54, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1841,7 +1904,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
             xytext=(0.80, 0.03),
             textcoords=fig.transFigure,
             annotation_clip=False,
-            fontsize=14,
+            fontsize=10,
         )
         plt.annotate(
             text="",
@@ -1867,7 +1930,6 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
-        plt.subplots_adjust(top=0.90, bottom=0.25, left=0.10, right=0.95)
 
         if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
             opslaan = (
