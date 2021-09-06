@@ -175,7 +175,7 @@ plt.close('all')
 #                   Stacked PDF PLOT                                           #
 #==============================================================================#
 
-stacked_pdf_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+stacked_pdf_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 #==============================================================================#
@@ -203,6 +203,7 @@ print("Done!")
 #==============================================================================#
 #                   Bar Chart PLOT                                             #
 #==============================================================================#
+
 bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath)
 matplotlib.rc_file_defaults()
 plt.close('all')

@@ -152,6 +152,13 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(which="both")
 
+                #Delete text string for first y_axis label for all but last panel
+                plt.gcf().canvas.draw()
+                if (int(ii)<len(Tlst)-1):
+                    plt.setp(currentAx.get_xticklabels(),visible = False)
+                    plt.gcf().canvas.draw()
+                    # STOP160IF
+
                 plot_patch = matplotlib.patches.Patch(color=colour)
                 plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
                 currentAx.legend(
@@ -193,8 +200,8 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             finalymax = math.ceil(finalymax)
             custom_ylim = (finalymin, finalymax)
             plt.setp(ax, ylim=custom_ylim)
-            plt.tight_layout(h_pad=0.0)
-            plt.subplots_adjust(top=0.875, hspace=0.0)
+            plt.tight_layout()
+            plt.subplots_adjust(top=0.875)
             opslaan = (
                     "./"
                     + 'MultiHalo'
@@ -378,7 +385,7 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
             fig.suptitle(
-                f"Percentage Tracers Still at Selection Temperature "
+                f"Percentage Tracers Still at \n Selection Temperature "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
                 + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
@@ -397,8 +404,7 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         midax.set_ylabel(
-            r"Percentage Tracers Still at $ T = 10^{%3.2f \pm %3.2f} K$"
-            % (T, TRACERSPARAMS["deltaT"]),
+            r"Percentage Tracers Still at Selection Temperature",
             fontsize=10,
         )
         plt.tight_layout(h_pad=0.0)
@@ -554,7 +560,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
 
             fig.suptitle(
-                f"Percentage Tracers Within Selection Temperature Range "
+                f"Percentage Tracers Within \n Selection Temperature Range "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
                 + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
@@ -573,8 +579,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         midax.set_ylabel(
-            r"Percentage Tracers Still at $ T = 10^{%3.2f \pm %3.2f} K$"
-            % (T, TRACERSPARAMS["deltaT"]),
+            r"Percentage Tracers Still Within Selection Temperature Range",
             fontsize=10,
         )
 
@@ -593,7 +598,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         plt.close()
     return
 
-def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
     xsize = 5.0
     ysize = 10.0
     ageUniverse = 13.77  # [Gyr]
@@ -640,8 +645,6 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                 print(f"T{Tlst[ii]}")
 
                 selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
-                # Temperature specific load path
-                plotData = statsData[selectKey]
 
                 # Get number of temperatures
                 NTemps = float(len(Tlst))
@@ -766,16 +769,10 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
 
                     ### Use a rolling window over the last outofrangePercentOfxRange % of data to attempt to create peaks in kdeplot at ends ###
 
-                    xmin0 = max(xmin*0.975,xmin*1.025)
-                    xmax0 = min(xmax*0.975,xmax*1.025)
+                    belowrangedf = belowrangedf.assign(x = xmin)
+                    aboverangedf = aboverangedf.assign(x = xmax)
 
-
-                    tmp = belowrangedf['y'].rolling(outofrangeNbins).sum().reset_index(drop=True).dropna()
-                    belowrangedf = pd.DataFrame({'x':np.linspace(xmin,xmin0,len(tmp)),'y':tmp})
-
-                    tmp = aboverangedf['y'].rolling(outofrangeNbins).sum().reset_index(drop=True).dropna()
-                    aboverangedf = pd.DataFrame({'x':np.linspace(xmax0,xmax,len(tmp)),'y':tmp})
-
+                    df = pd.concat([belowrangedf,inrangedf,aboverangedf],axis=0,ignore_index=True)
 
                     xminlist.append(xmin)
                     xmaxlist.append(xmax)
@@ -795,41 +792,7 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
                         shade =True,
                         common_norm = True
                     )
-                    mainplotylim = mainplot.get_ylim()
-
-                    
-                    #Lower KDE
-                    if len(belowrangedf)>0 :
-                        sns.kdeplot(
-                            belowrangedf["x"],
-                            weights=belowrangedf["y"],
-                            ax=currentAx,
-                            bw_adjust=5,
-                            clip = (xmin,xmin0),
-                            alpha=opacity,
-                            fill=True,
-                            lw=linewidth,
-                            color=colour,
-                            linestyle=lineStyle,
-                            shade =True,
-                            common_norm = True
-                        )
-                    #Upper KDE
-                    if len(aboverangedf)>0 :
-                        sns.kdeplot(
-                            aboverangedf["x"],
-                            weights=aboverangedf["y"],
-                            ax=currentAx,
-                            bw_adjust=5,
-                            clip = (xmax0,xmax),
-                            alpha=opacity,
-                            fill=True,
-                            lw=linewidth,
-                            color=colour,
-                            linestyle=lineStyle,
-                            shade =True,
-                            common_norm = True
-                        )
+                    # mainplotylim = mainplot.get_ylim()
                     currentAx.axhline(
                         y=0,
                         lw=linewidth,
@@ -840,7 +803,7 @@ def stacked_pdf_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapR
 
                     currentAx.set_yticks([])
                     currentAx.set_ylabel("")
-                    currentAx.set_ylim(mainplotylim)
+                    # currentAx.set_ylim(mainplotylim)
                     currentAx.set_xlabel(xlabel[dataKey], fontsize=10)
                     sns.despine(bottom=True, left=True)
 
@@ -1569,11 +1532,11 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
                 "Pre-Selection": np.array(outflow)[:, 0],
                 "Post-Selection": np.array(outflow)[:, 1],
             },
-            "%Above3/4(Z_solar)": {
+            "%>3/4(Z_solar)": {
                 "Pre-Selection": np.array(aboveZ)[:, 0],
                 "Post-Selection": np.array(aboveZ)[:, 1],
             },
-            "%Below3/4(Z_solar)": {
+            "%<3/4(Z_solar)": {
                 "Pre-Selection": np.array(belowZ)[:, 0],
                 "Post-Selection": np.array(belowZ)[:, 1],
             },
@@ -1698,8 +1661,8 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         preDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels= [r'$T^{%3.2f}'%(temp) for temp in Tlst]
-        ax.legend(legendLabels,loc="upper left", title="T [K]", fontsize=10)
+        legendLabels= [r'$10^{%3.2f}$'%(float(temp)) for temp in Tlst]
+        ax.legend(legendLabels,loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
             r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
@@ -1712,7 +1675,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="",
-            xy=(0.10, 0.25),
+            xy=(0.10, 0.30),
             xytext=(0.10, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
@@ -1720,8 +1683,8 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         )
         plt.annotate(
             text="Ever Matched Feature",
-            xy=(0.20, 0.02),
-            xytext=(0.20, 0.02),
+            xy=(0.17, 0.02),
+            xytext=(0.17, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
@@ -1729,15 +1692,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.48, 0.01),
+            xytext=(0.45, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.50, 0.25),
-            xytext=(0.50, 0.05),
+            xy=(0.47, 0.30),
+            xytext=(0.47, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1745,24 +1708,24 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="Median Matched Feature",
-            xy=(0.54, 0.02),
-            xytext=(0.54, 0.02),
+            xy=(0.48, 0.02),
+            xytext=(0.48, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
         )
         plt.annotate(
             text="",
-            xy=(0.52, 0.01),
-            xytext=(0.76, 0.01),
+            xy=(0.47, 0.01),
+            xytext=(0.73, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.78, 0.25),
-            xytext=(0.78, 0.05),
+            xy=(0.74, 0.30),
+            xytext=(0.74, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1770,24 +1733,24 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="-1 Snapshot Feature",
-            xy=(0.80, 0.03),
-            xytext=(0.80, 0.03),
+            xy=(0.75, 0.02),
+            xytext=(0.75, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
         )
         plt.annotate(
             text="",
-            xy=(0.78, 0.01),
-            xytext=(0.95, 0.01),
+            xy=(0.74, 0.01),
+            xytext=(0.90, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.95, 0.25),
-            xytext=(0.95, 0.05),
+            xy=(0.90, 0.30),
+            xytext=(0.90, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1800,7 +1763,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
-        plt.subplots_adjust(top=0.90, bottom=0.25, left=0.10, right=0.95)
+        plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
         if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
             opslaan = (
                 "./"
@@ -1829,8 +1792,8 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         postDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels= [r'$T^{%3.2f}'%(temp) for temp in Tlst]
-        ax.legend(legendLabels,loc="upper left", title="T [K]", fontsize=10)
+        legendLabels= [r'$10^{%3.2f}$'%(float(temp)) for temp in Tlst]
+        ax.legend(legendLabels,loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
             r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
@@ -1843,7 +1806,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="",
-            xy=(0.10, 0.25),
+            xy=(0.10, 0.30),
             xytext=(0.10, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
@@ -1851,8 +1814,8 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         )
         plt.annotate(
             text="Ever Matched Feature",
-            xy=(0.20, 0.02),
-            xytext=(0.20, 0.02),
+            xy=(0.17, 0.02),
+            xytext=(0.17, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
@@ -1860,15 +1823,15 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.48, 0.01),
+            xytext=(0.45, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.50, 0.25),
-            xytext=(0.50, 0.05),
+            xy=(0.47, 0.30),
+            xytext=(0.47, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1876,48 +1839,49 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         plt.annotate(
             text="Median Matched Feature",
-            xy=(0.54, 0.02),
-            xytext=(0.54, 0.02),
+            xy=(0.48, 0.02),
+            xytext=(0.48, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
         )
         plt.annotate(
             text="",
-            xy=(0.52, 0.01),
-            xytext=(0.76, 0.01),
+            xy=(0.47, 0.01),
+            xytext=(0.73, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.78, 0.25),
-            xytext=(0.78, 0.05),
+            xy=(0.74, 0.30),
+            xytext=(0.74, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
         plt.annotate(
             text="+1 Snapshot Feature",
-            xy=(0.80, 0.03),
-            xytext=(0.80, 0.03),
+            xy=(0.75, 0.02),
+            xytext=(0.75, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=10,
         )
         plt.annotate(
             text="",
-            xy=(0.78, 0.01),
-            xytext=(0.95, 0.01),
+            xy=(0.74, 0.01),
+            xytext=(0.90, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.95, 0.25),
-            xytext=(0.95, 0.05),
+            xy=(0.90, 0.30),
+            xytext=(0.90, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1930,6 +1894,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
+        plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
 
         if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
             opslaan = (
