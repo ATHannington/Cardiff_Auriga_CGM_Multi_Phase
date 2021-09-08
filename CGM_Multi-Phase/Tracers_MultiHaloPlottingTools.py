@@ -36,6 +36,7 @@ colourmapMain = "plasma"
 
 def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
 
+    tmpxsize = xsize + 2.0
 
     for analysisParam in saveParams:
         print("")
@@ -49,10 +50,12 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
-                nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
+                nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(tmpxsize, ysize), dpi=DPI
             )
             yminlist = []
             ymaxlist = []
+            patchList = []
+            labelList = []
             for ii in range(len(Tlst)):
                 print(f"T{Tlst[ii]}")
                 T = float(Tlst[ii])
@@ -151,19 +154,18 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(which="both")
-
-                #Delete text string for first y_axis label for all but last panel
-                plt.gcf().canvas.draw()
-                if (int(ii)<len(Tlst)-1):
-                    plt.setp(currentAx.get_xticklabels(),visible = False)
-                    plt.gcf().canvas.draw()
-                    # STOP160IF
+                #
+                # #Delete text string for first y_axis label for all but last panel
+                # plt.gcf().canvas.draw()
+                # if (int(ii)<len(Tlst)-1):
+                #     plt.setp(currentAx.get_xticklabels(),visible = False)
+                #     plt.gcf().canvas.draw()
+                #     # STOP160IF
 
                 plot_patch = matplotlib.patches.Patch(color=colour)
                 plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
-                currentAx.legend(
-                    handles=[plot_patch], labels=[plot_label], loc="upper right", facecolor='white', framealpha=1
-                )
+                patchList.append(plot_patch)
+                labelList.append(plot_label)
 
                 fig.suptitle(
                     f"Cells Containing Tracers selected by: "
@@ -200,8 +202,13 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             finalymax = math.ceil(finalymax)
             custom_ylim = (finalymin, finalymax)
             plt.setp(ax, ylim=custom_ylim)
+            fig.legend(handles=patchList, labels=labelList, loc="center right", facecolor='white', framealpha=1
+                )
             plt.tight_layout()
-            plt.subplots_adjust(top=0.875)
+            plt.subplots_adjust(top=0.875,right=0.80,hspace=0.1)
+
+
+
             opslaan = (
                     "./"
                     + 'MultiHalo'
@@ -616,19 +623,20 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
         "B": {"xmin": -6.0, "xmax": 2.0},
         "vrad": {"xmin": -250.0, "xmax": 250.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
+        "L" :  {"xmin": 0.0, "xmax": 5.0},
         "P_thermal": {"xmin": -1.0, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
         "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
         "P_tot": {"xmin": -1.0, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
         "tcool": {"xmin": -6.0, "xmax": 3.0},
+        "theat" :  {"xmin": -4.0, "xmax": 4.0},
         "tff": {"xmin": -3.0, "xmax": 1.0},
         "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
         "dens": {"xmin": -30.0, "xmax": -22.0},
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
-
     import seaborn as sns
     import scipy.stats as stats
 

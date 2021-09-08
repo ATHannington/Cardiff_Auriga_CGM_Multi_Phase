@@ -71,7 +71,7 @@ ylabel = {
     "P_thermal": r"$P_{Thermal} / k_B$ [$K$ $cm^{-3}$]",
     "P_magnetic": r"$P_{Magnetic} / k_B$ [$K$ $cm^{-3}$]",
     "P_kinetic": r"$P_{Kinetic} / k_B$ [$K$ $cm^{-3}$]",
-    "P_tot": r"$P_{tot} = P_{thermal} + P_{magnetic} / k_B$ [$K$ $cm^{-3}$]",
+    "P_tot": r"$P_{tot} = (P_{thermal} + P_{magnetic})/ k_B$ [$K$ $cm^{-3}$]",
     "Pthermal_Pmagnetic": r"$P_{thermal}/P_{magnetic}$",
     "tcool": r"Cooling Time [$Gyr$]",
     "theat": r"Heating Time [$Gyr$]",
@@ -157,6 +157,7 @@ statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
+
 #==============================================================================#
 #                   Persistent Temperature PLOT                                #
 #==============================================================================#
