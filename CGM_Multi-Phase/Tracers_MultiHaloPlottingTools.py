@@ -899,8 +899,6 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
     """
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-    from functools import reduce
-
     xsize = 10.0
     ysize = 5.0
     fontsize = 10
@@ -1925,4 +1923,283 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
+    return
+
+################################################################################
+##                  EXPERIMENTAL                                              ##
+################################################################################
+
+def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+    tmpxsize = xsize * 2.0
+    weightKey = "L"
+
+    labelDict = {
+        "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]",
+        "gz": r"Log10 Average Metallicity per pixel [$Z/Z_{\odot}$]",
+        "tcool": r"Log10 Cooling Time per pixel [$Gyr$]",
+        "tcool_tff": r"Cooling Time over Free Fall Time",
+        "L" : r"Specific Angular Momentum [$kpc$ $km$ $s^{-1}$]"
+    }
+
+    print("")
+    print("Loading Data!")
+    # Create a plot for each Temperature
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"{rin}R{rout}")
+
+        fig, ax = plt.subplots(
+            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(tmpxsize, ysize), dpi=DPI
+        )
+        yminlist = []
+        ymaxlist = []
+        patchList = []
+        labelList = []
+
+        for (ii, T) in enumerate(Tlst):
+            FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+
+            if len(Tlst) == 1:
+                currentAx = ax
+            else:
+                currentAx = ax[ii]
+
+            whereGas = np.where(np.where(FlatDataDict[FullDictKey]['type']==0,True,False).all(axis=0))[0]
+
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+            #   Figure 1: Full Cells Data
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+            print(f"T{T} Sub-Plot!")
+
+
+            # Set y data points.
+            # Flip x and y and weightings' temporal ordering to match medians.
+            ydataCells = np.flip(FlatDataDict[FullDictKey]["R"][:,whereGas],axis=0)
+            nDat = np.shape(ydataCells)[1]
+
+            # Set lookback time array for each data point in y
+            xDataCells = np.flip(np.tile(np.array(tlookback),nDat).reshape(nDat,-1).T,axis=0)
+
+            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:,whereGas],axis=0)
+            weightDataCells = np.flip(FlatDataDict[FullDictKey][weightKey][:,whereGas] * massCells,axis=0)
+
+            if weightKey == "mass":
+                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
+                    xdataCells, ydataCells, bins=Nbins, weights=massCells
+                )
+            else:
+                mhistCells, _, _ = np.histogram2d(
+                    xdataCells, ydataCells, bins=Nbins, weights=massCells
+                )
+                histCells, xedgeCells, yedgeCells = np.histogram2d(
+                    xdataCells, ydataCells, bins=Nbins, weights=weightDataCells
+                )
+
+                finalHistCells = histCells / mhistCells
+
+            finalHistCells[finalHistCells == 0.0] = np.nan
+            if weightKey in logparams:
+                finalHistCells = np.log10(finalHistCells)
+            finalHistCells = finalHistCells.T
+
+            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
+
+            img1 = currentAx.pcolormesh(
+                xcells,
+                ycells,
+                finalHistCells,
+                cmap=colourmapMain,
+                vmin=zmin,
+                vmax=zmax,
+                rasterized=True,
+            )
+            #
+            # img1 = currentAx.imshow(finalHistCells,cmap=colourmapMain,vmin=zmin,vmax=zmax \
+            # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
+
+            currentAx.set_xlabel(
+                ylabel['R'], fontsize=fontsize
+            )
+            currentAx.set_ylabel(r"Lookback time [$Gyr$]", fontsize=fontsize)
+
+            cax1 = inset_axes(currentAx, width="5%", height="95%", loc="right")
+            fig.colorbar(img1, cax=cax1, orientation="vertical").set_label(
+                label=labelDict[weightKey], size=fontsize
+            )
+            cax1.yaxis.set_ticks_position("left")
+            cax1.yaxis.set_label_position("left")
+            cax1.yaxis.label.set_color("black")
+            cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
+
+            currentAx.set_title(
+                r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
+                % (float(T), TRACERSPARAMS["deltaT"]),
+                fontsize=12,
+            )
+            currentAx.set_aspect("auto")
+
+            selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
+            plotData = statsData[selectKey].copy()
+            # Temperature specific load path
+
+            snapRange = np.array(
+                [
+                    xx
+                    for xx in range(
+                    int(TRACERSPARAMS["snapMin"]),
+                    min(
+                        int(TRACERSPARAMS["snapMax"]) + 1,
+                        int(TRACERSPARAMS["finalSnap"]) + 1,
+                    ),
+                    1,
+                )
+                ]
+            )
+            selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
+
+            vline = tlookback[selectionSnap]
+
+            # Get number of temperatures
+            NTemps = float(len(Tlst))
+
+            # Get temperature
+            temp = TRACERSPARAMS["targetTLst"][ii]
+
+            # Select a Temperature specific colour from colourmapMain
+
+            # Get a colour for median and percentiles for a given temperature
+            #   Have fiddled to move colours away from extremes of the colormap
+            cmap = matplotlib.cm.get_cmap(colourmapMain)
+            colour = cmap(float(ii) / float(len(Tlst)))
+
+            loadPercentilesTypes = [
+                analysisParam + "_" + str(percentile) + "%"
+                for percentile in TRACERSPARAMS["percentiles"]
+            ]
+            LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
+            UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
+            median = analysisParam + "_" + "50.00%"
+
+            if analysisParam in logParameters:
+                for k, v in plotData.items():
+                    plotData.update({k: np.log10(v)})
+
+            ymin = np.nanmin(plotData[LO])
+            ymax = np.nanmax(plotData[UP])
+            yminlist.append(ymin)
+            ymaxlist.append(ymax)
+
+            if (
+                    (np.isinf(ymin) == True)
+                    or (np.isinf(ymax) == True)
+                    or (np.isnan(ymin) == True)
+                    or (np.isnan(ymax) == True)
+            ):
+                print("Data All Inf/NaN! Skipping entry!")
+                continue
+            print("")
+            print("Sub-Plot!")
+
+            if len(Tlst) == 1:
+                currentAx = ax
+            else:
+                currentAx = ax[ii]
+
+            midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
+            percentilesPairs = zip(
+                loadPercentilesTypes[:midPercentile],
+                loadPercentilesTypes[midPercentile + 1:],
+            )
+            for (LO, UP) in percentilesPairs:
+                currentAx.fill_between(
+                    tlookback,
+                    plotData[UP],
+                    plotData[LO],
+                    facecolor=colour,
+                    alpha=opacityPercentiles,
+                    interpolate=False,
+                )
+            currentAx.plot(
+                tlookback,
+                plotData[median],
+                label=r"$T = 10^{%3.2f} K$" % (float(temp)),
+                color=colour,
+                lineStyle=lineStyleMedian,
+            )
+
+            currentAx.axvline(x=vline, c="red")
+
+            currentAx.xaxis.set_minor_locator(AutoMinorLocator())
+            currentAx.yaxis.set_minor_locator(AutoMinorLocator())
+            currentAx.tick_params(which="both")
+            #
+            # #Delete text string for first y_axis label for all but last panel
+            # plt.gcf().canvas.draw()
+            # if (int(ii)<len(Tlst)-1):
+            #     plt.setp(currentAx.get_xticklabels(),visible = False)
+            #     plt.gcf().canvas.draw()
+            #     # STOP160IF
+
+            plot_patch = matplotlib.patches.Patch(color=colour)
+            plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
+            patchList.append(plot_patch)
+            labelList.append(plot_label)
+
+            fig.suptitle(
+                f"Cells Containing Tracers selected by: "
+                + "\n"
+                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                + "\n"
+                + f" and selected at {vline[0]:3.2f} Gyr"
+                + f" weighted by mass",
+                fontsize=12,
+            )
+
+        # Only give 1 x-axis a label, as they sharex
+        if len(Tlst) == 1:
+            axis0 = ax
+            midax = ax
+        else:
+            axis0 = ax[len(Tlst) - 1]
+            midax = ax[(len(Tlst)-1)//2]
+
+        axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+        midax.set_ylabel(ylabel[analysisParam], fontsize=10)
+        finalymin = np.nanmin(yminlist)
+        finalymax = np.nanmax(ymaxlist)
+        if (
+                (np.isinf(finalymin) == True)
+                or (np.isinf(finalymax) == True)
+                or (np.isnan(finalymin) == True)
+                or (np.isnan(finalymax) == True)
+        ):
+            print("Data All Inf/NaN! Skipping entry!")
+            continue
+        finalymin = math.floor(finalymin)
+        finalymax = math.ceil(finalymax)
+        custom_ylim = (finalymin, finalymax)
+        plt.setp(ax, ylim=custom_ylim)
+        fig.legend(handles=patchList, labels=labelList, loc="center right", facecolor='white', framealpha=1
+            )
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.875,right=0.80,hspace=0.1)
+
+
+
+        opslaan = (
+                "./"
+                + 'MultiHalo'
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                + "L"
+                + f"_Medians+Phases.pdf"
+        )
+        plt.savefig(opslaan, dpi=DPI, transparent=False)
+        print(opslaan)
+        plt.close()
+
     return

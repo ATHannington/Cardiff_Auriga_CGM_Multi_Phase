@@ -3407,8 +3407,11 @@ def multi_halo_merge(  simList,
                         )
             saveParams: list [dtype = 'str']
     """
+    import collections
+
     mergedDict = {}
     saveParams = []
+    loadedParams = []
     for sim,loadPath in zip(simList,haloPathList):
         loadPath += '/'
 
@@ -3450,10 +3453,11 @@ def multi_halo_merge(  simList,
                 #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 #])
         print('PADDED')
+        selectKey0 = list(dataDict.keys())[0]
+        loadedParams += list(dataDict[selectKey0].keys())
         print('MERGE')
 
         for selectKey in dataDict.keys():
-
             for key in dataDict[selectKey].keys():
                 if selectKey in list(mergedDict.keys()):
                     if key in list(mergedDict[selectKey].keys()):
@@ -3471,6 +3475,25 @@ def multi_halo_merge(  simList,
 
         print('MERGED')
         print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+
+    ### Check all sims contained same params ###
+    paramFreqDict = collections.Counter(saveParams)
+    counts = list(paramFreqDict.values())
+    truthy = np.all(np.array([el == len(simList) for el in counts]))
+
+    if truthy == False:
+        print("")
+        print(f"Param Counts Dict: {paramFreqDict}")
+        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!")
+
+    ### Check all LOADED DATA contained same params ###
+    paramFreqDict = collections.Counter(loadedParams)
+    counts = list(paramFreqDict.values())
+    truthy = np.all(np.array([el == len(simList) for el in counts]))
+    if truthy == False:
+        print("")
+        print(f"Param Counts Dict: {paramFreqDict}")
+        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!")
 
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams
@@ -3510,6 +3533,7 @@ def multi_halo_merge_flat_wrt_time(  simList,
 
     mergedDict = {}
     saveParams = []
+    loadedParams = []
     for sim,loadPath in zip(simList,haloPathList):
         loadPath += '/'
 
@@ -3560,6 +3584,8 @@ def multi_halo_merge_flat_wrt_time(  simList,
                 #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 #])
         print('PADDED')
+        selectKey0 = list(dataDict.keys())[0]
+        loadedParams += list(dataDict[selectKey0].keys())
         print('MERGE')
         if loadParams is not None:
             print('Loading loadParams ONLY! Discarding the rest of data')
@@ -3610,8 +3636,8 @@ def multi_halo_merge_flat_wrt_time(  simList,
                                 mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
         else:
             for selectKey in dataDict.keys():
-
                 for key in dataDict[selectKey].keys():
+
                     if selectKey in list(mergedDict.keys()):
                         if key in list(mergedDict[selectKey].keys()):
 
@@ -3629,6 +3655,25 @@ def multi_halo_merge_flat_wrt_time(  simList,
 
         print('MERGED')
         print('debug',"mergedDict[selectKey]['trid']",mergedDict[selectKey]['trid'])
+
+    ### Check all sims contained same params ###
+    paramFreqDict = collections.Counter(saveParams)
+    counts = list(paramFreqDict.values())
+    truthy = np.all(np.array([el == len(simList) for el in counts]))
+    if truthy == False:
+        print("")
+        print(f"Param Counts Dict: {paramFreqDict}")
+        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!")
+
+    ### Check all LOADED DATA contained same params ###
+    paramFreqDict = collections.Counter(loadedParams)
+    counts = list(paramFreqDict.values())
+    truthy = np.all(np.array([el == len(simList) for el in counts]))
+    if truthy == False:
+        print("")
+        print(f"Param Counts Dict: {paramFreqDict}")
+        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!")
+
 
     saveParams = np.unique(np.array(saveParams)).tolist()
     return mergedDict,saveParams

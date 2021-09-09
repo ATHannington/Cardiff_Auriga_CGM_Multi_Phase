@@ -119,14 +119,13 @@ mergedDict, saveParams =  multi_halo_merge(SELECTEDHALOES,
 print("Done!")
 
 selectionSnap = np.array(snapRange)[np.where(np.array(snapRange)== int(TRACERSPARAMS["selectSnap"]))[0]]
-selectTime = abs(
-        mergedDict[
-            (
+selectTimeKey =  (
                 f"T{Tlst[0]}",
                 f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
                 f"{int(selectionSnap)}",
             )
-        ]["Lookback"][0]
+selectTime = abs(
+        mergedDict[selectTimeKey]["Lookback"][0]
     )
 
 tlookback = []
@@ -154,7 +153,7 @@ statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 #                   Medians PLOT                                               #
 #==============================================================================#
 
-medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+medians_plot(mergedDict,statsData,TRACERSPARAMS,['L'],tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 
@@ -176,7 +175,7 @@ plt.close('all')
 #                   Stacked PDF PLOT                                           #
 #==============================================================================#
 
-stacked_pdf_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+stacked_pdf_plot(mergedDict,TRACERSPARAMS,['L'],tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 #==============================================================================#
@@ -190,7 +189,7 @@ plt.close('all')
 #                   Load Flattened Data                                        #
 #==============================================================================#
 
-del mergedDict
+# del mergedDict
 
 print("Load Time Flattened Data!")
 flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
@@ -201,6 +200,12 @@ flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
                             TracersParamsPath
                             )
 print("Done!")
+
+selectTimeKey =  (
+                f"T{Tlst[0]}",
+                f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}"
+            )
+
 #==============================================================================#
 #                   Bar Chart PLOT                                             #
 #==============================================================================#
@@ -212,3 +217,12 @@ plt.close('all')
 bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=True,shortSnapRangeNumber=1)
 matplotlib.rc_file_defaults()
 plt.close('all')
+
+# ################################################################################
+# ##                  EXPERIMENTAL                                              ##
+# ################################################################################
+# matplotlib.rc_file_defaults()
+# plt.close('all')
+# medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
+# matplotlib.rc_file_defaults()
+# plt.close('all')
