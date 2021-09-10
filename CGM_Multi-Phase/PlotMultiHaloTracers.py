@@ -175,7 +175,7 @@ plt.close('all')
 #                   Stacked PDF PLOT                                           #
 #==============================================================================#
 
-stacked_pdf_plot(mergedDict,TRACERSPARAMS,['L'],tlookback,snapRange,Tlst,logParameters,ylabel)
+stacked_pdf_plot(mergedDict,TRACERSPARAMS,['n_H','L'],tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 #==============================================================================#

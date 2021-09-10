@@ -3529,6 +3529,7 @@ def multi_halo_merge_flat_wrt_time(  simList,
                         )
             saveParams: list [dtype = 'str']
     """
+    import collections
     random.seed(1234)
 
     mergedDict = {}

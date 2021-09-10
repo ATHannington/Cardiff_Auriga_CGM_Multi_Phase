@@ -619,7 +619,7 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
     xlimDict = {
         "T": {"xmin": 3.75, "xmax": 6.5},
         "R": {"xmin": 0, "xmax": 250},
-        "n_H": {"xmin": -5.0, "xmax": 0.0},
+        "n_H": {"xmin": -6.0, "xmax": 0.0},
         "B": {"xmin": -6.0, "xmax": 2.0},
         "vrad": {"xmin": -250.0, "xmax": 250.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
