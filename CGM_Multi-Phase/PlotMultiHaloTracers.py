@@ -58,6 +58,7 @@ logParameters = [
     "tcross",
     "tff",
     "tcool_tff",
+    "mass"
 ]
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel = {
@@ -82,6 +83,7 @@ ylabel = {
     "rho_rhomean": r"$\rho / \langle \rho \rangle$",
     "dens": r"Density [$g$ $cm^{-3}$]",
     "ndens": r"Number density [$cm^{-3}$]",
+    "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]"
 }
 
 for entry in logParameters:
@@ -153,7 +155,7 @@ statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 #                   Medians PLOT                                               #
 #==============================================================================#
 
-medians_plot(mergedDict,statsData,TRACERSPARAMS,['L'],tlookback,snapRange,Tlst,logParameters,ylabel)
+medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 
@@ -175,7 +177,7 @@ plt.close('all')
 #                   Stacked PDF PLOT                                           #
 #==============================================================================#
 
-stacked_pdf_plot(mergedDict,TRACERSPARAMS,['n_H','L'],tlookback,snapRange,Tlst,logParameters,ylabel)
+stacked_pdf_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
 matplotlib.rc_file_defaults()
 plt.close('all')
 #==============================================================================#
@@ -221,8 +223,14 @@ plt.close('all')
 # ################################################################################
 # ##                  EXPERIMENTAL                                              ##
 # ################################################################################
-# matplotlib.rc_file_defaults()
-# plt.close('all')
-# medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
-# matplotlib.rc_file_defaults()
-# plt.close('all')
+matplotlib.rc_file_defaults()
+plt.close('all')
+hist_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
+matplotlib.rc_file_defaults()
+plt.close('all')
+
+matplotlib.rc_file_defaults()
+plt.close('all')
+medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
+matplotlib.rc_file_defaults()
+plt.close('all')
