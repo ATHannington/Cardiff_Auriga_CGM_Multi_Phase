@@ -2181,7 +2181,11 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             zmax = xlimDict[weightKey]["xmax"]
             # Set y data points.
             # Flip x and y and weightings' temporal ordering to match medians.
-            ydataCells = np.flip(FlatDataDict[FullDictKey]["R"][:,whereGas],axis=0)
+            ydataCells = FlatDataDict[FullDictKey][analysisParam][:,whereGas]
+            if analysisParam in logParameters:
+                ydataCells = np.log10(ydataCells)
+            ydataCells = np.flip(ydataCells,axis=0)
+
             nDat = np.shape(ydataCells)[1]
 
             # Set lookback time array for each data point in y
@@ -2378,7 +2382,7 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
                 + f"{int(rin)}R{int(rout)}"
                 + "/"
                 + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                + "L"
+                + f"{weightKey}-{analysisParam}"
                 + f"_Medians+Phases.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
