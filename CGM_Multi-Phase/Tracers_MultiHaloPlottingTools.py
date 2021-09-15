@@ -2112,11 +2112,9 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
 
 ################################################################################
 
-def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins=150,DPI=75):
+def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins=150,DPI=75,weightKey = "L",analysisParam="R"):
 
     tmpxsize = xsize + 2.0
-    weightKey = "L"
-    analysisParam = "R"
     fontsize=10
 
     labelDict = {
@@ -2179,9 +2177,15 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
 
             zmin = xlimDict[weightKey]["xmin"]
             zmax = xlimDict[weightKey]["xmax"]
+
+            ydat = {analysisParam : FlatDataDict[FullDictKey][analysisParam][:,whereGas]}
+
+            ydat,whereReal = delete_nan_inf_axis(ydat, axis=0)
+
             # Set y data points.
             # Flip x and y and weightings' temporal ordering to match medians.
-            ydataCells = FlatDataDict[FullDictKey][analysisParam][:,whereGas]
+            ydataCells = ydat[analysisParam]
+            whereReal = whereGas[whereReal[analysisParam]]
             if analysisParam in logParameters:
                 ydataCells = np.log10(ydataCells)
             ydataCells = np.flip(ydataCells,axis=0)
@@ -2191,8 +2195,8 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             # Set lookback time array for each data point in y
             xdataCells = np.flip(np.tile(np.array(tlookback),nDat).reshape(nDat,-1).T,axis=0)
 
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:,whereGas],axis=0)
-            weightDataCells = np.flip(FlatDataDict[FullDictKey][weightKey][:,whereGas] * massCells,axis=0)
+            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:,whereReal],axis=0)
+            weightDataCells = np.flip(FlatDataDict[FullDictKey][weightKey][:,whereReal] * massCells,axis=0)
 
             if weightKey == "mass":
                 finalHistCells, xedgeCells, yedgeCells = np.histogram2d(

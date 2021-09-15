@@ -231,6 +231,6 @@ plt.close('all')
 
 matplotlib.rc_file_defaults()
 plt.close('all')
-medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
+medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,weightKey = "L",analysisParam="R")
 matplotlib.rc_file_defaults()
 plt.close('all')
