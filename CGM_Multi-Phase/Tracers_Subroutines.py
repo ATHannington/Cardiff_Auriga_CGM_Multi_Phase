@@ -2069,7 +2069,7 @@ def save_statistics(
         TRACERSPARAMS,
         saveParams,
         DataSavepath=None,
-        MiniDataPathSuffix=".csv",
+        MiniDataPathSuffix=".h5",
         saveBool=True
 ):
     # ------------------------------------------------------------------------------#

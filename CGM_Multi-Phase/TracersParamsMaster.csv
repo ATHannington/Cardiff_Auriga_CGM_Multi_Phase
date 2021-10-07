@@ -1,4 +1,4 @@
-simfile /home/universe/spxfv/Auriga/level4_MHD_reruns/output/                             # Set path to simulation data
+simfile /home/universe/spxfv/Auriga/level4_MHD_reruns/                            # Set path to simulation data
 savepath /home/universe/c1838736/Tracers/V9-1/                       # Set path to save data
 saveParams "rho_rhomean,ndens,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,Pthermal_Pmagnetic,tcool,theat,tff,tcool_tff"
 saveTracersOnly "sfr,age"                                                 # Optional Tracer only (no stats in .csv) parameters to be saved. nCannot guarantee that all Plotting and post-processing are independent of these. Will attempt to ensure any necessary parameters are stored in ESSENTIALS
