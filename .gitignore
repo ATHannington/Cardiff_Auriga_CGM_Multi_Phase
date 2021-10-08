@@ -6,6 +6,7 @@
 *.exe
 *.h5
 *Data*.csv
+*.xlsx
 
 ###Output Images###
 *.png

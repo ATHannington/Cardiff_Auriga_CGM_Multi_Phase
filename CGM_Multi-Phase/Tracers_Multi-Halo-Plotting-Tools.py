@@ -756,14 +756,6 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     tmpdict = {"x": data, "y": weights}
                     df = pd.DataFrame(tmpdict)
 
-                    # LO = weighted_percentile(
-                    #     data=data, weights=weights, perc=percentileLO, key="LO"
-                    # )
-                    # UP = weighted_percentile(
-                    #     data=data, weights=weights, perc=percentileUP, key="UP"
-                    # )
-                    #
-
                     xmin = xlimDict[dataKey]['xmin']
                     xmax = xlimDict[dataKey]['xmax']
 
@@ -1298,14 +1290,14 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             zPreDat = []
             #For each tracers, calculate the mass weighted average of specific parameter for all selected snapshots
             for (dat, wei) in zip(data.T, weights.T):
-                zPreDat.append(weighted_percentile(dat, wei, 50, "Z-Pre"))
+                zPreDat.append(np.median(dat))
             zPreDat = np.array(zPreDat)
 
             data = FlatDataDict[Tkey]["gz"][:,whereGas][post, :]
             weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
             zPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                zPostDat.append(weighted_percentile(dat, wei, 50, "Z-Post"))
+                zPostDat.append(np.median(dat))
             zPostDat = np.array(zPostDat)
 
             colspre = np.where(zPreDat > 0.75)[0]
@@ -1329,14 +1321,14 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             weights = FlatDataDict[Tkey]["mass"][:,whereGas][pre, :]
             vradPreDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                vradPreDat.append(weighted_percentile(dat, wei, 50, "Vrad-Pre"))
+                vradPreDat.append(np.median(dat))
             vradPreDat = np.array(vradPreDat)
 
             data = FlatDataDict[Tkey]["vrad"][:,whereGas][post, :]
             weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
             vradPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
-                vradPostDat.append(weighted_percentile(dat, wei, 50, "Vrad-Post"))
+                vradPostDat.append(np.median(dat))
             vradPostDat = np.array(vradPostDat)
 
             epsilon = 50.0

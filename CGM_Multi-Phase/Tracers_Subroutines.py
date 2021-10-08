@@ -2094,9 +2094,7 @@ def save_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = weighted_percentile(
-                    data=v, weights=Cells["mass"], perc=percentile, key=whereErrorKey
-                )
+                stat = np.percentile(v, percentile)
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
