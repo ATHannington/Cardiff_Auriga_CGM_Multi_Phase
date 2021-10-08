@@ -201,7 +201,7 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
     ###-------------------------------------------
     #   Find total number of tracers and gas mass in halo within rVir
     ###-------------------------------------------
-    Cond = np.where(snap.data["R"] <= Rvir)[0]
+    Cond = np.where((snap.data['R']<=Rvir)&(snap.data['R']>=25.0)&(snap.data['sfr']<=0.))[0]
     # Select Cell IDs for cells which meet condition
     CellIDs = snap.id[Cond]
 
@@ -223,10 +223,13 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
         f"For {halo} at snap {snapNumber} number of tracers = ", NtracersTotalR
     )
 
-    massTotalR = np.sum(snap.data['mass'][np.where(snap.data['R']<=Rvir)[0]])
+    massTotalR = np.sum(snap.data['mass'][Cond])
     print(
         f"For {halo} at snap {snapNumber} total mass [msol] = ", massTotalR
     )
+
+    summaryDict['Total Ntracers within R_vir'] += NtracersTotalR
+    summaryDict['Gas mass within R_vir [msol]'] += massTotalR
     ###-------------------------------------------
     #   Load in analysed data
     ###-------------------------------------------
@@ -246,6 +249,19 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
 
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
+        whereGas = np.where(snap.type == 0)[0]
+
+        Cond = np.where(
+              (snap.data["R"][whereGas] >= rin)
+            & (snap.data["R"][whereGas] <= rout)
+            & (snap.data["sfr"][whereGas] <= 0)
+        )[0]
+
+        massR = np.sum(snap.data['mass'][Cond])
+        dictRowSelectRonly = np.where((summaryDict['R_inner']==rin )&(summaryDict['R_outer']==rout))[0]
+        print(f"Total selected mass available in spherical shell [msol] = ",massR)
+        summaryDict['Mass Available in Spherical Shell [msol]'][dictRowSelectRonly] += massR
+
         for (ii, T) in enumerate(Tlst):
 
             FullDictKey = (f"T{float(T)}", f"{rin}R{rout}",f"{snapNumber}")
@@ -258,36 +274,12 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
             print(
                 f"Total selected mass [msol] = ", massSelected
             )
-            whereGas = np.where(snap.type == 0)[0]
-            whereStars = np.where(snap.type == 4)[0]
-            Cond = np.where(
-                (
-                        snap.data["T"][whereGas]
-                        >= 1.0 * 10 ** (float(T) - TRACERSPARAMS["deltaT"])
-                )
-                & (
-                        snap.data["T"][whereGas]
-                        <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"])
-                )
-                & (snap.data["R"][whereGas] >= rin)
-                & (snap.data["R"][whereGas] <= rout)
-                & (snap.data["sfr"][whereGas] <= 0)
-            )[0]
-
-            massR = np.sum(snap.data['mass'][Cond])
-            print(
-                f"Total selected mass available in spherical shell [msol] = ", massR
-            )
-
 
             dictRowSelect = np.where((summaryDict['R_inner']==rin )&(summaryDict['R_outer']==rout)&(summaryDict['Log10(T)']==float(T)))[0]
 
+
             summaryDict['Ntracers Selected'][dictRowSelect] += NtracersSelected
             summaryDict['Mass Selected [msol]'][dictRowSelect] += massSelected
-            summaryDict['Mass Available in Spherical Shell [msol]'][dictRowSelect] += massR
-
-            summaryDict['Total Ntracers within R_vir'] += NtracersTotalR
-            summaryDict['Gas mass within R_vir [msol]'] += massTotalR
 
     print('summaryDict = ', summaryDict)
 
@@ -298,6 +290,5 @@ df['%Available Tracers Selected'] = (df['Ntracers Selected'].astype('float64')/d
 
 df['%Available Mass of Spherical Shell Selected'] = (df['Mass Selected [msol]'].astype('float64')/df['Mass Available in Spherical Shell [msol]'].astype('float64'))*100.
 
-dffinal = df.append(df.sum().rename('Total'))
-dffinal.head(n=20)
-dffinal.to_csv('Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)
+print(df.head(n=20))
+df.to_csv('Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)
