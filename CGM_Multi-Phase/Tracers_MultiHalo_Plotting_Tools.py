@@ -173,7 +173,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                     + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                     + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                     + "\n"
-                    + f" and selected at {vline[0]:3.2f} Gyr"
+                    + f" and selected at {vline[0]:3.2f} Gyr",
                     fontsize=12,
                 )
 
@@ -856,7 +856,7 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
                     + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
                     + "\n"
-                    + f" and selected at {selectTime:3.2f} Gyr"
+                    + f" and selected at {selectTime:3.2f} Gyr",
                     fontsize=12,
                 )
                 # ax.axvline(x=vline, c='red')
@@ -2056,7 +2056,7 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
             + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
             + "\n"
-            + f" and selected at {selectTime:3.2f} Gyr"
+            + f" and selected at {selectTime:3.2f} Gyr",
             fontsize=12,
         )
 
@@ -2332,7 +2332,7 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
             + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
             + "\n"
-            + f" and selected at {vline[0]:3.2f} Gyr"
+            + f" and selected at {vline[0]:3.2f} Gyr",
             fontsize=12,
         )
         fig.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
