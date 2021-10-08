@@ -1,1 +1,1 @@
-pytest TracersIntegratedTest.py -v --tb=long --cov=/home/user/c1838736/Tracers
+pytest Tracers_Integrated-Test.py -v --tb=long

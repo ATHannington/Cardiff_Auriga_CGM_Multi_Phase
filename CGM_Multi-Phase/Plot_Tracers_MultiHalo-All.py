@@ -17,7 +17,7 @@ from gadget import *
 from gadget_subfind import *
 import h5py
 from Tracers_Subroutines import *
-from Tracers_MultiHalo_Plotting_Tools import *
+from Tracers_Multi-Halo-Plotting-Tools import *
 from random import sample
 import math
 
