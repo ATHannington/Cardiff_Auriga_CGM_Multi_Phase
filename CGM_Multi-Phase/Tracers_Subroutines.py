@@ -2094,7 +2094,7 @@ def save_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = np.percentile(v, percentile)
+                stat = np.percentile(v, percentile,axis=0)
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
@@ -2816,6 +2816,7 @@ def tracer_plot(
         numThreads=4,
         MaxSubset=100,
         lazyLoadBool=True,
+        tailsLength = 3,
 ):
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
@@ -3294,7 +3295,7 @@ def tracer_plot(
                     ax1.add_patch(innerCircle)
                     ax1.add_patch(outerCircle)
 
-                minSnap = int(snapNumber) - min(int(nOldSnaps), 3)
+                minSnap = int(snapNumber) - min(int(nOldSnaps), tailsLength)
 
                 print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Plot Tails...")
                 jj = 1

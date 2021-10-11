@@ -23,7 +23,8 @@ from random import sample
 import math
 from functools import reduce
 
-subset = 100
+subset = 250
+Ntails = 6
 ageUniverse = 13.77  # [Gyr]
 
 TracersParamsPath = "TracersParams.csv"
@@ -125,4 +126,5 @@ tracer_plot(
     pixreslos=TRACERSPARAMS["pixreslos"],
     numThreads=2,
     MaxSubset=subset,
+    tailsLength = Ntails
 )
