@@ -201,7 +201,10 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
     ###-------------------------------------------
     #   Find total number of tracers and gas mass in halo within rVir
     ###-------------------------------------------
-    Cond = np.where((snap.data['R']<=Rvir)&(snap.data['R']>=25.0)&(snap.data['sfr']<=0.))[0]
+
+    snap = halo_id_finder(snap, snap_subfind, snapNumber, OnlyHalo=0)
+
+    Cond = np.where((snap.data['R']<=Rvir)&(snap.data['R']>=25.0)&(snap.data['sfr']<=0.)&(np.isin(snap.data['SubHaloID'],np.array([-1.,0.]))))[0]
     # Select Cell IDs for cells which meet condition
     CellIDs = snap.id[Cond]
 
@@ -255,6 +258,7 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
               (snap.data["R"][whereGas] >= rin)
             & (snap.data["R"][whereGas] <= rout)
             & (snap.data["sfr"][whereGas] <= 0)
+            & (np.isin(snap.data['SubHaloID'],np.array([-1.,0.])))
         )[0]
 
         massR = np.sum(snap.data['mass'][Cond])
@@ -291,4 +295,4 @@ df['%Available Tracers Selected'] = (df['Ntracers Selected'].astype('float64')/d
 df['%Available Mass of Spherical Shell Selected'] = (df['Mass Selected [msol]'].astype('float64')/df['Mass Available in Spherical Shell [msol]'].astype('float64'))*100.
 
 print(df.head(n=20))
-df.to_csv('Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)
+df.to_csv('Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)

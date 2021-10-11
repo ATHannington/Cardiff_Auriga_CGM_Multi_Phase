@@ -1350,7 +1350,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
     print(f"[@{snapNumber}]: HaloID Finder!")
 
-    types = [0, 4]
+    types = np.unique(snapGas.data['type'])
 
     # Make a pre-computed list for these where type = 0 or 4
     #   This adds a speed advantage to the rest of this function =)
