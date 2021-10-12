@@ -1095,7 +1095,7 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
     (wheredisc,) = np.where(
         (snap.data["R"][whereGas] < 20.0) & (snap.data["sfr"] > 0.0)
     )
-    snap.vel = snap.vel - np.median(snap.vel[wheredisc], axis=0)
+    snap.vel = snap.vel - np.nanmedian(snap.vel[wheredisc], axis=0)
     return snap
 
 
@@ -2094,7 +2094,7 @@ def save_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = np.percentile(v, percentile,axis=0)
+                stat = np.nanpercentile(v, percentile,axis=0)
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
