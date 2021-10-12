@@ -92,7 +92,7 @@ snapRange = [snap for snap in range(
 
 
 snapNumber = int(TRACERSPARAMS['selectSnap'])
-Rvir = 250. #[kpc]
+
 
 rinList = []
 routList = []
@@ -105,11 +105,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         fullTList.append(float(T))
 
 blankList = np.array([0. for xx in range(len(rinList))])
-summaryDict = {'R_inner': np.array(rinList),'R_outer': np.array(routList), 'Log10(T)': np.array(fullTList), 'Ntracers Selected' : blankList.copy(),'Mass Selected [msol]': blankList.copy(),'Mass Available in Spherical Shell [msol]': blankList.copy(),
-'Total Ntracers within R_vir' : blankList.copy(), 'Gas mass within R_vir [msol]': blankList.copy()}
+summaryDict = {'R_inner': np.array(rinList),'R_outer': np.array(routList), 'Log10(T)': np.array(fullTList), 'Ntracers selected' : blankList.copy(),'Mass selected [msol]': blankList.copy(),'Mass available in spherical shell [msol]': blankList.copy(),'Total Ntracers (all haloes) in spherical shell' : blankList.copy(),'Total Ntracers (all haloes) within selection radii': blankList.copy(), 'Total gas mass (all haloes) within selection radii [msol]': blankList.copy()}
 
 TRACERSPARAMSCOMBI = TRACERSPARAMS
 
+Rmin = min(TRACERSPARAMSCOMBI['Rinner'])
+Rmax = max(TRACERSPARAMSCOMBI['Router'])
 for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
 
     haloPath = TRACERSPARAMSCOMBI['simfile'] + halo + "/output/"
@@ -204,8 +205,8 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
 
     snap = halo_id_finder(snap, snap_subfind, snapNumber, OnlyHalo=0)
 
-    Cond = np.where((snap.data['R']<=Rvir)&(snap.data['R']>=25.0)&(snap.data['sfr']<=0.)&(np.isin(snap.data['SubHaloID'],np.array([-1.,0.]))))[0]
-    # Select Cell IDs for cells which meet condition
+    Cond = np.where((snap.data['R']<=Rmax)&(snap.data['R']>=Rmin)&(snap.data['sfr']<=0.)&(np.isin(snap.data['SubHaloID'],np.array([-1.,0.]))))[0]
+
     CellIDs = snap.id[Cond]
 
     # Select Parent IDs in Cond list
@@ -223,16 +224,16 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
     NtracersTotalR = np.shape(Tracers)[0]
 
     print(
-        f"For {halo} at snap {snapNumber} number of tracers = ", NtracersTotalR
+        f"For {halo} at snap {snapNumber} Total Ntracers (all haloes) within selection radii = ", NtracersTotalR
     )
+    summaryDict['Total Ntracers (all haloes) within selection radii'] += NtracersTotalR
 
+    
     massTotalR = np.sum(snap.data['mass'][Cond])
     print(
         f"For {halo} at snap {snapNumber} total mass [msol] = ", massTotalR
     )
-
-    summaryDict['Total Ntracers within R_vir'] += NtracersTotalR
-    summaryDict['Gas mass within R_vir [msol]'] += massTotalR
+    summaryDict['Total gas mass (all haloes) within selection radii [msol]'] += massTotalR
     ###-------------------------------------------
     #   Load in analysed data
     ###-------------------------------------------
@@ -263,36 +264,59 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
 
         massR = np.sum(snap.data['mass'][Cond])
         dictRowSelectRonly = np.where((summaryDict['R_inner']==rin )&(summaryDict['R_outer']==rout))[0]
-        print(f"Total selected mass available in spherical shell [msol] = ",massR)
-        summaryDict['Mass Available in Spherical Shell [msol]'][dictRowSelectRonly] += massR
+
+        print(f"Total mass (all haloes) in spherical shell [msol] = ",massR)
+
+        summaryDict['Mass available in spherical shell [msol]'][dictRowSelectRonly] += massR
+        # Select Cell IDs for cells which meet condition
+        CellIDs = snap.id[Cond]
+
+        # Select Parent IDs in Cond list
+        #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
+        ParentsIndices = np.where(np.isin(snapTracers.prid, CellIDs))
+
+        # Select Tracers and Parent IDs from cells that meet condition and contain tracers
+        Tracers = snapTracers.trid[ParentsIndices]
+        Parents = snapTracers.prid[ParentsIndices]
+
+        # Get Gas meeting Cond AND with tracers
+        CellsIndices = np.where(np.isin(snap.id, Parents))
+        CellIDs = snap.id[CellsIndices]
+
+        NtracersR = np.shape(Tracers)[0]
+
+        print(
+            f"Total Ntracers (all haloes) in spherical shell= ", NtracersR
+        )
+        summaryDict['Total Ntracers (all haloes) in spherical shell'][dictRowSelectRonly] += NtracersR
 
         for (ii, T) in enumerate(Tlst):
 
             FullDictKey = (f"T{float(T)}", f"{rin}R{rout}",f"{snapNumber}")
             print(FullDictKey)
-            NtracersSelected = dataDict[FullDictKey]['Ntracers']
+            Ntracersselected = dataDict[FullDictKey]['Ntracers'][0]
             print(
-                    f"Number of tracers selected = ", NtracersSelected[0]
+                    f"Total Ntracers (all haloes) in spherical shell = ",Ntracersselected
                 )
-            massSelected = np.sum(dataDict[FullDictKey]['mass'][np.where(dataDict[FullDictKey]['type']==0)[0]])
+            massselected = np.sum(dataDict[FullDictKey]['mass'][np.where(dataDict[FullDictKey]['type']==0)[0]])
             print(
-                f"Total selected mass [msol] = ", massSelected
+                f"Total mass (all haloes) in spherical shell [msol] = ", massselected
             )
 
             dictRowSelect = np.where((summaryDict['R_inner']==rin )&(summaryDict['R_outer']==rout)&(summaryDict['Log10(T)']==float(T)))[0]
 
 
-            summaryDict['Ntracers Selected'][dictRowSelect] += NtracersSelected
-            summaryDict['Mass Selected [msol]'][dictRowSelect] += massSelected
+            summaryDict['Ntracers selected'][dictRowSelect] += Ntracersselected
+            summaryDict['Mass selected [msol]'][dictRowSelect] += massselected
 
     print('summaryDict = ', summaryDict)
 
 
 df = pd.DataFrame(summaryDict,index=[ii for ii in range(len(blankList))])
 
-df['%Available Tracers Selected'] = (df['Ntracers Selected'].astype('float64')/df['Total Ntracers within R_vir'].astype('float64'))*100.
+df['%Available tracers in spherical shell selected'] = (df['Ntracers selected'].astype('float64')/df['Total Ntracers (all haloes) in spherical shell'].astype('float64'))*100.
 
-df['%Available Mass of Spherical Shell Selected'] = (df['Mass Selected [msol]'].astype('float64')/df['Mass Available in Spherical Shell [msol]'].astype('float64'))*100.
+df['%Available mass of spherical shell selected'] = (df['Mass selected [msol]'].astype('float64')/df['Mass available in spherical shell [msol]'].astype('float64'))*100.
 
 print(df.head(n=20))
 df.to_csv('Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)
