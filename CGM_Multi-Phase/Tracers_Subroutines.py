@@ -199,7 +199,7 @@ def snap_analysis(
 
             hdf5_save(savePath, out)
 
-            save_statistics(
+            calculate_statistics(
                 CellsCFT,
                 targetT,
                 rin,
@@ -565,7 +565,7 @@ def tracer_selection_snap_analysis(
 #
 #     hdf5_save(savePath,out)
 #
-#     save_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
+#     calculate_statistics(CellsCFT, targetT, snapNumber, TRACERSPARAMS, saveParams, DataSavepath, MiniDataPathSuffix)
 #
 #     sys.stdout.flush()
 #     return {"out": out, "CellsCFT": CellsCFT, "CellIDsCFT": CellIDsCFT}
@@ -2060,7 +2060,7 @@ def pad_non_entries(snapGas, snapNumber):
 # ------------------------------------------------------------------------------#
 
 
-def save_statistics(
+def calculate_statistics(
         Cells,
         targetT,
         rin,
@@ -2124,8 +2124,51 @@ def save_statistics(
 
 
 # ------------------------------------------------------------------------------#
+def save_statistics_csv(
+        statsData,
+        TRACERSPARAMS,
+        simList,
+        haloPathList,
+        Tlst,
+        snapRange,
+        StatsDataPathSuffix=".csv"):
 
+    HaloPathBase = TRACERSPARAMS['savepath']
+    dfList = []
+    for T in Tlst:
+        print(f"T{T}")
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"],
+        TRACERSPARAMS["Router"]):
 
+            print(f"{rin}R{rout}")
+            key = (f"T{T}", f"{rin}R{rout}")
+            dat = statsData[key].copy()
+            datDF = pd.DataFrame(dat)
+            datDF['Log10(T)'] = float(T)
+            datDF['R_inner'] = float(rin)
+            datDF['R_outer'] = float(rout)
+            datDF['Snap Number'] = snapRange
+
+            #Re-order the columns for easier reading...
+            frontCols = ['Log10(T)','R_inner','R_outer','Snap Number']
+            cols = list(datDF.columns)
+            for col in frontCols:
+                cols.remove(col)
+
+            datDF = datDF[frontCols+cols]
+            dfList.append(datDF)
+
+    dfOut = pd.concat(dfList,axis=0)
+
+    savePath = HaloPathBase + f"Data_Tracers_MultiHalo_Statistics-Table" + StatsDataPathSuffix
+
+    print(f"Saving Statistics to csv as: {savePath}")
+
+    # print(dfOut.head(n=50))
+    dfOut.to_csv(savePath, index=False)
+
+    return
+# ------------------------------------------------------------------------------#
 def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
     flattened_dict = {}
     for snap in snapRange:
@@ -3687,7 +3730,7 @@ def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPa
             key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
             for snap in snapRange:
                 selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
-                dat = save_statistics(
+                dat = calculate_statistics(
                         dataDict[selectKey],
                         T,
                         rin,

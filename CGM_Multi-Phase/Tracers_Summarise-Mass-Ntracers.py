@@ -105,7 +105,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         fullTList.append(float(T))
 
 blankList = np.array([0. for xx in range(len(rinList))])
-summaryDict = {'R_inner': np.array(rinList),'R_outer': np.array(routList), 'Log10(T)': np.array(fullTList), 'Ntracers selected' : blankList.copy(),'Mass selected [msol]': blankList.copy(),'Mass available in spherical shell [msol]': blankList.copy(),'Total Ntracers (all haloes) in spherical shell' : blankList.copy(),'Total Ntracers (all haloes) within selection radii': blankList.copy(), 'Total gas mass (all haloes) within selection radii [msol]': blankList.copy()}
+summaryDict = {'R_inner': np.array(rinList),'R_outer': np.array(routList), 'Log10(T)': np.array(fullTList), 'N_tracers selected' : blankList.copy(),'Gas mass selected [msol]': blankList.copy(),'Total gas mass (all haloes) available in spherical shell [msol]': blankList.copy(),'Total N_tracers (all haloes) in spherical shell' : blankList.copy(),'Total N_tracers (all haloes) within selection radii': blankList.copy(), 'Total gas mass (all haloes) within selection radii [msol]': blankList.copy()}
 
 TRACERSPARAMSCOMBI = TRACERSPARAMS
 
@@ -224,11 +224,11 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
     NtracersTotalR = np.shape(Tracers)[0]
 
     print(
-        f"For {halo} at snap {snapNumber} Total Ntracers (all haloes) within selection radii = ", NtracersTotalR
+        f"For {halo} at snap {snapNumber} Total N_tracers (all haloes) within selection radii = ", NtracersTotalR
     )
-    summaryDict['Total Ntracers (all haloes) within selection radii'] += NtracersTotalR
+    summaryDict['Total N_tracers (all haloes) within selection radii'] += NtracersTotalR
 
-    
+
     massTotalR = np.sum(snap.data['mass'][Cond])
     print(
         f"For {halo} at snap {snapNumber} total mass [msol] = ", massTotalR
@@ -267,7 +267,7 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
 
         print(f"Total mass (all haloes) in spherical shell [msol] = ",massR)
 
-        summaryDict['Mass available in spherical shell [msol]'][dictRowSelectRonly] += massR
+        summaryDict['Total gas mass (all haloes) available in spherical shell [msol]'][dictRowSelectRonly] += massR
         # Select Cell IDs for cells which meet condition
         CellIDs = snap.id[Cond]
 
@@ -286,9 +286,9 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
         NtracersR = np.shape(Tracers)[0]
 
         print(
-            f"Total Ntracers (all haloes) in spherical shell= ", NtracersR
+            f"Total N_tracers (all haloes) in spherical shell= ", NtracersR
         )
-        summaryDict['Total Ntracers (all haloes) in spherical shell'][dictRowSelectRonly] += NtracersR
+        summaryDict['Total N_tracers (all haloes) in spherical shell'][dictRowSelectRonly] += NtracersR
 
         for (ii, T) in enumerate(Tlst):
 
@@ -296,7 +296,7 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
             print(FullDictKey)
             Ntracersselected = dataDict[FullDictKey]['Ntracers'][0]
             print(
-                    f"Total Ntracers (all haloes) in spherical shell = ",Ntracersselected
+                    f"Total N_tracers (all haloes) in spherical shell = ",Ntracersselected
                 )
             massselected = np.sum(dataDict[FullDictKey]['mass'][np.where(dataDict[FullDictKey]['type']==0)[0]])
             print(
@@ -306,17 +306,42 @@ for halo,loadPath in zip(SELECTEDHALOES,HALOPATHS):
             dictRowSelect = np.where((summaryDict['R_inner']==rin )&(summaryDict['R_outer']==rout)&(summaryDict['Log10(T)']==float(T)))[0]
 
 
-            summaryDict['Ntracers selected'][dictRowSelect] += Ntracersselected
-            summaryDict['Mass selected [msol]'][dictRowSelect] += massselected
+            summaryDict['N_tracers selected'][dictRowSelect] += Ntracersselected
+            summaryDict['Gas mass selected [msol]'][dictRowSelect] += massselected
 
     print('summaryDict = ', summaryDict)
 
 
 df = pd.DataFrame(summaryDict,index=[ii for ii in range(len(blankList))])
 
-df['%Available tracers in spherical shell selected'] = (df['Ntracers selected'].astype('float64')/df['Total Ntracers (all haloes) in spherical shell'].astype('float64'))*100.
+df['%Available tracers in spherical shell selected'] = (df['N_tracers selected'].astype('float64')/df['Total N_tracers (all haloes) in spherical shell'].astype('float64'))*100.
 
-df['%Available mass of spherical shell selected'] = (df['Mass selected [msol]'].astype('float64')/df['Mass available in spherical shell [msol]'].astype('float64'))*100.
+df['%Available mass of spherical shell selected'] = (df['Gas mass selected [msol]'].astype('float64')/df['Total gas mass (all haloes) available in spherical shell [msol]'].astype('float64'))*100.
+
+nHaloes = float(len(SELECTEDHALOES))
+df['Number of Haloes'] = nHaloes
+
+df['Average N_tracers selected (per halo)'] = df['N_tracers selected'].astype('float64')/nHaloes
+
+df['Average gas mass selected (per halo) [msol]'] = df['Gas mass selected [msol]'].astype('float64')/nHaloes
+
+# summaryDict = {'R_inner':
+# 'R_outer':
+# 'Log10(T)'
+# 'N_tracers selected'
+# 'Gas mass selected [msol]'
+# 'Total gas mass (all haloes) available in spherical shell [msol]'
+# 'Total N_tracers (all haloes) in spherical shell'
+# 'Total N_tracers (all haloes) within selection radii'
+# 'Total gas mass (all haloes) within selection radii [msol]'}
+
+df['Average gas mass (per halo) available in spherical shell [msol]'] = df['Total gas mass (all haloes) available in spherical shell [msol]'].astype('float64')/nHaloes
+
+df['Average N_tracers (per halo) in spherical shell'] = df['Total N_tracers (all haloes) in spherical shell'].astype('float64')/nHaloes
+
+df['Average N_tracers (per halo) within selection radii'] = df['Total N_tracers (all haloes) within selection radii'].astype('float64')/nHaloes
+
+df['Average gas mass (per halo) within selection radii [msol]'] = df['Total gas mass (all haloes) within selection radii [msol]'].astype('float64')/nHaloes
 
 print(df.head(n=20))
 df.to_csv('Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv',index=False)

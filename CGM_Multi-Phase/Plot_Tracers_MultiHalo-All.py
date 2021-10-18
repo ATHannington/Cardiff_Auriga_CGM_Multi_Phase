@@ -151,6 +151,7 @@ tlookback = np.array(tlookback)
 
 statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 
+save_statistics_csv(statsData,TRACERSPARAMS,SELECTEDHALOES,HALOPATHS,Tlst,snapRange)
 #==============================================================================#
 #                   Medians PLOT                                               #
 #==============================================================================#
