@@ -200,7 +200,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             finalymin = math.floor(finalymin)
             finalymax = math.ceil(finalymax)
             custom_ylim = (finalymin, finalymax)
-            plt.setp(ax, ylim=custom_ylim)
+            plt.setp(ax, ylim=custom_ylim, xlim=(max(tlookback),min(tlookback)))
             fig.legend(handles=patchList, labels=labelList, loc="center right", facecolor='white', framealpha=1
                 )
             plt.tight_layout()
@@ -389,6 +389,7 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
 
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
+            currentAx.set_xlim(xmin=max(tlookback), xmax=min(tlookback))
 
             fig.suptitle(
                 f"Percentage Tracers Still at \n Selection Temperature "
@@ -564,7 +565,8 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             currentAx.tick_params(which="both")
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
-
+            currentAx.set_xlim(xmin=max(tlookback), xmax=min(tlookback))
+            
             fig.suptitle(
                 f"Percentage Tracers Within \n Selection Temperature Range "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
