@@ -25,6 +25,7 @@ from functools import reduce
 
 subset = 250
 Ntails = 6
+numThreads = 12
 ageUniverse = 13.77  # [Gyr]
 
 TracersParamsPath = "TracersParams.csv"
@@ -36,9 +37,9 @@ DataSavepathSuffix = f".h5"
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 dataParams = (
-        TRACERSPARAMS["saveParams"]
-        + TRACERSPARAMS["saveTracersOnly"]
-        + TRACERSPARAMS["saveEssentials"]
+    TRACERSPARAMS["saveParams"]
+    + TRACERSPARAMS["saveTracersOnly"]
+    + TRACERSPARAMS["saveEssentials"]
 )
 
 for param in singleValueParams:
@@ -124,7 +125,7 @@ tracer_plot(
     boxlos=TRACERSPARAMS["boxlos"],
     pixres=TRACERSPARAMS["pixres"],
     pixreslos=TRACERSPARAMS["pixreslos"],
-    numThreads=2,
+    numThreads=numThreads,
     MaxSubset=subset,
-    tailsLength = Ntails
+    tailsLength=Ntails,
 )

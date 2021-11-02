@@ -286,7 +286,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             ydataCells = np.log10(snapGasFinalDict[key]["T"][whereCellsGas])
             massCells = snapGasFinalDict[key]["mass"][whereCellsGas]
             weightDataCells = (
-                    snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
+                snapGasFinalDict[key][weightKey][whereCellsGas] * massCells
             )
 
             # xdataCellsNotNaNorInf = np.where((np.isinf(xdataCells)==False) & (np.isnan(xdataCells)==False))[0]
@@ -368,7 +368,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             ydataTracers = np.log10(TracersFinalDict[tkey]["T"][whereTracersGas])
             massTracers = TracersFinalDict[tkey]["mass"][whereTracersGas]
             weightDataTracers = (
-                    TracersFinalDict[tkey][weightKey][whereTracersGas] * massTracers
+                TracersFinalDict[tkey][weightKey][whereTracersGas] * massTracers
             )
 
             # xdataTracersNotNaNorInf = np.where((np.isinf(xdataTracers)==False) & (np.isnan(xdataTracers)==False))[0]
@@ -457,12 +457,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plt.subplots_adjust(top=0.90, hspace=0.01)
 
             opslaan = (
-                    "./"
-                    + saveHalo
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
+                "./"
+                + saveHalo
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
@@ -590,12 +590,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plt.subplots_adjust(top=0.90, hspace=0.01)
 
             opslaan = (
-                    "./"
-                    + saveHalo
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
+                "./"
+                + saveHalo
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)

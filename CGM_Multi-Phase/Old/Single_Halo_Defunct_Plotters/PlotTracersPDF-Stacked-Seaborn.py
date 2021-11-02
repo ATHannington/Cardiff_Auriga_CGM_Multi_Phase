@@ -250,13 +250,13 @@ for dataKey in saveParams:
                     weights=df["y"],
                     ax=currentAx,
                     bw_adjust=0.5,
-                    clip = (xmin,xmax),
+                    clip=(xmin, xmax),
                     alpha=opacity,
                     fill=True,
                     lw=linewidth,
                     color=colour,
                     linestyle=lineStyle,
-                    shade =True
+                    shade=True,
                 )
                 currentAx.axhline(
                     y=0,
@@ -266,7 +266,7 @@ for dataKey in saveParams:
                     clip_on=False,
                 )
 
- # np.nanmax(data)
+                # np.nanmax(data)
 
                 # #            # # step = (xmax-xmin)/Nbins
                 # #
@@ -372,12 +372,12 @@ for dataKey in saveParams:
             plt.subplots_adjust(top=0.90, hspace=-0.25)
 
             opslaan = (
-                    "./"
-                    + saveHalo
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
+                "./"
+                + saveHalo
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)

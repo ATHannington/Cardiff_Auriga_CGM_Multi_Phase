@@ -12,7 +12,25 @@ from Tracers_Subroutines import *
 
 baseLoadPath = "/home/universe/spxfv/Auriga/level4_MHD_reruns/"
 
-haloes = ['L10','L3','L2','L5','L6','L7','L1','L8','5','6','9','13','17','23','24','26','28']
+haloes = [
+    "L10",
+    "L3",
+    "L2",
+    "L5",
+    "L6",
+    "L7",
+    "L1",
+    "L8",
+    "5",
+    "6",
+    "9",
+    "13",
+    "17",
+    "23",
+    "24",
+    "26",
+    "28",
+]
 
 snapNumber = 251
 
@@ -43,20 +61,19 @@ for halo in haloes:
         subfind=snap_subfind,
     )
 
-
     nTracers = np.shape(snap.data["type"])[0]
-    print(
-        f"For halo {halo} at snap {snapNumber} number of tracers = ", nTracers
-    )
+    print(f"For halo {halo} at snap {snapNumber} number of tracers = ", nTracers)
 
     nTracersOuter.append(nTracers)
 
-alltest = np.all(np.where(np.array(nTracersOuter)==int(np.median(nTracersOuter)),True,False))
+alltest = np.all(
+    np.where(np.array(nTracersOuter) == int(np.median(nTracersOuter)), True, False)
+)
 print("***")
 print(f"All Haloes Safe? = {alltest}")
 if alltest == False:
     print(f"WARNING! Haloes have inconsistent Tracer Numbers!")
-    for (ind,halo) in enumerate(haloes):
+    for (ind, halo) in enumerate(haloes):
         print(f"Halo_{halo} NTracers = {nTracersOuter[ind]}")
 else:
     print("Phew! All haloes are safe.")

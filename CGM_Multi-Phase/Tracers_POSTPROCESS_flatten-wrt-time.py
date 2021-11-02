@@ -31,9 +31,9 @@ DataSavepathSuffix = f".h5"
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
 saveParams = (
-        TRACERSPARAMS["saveParams"]
-        + TRACERSPARAMS["saveTracersOnly"]
-        + TRACERSPARAMS["saveEssentials"]
+    TRACERSPARAMS["saveParams"]
+    + TRACERSPARAMS["saveTracersOnly"]
+    + TRACERSPARAMS["saveEssentials"]
 )
 
 for param in singleValueParams:
@@ -41,10 +41,15 @@ for param in singleValueParams:
 
 DataSavepathSuffix = f".h5"
 
-snapRange = [snap for snap in range(
+snapRange = [
+    snap
+    for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1)]
+        1,
+    )
+]
+
 
 def err_catcher(arg):
     raise Exception(f"Child Process died and gave error: {arg}")
@@ -68,22 +73,22 @@ if __name__ == "__main__":
             snapRange,
             DataSavepath,
             DataSavepathSuffix,
-            True #saveBool
+            True,  # saveBool
         ]
         for targetT in TRACERSPARAMS["targetTLst"]:
             dataDict = {}
             for snap in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"] + 1),
-                        int(TRACERSPARAMS["finalSnap"] + 1),
-                    ),
-                    1,
+                int(TRACERSPARAMS["snapMin"]),
+                min(
+                    int(TRACERSPARAMS["snapMax"] + 1),
+                    int(TRACERSPARAMS["finalSnap"] + 1),
+                ),
+                1,
             ):
                 loadPath = (
-                        DataSavepath
-                        + f"_T{targetT}_{rin}R{rout}_{int(snap)}"
-                        + DataSavepathSuffix
+                    DataSavepath
+                    + f"_T{targetT}_{rin}R{rout}_{int(snap)}"
+                    + DataSavepathSuffix
                 )
                 data = hdf5_load(loadPath)
                 dataDict.update(data)

@@ -106,9 +106,9 @@ dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
 
 tlookback = []
 for snap in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1,
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+    1,
 ):
     minTemp = TRACERSPARAMS["targetTLst"][0]
     minrin = TRACERSPARAMS["Rinner"][0]
@@ -148,13 +148,13 @@ for analysisParam in saveParams:
                 [
                     xx
                     for xx in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"]) + 1,
-                        int(TRACERSPARAMS["finalSnap"]) + 1,
-                    ),
-                    1,
-                )
+                        int(TRACERSPARAMS["snapMin"]),
+                        min(
+                            int(TRACERSPARAMS["snapMax"]) + 1,
+                            int(TRACERSPARAMS["finalSnap"]) + 1,
+                        ),
+                        1,
+                    )
                 ]
             )
             selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
@@ -192,10 +192,10 @@ for analysisParam in saveParams:
             ymaxlist.append(ymax)
 
             if (
-                    (np.isinf(ymin) == True)
-                    or (np.isinf(ymax) == True)
-                    or (np.isnan(ymin) == True)
-                    or (np.isnan(ymax) == True)
+                (np.isinf(ymin) == True)
+                or (np.isinf(ymax) == True)
+                or (np.isnan(ymin) == True)
+                or (np.isnan(ymax) == True)
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
@@ -210,7 +210,7 @@ for analysisParam in saveParams:
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
                 loadPercentilesTypes[:midPercentile],
-                loadPercentilesTypes[midPercentile + 1:],
+                loadPercentilesTypes[midPercentile + 1 :],
             )
             for (LO, UP) in percentilesPairs:
                 currentAx.fill_between(
@@ -240,7 +240,11 @@ for analysisParam in saveParams:
             plot_patch = matplotlib.patches.Patch(color=colour)
             plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
             currentAx.legend(
-                handles=[plot_patch], labels=[plot_label], loc="upper right", facecolor='white', framealpha=1
+                handles=[plot_patch],
+                labels=[plot_label],
+                loc="upper right",
+                facecolor="white",
+                framealpha=1,
             )
 
             fig.suptitle(
@@ -264,10 +268,10 @@ for analysisParam in saveParams:
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
         if (
-                (np.isinf(finalymin) == True)
-                or (np.isinf(finalymax) == True)
-                or (np.isnan(finalymin) == True)
-                or (np.isnan(finalymax) == True)
+            (np.isinf(finalymin) == True)
+            or (np.isinf(finalymax) == True)
+            or (np.isnan(finalymin) == True)
+            or (np.isnan(finalymax) == True)
         ):
             print("Data All Inf/NaN! Skipping entry!")
             continue
@@ -278,14 +282,14 @@ for analysisParam in saveParams:
         plt.tight_layout()
         plt.subplots_adjust(top=0.90, hspace=0.0)
         opslaan = (
-                "./"
-                + saveHalo
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                + analysisParam
-                + f"_Medians.pdf"
+            "./"
+            + saveHalo
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+            + analysisParam
+            + f"_Medians.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)

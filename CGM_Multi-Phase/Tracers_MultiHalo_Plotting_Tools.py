@@ -34,14 +34,28 @@ ageUniverse = 13.77  # [Gyr]
 
 colourmapMain = "plasma"
 
-def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+def medians_plot(
+    dataDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
 
     tmpxsize = xsize + 2.0
 
     for analysisParam in saveParams:
         print("")
         print(f"Starting {analysisParam} Sub-plots!")
-
 
         print("")
         print("Loading Data!")
@@ -50,7 +64,12 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
-                nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(tmpxsize, ysize), dpi=DPI
+                nrows=len(Tlst),
+                ncols=1,
+                sharex=True,
+                sharey=True,
+                figsize=(tmpxsize, ysize),
+                dpi=DPI,
             )
             yminlist = []
             ymaxlist = []
@@ -60,7 +79,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 print(f"T{Tlst[ii]}")
                 T = float(Tlst[ii])
 
-                selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
+                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
                 plotData = statsData[selectKey].copy()
                 # Temperature specific load path
 
@@ -68,13 +87,13 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                     [
                         xx
                         for xx in range(
-                        int(TRACERSPARAMS["snapMin"]),
-                        min(
-                            int(TRACERSPARAMS["snapMax"]) + 1,
-                            int(TRACERSPARAMS["finalSnap"]) + 1,
-                        ),
-                        1,
-                    )
+                            int(TRACERSPARAMS["snapMin"]),
+                            min(
+                                int(TRACERSPARAMS["snapMax"]) + 1,
+                                int(TRACERSPARAMS["finalSnap"]) + 1,
+                            ),
+                            1,
+                        )
                     ]
                 )
                 selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
@@ -112,10 +131,10 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 ymaxlist.append(ymax)
 
                 if (
-                        (np.isinf(ymin) == True)
-                        or (np.isinf(ymax) == True)
-                        or (np.isnan(ymin) == True)
-                        or (np.isnan(ymax) == True)
+                    (np.isinf(ymin) == True)
+                    or (np.isinf(ymax) == True)
+                    or (np.isnan(ymin) == True)
+                    or (np.isnan(ymax) == True)
                 ):
                     print("Data All Inf/NaN! Skipping entry!")
                     continue
@@ -130,7 +149,7 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
                 percentilesPairs = zip(
                     loadPercentilesTypes[:midPercentile],
-                    loadPercentilesTypes[midPercentile + 1:],
+                    loadPercentilesTypes[midPercentile + 1 :],
                 )
                 for (LO, UP) in percentilesPairs:
                     currentAx.fill_between(
@@ -183,40 +202,47 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
                 midax = ax
             else:
                 axis0 = ax[len(Tlst) - 1]
-                midax = ax[(len(Tlst)-1)//2]
+                midax = ax[(len(Tlst) - 1) // 2]
 
             axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
             midax.set_ylabel(ylabel[analysisParam], fontsize=10)
             finalymin = np.nanmin(yminlist)
             finalymax = np.nanmax(ymaxlist)
             if (
-                    (np.isinf(finalymin) == True)
-                    or (np.isinf(finalymax) == True)
-                    or (np.isnan(finalymin) == True)
-                    or (np.isnan(finalymax) == True)
+                (np.isinf(finalymin) == True)
+                or (np.isinf(finalymax) == True)
+                or (np.isnan(finalymin) == True)
+                or (np.isnan(finalymax) == True)
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
             finalymin = math.floor(finalymin)
             finalymax = math.ceil(finalymax)
             custom_ylim = (finalymin, finalymax)
-            plt.setp(ax, ylim=custom_ylim, xlim=(max(tlookback),min(tlookback)))
-            fig.legend(handles=patchList, labels=labelList, loc="center right", facecolor='white', framealpha=1
-                )
+            plt.setp(
+                ax,
+                ylim=custom_ylim,
+                xlim=(round(max(tlookback)), round(min(tlookback))),
+            )
+            fig.legend(
+                handles=patchList,
+                labels=labelList,
+                loc="center right",
+                facecolor="white",
+                framealpha=1,
+            )
             plt.tight_layout()
-            plt.subplots_adjust(top=0.875,right=0.80,hspace=0.1)
-
-
+            plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
 
             opslaan = (
-                    "./"
-                    + 'MultiHalo'
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                    + analysisParam
-                    + f"_Medians.pdf"
+                "./"
+                + "MultiHalo"
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                + analysisParam
+                + f"_Medians.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
@@ -224,7 +250,19 @@ def medians_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange
 
     return
 
-def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+def persistant_temperature_plot(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
     Ydata = {}
     Xdata = {}
     # Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
@@ -254,7 +292,10 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             )
             snapRangeHi = range(
                 int(TRACERSPARAMS["selectSnap"] + 1),
-                min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+                min(
+                    int(TRACERSPARAMS["snapMax"] + 1),
+                    int(TRACERSPARAMS["finalSnap"] + 1),
+                ),
             )
 
             rangeSet = [snapRangeLow, snapRangeHi]
@@ -270,10 +311,14 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
 
                     data = dataDict[key]["T"][whereGas]
 
-                    whereTrids = np.where(np.isin(dataDict[key]["trid"], SelectedTracers))
+                    whereTrids = np.where(
+                        np.isin(dataDict[key]["trid"], SelectedTracers)
+                    )
                     Parents = dataDict[key]["prid"][whereTrids]
 
-                    whereCells = np.where(np.isin(dataDict[key]["id"][whereGas], Parents))
+                    whereCells = np.where(
+                        np.isin(dataDict[key]["id"][whereGas], Parents)
+                    )
 
                     data = data[whereCells]
 
@@ -301,15 +346,17 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
                     tmpXdata.append(dataDict[key]["Lookback"][0])
                     tmpYdata.append(nTracers)
 
-
             ind_sorted = np.argsort(tmpXdata)
             maxN = np.nanmax(tmpYdata)
             tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
             tmpYarray = np.array(tmpYarray)
             tmpXarray = np.array(tmpXdata)
-            tmpYarray = np.flip(np.take_along_axis(tmpYarray,ind_sorted,axis=0), axis=0)
-            tmpXarray = np.flip(np.take_along_axis(tmpXarray,ind_sorted,axis=0), axis=0)
-
+            tmpYarray = np.flip(
+                np.take_along_axis(tmpYarray, ind_sorted, axis=0), axis=0
+            )
+            tmpXarray = np.flip(
+                np.take_along_axis(tmpXarray, ind_sorted, axis=0), axis=0
+            )
 
             # Add the full list of snaps data to temperature dependent dictionary.
             Xdata.update({f"T{T}": tmpXarray})
@@ -320,7 +367,12 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
+            nrows=len(Tlst),
+            ncols=1,
+            sharex=True,
+            sharey=True,
+            figsize=(xsize, ysize),
+            dpi=DPI,
         )
 
         # Create a plot for each Temperature
@@ -329,13 +381,13 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
                 [
                     xx
                     for xx in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"]) + 1,
-                        int(TRACERSPARAMS["finalSnap"]) + 1,
-                    ),
-                    1,
-                )
+                        int(TRACERSPARAMS["snapMin"]),
+                        min(
+                            int(TRACERSPARAMS["snapMax"]) + 1,
+                            int(TRACERSPARAMS["finalSnap"]) + 1,
+                        ),
+                        1,
+                    )
                 ]
             )
             selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
@@ -371,7 +423,12 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
             currentAx.fill_between(
-                tlookback, tmpMinData, plotYdata, facecolor=colour, alpha=0.25, interpolate=False
+                tlookback,
+                tmpMinData,
+                plotYdata,
+                facecolor=colour,
+                alpha=0.25,
+                interpolate=False,
             )
 
             currentAx.plot(
@@ -387,9 +444,10 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
             currentAx.tick_params(which="both")
 
-
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
-            currentAx.set_xlim(xmin=max(tlookback), xmax=min(tlookback))
+            currentAx.set_xlim(
+                xmin=round(max(tlookback)), xmax=round(min(tlookback))
+            )
 
             fig.suptitle(
                 f"Percentage Tracers Still at \n Selection Temperature "
@@ -407,7 +465,7 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
             midax = ax
         else:
             axis0 = ax[len(Tlst) - 1]
-            midax = ax[(len(Tlst)-1)//2]
+            midax = ax[(len(Tlst) - 1) // 2]
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         midax.set_ylabel(
@@ -416,13 +474,13 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
         )
         plt.tight_layout(h_pad=0.0)
         opslaan = (
-                "./"
-                + "MultiHalo"
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-                + f"_PersistantTemperature.pdf"
+            "./"
+            + "MultiHalo"
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+            + f"_PersistantTemperature.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
@@ -430,7 +488,19 @@ def persistant_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
 
     return
 
-def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+def within_temperature_plot(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
     Ydata = {}
     Xdata = {}
 
@@ -448,7 +518,10 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             )
             snapRangeHi = range(
                 int(TRACERSPARAMS["selectSnap"] + 1),
-                min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+                min(
+                    int(TRACERSPARAMS["snapMax"] + 1),
+                    int(TRACERSPARAMS["finalSnap"] + 1),
+                ),
             )
 
             rangeSet = [snapRangeLow, snapRangeHi]
@@ -478,15 +551,17 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
                     tmpXdata.append(dataDict[key]["Lookback"][0])
                     tmpYdata.append(nTracers)
 
-
-
             ind_sorted = np.argsort(tmpXdata)
             maxN = np.nanmax(tmpYdata)
             tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
             tmpYarray = np.array(tmpYarray)
             tmpXarray = np.array(tmpXdata)
-            tmpYarray = np.flip(np.take_along_axis(tmpYarray,ind_sorted,axis=0), axis=0)
-            tmpXarray = np.flip(np.take_along_axis(tmpXarray,ind_sorted,axis=0), axis=0)
+            tmpYarray = np.flip(
+                np.take_along_axis(tmpYarray, ind_sorted, axis=0), axis=0
+            )
+            tmpXarray = np.flip(
+                np.take_along_axis(tmpXarray, ind_sorted, axis=0), axis=0
+            )
 
             # Add the full list of snaps data to temperature dependent dictionary.
             Xdata.update({f"T{T}": tmpXarray})
@@ -497,7 +572,12 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(xsize, ysize), dpi=DPI
+            nrows=len(Tlst),
+            ncols=1,
+            sharex=True,
+            sharey=True,
+            figsize=(xsize, ysize),
+            dpi=DPI,
         )
 
         # Create a plot for each Temperature
@@ -506,18 +586,18 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
                 [
                     xx
                     for xx in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"]) + 1,
-                        int(TRACERSPARAMS["finalSnap"]) + 1,
-                    ),
-                    1,
-                )
+                        int(TRACERSPARAMS["snapMin"]),
+                        min(
+                            int(TRACERSPARAMS["snapMax"]) + 1,
+                            int(TRACERSPARAMS["finalSnap"]) + 1,
+                        ),
+                        1,
+                    )
                 ]
             )
             selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
 
-            vline = tlookback [selectionSnap]
+            vline = tlookback[selectionSnap]
 
             T = TRACERSPARAMS["targetTLst"][ii]
 
@@ -548,11 +628,16 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
             currentAx.fill_between(
-                tlookback , tmpMinData, plotYdata, facecolor=colour, alpha=0.25, interpolate=False
+                tlookback,
+                tmpMinData,
+                plotYdata,
+                facecolor=colour,
+                alpha=0.25,
+                interpolate=False,
             )
 
             currentAx.plot(
-                tlookback ,
+                tlookback,
                 plotYdata,
                 label=r"$T = 10^{%3.2f} K$" % (float(temp)),
                 color=colour,
@@ -565,8 +650,10 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             currentAx.tick_params(which="both")
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
-            currentAx.set_xlim(xmin=max(tlookback), xmax=min(tlookback))
-            
+            currentAx.set_xlim(
+                xmin=round(max(tlookback)), xmax=round(min(tlookback))
+            )
+
             fig.suptitle(
                 f"Percentage Tracers Within \n Selection Temperature Range "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
@@ -583,7 +670,7 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
             midax = ax
         else:
             axis0 = ax[len(Tlst) - 1]
-            midax = ax[(len(Tlst)-1)//2]
+            midax = ax[(len(Tlst) - 1) // 2]
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         midax.set_ylabel(
@@ -593,20 +680,34 @@ def within_temperature_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRang
 
         plt.tight_layout(h_pad=0.0)
         opslaan = (
-                "./"
-                + "MultiHalo"
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-                + f"_WithinTemperature.pdf"
+            "./"
+            + "MultiHalo"
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+            + f"_WithinTemperature.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
     return
 
-def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+def stacked_pdf_plot(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
     xsize = 5.0
     ysize = 10.0
     ageUniverse = 13.77  # [Gyr]
@@ -624,14 +725,14 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
         "B": {"xmin": -6.0, "xmax": 2.0},
         "vrad": {"xmin": -250.0, "xmax": 250.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
-        "L" :  {"xmin": 0.0, "xmax": 5.0},
+        "L": {"xmin": 0.0, "xmax": 5.0},
         "P_thermal": {"xmin": -1.0, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
         "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
         "P_tot": {"xmin": -1.0, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
         "tcool": {"xmin": -6.0, "xmax": 3.0},
-        "theat" :  {"xmin": -4.0, "xmax": 4.0},
+        "theat": {"xmin": -4.0, "xmax": 4.0},
         "tff": {"xmin": -3.0, "xmax": 1.0},
         "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
@@ -653,14 +754,13 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
             for ii in range(len(Tlst)):
                 print(f"T{Tlst[ii]}")
 
-                selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
+                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
 
                 # Get number of temperatures
                 NTemps = float(len(Tlst))
 
                 # Get temperature
                 T = TRACERSPARAMS["targetTLst"][ii]
-
 
                 selectKey = (
                     f"T{T}",
@@ -679,7 +779,8 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                         int(TRACERSPARAMS["snapMin"]),
                         int(
                             min(
-                                TRACERSPARAMS["finalSnap"] + 1, TRACERSPARAMS["snapMax"] + 1
+                                TRACERSPARAMS["finalSnap"] + 1,
+                                TRACERSPARAMS["snapMax"] + 1,
                             )
                         ),
                     )
@@ -691,7 +792,7 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     figsize=(xsize, ysize),
                     dpi=DPI,
                     frameon=False,
-                    sharex=True
+                    sharex=True,
                 )
                 # Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
                 for (jj, snap) in enumerate(snapRange):
@@ -705,7 +806,8 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     ] = 0.0
 
                     whereStars = np.where(
-                        (dataDict[dictkey]["type"] == 4) & (dataDict[dictkey]["age"] >= 0.0)
+                        (dataDict[dictkey]["type"] == 4)
+                        & (dataDict[dictkey]["age"] >= 0.0)
                     )
 
                     NGas = len(dataDict[dictkey]["type"][whereGas])
@@ -745,11 +847,15 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                         lineStyle = selectStyle
                         linewidth = selectWidth
                     else:
-                        sRange = int(
-                            min(
-                                TRACERSPARAMS["finalSnap"] + 1, TRACERSPARAMS["snapMax"] + 1
+                        sRange = (
+                            int(
+                                min(
+                                    TRACERSPARAMS["finalSnap"] + 1,
+                                    TRACERSPARAMS["snapMax"] + 1,
+                                )
                             )
-                        ) - int(TRACERSPARAMS["snapMin"])
+                            - int(TRACERSPARAMS["snapMin"])
+                        )
                         colour = cmap(((float(jj)) / (sRange)))
                         lineStyle = "-"
                         linewidth = 2
@@ -757,23 +863,27 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     tmpdict = {"x": data, "y": weights}
                     df = pd.DataFrame(tmpdict)
 
-                    xmin = xlimDict[dataKey]['xmin']
-                    xmax = xlimDict[dataKey]['xmax']
+                    xmin = xlimDict[dataKey]["xmin"]
+                    xmax = xlimDict[dataKey]["xmax"]
 
                     ###############################
                     ##### aggregate endpoints #####
                     ###############################
 
-                    belowrangedf = df.loc[(df['x']<xmin)]
-                    inrangedf = df.loc[(df['x']>=xmin)&(df['x']<=xmax)]
-                    aboverangedf = df.loc[(df['x']>xmax)]
+                    belowrangedf = df.loc[(df["x"] < xmin)]
+                    inrangedf = df.loc[(df["x"] >= xmin) & (df["x"] <= xmax)]
+                    aboverangedf = df.loc[(df["x"] > xmax)]
 
                     ### Use a rolling window over the last outofrangePercentOfxRange % of data to attempt to create peaks in kdeplot at ends ###
 
-                    belowrangedf = belowrangedf.assign(x = xmin)
-                    aboverangedf = aboverangedf.assign(x = xmax)
+                    belowrangedf = belowrangedf.assign(x=xmin)
+                    aboverangedf = aboverangedf.assign(x=xmax)
 
-                    df = pd.concat([belowrangedf,inrangedf,aboverangedf],axis=0,ignore_index=True)
+                    df = pd.concat(
+                        [belowrangedf, inrangedf, aboverangedf],
+                        axis=0,
+                        ignore_index=True,
+                    )
 
                     xminlist.append(xmin)
                     xmaxlist.append(xmax)
@@ -784,14 +894,14 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                         weights=df["y"],
                         ax=currentAx,
                         bw_adjust=0.1,
-                        clip = (xmin,xmax),
+                        clip=(xmin, xmax),
                         alpha=opacity,
                         fill=True,
                         lw=linewidth,
                         color=colour,
                         linestyle=lineStyle,
-                        shade =True,
-                        common_norm = True
+                        shade=True,
+                        common_norm=True,
                     )
                     # mainplotylim = mainplot.get_ylim()
                     currentAx.axhline(
@@ -807,8 +917,6 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                     # currentAx.set_ylim(mainplotylim)
                     currentAx.set_xlabel(xlabel[dataKey], fontsize=10)
                     sns.despine(bottom=True, left=True)
-
-
 
                 xmin = np.nanmin(xminlist)
                 xmax = np.nanmax(xmaxlist)
@@ -864,15 +972,15 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
                 # ax.axvline(x=vline, c='red')
 
                 plt.tight_layout()
-                plt.subplots_adjust(top=0.90,bottom=0.05, hspace=-0.25)
+                plt.subplots_adjust(top=0.90, bottom=0.05, hspace=-0.25)
 
                 opslaan = (
-                        "./"
-                        + "MultiHalo"
-                        + "/"
-                        + f"{int(rin)}R{int(rout)}"
-                        + "/"
-                        + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_T{T}_{dataKey}_PDF.pdf"
                 )
                 plt.savefig(opslaan, dpi=DPI, transparent=False)
                 print(opslaan)
@@ -880,7 +988,19 @@ def stacked_pdf_plot(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,
 
     return
 
-def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 250):
+
+def phases_plot(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    snapRange,
+    Tlst,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+    Nbins=250,
+):
     """
     Author: A. T. Hannington
     Created: 21/07/2020
@@ -894,7 +1014,6 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
     xsize = 10.0
     ysize = 5.0
     fontsize = 10
-
 
     # Paramters to weight the 2D hist by
     weightKeys = ["mass", "tcool", "gz", "tcool_tff"]
@@ -950,7 +1069,12 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                 zmax = zlimDict[weightKey]["zmax"]
 
                 fig, ax = plt.subplots(
-                    nrows=1, ncols=int(len(Tlst)), figsize=(xsize * 2, ysize), dpi=DPI,sharey=True,sharex=True
+                    nrows=1,
+                    ncols=int(len(Tlst)),
+                    figsize=(xsize * 2, ysize),
+                    dpi=DPI,
+                    sharey=True,
+                    sharex=True,
                 )
 
                 for (ii, T) in enumerate(Tlst):
@@ -968,10 +1092,14 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
                     print(f"T{T} Sub-Plot!")
 
-                    xdataCells = np.log10(dataDict[FullDictKey]["rho_rhomean"][whereGas])
+                    xdataCells = np.log10(
+                        dataDict[FullDictKey]["rho_rhomean"][whereGas]
+                    )
                     ydataCells = np.log10(dataDict[FullDictKey]["T"][whereGas])
                     massCells = dataDict[FullDictKey]["mass"][whereGas]
-                    weightDataCells = dataDict[FullDictKey][weightKey][whereGas] * massCells
+                    weightDataCells = (
+                        dataDict[FullDictKey][weightKey][whereGas] * massCells
+                    )
 
                     if weightKey == "mass":
                         finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
@@ -1008,7 +1136,8 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                     # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
                     currentAx.set_xlabel(
-                        r"Log10 Density [$\rho / \langle \rho \rangle $]", fontsize=fontsize
+                        r"Log10 Density [$\rho / \langle \rho \rangle $]",
+                        fontsize=fontsize,
                     )
                     currentAx.set_ylabel(r"Log10 Temperatures [$K$]", fontsize=fontsize)
 
@@ -1057,12 +1186,12 @@ def phases_plot(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,DataSavepathSuf
                 plt.tight_layout()
 
                 opslaan = (
-                        "./"
-                        + "MultiHalo"
-                        + "/"
-                        + f"{int(rin)}R{int(rout)}"
-                        + "/"
-                        + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
                 )
                 plt.savefig(opslaan, dpi=DPI, transparent=False)
                 print(opslaan)
@@ -1084,7 +1213,16 @@ def _get_id_prid_trid_where(dataDict, whereEntries):
 
     return {"id": id, "prid": prid, "trid": trid}
 
-def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS,shortSnapRangeBool=False,shortSnapRangeNumber = None):
+
+def flat_analyse_time_averages(
+    FlatDataDict,
+    Tlst,
+    snapRange,
+    tlookback,
+    TRACERSPARAMS,
+    shortSnapRangeBool=False,
+    shortSnapRangeNumber=None,
+):
 
     gas = []
     heating = []
@@ -1134,109 +1272,106 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             data = FlatDataDict[Tkey]
             ntracersAll = FlatDataDict[Tkey]["Ntracers"]
 
-            #Select only the tracers which were ALWAYS gas
-            whereGas = np.where((FlatDataDict[Tkey]["type"]==0).all(axis=0))[0]
+            # Select only the tracers which were ALWAYS gas
+            whereGas = np.where((FlatDataDict[Tkey]["type"] == 0).all(axis=0))[0]
             ntracers = int(np.shape(whereGas)[0])
 
             print("Gas")
 
-            if ((shortSnapRangeBool is False)&(shortSnapRangeNumber is None)):
+            if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
                 pre = preselectInd
                 post = postselectInd
             else:
-                pre = preselectInd[-1*int(shortSnapRangeNumber):]
-                post = postselectInd[:int(shortSnapRangeNumber)]
+                pre = preselectInd[-1 * int(shortSnapRangeNumber) :]
+                post = postselectInd[: int(shortSnapRangeNumber)]
 
-            #Select where ANY tracer (gas or stars) meets condition PRIOR TO selection
-            rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["type"][pre, :] == 0
-            )
-            #Calculate the number of these unique tracers compared to the total number
+            # Select where ANY tracer (gas or stars) meets condition PRIOR TO selection
+            rowspre, colspre = np.where(FlatDataDict[Tkey]["type"][pre, :] == 0)
+            # Calculate the number of these unique tracers compared to the total number
             gaspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
-            rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["type"][post, :] == 0
+            rowspost, colspost = np.where(FlatDataDict[Tkey]["type"][post, :] == 0)
+            gaspost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
             )
-            gaspost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
-            #Add data to internal database lists
+            # Add data to internal database lists
             gas.append([gaspre, gaspost])
 
             print("Heating & Cooling")
-            epsilonT = float(TRACERSPARAMS['deltaT'])#[k]
+            epsilonT = float(TRACERSPARAMS["deltaT"])  # [k]
 
-            #Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
-            rowspre, colspre = np.where(np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) > (epsilonT))
-            #Calculate the number of these unique tracers compared to the total number
+            # Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
+            rowspre, colspre = np.where(
+                np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1:])
+                - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                > (epsilonT)
+            )
+            # Calculate the number of these unique tracers compared to the total number
             coolingpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
 
             rowspost, colspost = np.where(
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
+                np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][:1])
                 > (epsilonT)
-                )
+            )
 
             coolingpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
 
-
             rowspre, colspre = np.where(
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
-                < (-1.*epsilonT)
+                np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1:])
+                - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                < (-1.0 * epsilonT)
             )
             heatingpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
 
-
             rowspost, colspost = np.where(
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
-                < (-1.*epsilonT)
+                np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][:1])
+                < (-1.0 * epsilonT)
             )
             heatingpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
 
-
             rowspre, colspre = np.where(
                 (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre,:][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
-                <=(0+epsilonT)
+                    np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1:])
+                    - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                    <= (0 + epsilonT)
                 )
-                &
-                (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][pre, :][-1:])-np.log10(                FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :])
-                >=(0-epsilonT)
+                & (
+                    np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1:])
+                    - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                    >= (0 - epsilonT)
                 )
             )
-            smallTpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
+            smallTpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
 
             rowspost, colspost = np.where(
                 (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
-                <=(0.+epsilonT)
+                    np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                    - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][:1])
+                    <= (0.0 + epsilonT)
                 )
-                &
-                (
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][selectInd, :]) -
-                np.log10(FlatDataDict[Tkey]["T"][:,whereGas][post, :][:1])
-                >=(0.-epsilonT)
+                & (
+                    np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+                    - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][:1])
+                    >= (0.0 - epsilonT)
                 )
             )
             smallTpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
-            #Add data to internal database lists
+            # Add data to internal database lists
 
             cooling.append([coolingpre, coolingpost])
             heating.append([heatingpre, heatingpost])
-            smallTchange.append([smallTpre,smallTpost])
+            smallTchange.append([smallTpre, smallTpost])
             #
             # print("Pthermal_Pmagnetic 1 ")
             # rowspre, colspre = np.where(
@@ -1283,18 +1418,18 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             # tff.append([tffpre, tffpost])
             #
             print("Z")
-            #Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
+            # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
-            data = FlatDataDict[Tkey]["gz"][:,whereGas][pre, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][pre, :]
+            data = FlatDataDict[Tkey]["gz"][:, whereGas][pre, :]
+            weights = FlatDataDict[Tkey]["mass"][:, whereGas][pre, :]
             zPreDat = []
-            #For each tracers, calculate the mass weighted average of specific parameter for all selected snapshots
+            # For each tracers, calculate the mass weighted average of specific parameter for all selected snapshots
             for (dat, wei) in zip(data.T, weights.T):
                 zPreDat.append(np.nanmedian(dat))
             zPreDat = np.array(zPreDat)
 
-            data = FlatDataDict[Tkey]["gz"][:,whereGas][post, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
+            data = FlatDataDict[Tkey]["gz"][:, whereGas][post, :]
+            weights = FlatDataDict[Tkey]["mass"][:, whereGas][post, :]
             zPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 zPostDat.append(np.nanmedian(dat))
@@ -1317,15 +1452,15 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             belowZ.append([belowZpre, belowZpost])
 
             print("Radial-Flow")
-            data = FlatDataDict[Tkey]["vrad"][:,whereGas][pre, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][pre, :]
+            data = FlatDataDict[Tkey]["vrad"][:, whereGas][pre, :]
+            weights = FlatDataDict[Tkey]["mass"][:, whereGas][pre, :]
             vradPreDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 vradPreDat.append(np.nanmedian(dat))
             vradPreDat = np.array(vradPreDat)
 
-            data = FlatDataDict[Tkey]["vrad"][:,whereGas][post, :]
-            weights = FlatDataDict[Tkey]["mass"][:,whereGas][post, :]
+            data = FlatDataDict[Tkey]["vrad"][:, whereGas][post, :]
+            weights = FlatDataDict[Tkey]["mass"][:, whereGas][post, :]
             vradPostDat = []
             for (dat, wei) in zip(data.T, weights.T):
                 vradPostDat.append(np.nanmedian(dat))
@@ -1367,12 +1502,12 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Halo0")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
+                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
+                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0post = (
@@ -1382,13 +1517,13 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
 
             print("Unbound")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] == -1
+                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] == -1
             )
             unboundpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] == -1
+                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] == -1
             )
             unboundpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1398,22 +1533,28 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             print("OtherHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]) == False)
+                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] != -1)
+                & (
+                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :])
+                    == False
+                )
             )
             otherHalopre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]) == False)
+                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] != -1)
+                & (
+                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :])
+                    == False
+                )
             )
             otherHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1423,20 +1564,26 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
             print("NoHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][pre, :]) == True)
+                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] != -1)
+                & (
+                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :])
+                    == True
+                )
             )
             noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]
+                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :] != -1)
-                & (np.isnan(FlatDataDict[Tkey]["SubHaloID"][:,whereGas][post, :]) == True)
+                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] != -1)
+                & (
+                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :])
+                    == True
+                )
             )
             noHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1448,7 +1595,9 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
                 (FlatDataDict[Tkey]["type"][pre, :] == 4)
                 & (FlatDataDict[Tkey]["age"][pre, :] >= 0.0)
             )
-            starspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            starspre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            )
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["type"][post, :] == 4)
                 & (FlatDataDict[Tkey]["age"][post, :] >= 0.0)
@@ -1463,12 +1612,16 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
                 (FlatDataDict[Tkey]["type"][pre, :] == 4)
                 & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
             )
-            windpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            windpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            )
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["type"][post, :] == 4)
                 & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
             )
-            windpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            windpost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            )
             wind.append([windpre, windpost])
 
             print("ISM")
@@ -1481,7 +1634,9 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
                 (FlatDataDict[Tkey]["R"][post, :] <= 25.0)
                 & (FlatDataDict[Tkey]["sfr"][post, :] > 0.0)
             )
-            ismpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            ismpost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            )
             ism.append([ismpre, ismpost])
 
         outinner = {
@@ -1588,7 +1743,23 @@ def flat_analyse_time_averages(FlatDataDict, Tlst, snapRange, tlookback, TRACERS
     df = df1.set_index("T")
     return df
 
-def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=False,shortSnapRangeNumber = None,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+
+def bars_plot(
+    FlatDataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    shortSnapRangeBool=False,
+    shortSnapRangeNumber=None,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
     xsize = 15.0
     ysize = 5.0
     DPI = 100
@@ -1600,22 +1771,30 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
     snapRange = np.array(snapRange)
     for key in FlatDataDict.keys():
-        FlatDataDict[key].update({'Ntracers' : np.shape(FlatDataDict[key]['type'])[1]})
+        FlatDataDict[key].update({"Ntracers": np.shape(FlatDataDict[key]["type"])[1]})
     print("Analyse Data!")
 
     timeAvDF = flat_analyse_time_averages(
-        FlatDataDict, Tlst, snapRange, tlookback, TRACERSPARAMS,shortSnapRangeBool=shortSnapRangeBool,shortSnapRangeNumber = shortSnapRangeNumber
+        FlatDataDict,
+        Tlst,
+        snapRange,
+        tlookback,
+        TRACERSPARAMS,
+        shortSnapRangeBool=shortSnapRangeBool,
+        shortSnapRangeNumber=shortSnapRangeNumber,
     )
 
     # Save
-    if  ((shortSnapRangeBool is False)&(shortSnapRangeNumber is None)):
+    if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
         savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
     else:
-        savePath = DataSavepath + f"_Time-Averages-Statistics-Table_shortSnapRange-{int(shortSnapRangeNumber)}snaps.csv"
+        savePath = (
+            DataSavepath
+            + f"_Time-Averages-Statistics-Table_shortSnapRange-{int(shortSnapRangeNumber)}snaps.csv"
+        )
     print("\n" + f"Saving Stats table .csv as {savePath}")
 
     timeAvDF.to_csv(savePath, index=False)
-
 
     # -------------------------------------------------------------------------------#
     #       Plot!!
@@ -1659,17 +1838,17 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         preDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels= [r'$10^{%3.2f}$'%(float(temp)) for temp in Tlst]
-        ax.legend(legendLabels,loc="center left", title="T [K]", fontsize=10)
+        legendLabels = [r"$10^{%3.2f}$" % (float(temp)) for temp in Tlst]
+        ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
-            r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
+            r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
+            + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
             + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
             fontsize=12,
         )
-
 
         plt.annotate(
             text="",
@@ -1762,10 +1941,10 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
         plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
-        if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
+        if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
                 "./"
-                + 'MultiHalo'
+                + "MultiHalo"
                 + "/"
                 + f"{int(rin)}R{int(rout)}"
                 + "/"
@@ -1774,7 +1953,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         else:
             opslaan = (
                 "./"
-                + 'MultiHalo'
+                + "MultiHalo"
                 + "/"
                 + f"{int(rin)}R{int(rout)}"
                 + "/"
@@ -1790,17 +1969,17 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
 
         postDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels= [r'$10^{%3.2f}$'%(float(temp)) for temp in Tlst]
-        ax.legend(legendLabels,loc="center left", title="T [K]", fontsize=10)
+        legendLabels = [r"$10^{%3.2f}$" % (float(temp)) for temp in Tlst]
+        ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
-            r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"+f"={selectTime:3.2f} Gyr"
+            r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"
+            + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
             + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
             fontsize=12,
         )
-
 
         plt.annotate(
             text="",
@@ -1894,10 +2073,10 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.tight_layout()
         plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
 
-        if ((shortSnapRangeBool is False) & (shortSnapRangeNumber is None)):
+        if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
                 "./"
-                + 'MultiHalo'
+                + "MultiHalo"
                 + "/"
                 + f"{int(rin)}R{int(rout)}"
                 + "/"
@@ -1906,7 +2085,7 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         else:
             opslaan = (
                 "./"
-                + 'MultiHalo'
+                + "MultiHalo"
                 + "/"
                 + f"{int(rin)}R{int(rout)}"
                 + "/"
@@ -1917,18 +2096,36 @@ def bars_plot(FlatDataDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRan
         plt.close()
     return
 
+
 ################################################################################
 ##                  EXPERIMENTAL                                              ##
 ################################################################################
 
 
-def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins = 150,DPI=75):
+def hist_plot(
+    dataDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+    Nbins=150,
+    DPI=75,
+):
 
     tmpysize = ysize * 4.0
     tmpxsize = xsize * 2.0
     weightKey = "mass"
-    xanalysisParam = 'L'
-    yanalysisParam = 'R'
+    xanalysisParam = "L"
+    yanalysisParam = "R"
 
     fontsize = 10
     xlimDict = {
@@ -1938,14 +2135,14 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
         "B": {"xmin": -6.0, "xmax": 2.0},
         "vrad": {"xmin": -250.0, "xmax": 250.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
-        "L" :  {"xmin": 0.0, "xmax": 5.0},
+        "L": {"xmin": 0.0, "xmax": 5.0},
         "P_thermal": {"xmin": -1.0, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
         "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
         "P_tot": {"xmin": -1.0, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
         "tcool": {"xmin": -6.0, "xmax": 3.0},
-        "theat" :  {"xmin": -4.0, "xmax": 4.0},
+        "theat": {"xmin": -4.0, "xmax": 4.0},
         "tff": {"xmin": -3.0, "xmax": 1.0},
         "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
@@ -1953,11 +2150,21 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
 
-    whereSelect = int(np.where(np.array(snapRange)==TRACERSPARAMS['selectSnap'])[0][0])
+    whereSelect = int(
+        np.where(np.array(snapRange) == TRACERSPARAMS["selectSnap"])[0][0]
+    )
 
-    selectSnaps = snapRange[0:whereSelect:2] + [snapRange[whereSelect]] + snapRange[whereSelect+2::2]
+    selectSnaps = (
+        snapRange[0:whereSelect:2]
+        + [snapRange[whereSelect]]
+        + snapRange[whereSelect + 2 :: 2]
+    )
 
-    tlookbackSelect = tlookback.tolist()[0:whereSelect:2] + [tlookback.tolist()[whereSelect]] + tlookback.tolist()[whereSelect+2::2]
+    tlookbackSelect = (
+        tlookback.tolist()[0:whereSelect:2]
+        + [tlookback.tolist()[whereSelect]]
+        + tlookback.tolist()[whereSelect + 2 :: 2]
+    )
 
     print("")
     print("Loading Data!")
@@ -1966,7 +2173,12 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
         print(f"{rin}R{rout}")
 
         fig, ax = plt.subplots(
-            nrows=len(selectSnaps), ncols=len(Tlst), sharex=True, sharey=True, figsize=(tmpxsize, tmpysize), dpi=DPI
+            nrows=len(selectSnaps),
+            ncols=len(Tlst),
+            sharex=True,
+            sharey=True,
+            figsize=(tmpxsize, tmpysize),
+            dpi=DPI,
         )
         for (jj, snap) in enumerate(selectSnaps):
             print(f"Snap {snap}")
@@ -1976,21 +2188,19 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
             labelList = []
 
             for (ii, T) in enumerate(Tlst):
-                FullDictKey = (f"T{float(T)}", f"{rin}R{rout}",f"{snap}")
+                FullDictKey = (f"T{float(T)}", f"{rin}R{rout}", f"{snap}")
 
                 if len(Tlst) == 1:
                     currentAx = ax[jj]
                 else:
-                    currentAx = ax[jj,ii]
+                    currentAx = ax[jj, ii]
 
-                whereGas = np.where(dataDict[FullDictKey]['type']==0)[0]
-
+                whereGas = np.where(dataDict[FullDictKey]["type"] == 0)[0]
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
                 #   Figure 1: Full Cells Data
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
                 print(f"T{T} Sub-Plot!")
-
 
                 ydataCells = dataDict[FullDictKey][yanalysisParam][whereGas]
                 if yanalysisParam in logParameters:
@@ -2004,7 +2214,7 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
                     xdataCells = np.log10(xdataCells)
 
                 massCells = dataDict[FullDictKey]["mass"][whereGas]
-                weightDataCells =dataDict[FullDictKey][weightKey][whereGas] * massCells
+                weightDataCells = dataDict[FullDictKey][weightKey][whereGas] * massCells
 
                 if weightKey == "mass":
                     finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
@@ -2033,14 +2243,14 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
                     finalHistCells,
                     cmap=colourmapMain,
                     rasterized=True,
-                    )
+                )
 
-                if (jj == 0):
+                if jj == 0:
                     currentAx.set_title(
                         r"$ 10^{%03.2f \pm %3.2f} K $"
                         % (float(T), TRACERSPARAMS["deltaT"]),
-                        fontsize=fontsize+2,
-                        )
+                        fontsize=fontsize + 2,
+                    )
 
                 currentAx.annotate(
                     text=f"{tlookbackSelect[jj]:3.2f} Gyr",
@@ -2064,36 +2274,38 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
 
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
-            axis0 = ax[(len(selectSnaps)-1)//2]
-            midax = ax[(len(selectSnaps)-1)//2]
+            axis0 = ax[(len(selectSnaps) - 1) // 2]
+            midax = ax[(len(selectSnaps) - 1) // 2]
         else:
-            axis0 = ax[len(selectSnaps)-1,(len(Tlst)-1)//2]
-            midax = ax[(len(selectSnaps)-1)//2,0]
+            axis0 = ax[len(selectSnaps) - 1, (len(Tlst) - 1) // 2]
+            midax = ax[(len(selectSnaps) - 1) // 2, 0]
 
         axis0.set_xlabel(ylabel[xanalysisParam], fontsize=10)
         midax.set_ylabel(ylabel[yanalysisParam], fontsize=10)
 
-
-        plt.colorbar(img1, ax=ax.ravel().tolist(),orientation="vertical").set_label(
+        plt.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
             label=ylabel[weightKey], size=fontsize
         )
 
-        plt.setp(ax, ylim=(xlimDict[yanalysisParam]['xmin'],xlimDict[yanalysisParam]['xmax']), xlim=(xlimDict[xanalysisParam]['xmin'],xlimDict[xanalysisParam]['xmax'])
+        plt.setp(
+            ax,
+            ylim=(xlimDict[yanalysisParam]["xmin"], xlimDict[yanalysisParam]["xmax"]),
+            xlim=(xlimDict[xanalysisParam]["xmin"], xlimDict[xanalysisParam]["xmax"]),
         )
         plt.tight_layout()
-        plt.subplots_adjust(top=0.90,bottom=0.05,left=0.10,right=0.75,hspace=0.1,wspace=0.1)
-
-
+        plt.subplots_adjust(
+            top=0.90, bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
+        )
 
         opslaan = (
-                "./"
-                + 'MultiHalo'
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                + f"{xanalysisParam}-{yanalysisParam}"
-                + f"_Hist.pdf"
+            "./"
+            + "MultiHalo"
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+            + f"{xanalysisParam}-{yanalysisParam}"
+            + f"_Hist.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
@@ -2101,41 +2313,63 @@ def hist_plot(dataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,s
 
     return
 
+
 ################################################################################
 
-def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv",Nbins=150,DPI=75,weightKey = "L",analysisParam="R"):
+
+def medians_phases_plot(
+    FlatDataDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+    Nbins=150,
+    DPI=75,
+    weightKey="L",
+    analysisParam="R",
+):
 
     tmpxsize = xsize + 2.0
-    fontsize=10
+    fontsize = 10
 
     labelDict = {
         "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]",
         "gz": r"Log10 Average Metallicity per pixel [$Z/Z_{\odot}$]",
         "tcool": r"Log10 Cooling Time per pixel [$Gyr$]",
         "tcool_tff": r"Cooling Time over Free Fall Time",
-        "L" : r"Specific Angular Momentum [$kpc$ $km$ $s^{-1}$]"
+        "L": r"Specific Angular Momentum [$kpc$ $km$ $s^{-1}$]",
     }
 
-    xlimDict = {"L" :  {"xmin": 3.5, "xmax": 4.5},
-            "T": {"xmin": 3.75, "xmax": 6.5},
-            "R": {"xmin": 0, "xmax": 400},
-            "n_H": {"xmin": -6.0, "xmax": 0.0},
-            "B": {"xmin": -6.0, "xmax": 2.0},
-            "vrad": {"xmin": -250.0, "xmax": 250.0},
-            "gz": {"xmin": -4.0, "xmax": 1.0},
-            "P_thermal": {"xmin": -1.0, "xmax": 7.0},
-            "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
-            "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
-            "P_tot": {"xmin": -1.0, "xmax": 7.0},
-            "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
-            "tcool": {"xmin": -6.0, "xmax": 3.0},
-            "theat" :  {"xmin": -4.0, "xmax": 4.0},
-            "tff": {"xmin": -3.0, "xmax": 1.0},
-            "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
-            "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
-            "dens": {"xmin": -30.0, "xmax": -22.0},
-            "ndens": {"xmin": -6.0, "xmax": 2.0},
-        }
+    xlimDict = {
+        "L": {"xmin": 3.5, "xmax": 4.5},
+        "T": {"xmin": 3.75, "xmax": 6.5},
+        "R": {"xmin": 0, "xmax": 400},
+        "n_H": {"xmin": -6.0, "xmax": 0.0},
+        "B": {"xmin": -6.0, "xmax": 2.0},
+        "vrad": {"xmin": -250.0, "xmax": 250.0},
+        "gz": {"xmin": -4.0, "xmax": 1.0},
+        "P_thermal": {"xmin": -1.0, "xmax": 7.0},
+        "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
+        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
+        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
+        "tcool": {"xmin": -6.0, "xmax": 3.0},
+        "theat": {"xmin": -4.0, "xmax": 4.0},
+        "tff": {"xmin": -3.0, "xmax": 1.0},
+        "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
+        "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
+        "dens": {"xmin": -30.0, "xmax": -22.0},
+        "ndens": {"xmin": -6.0, "xmax": 2.0},
+    }
     print("")
     print("Loading Data!")
     # Create a plot for each Temperature
@@ -2143,7 +2377,12 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
         print(f"{rin}R{rout}")
 
         fig, ax = plt.subplots(
-            nrows=len(Tlst), ncols=1, sharex=True, sharey=True, figsize=(tmpxsize, ysize), dpi=DPI
+            nrows=len(Tlst),
+            ncols=1,
+            sharex=True,
+            sharey=True,
+            figsize=(tmpxsize, ysize),
+            dpi=DPI,
         )
         yminlist = []
         ymaxlist = []
@@ -2158,8 +2397,11 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             else:
                 currentAx = ax[ii]
 
-            whereGas = np.where(np.where(FlatDataDict[FullDictKey]['type']==0,True,False).all(axis=0))[0]
-
+            whereGas = np.where(
+                np.where(FlatDataDict[FullDictKey]["type"] == 0, True, False).all(
+                    axis=0
+                )
+            )[0]
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
             #   Figure 1: Full Cells Data
@@ -2169,9 +2411,11 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             zmin = xlimDict[weightKey]["xmin"]
             zmax = xlimDict[weightKey]["xmax"]
 
-            ydat = {analysisParam : FlatDataDict[FullDictKey][analysisParam][:,whereGas]}
+            ydat = {
+                analysisParam: FlatDataDict[FullDictKey][analysisParam][:, whereGas]
+            }
 
-            ydat,whereReal = delete_nan_inf_axis(ydat, axis=0)
+            ydat, whereReal = delete_nan_inf_axis(ydat, axis=0)
 
             # Set y data points.
             # Flip x and y and weightings' temporal ordering to match medians.
@@ -2179,26 +2423,39 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             whereReal = whereGas[whereReal[analysisParam]]
             if analysisParam in logParameters:
                 ydataCells = np.log10(ydataCells)
-            ydataCells = np.flip(ydataCells,axis=0)
+            ydataCells = np.flip(ydataCells, axis=0)
 
             nDat = np.shape(ydataCells)[1]
 
             # Set lookback time array for each data point in y
-            xdataCells = np.flip(np.tile(np.array(tlookback),nDat).reshape(nDat,-1).T,axis=0)
+            xdataCells = np.flip(
+                np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
+            )
 
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:,whereReal],axis=0)
-            weightDataCells = np.flip(FlatDataDict[FullDictKey][weightKey][:,whereReal] * massCells,axis=0)
+            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
+            weightDataCells = np.flip(
+                FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
+            )
 
             if weightKey == "mass":
                 finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
-                    xdataCells.flatten(), ydataCells.flatten(), bins=[len(snapRange)-1,Nbins], weights=massCells.flatten()
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=[len(snapRange) - 1, Nbins],
+                    weights=massCells.flatten(),
                 )
             else:
                 mhistCells, _, _ = np.histogram2d(
-                    xdataCells.flatten(), ydataCells.flatten(), bins=[len(snapRange)-1,Nbins], weights=massCells.flatten()
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=[len(snapRange) - 1, Nbins],
+                    weights=massCells.flatten(),
                 )
                 histCells, xedgeCells, yedgeCells = np.histogram2d(
-                    xdataCells.flatten(), ydataCells.flatten(), bins=[len(snapRange)-1,Nbins], weights=weightDataCells.flatten()
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=[len(snapRange) - 1, Nbins],
+                    weights=weightDataCells.flatten(),
                 )
 
                 finalHistCells = histCells / mhistCells
@@ -2220,15 +2477,13 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
                 rasterized=True,
             )
 
-
             currentAx.set_title(
                 r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
                 % (float(T), TRACERSPARAMS["deltaT"]),
                 fontsize=12,
             )
 
-
-            selectKey = (f"T{Tlst[ii]}",f"{rin}R{rout}")
+            selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
             plotData = statsData[selectKey].copy()
             # Temperature specific load path
 
@@ -2236,13 +2491,13 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
                 [
                     xx
                     for xx in range(
-                    int(TRACERSPARAMS["snapMin"]),
-                    min(
-                        int(TRACERSPARAMS["snapMax"]) + 1,
-                        int(TRACERSPARAMS["finalSnap"]) + 1,
-                    ),
-                    1,
-                )
+                        int(TRACERSPARAMS["snapMin"]),
+                        min(
+                            int(TRACERSPARAMS["snapMax"]) + 1,
+                            int(TRACERSPARAMS["finalSnap"]) + 1,
+                        ),
+                        1,
+                    )
                 ]
             )
             selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
@@ -2280,10 +2535,10 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             ymaxlist.append(ymax)
 
             if (
-                    (np.isinf(ymin) == True)
-                    or (np.isinf(ymax) == True)
-                    or (np.isnan(ymin) == True)
-                    or (np.isnan(ymax) == True)
+                (np.isinf(ymin) == True)
+                or (np.isinf(ymax) == True)
+                or (np.isnan(ymin) == True)
+                or (np.isnan(ymax) == True)
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
@@ -2298,21 +2553,21 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
                 loadPercentilesTypes[:midPercentile],
-                loadPercentilesTypes[midPercentile + 1:],
+                loadPercentilesTypes[midPercentile + 1 :],
             )
             for (LO, UP) in percentilesPairs:
                 currentAx.plot(
-                        tlookback,
-                        plotData[UP],
-                        color="black",
-                        lineStyle=lineStylePercentiles
-                    )
+                    tlookback,
+                    plotData[UP],
+                    color="black",
+                    lineStyle=lineStylePercentiles,
+                )
                 currentAx.plot(
-                        tlookback,
-                        plotData[LO],
-                        color="black",
-                        lineStyle=lineStylePercentiles
-                    )
+                    tlookback,
+                    plotData[LO],
+                    color="black",
+                    lineStyle=lineStylePercentiles,
+                )
             currentAx.plot(
                 tlookback,
                 plotData[median],
@@ -2347,37 +2602,35 @@ def medians_phases_plot(FlatDataDict,statsData,TRACERSPARAMS,saveParams,tlookbac
             midax = ax
         else:
             axis0 = ax[len(Tlst) - 1]
-            midax = ax[(len(Tlst)-1)//2]
+            midax = ax[(len(Tlst) - 1) // 2]
 
         axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
         midax.set_ylabel(ylabel[analysisParam], fontsize=10)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
         if (
-                (np.isinf(finalymin) == True)
-                or (np.isinf(finalymax) == True)
-                or (np.isnan(finalymin) == True)
-                or (np.isnan(finalymax) == True)
+            (np.isinf(finalymin) == True)
+            or (np.isinf(finalymax) == True)
+            or (np.isnan(finalymin) == True)
+            or (np.isnan(finalymax) == True)
         ):
             print("Data All Inf/NaN! Skipping entry!")
             continue
 
-        custom_ylim = (xlimDict[analysisParam]['xmin'], xlimDict[analysisParam]['xmax'])
+        custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
         plt.setp(ax, ylim=custom_ylim)
         plt.tight_layout()
-        plt.subplots_adjust(top=0.80,right=0.75,hspace=0.25)
-
-
+        plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
 
         opslaan = (
-                "./"
-                + 'MultiHalo'
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                + f"{weightKey}-{analysisParam}"
-                + f"_Medians+Phases.pdf"
+            "./"
+            + "MultiHalo"
+            + "/"
+            + f"{int(rin)}R{int(rout)}"
+            + "/"
+            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+            + f"{weightKey}-{analysisParam}"
+            + f"_Medians+Phases.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)

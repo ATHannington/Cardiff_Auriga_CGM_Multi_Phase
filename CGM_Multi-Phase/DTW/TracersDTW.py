@@ -50,14 +50,20 @@ def DTW_prep(M):
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
 
 # Load Halo Selection Data
-SELECTEDHALOES, HALOPATHS = load_haloes_selected(HaloPathBase = TRACERSPARAMS['savepath'] ,SelectedHaloesPath=SelectedHaloesPath)
+SELECTEDHALOES, HALOPATHS = load_haloes_selected(
+    HaloPathBase=TRACERSPARAMS["savepath"], SelectedHaloesPath=SelectedHaloesPath
+)
 
 DataSavepathSuffix = f".h5"
 
-snapRange = [snap for snap in range(
+snapRange = [
+    snap
+    for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1)]
+        1,
+    )
+]
 
 
 dtwParams = TRACERSPARAMS["dtwParams"]
@@ -65,18 +71,19 @@ logParams = TRACERSPARAMS["dtwlogParams"]
 
 dtwSubset = int(TRACERSPARAMS["dtwSubset"])
 
-loadParams = dtwParams + TRACERSPARAMS['saveEssentials']
+loadParams = dtwParams + TRACERSPARAMS["saveEssentials"]
 
 print("Load Time Flattened Data!")
-dataDict , saveParams = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
-                            HALOPATHS,
-                            DataSavepathSuffix,
-                            snapRange,
-                            Tlst,
-                            TracersParamsPath,
-                            loadParams = loadParams,
-                            dtwSubset = dtwSubset
-                            )
+dataDict, saveParams = multi_halo_merge_flat_wrt_time(
+    SELECTEDHALOES,
+    HALOPATHS,
+    DataSavepathSuffix,
+    snapRange,
+    Tlst,
+    TracersParamsPath,
+    loadParams=loadParams,
+    dtwSubset=dtwSubset,
+)
 print("Done!")
 
 print(torch.__version__)
@@ -102,14 +109,14 @@ pridDict = {}
 for T in Tlst:
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         for analysisParam in dtwParams:
-            key = (f"T{T}",f"{rin}R{rout}")
+            key = (f"T{T}", f"{rin}R{rout}")
             if analysisParam in logParams:
-                newkey = (f"T{T}",f"{rin}R{rout}", f"log10{analysisParam}")
+                newkey = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
                 analysisDict.update(
                     {newkey: np.log10(dataDict[key][analysisParam].T.copy())}
                 )
             else:
-                newkey = (f"T{T}",f"{rin}R{rout}", f"{analysisParam}")
+                newkey = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
                 analysisDict.update({newkey: dataDict[key][analysisParam].T.copy()})
 
             tridDict.update({newkey: dataDict[key]["trid"]})

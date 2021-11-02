@@ -235,12 +235,12 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plt.subplots_adjust(top=0.90, hspace=0.01)
 
             opslaan = (
-                    "./"
-                    + saveHalo
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
+                "./"
+                + saveHalo
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_snap{int(snap)}_{weightKey}_PhaseDiagram_Individual-Temps.pdf"
             )
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)

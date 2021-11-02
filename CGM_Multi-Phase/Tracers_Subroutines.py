@@ -26,22 +26,22 @@ from itertools import combinations, chain
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 # ==============================================================================#
 def snap_analysis(
-        snapNumber,
-        TRACERSPARAMS,
-        HaloID,
-        TracersTFC,
-        elements,
-        elements_Z,
-        elements_mass,
-        elements_solar,
-        Zsolar,
-        omegabaryon0,
-        saveParams,
-        saveTracersOnly,
-        DataSavepath,
-        FullDataPathSuffix,
-        MiniDataPathSuffix,
-        lazyLoadBool=True,
+    snapNumber,
+    TRACERSPARAMS,
+    HaloID,
+    TracersTFC,
+    elements,
+    elements_Z,
+    elements_mass,
+    elements_solar,
+    Zsolar,
+    omegabaryon0,
+    saveParams,
+    saveTracersOnly,
+    DataSavepath,
+    FullDataPathSuffix,
+    MiniDataPathSuffix,
+    lazyLoadBool=True,
 ):
     print("")
     print(f"[@{int(snapNumber)}]: Starting Snap {snapNumber}")
@@ -186,9 +186,9 @@ def snap_analysis(
             out = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): CellsCFT}
 
             savePath = (
-                    DataSavepath
-                    + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}"
-                    + FullDataPathSuffix
+                DataSavepath
+                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}"
+                + FullDataPathSuffix
             )
 
             print(
@@ -212,9 +212,9 @@ def snap_analysis(
             )
 
             if (
-                    (TRACERSPARAMS["QuadPlotBool"] == True)
-                    & (targetT == int(TRACERSPARAMS["targetTLst"][0]))
-                    & (rin == TRACERSPARAMS["Rinner"][0])
+                (TRACERSPARAMS["QuadPlotBool"] == True)
+                & (targetT == int(TRACERSPARAMS["targetTLst"][0]))
+                & (rin == TRACERSPARAMS["Rinner"][0])
             ):
                 plot_projections(
                     snapGas,
@@ -259,25 +259,25 @@ def snap_analysis(
 #       PRE-MAIN ANALYSIS CODE
 # ==============================================================================#
 def tracer_selection_snap_analysis(
-        TRACERSPARAMS,
-        HaloID,
-        elements,
-        elements_Z,
-        elements_mass,
-        elements_solar,
-        Zsolar,
-        omegabaryon0,
-        saveParams,
-        saveTracersOnly,
-        DataSavepath,
-        FullDataPathSuffix,
-        MiniDataPathSuffix,
-        lazyLoadBool=True,
-        SUBSET=None,
-        snapNumber=None,
-        saveTracers=True,
-        TFCbool=True,
-        loadonlyhalo=True,
+    TRACERSPARAMS,
+    HaloID,
+    elements,
+    elements_Z,
+    elements_mass,
+    elements_solar,
+    Zsolar,
+    omegabaryon0,
+    saveParams,
+    saveTracersOnly,
+    DataSavepath,
+    FullDataPathSuffix,
+    MiniDataPathSuffix,
+    lazyLoadBool=True,
+    SUBSET=None,
+    snapNumber=None,
+    saveTracers=True,
+    TFCbool=True,
+    loadonlyhalo=True,
 ):
     print("")
     print("***")
@@ -418,7 +418,7 @@ def tracer_selection_snap_analysis(
         if saveTracers is True:
             for targetT in TRACERSPARAMS["targetTLst"]:
                 for (rin, rout) in zip(
-                        TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]
+                    TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]
                 ):
                     key = (f"T{targetT}", f"{rin}R{rout}")
 
@@ -429,9 +429,9 @@ def tracer_selection_snap_analysis(
                     }
 
                     savePath = (
-                            DataSavepath
-                            + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"
-                            + FullDataPathSuffix
+                        DataSavepath
+                        + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Tracers"
+                        + FullDataPathSuffix
                     )
 
                     print(
@@ -690,7 +690,7 @@ def tracer_selection_snap_analysis(
 
 
 def get_tracers_from_cells(
-        snapGas, snapTracers, TRACERSPARAMS, saveParams, saveTracersOnly, snapNumber
+    snapGas, snapTracers, TRACERSPARAMS, saveParams, saveTracersOnly, snapNumber
 ):
     """
     Select the Cells which meet the conditional where Cond. Select from these cells
@@ -716,12 +716,12 @@ def get_tracers_from_cells(
 
             Cond = np.where(
                 (
-                        snapGas.data["T"][whereGas]
-                        >= 1.0 * 10 ** (targetT - TRACERSPARAMS["deltaT"])
+                    snapGas.data["T"][whereGas]
+                    >= 1.0 * 10 ** (targetT - TRACERSPARAMS["deltaT"])
                 )
                 & (
-                        snapGas.data["T"][whereGas]
-                        <= 1.0 * 10 ** (targetT + TRACERSPARAMS["deltaT"])
+                    snapGas.data["T"][whereGas]
+                    <= 1.0 * 10 ** (targetT + TRACERSPARAMS["deltaT"])
                 )
                 & (snapGas.data["R"][whereGas] >= rin)
                 & (snapGas.data["R"][whereGas] <= rout)
@@ -768,7 +768,7 @@ def get_tracers_from_cells(
 
 # ------------------------------------------------------------------------------#
 def get_cells_from_tracers(
-        snapGas, snapTracers, Tracers, saveParams, saveTracersOnly, snapNumber
+    snapGas, snapTracers, Tracers, saveParams, saveTracersOnly, snapNumber
 ):
     """
     Get the IDs and data from cells containing the Tracers passed in in Tracers.
@@ -841,15 +841,15 @@ def get_cells_from_tracers(
 
 # ------------------------------------------------------------------------------#
 def save_tracer_data(
-        snapGas,
-        Tracers,
-        Parents,
-        CellIDs,
-        CellsIndices,
-        Ntracers,
-        snapNumber,
-        saveParams,
-        saveTracersOnly,
+    snapGas,
+    Tracers,
+    Parents,
+    CellIDs,
+    CellsIndices,
+    Ntracers,
+    snapNumber,
+    saveParams,
+    saveTracersOnly,
 ):
     """
     Save the requested data from the Tracers' Cells data. Only saves the cells
@@ -911,15 +911,15 @@ def save_tracer_data(
 
 
 def save_cells_data(
-        snapGas,
-        Tracers,
-        Parents,
-        CellIDs,
-        CellsIndices,
-        Ntracers,
-        snapNumber,
-        saveParams,
-        saveTracersOnly,
+    snapGas,
+    Tracers,
+    Parents,
+    CellIDs,
+    CellsIndices,
+    Ntracers,
+    snapNumber,
+    saveParams,
+    saveTracersOnly,
 ):
     """
     Save the requested data from the Tracers' Cells data. Should save an entry for every Tracer,
@@ -1101,15 +1101,15 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 
 # ------------------------------------------------------------------------------#
 def calculate_tracked_parameters(
-        snapGas,
-        snap,
-        elements,
-        elements_Z,
-        elements_mass,
-        elements_solar,
-        Zsolar,
-        omegabaryon0,
-        snapNumber,
+    snapGas,
+    snap,
+    elements,
+    elements_Z,
+    elements_mass,
+    elements_solar,
+    Zsolar,
+    omegabaryon0,
+    snapNumber,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1119,29 +1119,29 @@ def calculate_tracked_parameters(
     whereGas = np.where(snapGas.type == 0)
     # Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = (
-            3.0
-            * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3 + snapGas.omegalambda)
-            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-            / (8.0 * pi * c.G)
+        3.0
+        * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3 + snapGas.omegalambda)
+        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
+        / (8.0 * pi * c.G)
     )
     rhomean = (
-            3.0
-            * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3)
-            * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-            / (8.0 * pi * c.G)
+        3.0
+        * (snapGas.omega0 * (1.0 + snapGas.redshift) ** 3)
+        * (snapGas.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
+        / (8.0 * pi * c.G)
     )
 
     # Mean weight [amu]
     meanweight = sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
-            sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
-            + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
+        sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
+        + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
     )
 
     # 3./2. N KB
     Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
 
     snapGas.data["dens"] = (
-            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
+        (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
     )  # [g cm^-3]
     gasX = snapGas.gmet[whereGas, 0][0]
 
@@ -1149,16 +1149,16 @@ def calculate_tracked_parameters(
     snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
     snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / c.amu * gasX  # cm^-3
     snapGas.data["rho_rhomean"] = snapGas.data["dens"][whereGas] / (
-            rhomean * omegabaryon0 / snapGas.omega0
+        rhomean * omegabaryon0 / snapGas.omega0
     )  # rho / <rho>
     snapGas.data["Tdens"] = (
-            snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
+        snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
     )
 
     bfactor = (
-            1e6
-            * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
-            * (1e5 / (c.parsec * 1e6))
+        1e6
+        * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
+        * (1e5 / (c.parsec * 1e6))
     )  # [microGauss]
 
     # Magnitude of Magnetic Field [micro Guass]
@@ -1173,7 +1173,7 @@ def calculate_tracked_parameters(
     KpcTokm = 1e3 * c.parsec * 1e-5
     # Radial Velocity [km s^-1]
     snapGas.data["vrad"] = (
-            snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
+        snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
     ).sum(axis=1)
     snapGas.data["vrad"] /= snapGas.data["R"][whereGas] * KpcTokm
 
@@ -1181,12 +1181,12 @@ def calculate_tracked_parameters(
     GyrToSeconds = 365.25 * 24.0 * 60.0 * 60.0 * 1e9
 
     snapGas.data["tcool"] = (
-                                    snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
-                            ) / (
-                                    GyrToSeconds
-                                    * snapGas.data["gcol"][whereGas]
-                                    * snapGas.data["n_H"][whereGas] ** 2
-                            )  # [Gyrs]
+        snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
+    ) / (
+        GyrToSeconds
+        * snapGas.data["gcol"][whereGas]
+        * snapGas.data["n_H"][whereGas] ** 2
+    )  # [Gyrs]
     snapGas.data["theat"] = snapGas.data["tcool"].copy()
 
     coolingGas = np.where(snapGas.data["tcool"] < 0.0)
@@ -1211,7 +1211,7 @@ def calculate_tracked_parameters(
     # Specific Angular Momentum [kpc km s^-1]
     snapGas.data["L"] = sqrt(
         (
-                cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
+            cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
         ).sum(axis=1)
     )
 
@@ -1221,24 +1221,24 @@ def calculate_tracked_parameters(
 
     # Magnetic Pressure [P/k_B K cm^-3]
     snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
-            8.0 * pi * c.KB
+        8.0 * pi * c.KB
     )
 
     snapGas.data["P_tot"] = (
-            snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
+        snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
     )
 
     snapGas.data["Pthermal_Pmagnetic"] = (
-            snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
+        snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
     )
 
     # Kinetic "Pressure" [P/k_B K cm^-3]
     snapGas.data["P_kinetic"] = (
-            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
-            * 1e10
-            * c.msol
-            * (1.0 / c.KB)
-            * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
+        (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
+        * 1e10
+        * c.msol
+        * (1.0 / c.KB)
+        * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
     )
 
     # Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
@@ -1248,16 +1248,16 @@ def calculate_tracked_parameters(
 
     # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
     snapGas.data["tcross"] = (
-            (KpcTokm * 1e3 / GyrToSeconds)
-            * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
-            / snapGas.data["csound"][whereGas]
+        (KpcTokm * 1e3 / GyrToSeconds)
+        * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
+        / snapGas.data["csound"][whereGas]
     )
 
     rsort = np.argsort(snap.data["R"])
     runsort = np.argsort(rsort)
 
     rhosorted = (3.0 * np.cumsum(snap.data["mass"][rsort])) / (
-            4.0 * pi * (snap.data["R"][rsort]) ** 3
+        4.0 * pi * (snap.data["R"][rsort]) ** 3
     )
     rho = rhosorted[runsort]
 
@@ -1272,7 +1272,7 @@ def calculate_tracked_parameters(
 
     # Cooling time over free fall time
     snapGas.data["tcool_tff"] = (
-            snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
+        snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
     )
     del tmp
 
@@ -1350,7 +1350,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
     print(f"[@{snapNumber}]: HaloID Finder!")
 
-    types = np.unique(snapGas.data['type'])
+    types = np.unique(snapGas.data["type"])
 
     # Make a pre-computed list for these where type = 0 or 4
     #   This adds a speed advantage to the rest of this function =)
@@ -1431,10 +1431,10 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
             # Some Sanity checks. There should be 1 index pair for each subhalo, +1 for upper and lower bounds...
             assert len(lower) == (
-                    nshUP + 1 - nshLO
+                nshUP + 1 - nshLO
             ), "[@halo_id_finder]: Lower selection list has fewer entries than number of subhaloes!"
             assert len(upper) == (
-                    nshUP + 1 - nshLO
+                nshUP + 1 - nshLO
             ), "[@halo_id_finder]: Upper selection list has fewer entries than number of subhaloes!"
 
             # Loop over the index pairs, and assign all bound material (that is, all material apart from the end of slty to flty final pair)
@@ -1456,7 +1456,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             if lower[0] == upper[-1]:
                 whereSelectSHFoF = whereType[0][lower[0]]
             else:
-                whereSelectSHFoF = whereType[0][lower[0]: upper[-1]]
+                whereSelectSHFoF = whereType[0][lower[0] : upper[-1]]
 
             snapGas.data["FoFHaloID"][whereSelectSHFoF] = fofhalo
 
@@ -1465,7 +1465,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             if lower[-1] == upper[-1]:
                 continue
             else:
-                whereSelectSHunassigned = whereType[0][lower[-1]: upper[-1]]
+                whereSelectSHunassigned = whereType[0][lower[-1] : upper[-1]]
 
             snapGas.data["SubHaloID"][whereSelectSHunassigned] = -1
 
@@ -1487,23 +1487,23 @@ def load_tracers_parameters(TracersParamsPath):
     # Convert Dictionary items to (mostly) floats
     for key, value in TRACERSPARAMS.items():
         if (
-                (key == "targetTLst")
-                or (key == "phasesSnaps")
-                or (key == "Axes")
-                or (key == "percentiles")
-                or (key == "Rinner")
-                or (key == "Router")
+            (key == "targetTLst")
+            or (key == "phasesSnaps")
+            or (key == "Axes")
+            or (key == "percentiles")
+            or (key == "Rinner")
+            or (key == "Router")
         ):
             # Convert targetTLst to list of floats
             lst = value.split(",")
             lst2 = [float(item) for item in lst]
             TRACERSPARAMS.update({key: lst2})
         elif (
-                (key == "saveParams")
-                or (key == "saveTracersOnly")
-                or (key == "saveEssentials")
-                or (key == "dtwParams")
-                or (key == "dtwlogParams")
+            (key == "saveParams")
+            or (key == "saveTracersOnly")
+            or (key == "saveEssentials")
+            or (key == "dtwParams")
+            or (key == "dtwlogParams")
         ):
             # Convert targetTLst to list of strings
             lst = value.split(",")
@@ -1534,15 +1534,15 @@ def load_tracers_parameters(TracersParamsPath):
 
     # This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
     DataSavepath = (
-            TRACERSPARAMS["savepath"]
-            + f"Data_selectSnap{int(TRACERSPARAMS['selectSnap'])}_targetT{Tstr}"
+        TRACERSPARAMS["savepath"]
+        + f"Data_selectSnap{int(TRACERSPARAMS['selectSnap'])}_targetT{Tstr}"
     )
 
     return TRACERSPARAMS, DataSavepath, Tlst
 
 
 # ------------------------------------------------------------------------------#
-def load_haloes_selected(HaloPathBase,SelectedHaloesPath):
+def load_haloes_selected(HaloPathBase, SelectedHaloesPath):
     SELECTEDHALOES = pd.read_csv(
         SelectedHaloesPath,
         delimiter=" ",
@@ -1556,19 +1556,19 @@ def load_haloes_selected(HaloPathBase,SelectedHaloesPath):
     HALOPATHS = {}
     # Convert Dictionary items to (mostly) floats
     for key, value in SELECTEDHALOES.items():
-        if (
-                (key == "selectedHaloes")
-        ):
+        if key == "selectedHaloes":
             # Convert targetTLst to list of floats
             lst = value.split(",")
             strlst = [str(item) for item in lst]
-            pathlst = [HaloPathBase + item  for item in strlst]
+            pathlst = [HaloPathBase + item for item in strlst]
             SELECTEDHALOES.update({key: strlst})
-            HALOPATHS.update({'haloPaths' :pathlst })
+            HALOPATHS.update({"haloPaths": pathlst})
         else:
-            raise Exception('None "selectedHaloes" data fields detected in ' + SelectedHaloesPath)
+            raise Exception(
+                'None "selectedHaloes" data fields detected in ' + SelectedHaloesPath
+            )
 
-    return SELECTEDHALOES['selectedHaloes'], HALOPATHS['haloPaths']
+    return SELECTEDHALOES["selectedHaloes"], HALOPATHS["haloPaths"]
 
 
 # ------------------------------------------------------------------------------#
@@ -1706,29 +1706,30 @@ def load_haloes_selected(HaloPathBase,SelectedHaloesPath):
 #
 #     return SelectedData, SelectedTrids, SelectedPrids
 
+
 def get_individual_cell_from_tracer(
-        Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+    Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
     """
-        Function to go from Tracers, Parents, CellIDs, Data
-        to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
-        [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
-        Selected Tracers is not in the CellIDs.
-        This should return a consistently ordered data set where we always Have
-        the data in the order of SelectedTracers and NaN's where that tracer
-        has been lost. This allows for a look over the individual tracer's
-        behaviour over time.
+    Function to go from Tracers, Parents, CellIDs, Data
+    to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
+    [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
+    Selected Tracers is not in the CellIDs.
+    This should return a consistently ordered data set where we always Have
+    the data in the order of SelectedTracers and NaN's where that tracer
+    has been lost. This allows for a look over the individual tracer's
+    behaviour over time.
 
-        We use a FORTRAN90 numpy.f2py compiled script called where_duplicates
-        in this function. This function accepts two 1D arrays, a & b. a ought
-        to be of the same shape as SelectedTracers, and contain the Parent IDs
-        (prids). b ought to be of shape Data and contain the CellIDs.
+    We use a FORTRAN90 numpy.f2py compiled script called where_duplicates
+    in this function. This function accepts two 1D arrays, a & b. a ought
+    to be of the same shape as SelectedTracers, and contain the Parent IDs
+    (prids). b ought to be of shape Data and contain the CellIDs.
 
-        The intention is that we return the intersect of a & b, WITH DUPLICATES.
-        That is, if a value is in a multiple times, it should return the
-        corresponding index and value of b for each of those instances of the
-        matching value. This is similar to numpy.intersect1d, but we include
-        duplicates. Hence the name, 'where_duplicates'.
+    The intention is that we return the intersect of a & b, WITH DUPLICATES.
+    That is, if a value is in a multiple times, it should return the
+    corresponding index and value of b for each of those instances of the
+    matching value. This is similar to numpy.intersect1d, but we include
+    duplicates. Hence the name, 'where_duplicates'.
     """
     # Import FORTRAN90 function
     from where_duplicates import where_duplicates
@@ -1743,19 +1744,27 @@ def get_individual_cell_from_tracer(
         dimension = 1
         NullEntry = np.nan
         dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
-    elif ((np.shape(np.shape(Data))[0] == 2)&((np.shape(Data)[0]==3)|(np.shape(Data)[1]==3))):
+    elif (np.shape(np.shape(Data))[0] == 2) & (
+        (np.shape(Data)[0] == 3) | (np.shape(Data)[1] == 3)
+    ):
         dimension = 3
         NullEntry = [np.nan for dd in range(dimension)]
-        dataBlank = np.full(shape=(np.shape(SelectedTracers)[0],dimension), fill_value=NullEntry)
+        dataBlank = np.full(
+            shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+        )
     else:
-        raise Exception(f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!")
+        raise Exception(
+            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+        )
 
     # Select which of the SelectedTracers are in Tracers from this snap
     SelectedTrids = np.where(np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
 
     # Find the indices of Tracers included in SelectedTracers in this snap
     # in the order, and shape, of SelectedTracers
-    _, SelectedIndices, TridIndices = np.intersect1d(    SelectedTracers, Tracers, return_indices=True)
+    _, SelectedIndices, TridIndices = np.intersect1d(
+        SelectedTracers, Tracers, return_indices=True
+    )
 
     # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
     # values (order SelectedTracers) to have the corresponding Parent ID from
@@ -1763,7 +1772,7 @@ def get_individual_cell_from_tracer(
     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
     pridBlank[SelectedIndices] = Parents[TridIndices]
 
-    #Rename for clarity
+    # Rename for clarity
     SelectedPrids = pridBlank
 
     # Use our FORTRAN90 function as described above to return the
@@ -1772,17 +1781,17 @@ def get_individual_cell_from_tracer(
     # to selectedCellIDs match, -1 where Tracer's cell not in snap.
     # This will allow for selection of Data with duplicates by
     # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
-    selectedCellIDs, selectedDataIndices = where_duplicates(SelectedPrids,CellIDs)
+    selectedCellIDs, selectedDataIndices = where_duplicates(SelectedPrids, CellIDs)
 
-    #Grab location of index of match of SelectedPrids with CellIDs.
-    whereIndexData = np.where(selectedDataIndices!=-1.)[0]
+    # Grab location of index of match of SelectedPrids with CellIDs.
+    whereIndexData = np.where(selectedDataIndices != -1.0)[0]
 
     # Assign the non-blank data to the prepared NullEntry populated array
     # of shape SelectedTracers. Again, this step is designed to
     # copy duplicates of the data where a cell contains more than one tracer.
     dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
 
-    #Rename for clarity
+    # Rename for clarity
     SelectedData = dataBlank
 
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
@@ -1790,6 +1799,7 @@ def get_individual_cell_from_tracer(
     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
 
     return SelectedData, SelectedTrids, SelectedPrids
+
 
 # ------------------------------------------------------------------------------#
 # def _select_data_from_selected_prids(SelectedPrids,CellIDs,Data,NullEntry=np.nan,dimension=1):
@@ -1806,12 +1816,18 @@ def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
         dimension = 1
         NullEntry = np.nan
         dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
-    elif ((np.shape(np.shape(Data))[0] == 2)&((np.shape(Data)[0]==3)|(np.shape(Data)[1]==3))):
+    elif (np.shape(np.shape(Data))[0] == 2) & (
+        (np.shape(Data)[0] == 3) | (np.shape(Data)[1] == 3)
+    ):
         dimension = 3
         NullEntry = [np.nan for dd in range(dimension)]
-        dataBlank = np.full(shape=(np.shape(SelectedTracers)[0],dimension), fill_value=NullEntry)
+        dataBlank = np.full(
+            shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+        )
     else:
-        raise Exception(f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!")
+        raise Exception(
+            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+        )
 
         # Select which of the SelectedTracers are in Tracers from this snap
     SelectedCellsReturned = np.where(np.isin(SelectedCells, CellIDs), SelectedCells, -1)
@@ -1826,17 +1842,16 @@ def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     # assert np.shape(SelectedData)[0] == np.shape(SelectedCells)[0]
     # assert np.shape(SelectedCellsReturned) == np.shape(SelectedCells)
 
-
-    parentsEqualsCellIDs = np.array_equal(SelectedCells,CellIDs)
+    parentsEqualsCellIDs = np.array_equal(SelectedCells, CellIDs)
     if parentsEqualsCellIDs == False:
-        selectedCellIDs, selectedDataIndices = where_duplicates(SelectedCells,CellIDs)
+        selectedCellIDs, selectedDataIndices = where_duplicates(SelectedCells, CellIDs)
 
-        whereIndexData = np.where(selectedDataIndices!=-1.)[0]
+        whereIndexData = np.where(selectedDataIndices != -1.0)[0]
 
         dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
 
     else:
-        dataBlank = Data[np.where(np.isin(CellIDs,Parents))[0]]
+        dataBlank = Data[np.where(np.isin(CellIDs, Parents))[0]]
 
     SelectedData = dataBlank
 
@@ -1917,14 +1932,14 @@ def hdf5_load(path):
 def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
     FullDict = {}
     for snap in range(
-            int(TRACERSPARAMS["snapMin"]),
-            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
-            1,
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+        1,
     ):
         for targetT in TRACERSPARAMS["targetTLst"]:
             for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 loadPath = (
-                        path + f"_T{targetT}_{rin}R{rout}_{int(snap)}" + FullDataPathSuffix
+                    path + f"_T{targetT}_{rin}R{rout}_{int(snap)}" + FullDataPathSuffix
                 )
                 data = hdf5_load(loadPath)
                 FullDict.update(data)
@@ -1939,15 +1954,15 @@ def statistics_hdf5_load(targetT, rin, rout, path, TRACERSPARAMS, MiniDataPathSu
     # Load data in {(T#, snap#):{k:v}} form
     nested = {}
     for snap in range(
-            int(TRACERSPARAMS["snapMin"]),
-            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
-            1,
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+        1,
     ):
         # Temperature specific load path
         loadPath = (
-                path
-                + f"_T{targetT}_{rin}R{rout}_{int(snap)}_Statistics"
-                + MiniDataPathSuffix
+            path
+            + f"_T{targetT}_{rin}R{rout}_{int(snap)}_Statistics"
+            + MiniDataPathSuffix
         )
         data = hdf5_load(loadPath)
         nested.update(data)
@@ -2061,16 +2076,16 @@ def pad_non_entries(snapGas, snapNumber):
 
 
 def calculate_statistics(
-        Cells,
-        targetT,
-        rin,
-        rout,
-        snapNumber,
-        TRACERSPARAMS,
-        saveParams,
-        DataSavepath=None,
-        MiniDataPathSuffix=".h5",
-        saveBool=True
+    Cells,
+    targetT,
+    rin,
+    rout,
+    snapNumber,
+    TRACERSPARAMS,
+    saveParams,
+    DataSavepath=None,
+    MiniDataPathSuffix=".h5",
+    saveBool=True,
 ):
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
@@ -2094,7 +2109,7 @@ def calculate_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = np.nanpercentile(v, percentile,axis=0)
+                stat = np.nanpercentile(v, percentile, axis=0)
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
@@ -2106,9 +2121,9 @@ def calculate_statistics(
     if saveBool == True:
         # Generate our savepath
         savePath = (
-                DataSavepath
-                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
-                + MiniDataPathSuffix
+            DataSavepath
+            + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
+            + MiniDataPathSuffix
         )
         print(
             "\n"
@@ -2125,42 +2140,44 @@ def calculate_statistics(
 
 # ------------------------------------------------------------------------------#
 def save_statistics_csv(
-        statsData,
-        TRACERSPARAMS,
-        simList,
-        haloPathList,
-        Tlst,
-        snapRange,
-        StatsDataPathSuffix=".csv"):
+    statsData,
+    TRACERSPARAMS,
+    simList,
+    haloPathList,
+    Tlst,
+    snapRange,
+    StatsDataPathSuffix=".csv",
+):
 
-    HaloPathBase = TRACERSPARAMS['savepath']
+    HaloPathBase = TRACERSPARAMS["savepath"]
     dfList = []
     for T in Tlst:
         print(f"T{T}")
-        for (rin, rout) in zip(TRACERSPARAMS["Rinner"],
-        TRACERSPARAMS["Router"]):
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
             print(f"{rin}R{rout}")
             key = (f"T{T}", f"{rin}R{rout}")
             dat = statsData[key].copy()
             datDF = pd.DataFrame(dat)
-            datDF['Log10(T)'] = float(T)
-            datDF['R_inner'] = float(rin)
-            datDF['R_outer'] = float(rout)
-            datDF['Snap Number'] = snapRange
+            datDF["Log10(T)"] = float(T)
+            datDF["R_inner"] = float(rin)
+            datDF["R_outer"] = float(rout)
+            datDF["Snap Number"] = snapRange
 
-            #Re-order the columns for easier reading...
-            frontCols = ['Log10(T)','R_inner','R_outer','Snap Number']
+            # Re-order the columns for easier reading...
+            frontCols = ["Log10(T)", "R_inner", "R_outer", "Snap Number"]
             cols = list(datDF.columns)
             for col in frontCols:
                 cols.remove(col)
 
-            datDF = datDF[frontCols+cols]
+            datDF = datDF[frontCols + cols]
             dfList.append(datDF)
 
-    dfOut = pd.concat(dfList,axis=0)
+    dfOut = pd.concat(dfList, axis=0)
 
-    savePath = HaloPathBase + f"Data_Tracers_MultiHalo_Statistics-Table" + StatsDataPathSuffix
+    savePath = (
+        HaloPathBase + f"Data_Tracers_MultiHalo_Statistics-Table" + StatsDataPathSuffix
+    )
 
     print(f"Saving Statistics to csv as: {savePath}")
 
@@ -2168,6 +2185,8 @@ def save_statistics_csv(
     dfOut.to_csv(savePath, index=False)
 
     return
+
+
 # ------------------------------------------------------------------------------#
 def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
     flattened_dict = {}
@@ -2190,21 +2209,20 @@ def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
 
 # ------------------------------------------------------------------------------#
 def flatten_wrt_time_speed_test(
-        targetT,
-        dataDict,
-        rin,
-        rout,
-        TRACERSPARAMS,
-        saveParams,
-        snapRange,
-        DataSavepath,
-        DataSavepathSuffix,
-        saveBool = True
+    targetT,
+    dataDict,
+    rin,
+    rout,
+    TRACERSPARAMS,
+    saveParams,
+    snapRange,
+    DataSavepath,
+    DataSavepathSuffix,
+    saveBool=True,
 ):
     import time
 
     flattened_dict = {}
-
 
     tmp = {}
     newkey = (f"T{targetT}", f"{rin}R{rout}")
@@ -2216,7 +2234,7 @@ def flatten_wrt_time_speed_test(
     key = (f"T{targetT}", f"{rin}R{rout}", f"{int(snap)}")
     for k, v in dataDict[key].items():
         if k in saveParams:
-            print('Start V1')
+            print("Start V1")
 
             start = time.time()
             (
@@ -2231,10 +2249,9 @@ def flatten_wrt_time_speed_test(
                 Data=dataDict[key][k],
             )
             stop = time.time()
-            print(f'Elapsed = {stop-start} s')
+            print(f"Elapsed = {stop-start} s")
 
-
-            print('Start V2 - F90')
+            print("Start V2 - F90")
 
             start = time.time()
             (
@@ -2249,7 +2266,7 @@ def flatten_wrt_time_speed_test(
                 Data=dataDict[key][k],
             )
             stop = time.time()
-            print(f'Elapsed = {stop-start} s')
+            print(f"Elapsed = {stop-start} s")
 
             if k == "trid":
                 tracerData = TracersReturned
@@ -2262,7 +2279,7 @@ def flatten_wrt_time_speed_test(
                 tmp.update({k: entry})
             else:
                 tmp.update({k: [tracerData]})
-                    # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
+                # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
 
     # print("To array!")
     for k, v in tmp.items():
@@ -2278,29 +2295,30 @@ def flatten_wrt_time_speed_test(
     #     final_dict.update({key : tmp})
 
     savePath = (
-            DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
+        DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
     )
 
     if saveBool == True:
-            print("\n" + f": Saving flat data as: " + savePath)
+        print("\n" + f": Saving flat data as: " + savePath)
 
-            hdf5_save(savePath, flattened_dict)
+        hdf5_save(savePath, flattened_dict)
 
-            return None
+        return None
     else:
         return flattened_dict
 
+
 def flatten_wrt_time(
-        targetT,
-        dataDict,
-        rin,
-        rout,
-        TRACERSPARAMS,
-        saveParams,
-        snapRange,
-        DataSavepath,
-        DataSavepathSuffix,
-        saveBool = True
+    targetT,
+    dataDict,
+    rin,
+    rout,
+    TRACERSPARAMS,
+    saveParams,
+    snapRange,
+    DataSavepath,
+    DataSavepathSuffix,
+    saveBool=True,
 ):
     flattened_dict = {}
     snapRange = [
@@ -2347,7 +2365,6 @@ def flatten_wrt_time(
                     tmp.update({k: [tracerData]})
                 # print(f"k : {k} --> type(tracerData) : {type(tracerData)} --> np.shape(tracerData) : {np.shape(tracerData)} --> type(tmp[k]) {type(tmp[k])} --> np.shape(tmp[k]) {np.shape(tmp[k])}")
 
-
     for k, v in tmp.items():
         tmp.update({k: np.array(v)})
         # print(f"k : {k} --> type(np.array(v)) : {type(np.array(v))} -->
@@ -2360,59 +2377,35 @@ def flatten_wrt_time(
     #     final_dict.update({key : tmp})
 
     savePath = (
-            DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
-            )
-    print('Flat Keys = ', flattened_dict.keys())
+        DataSavepath + f"_T{targetT}_{rin}R{rout}_flat-wrt-time" + DataSavepathSuffix
+    )
+    print("Flat Keys = ", flattened_dict.keys())
     if saveBool == True:
-            print("\n" + f": Saving flat data as: " + savePath)
+        print("\n" + f": Saving flat data as: " + savePath)
 
-            hdf5_save(savePath, flattened_dict)
+        hdf5_save(savePath, flattened_dict)
 
-            return None
+        return None
     else:
         return flattened_dict
 
+
 # ------------------------------------------------------------------------------#
 
-def multi_halo_flatten_wrt_time_speed_test(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,DataSavepathSuffix = f".h5",TracersParamsPath= "TracersParams.csv",TracersMasterParamsPath="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
 
-
-    singleValueParams = ["Lookback", "Ntracers", "Snap"]
-
-    # Number of cores to run on:
-
-    flattenParams = saveParams.copy()
-    flattenParams += TRACERSPARAMS["saveTracersOnly"] + TRACERSPARAMS["saveEssentials"]
-    for param in singleValueParams:
-        flattenParams.remove(param)
-
-    flattenedDict = {}
-    print("Flattening wrt time!")
-    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-        print(f"{rin}R{rout}")
-
-        for targetT in Tlst:
-            key = (f'T{targetT}',f'{rin}R{rout}')
-            print(key)
-            #Disable saving of dict and return flattened to parent process
-
-            out = flatten_wrt_time_speed_test(targetT,dataDict,
-            rin,
-            rout,
-            TRACERSPARAMS,
-            flattenParams,
-            snapRange,
-            DataSavepath,
-            DataSavepathSuffix,
-            saveBool = False)
-            flattenedDict.update({key:out})
-
-    print("Done! End of Flattening wrt Time Post-Processing :)")
-    return flattenedDict
-
-
-def multi_halo_flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,DataSavepath,loadParams=None,DataSavepathSuffix = f".h5",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
-
+def multi_halo_flatten_wrt_time_speed_test(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
 
     singleValueParams = ["Lookback", "Ntracers", "Snap"]
 
@@ -2429,26 +2422,81 @@ def multi_halo_flatten_wrt_time(dataDict,TRACERSPARAMS,saveParams,tlookback,snap
         print(f"{rin}R{rout}")
 
         for targetT in Tlst:
-            key = (f'T{targetT}',f'{rin}R{rout}')
+            key = (f"T{targetT}", f"{rin}R{rout}")
             print(key)
-            #Disable saving of dict and return flattened to parent process
+            # Disable saving of dict and return flattened to parent process
 
-            out = flatten_wrt_time(targetT,dataDict,
-            rin,
-            rout,
-            TRACERSPARAMS,
-            flattenParams,
-            snapRange,
-            DataSavepath,
-            DataSavepathSuffix,
-            saveBool = False)
-            flattenedDict.update({key:out})
+            out = flatten_wrt_time_speed_test(
+                targetT,
+                dataDict,
+                rin,
+                rout,
+                TRACERSPARAMS,
+                flattenParams,
+                snapRange,
+                DataSavepath,
+                DataSavepathSuffix,
+                saveBool=False,
+            )
+            flattenedDict.update({key: out})
 
     print("Done! End of Flattening wrt Time Post-Processing :)")
     return flattenedDict
 
 
-#------------------------------------------------------------------------------#
+def multi_halo_flatten_wrt_time(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    loadParams=None,
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
+
+    singleValueParams = ["Lookback", "Ntracers", "Snap"]
+
+    # Number of cores to run on:
+
+    flattenParams = saveParams.copy()
+    flattenParams += TRACERSPARAMS["saveTracersOnly"] + TRACERSPARAMS["saveEssentials"]
+    for param in singleValueParams:
+        flattenParams.remove(param)
+
+    flattenedDict = {}
+    print("Flattening wrt time!")
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"{rin}R{rout}")
+
+        for targetT in Tlst:
+            key = (f"T{targetT}", f"{rin}R{rout}")
+            print(key)
+            # Disable saving of dict and return flattened to parent process
+
+            out = flatten_wrt_time(
+                targetT,
+                dataDict,
+                rin,
+                rout,
+                TRACERSPARAMS,
+                flattenParams,
+                snapRange,
+                DataSavepath,
+                DataSavepathSuffix,
+                saveBool=False,
+            )
+            flattenedDict.update({key: out})
+
+    print("Done! End of Flattening wrt Time Post-Processing :)")
+    return flattenedDict
+
+
+# ------------------------------------------------------------------------------#
 
 
 def delete_nan_inf_axis(dict, axis=0):
@@ -2481,23 +2529,23 @@ def delete_nan_inf_axis(dict, axis=0):
 
 # ------------------------------------------------------------------------------#
 def plot_projections(
-        snapGas,
-        snapNumber,
-        targetT,
-        rin,
-        rout,
-        TRACERSPARAMS,
-        DataSavepath,
-        FullDataPathSuffix,
-        Axes=[0, 1],
-        zAxis=[2],
-        boxsize=400.0,
-        boxlos=20.0,
-        pixres=0.2,
-        pixreslos=4,
-        DPI=100,
-        CMAP=None,
-        numThreads=2,
+    snapGas,
+    snapNumber,
+    targetT,
+    rin,
+    rout,
+    TRACERSPARAMS,
+    DataSavepath,
+    FullDataPathSuffix,
+    Axes=[0, 1],
+    zAxis=[2],
+    boxsize=400.0,
+    boxlos=20.0,
+    pixres=0.2,
+    pixreslos=4,
+    DPI=100,
+    CMAP=None,
+    numThreads=2,
 ):
     print(
         f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Starting Projections Video Plots!"
@@ -2658,17 +2706,17 @@ def plot_projections(
 
     # Add overall figure plot
     TITLE = (
-            r"Redshift $(z) =$"
-            + f"{redshift:0.03f} "
-            + " "
-            + r"$t_{Lookback Time}=$"
-            + f"{tlookback :0.03f} Gyrs"
-            + "\n"
-            + f"Projections within {-1. * float(boxlos) / 2.}"
-            + r"<"
-            + f"{AxesLabels[zAxis[0]]}-axis"
-            + r"<"
-            + f"{float(boxlos) / 2.} kpc"
+        r"Redshift $(z) =$"
+        + f"{redshift:0.03f} "
+        + " "
+        + r"$t_{Lookback Time}=$"
+        + f"{tlookback :0.03f} Gyrs"
+        + "\n"
+        + f"Projections within {-1. * float(boxlos) / 2.}"
+        + r"<"
+        + f"{AxesLabels[zAxis[0]]}-axis"
+        + r"<"
+        + f"{float(boxlos) / 2.} kpc"
     )
     fig.suptitle(TITLE, fontsize=fontsizeTitle)
 
@@ -2702,8 +2750,8 @@ def plot_projections(
     cax1.yaxis.label.set_color("white")
     cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax1.set_ylabel(f"{AxesLabels[Axes[1]]} (kpc)", fontsize=fontsize)
-    # ax1.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize = fontsize)
+    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
+    # ax1.set_xlabel(f'{AxesLabels[Axes[0]]}"+r" [$kpc$]"', fontsize = fontsize)
     # ax1.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2738,8 +2786,8 @@ def plot_projections(
     cax2.yaxis.set_label_position("left")
     cax2.yaxis.label.set_color("white")
     cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
-    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
-    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} (kpc)', fontsize=fontsize)
+    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [$kpc$]"', fontsize=fontsize)
+    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} "+r" [$kpc$]"', fontsize=fontsize)
     # ax2.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2775,8 +2823,8 @@ def plot_projections(
     cax3.yaxis.label.set_color("white")
     cax3.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} (kpc)", fontsize=fontsize)
-    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} (kpc)", fontsize=fontsize)
+    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} "+r" [$kpc$]", fontsize=fontsize)
+    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [$kpc$]", fontsize=fontsize)
 
     # ax3.set_aspect(aspect)
 
@@ -2813,8 +2861,8 @@ def plot_projections(
     cax4.yaxis.label.set_color("white")
     cax4.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} (kpc)', fontsize=fontsize)
-    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} (kpc)", fontsize=fontsize)
+    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [$kpc$]"', fontsize=fontsize)
+    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [$kpc$]", fontsize=fontsize)
     # ax4.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2843,23 +2891,23 @@ def plot_projections(
 
 # ------------------------------------------------------------------------------#
 def tracer_plot(
-        Cells,
-        tridDict,
-        TRACERSPARAMS,
-        DataSavepath,
-        FullDataPathSuffix,
-        Axes=[0, 1],
-        zAxis=[2],
-        boxsize=400.0,
-        boxlos=20.0,
-        pixres=0.2,
-        pixreslos=4,
-        DPI=100,
-        CMAP=None,
-        numThreads=4,
-        MaxSubset=100,
-        lazyLoadBool=True,
-        tailsLength = 3,
+    Cells,
+    tridDict,
+    TRACERSPARAMS,
+    DataSavepath,
+    FullDataPathSuffix,
+    Axes=[0, 1],
+    zAxis=[2],
+    boxsize=400.0,
+    boxlos=20.0,
+    pixres=0.2,
+    pixreslos=4,
+    DPI=100,
+    CMAP=None,
+    numThreads=4,
+    MaxSubset=100,
+    lazyLoadBool=True,
+    tailsLength=3,
 ):
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
@@ -2870,8 +2918,8 @@ def tracer_plot(
     AxesLabels = ["x", "y", "z"]
 
     # Set plot figure sizes
-    xsize = 10.0
-    ysize = 10.0
+    xsize = 5.0
+    ysize = 5.0
     ageUniverse = 13.77
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
@@ -2937,11 +2985,23 @@ def tracer_plot(
     omegabaryon0 = 0.048
 
     HaloID = int(TRACERSPARAMS["haloID"])
+    snapRange = range(
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
 
-    for snapNumber in range(
-            int(TRACERSPARAMS["snapMin"]),
-            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
-    ):
+    # DPI Controlled by user as lower res needed for videos #
+    figOuter, axesOuter = plt.subplots(
+        nrows=1, ncols=3, figsize=(xsize*3., ysize), dpi=DPI
+    )
+
+    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+
+    kk = 0
+
+    for snapNumber in snapRange:
+        if snapNumber in outerPlotSnaps:
+            axOuter = axesOuter[kk]
+            kk += 1
         # --------------------------#
         ## Slices and Projections ##
         # --------------------------#
@@ -3227,29 +3287,34 @@ def tracer_plot(
 
                 # Add overall figure plot
                 TITLE = (
-                        r"Redshift $(z) =$"
-                        + f"{redshift:0.03f} "
-                        + " "
-                        + r"$t_{Lookback Time}=$"
-                        + f"{tlookback :0.03f} Gyrs"
-                        + "\n"
-                        + f"Projections within {-1. * float(boxlos) / 2.}"
-                        + r"<"
-                        + f"{AxesLabels[zAxis[0]]}-axis"
-                        + r"<"
-                        + f"{float(boxlos) / 2.} kpc"
-                        + "\n"
-                        + f"Subset of {int(subset)} Tracers selected at "
-                        + r"$t_{Lookback Time}=$"
-                        + f"{selectlookback :0.03f} Gyrs"
-                        + " as being at "
-                        + "\n"
-                        + r"$T = 10^{%5.2f \pm %5.2f} K$"
-                        % (targetT, TRACERSPARAMS["deltaT"])
-                        + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+                    r"Redshift $(z) =$"
+                    + f"{redshift:0.03f} "
+                    + " "
+                    + r"$t_{Lookback Time}=$"
+                    + f"{tlookback :0.03f} Gyrs"
+                    + "\n"
+                    + f"Projections within {-1. * float(boxlos) / 2.}"
+                    + r"<"
+                    + f"{AxesLabels[zAxis[0]]}-axis"
+                    + r"<"
+                    + f"{float(boxlos) / 2.} kpc"
+                    + "\n"
+                    + f"Subset of {int(subset)} Tracers selected at "
+                    + r"$t_{Lookback Time}=$"
+                    + f"{selectlookback :0.03f} Gyrs"
+                    + " as being at "
+                    + "\n"
+                    + r"$T = 10^{%5.2f \pm %5.2f} K$"
+                    % (targetT, TRACERSPARAMS["deltaT"])
+                    + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
+                if snapNumber in outerPlotSnaps:
+                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ " " + r"$t_{Lookback Time}=$"+ f"{tlookback :0.03f} Gyrs"
+
+                    axOuter.set_title(label=OUTERSUBTITLE)
+                    axOuter.title.set_size(fontsize)
 
                 # cmap = plt.get_cmap(CMAP)
                 cmap.set_bad(color="grey")
@@ -3278,6 +3343,7 @@ def tracer_plot(
 
                 ax1 = axes
 
+
                 pcm1 = ax1.pcolormesh(
                     proj_T["x"],
                     proj_T["y"],
@@ -3288,7 +3354,17 @@ def tracer_plot(
                     cmap=cmap,
                     rasterized=True,
                 )
-
+                if snapNumber in outerPlotSnaps:
+                    pcm1Outer = axOuter.pcolormesh(
+                        proj_T["x"],
+                        proj_T["y"],
+                        np.transpose(proj_T["grid"] / proj_dens["grid"]),
+                        vmin=1e4,
+                        vmax=1e7,
+                        norm=matplotlib.colors.LogNorm(),
+                        cmap=cmap,
+                        rasterized=True,
+                    )
                 sizeMultiply = 25
                 sizeConst = 10
 
@@ -3317,7 +3393,14 @@ def tracer_plot(
                     c=colour,
                     marker="o",
                 )  # colourInRange,marker='o')
-
+                if snapNumber in outerPlotSnaps:
+                    axOuter.scatter(
+                        posDataInRange[:, Axes[0]],
+                        posDataInRange[:, Axes[1]],
+                        s=sizeData,
+                        c=colour,
+                        marker="o",
+                    )
                 if int(snapNumber) == int(TRACERSPARAMS["selectSnap"]):
                     innerCircle = matplotlib.patches.Circle(
                         xy=(0, 0),
@@ -3337,6 +3420,9 @@ def tracer_plot(
                     )
                     ax1.add_patch(innerCircle)
                     ax1.add_patch(outerCircle)
+                    if snapNumber in outerPlotSnaps:
+                        axOuter.add_patch(innerCircle)
+                        axOuter.add_patch(outerCircle)
 
                 minSnap = int(snapNumber) - min(int(nOldSnaps), tailsLength)
 
@@ -3361,7 +3447,7 @@ def tracer_plot(
 
                     pathData = np.array([pos1[whereInRange], pos2[whereInRange]])
                     ntails = np.shape(pos1[whereInRange])[0]
-                    alph = float(jj) / float(max(1, min(int(nOldSnaps), 3)) + 1.0)
+                    alph = float(jj) / float(max(1, min(int(nOldSnaps), tailsLength)) + 1.0)
                     jj += 1
 
                     for ii in range(0, int(ntails)):
@@ -3370,7 +3456,16 @@ def tracer_plot(
                             pathData[:, ii, Axes[1]],
                             c=colour,
                             alpha=alph,
+                            linewidth=(sizeMultiply//2)+sizeConst
                         )  # colourTracers[ii],alpha=alph)
+                        if snapNumber in outerPlotSnaps:
+                            axOuter.plot(
+                                pathData[:, ii, Axes[0]],
+                                pathData[:, ii, Axes[1]],
+                                c=colour,
+                                alpha=alph,
+                                linewidth=(sizeMultiply//2)+sizeConst
+                            )
 
                 print(
                     f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...finished Plot Tails!"
@@ -3383,6 +3478,9 @@ def tracer_plot(
 
                 ax1.set_ylim(ymin=ymin, ymax=ymax)
                 ax1.set_xlim(xmin=xmin, xmax=xmax)
+                if snapNumber in outerPlotSnaps:
+                    axOuter.set_ylim(ymin=ymin, ymax=ymax)
+                    axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
                 ax1.set_title(f"Temperature Projection", fontsize=fontsize)
                 cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
@@ -3394,75 +3492,125 @@ def tracer_plot(
                 cax1.yaxis.label.set_color("white")
                 cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-                ax1.set_ylabel(f"{AxesLabels[Axes[1]]} (kpc)", fontsize=fontsize)
-                ax1.set_xlabel(f"{AxesLabels[Axes[0]]} (kpc)", fontsize=fontsize)
+                ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
+                ax1.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
 
+                if snapNumber in outerPlotSnaps:
+                    axOuter.set_title(f"Temperature Projection", fontsize=fontsize)
+                    caxOuter = inset_axes(axOuter, width="5%", height="95%", loc="right")
+                    fig.colorbar(pcm1, cax=caxOuter, orientation="vertical").set_label(
+                        label=r"$T$ [$K$]", size=fontsize, weight="bold"
+                    )
+                    caxOuter.yaxis.set_ticks_position("left")
+                    caxOuter.yaxis.set_label_position("left")
+                    caxOuter.yaxis.label.set_color("white")
+                    caxOuter.tick_params(axis="y", colors="white", labelsize=fontsize)
+
+                    axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
+                    axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
+                    axOuter.set_aspect(aspect)
+                    figOuter.subplots_adjust(wspace=0.0, hspace=0.0, top=0.80)
+                    
                 # Pad snapnum with zeroes to enable easier video making
                 fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.80)
+
                 # fig.tight_layout()
 
                 SaveSnapNumber = str(snapNumber).zfill(4)
                 savePath = (
-                        DataSavepath
-                        + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
+                    DataSavepath
+                    + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_{int(SaveSnapNumber)}.png"
                 )
 
                 print(
                     f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Save {savePath}"
                 )
-                plt.savefig(savePath, transparent=False)
-                plt.close()
+                fig.savefig(savePath, transparent=False)
 
                 print(
                     f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...Tracer Plot done!"
                 )
 
+    # Add overall figure plot
+    TRIOTITLE = (
+        f"Projections within {-1. * float(boxlos) / 2.}"
+        + r"<"
+        + f"{AxesLabels[zAxis[0]]}-axis"
+        + r"<"
+        + f"{float(boxlos) / 2.} kpc"
+        + "\n"
+        + f"Subset of {int(subset)} Tracers selected at "
+        + r"$t_{Lookback Time}=$"
+        + f"{selectlookback :0.03f} Gyrs"
+        + " as being at "
+        + "\n"
+        + r"$T = 10^{%5.2f \pm %5.2f} K$"
+        % (targetT, TRACERSPARAMS["deltaT"])
+        + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+    )
+
+    figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
+
+    savePathOuter = (
+        DataSavepath
+        + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
+    )
+
+    print(
+        f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}"
+    )
+    figOuter.savefig(savePathOuter, transparent=False)
+    plt.close()
     return
 
-def multi_halo_merge(  simList,
-                        haloPathList,
-                        FullDataPathSuffix,
-                        snapRange,
-                        Tlst,
-                        TracersParamsPath = "TracersParams.csv"
-                        ):
+
+def multi_halo_merge(
+    simList,
+    haloPathList,
+    FullDataPathSuffix,
+    snapRange,
+    Tlst,
+    TracersParamsPath="TracersParams.csv",
+):
     """
-        This function is designed to combine the data sets for multiple
-        Auriga simulation datasets from Tracer.py analysis.
-        NOTE: This is NOT the flatten_wrt_time version!
+    This function is designed to combine the data sets for multiple
+    Auriga simulation datasets from Tracer.py analysis.
+    NOTE: This is NOT the flatten_wrt_time version!
 
-        inputs:
-            simList: list [dtype = 'str']
-            haloPathList: list [dtype = 'str']
-            FullDataPathSuffix: str
-            snapRange: list [dtype = 'int']
-            Tlst: list [dtype = 'str']
-            TracersParamsPath: str
+    inputs:
+        simList: list [dtype = 'str']
+        haloPathList: list [dtype = 'str']
+        FullDataPathSuffix: str
+        snapRange: list [dtype = 'int']
+        Tlst: list [dtype = 'str']
+        TracersParamsPath: str
 
-        outputs:
-            mergedDict: dictionary
-                        keys = (
-                        f"T{T}",
-                        f"{rin}R{rout}",
-                        f"{int(snap)}",
-                        )
-            saveParams: list [dtype = 'str']
+    outputs:
+        mergedDict: dictionary
+                    keys = (
+                    f"T{T}",
+                    f"{rin}R{rout}",
+                    f"{int(snap)}",
+                    )
+        saveParams: list [dtype = 'str']
     """
     import collections
 
     mergedDict = {}
     saveParams = []
     loadedParams = []
-    for sim,loadPath in zip(simList,haloPathList):
-        loadPath += '/'
+    for sim, loadPath in zip(simList, haloPathList):
+        loadPath += "/"
 
-        TRACERSPARAMS, DataSavepath , _ = load_tracers_parameters(loadPath+TracersParamsPath)
+        TRACERSPARAMS, DataSavepath, _ = load_tracers_parameters(
+            loadPath + TracersParamsPath
+        )
         saveParams += TRACERSPARAMS["saveParams"]
 
         saveHalo = (sim.split("_"))[-1]
-        if 'L' in saveHalo:
-            saveHalo = saveHalo.split('L')[-1]
+        if "L" in saveHalo:
+            saveHalo = saveHalo.split("L")[-1]
             padFlag = True
         else:
             padFlag = False
@@ -3479,44 +3627,53 @@ def multi_halo_merge(  simList,
         # Pad id, prid, and trid, with unique Auriga halo      #
         # prefix. This should ensure there are no repeat id    #
         # numbers.
-        print('PAD')
+        print("PAD")
         for selectKey in dataDict.keys():
-            for key in ['id','prid','trid']:
+            for key in ["id", "prid", "trid"]:
                 ## Add Halo Number plus one zero to start of every number ##
                 if padFlag is False:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + index))
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(
+                        int(saveHalo) * 10 ** (1 + index)
+                    )
                 else:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] +  int(int(saveHalo) * 10 ** (1 + index)) + int(9*10**(3+index))
+                    dataDict[selectKey][key] = (
+                        dataDict[selectKey][key]
+                        + int(int(saveHalo) * 10 ** (1 + index))
+                        + int(9 * 10 ** (3 + index))
+                    )
                 # np.array([
-                #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
-                #])
-        print('PADDED')
+                # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
+                # ])
+        print("PADDED")
         selectKey0 = list(dataDict.keys())[0]
         loadedParams += list(dataDict[selectKey0].keys())
-        print('MERGE')
+        print("MERGE")
 
         for selectKey in dataDict.keys():
             for key in dataDict[selectKey].keys():
                 if selectKey in list(mergedDict.keys()):
                     if key in list(mergedDict[selectKey].keys()):
 
-                        tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=0)
+                        tmp = np.concatenate(
+                            (mergedDict[selectKey][key], dataDict[selectKey][key]),
+                            axis=0,
+                        )
 
-                        mergedDict[selectKey].update({key:  tmp})
+                        mergedDict[selectKey].update({key: tmp})
 
                     else:
 
-                        mergedDict[selectKey].update({key : dataDict[selectKey][key]})
+                        mergedDict[selectKey].update({key: dataDict[selectKey][key]})
                 else:
 
-                    mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+                    mergedDict.update({selectKey: {key: dataDict[selectKey][key]}})
 
-        print('MERGED')
-        print('debug',"mergedDict[selectKey]['id']",mergedDict[selectKey]['id'])
+        print("MERGED")
+        print("debug", "mergedDict[selectKey]['id']", mergedDict[selectKey]["id"])
 
     ### Check all sims contained same params ###
     paramFreqDict = collections.Counter(saveParams)
@@ -3526,7 +3683,9 @@ def multi_halo_merge(  simList,
     if truthy == False:
         print("")
         print(f"Param Counts Dict: {paramFreqDict}")
-        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!")
+        raise Exception(
+            "[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!"
+        )
 
     ### Check all LOADED DATA contained same params ###
     paramFreqDict = collections.Counter(loadedParams)
@@ -3535,57 +3694,64 @@ def multi_halo_merge(  simList,
     if truthy == False:
         print("")
         print(f"Param Counts Dict: {paramFreqDict}")
-        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!")
+        raise Exception(
+            "[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!"
+        )
 
     saveParams = np.unique(np.array(saveParams)).tolist()
-    return mergedDict,saveParams
+    return mergedDict, saveParams
 
-def multi_halo_merge_flat_wrt_time(  simList,
-                        haloPathList,
-                        FullDataPathSuffix,
-                        snapRange,
-                        Tlst,
-                        TracersParamsPath = "TracersParams.csv",
-                        loadParams = None,
-                        dtwSubset = None
-                        ):
+
+def multi_halo_merge_flat_wrt_time(
+    simList,
+    haloPathList,
+    FullDataPathSuffix,
+    snapRange,
+    Tlst,
+    TracersParamsPath="TracersParams.csv",
+    loadParams=None,
+    dtwSubset=None,
+):
     """
-        This function is designed to combine the data sets for multiple
-        Auriga simulation datasets from Tracer.py analysis.
-        NOTE: THIS IS the flatten_wrt_time version!
+    This function is designed to combine the data sets for multiple
+    Auriga simulation datasets from Tracer.py analysis.
+    NOTE: THIS IS the flatten_wrt_time version!
 
-        inputs:
-            simList: list [dtype = 'str']
-            haloPathList: list [dtype = 'str']
-            FullDataPathSuffix: str
-            snapRange: list [dtype = 'int']
-            Tlst: list [dtype = 'str']
-            TracersParamsPath: str
+    inputs:
+        simList: list [dtype = 'str']
+        haloPathList: list [dtype = 'str']
+        FullDataPathSuffix: str
+        snapRange: list [dtype = 'int']
+        Tlst: list [dtype = 'str']
+        TracersParamsPath: str
 
-        outputs:
-            mergedDict: dictionary
-                        keys = (
-                        f"T{T}",
-                        f"{rin}R{rout}",
-                        f"{int(snap)}",
-                        )
-            saveParams: list [dtype = 'str']
+    outputs:
+        mergedDict: dictionary
+                    keys = (
+                    f"T{T}",
+                    f"{rin}R{rout}",
+                    f"{int(snap)}",
+                    )
+        saveParams: list [dtype = 'str']
     """
     import collections
+
     random.seed(1234)
 
     mergedDict = {}
     saveParams = []
     loadedParams = []
-    for sim,loadPath in zip(simList,haloPathList):
-        loadPath += '/'
+    for sim, loadPath in zip(simList, haloPathList):
+        loadPath += "/"
 
-        TRACERSPARAMS, DataSavepath , _ = load_tracers_parameters(loadPath+TracersParamsPath)
+        TRACERSPARAMS, DataSavepath, _ = load_tracers_parameters(
+            loadPath + TracersParamsPath
+        )
         saveParams += TRACERSPARAMS["saveParams"]
 
         saveHalo = (sim.split("_"))[-1]
-        if 'L' in saveHalo:
-            saveHalo = saveHalo.split('L')[-1]
+        if "L" in saveHalo:
+            saveHalo = saveHalo.split("L")[-1]
             padFlag = True
         else:
             padFlag = False
@@ -3593,72 +3759,96 @@ def multi_halo_merge_flat_wrt_time(  simList,
         print("")
         print(f"Loading {sim} Data!")
 
-
         print("LOAD")
         dataDict = {}
         for T in Tlst:
             for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 loadPath = (
-                    DataSavepath + f"_T{T}_{rin}R{rout}_flat-wrt-time" + FullDataPathSuffix
+                    DataSavepath
+                    + f"_T{T}_{rin}R{rout}_flat-wrt-time"
+                    + FullDataPathSuffix
                 )
                 key = (f"T{T}", f"{rin}R{rout}")
                 tmp = hdf5_load(loadPath)
                 dataDict.update(tmp)
-
 
         print("LOADED")
 
         # Pad id, prid, and trid, with unique Auriga halo      #
         # prefix. This should ensure there are no repeat id    #
         # numbers.
-        print('PAD')
+        print("PAD")
         for selectKey in dataDict.keys():
-            for key in ['id','prid','trid']:
+            for key in ["id", "prid", "trid"]:
                 ## Add Halo Number plus one zero to start of every number ##
                 if padFlag is False:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(int(saveHalo) * 10 ** (1 + index))
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(
+                        int(saveHalo) * 10 ** (1 + index)
+                    )
                 else:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] +  int(int(saveHalo) * 10 ** (1 + index)) + int(9*10**(3+index))
+                    dataDict[selectKey][key] = (
+                        dataDict[selectKey][key]
+                        + int(int(saveHalo) * 10 ** (1 + index))
+                        + int(9 * 10 ** (3 + index))
+                    )
                 # np.array([
-                #int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
-                #])
-        print('PADDED')
+                # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
+                # ])
+        print("PADDED")
         selectKey0 = list(dataDict.keys())[0]
         loadedParams += list(dataDict[selectKey0].keys())
-        print('MERGE')
+        print("MERGE")
         if loadParams is not None:
-            print('Loading loadParams ONLY! Discarding the rest of data')
-            print(f'loadParams = {loadParams}')
+            print("Loading loadParams ONLY! Discarding the rest of data")
+            print(f"loadParams = {loadParams}")
             if dtwSubset is not None:
-                print('Loading dtwSubset ONLY! Discarding the rest of data')
-                print(f'dtwSubset = {dtwSubset} Data Points per halo, per time, per temperature, per radius.')
+                print("Loading dtwSubset ONLY! Discarding the rest of data")
+                print(
+                    f"dtwSubset = {dtwSubset} Data Points per halo, per time, per temperature, per radius."
+                )
                 for selectKey in dataDict.keys():
 
-                    typeLen = np.shape(dataDict[selectKey]['type'])[1]
-                    subset = min(typeLen,dtwSubset)
+                    typeLen = np.shape(dataDict[selectKey]["type"])[1]
+                    subset = min(typeLen, dtwSubset)
 
-                    dtwSelect = random.sample([ ii for ii in range(0,typeLen,1)], k=subset)
+                    dtwSelect = random.sample(
+                        [ii for ii in range(0, typeLen, 1)], k=subset
+                    )
 
                     for key in dataDict[selectKey].keys():
                         if key in loadParams:
                             if selectKey in list(mergedDict.keys()):
                                 if key in list(mergedDict[selectKey].keys()):
 
-                                    #AXIS 0 now temporal axis, so concat on axis 1
-                                    tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key][:, dtwSelect]),axis=1)
+                                    # AXIS 0 now temporal axis, so concat on axis 1
+                                    tmp = np.concatenate(
+                                        (
+                                            mergedDict[selectKey][key],
+                                            dataDict[selectKey][key][:, dtwSelect],
+                                        ),
+                                        axis=1,
+                                    )
 
-                                    mergedDict[selectKey].update({key:  tmp})
+                                    mergedDict[selectKey].update({key: tmp})
 
                                 else:
 
-                                    mergedDict[selectKey].update({key : dataDict[selectKey][key][:, dtwSelect]})
+                                    mergedDict[selectKey].update(
+                                        {key: dataDict[selectKey][key][:, dtwSelect]}
+                                    )
                             else:
 
-                                mergedDict.update({selectKey : {key : dataDict[selectKey][key][:, dtwSelect]}})
+                                mergedDict.update(
+                                    {
+                                        selectKey: {
+                                            key: dataDict[selectKey][key][:, dtwSelect]
+                                        }
+                                    }
+                                )
             else:
                 for selectKey in dataDict.keys():
                     for key in dataDict[selectKey].keys():
@@ -3666,17 +3856,27 @@ def multi_halo_merge_flat_wrt_time(  simList,
                             if selectKey in list(mergedDict.keys()):
                                 if key in list(mergedDict[selectKey].keys()):
 
-                                    #AXIS 0 now temporal axis, so concat on axis 1
-                                    tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+                                    # AXIS 0 now temporal axis, so concat on axis 1
+                                    tmp = np.concatenate(
+                                        (
+                                            mergedDict[selectKey][key],
+                                            dataDict[selectKey][key],
+                                        ),
+                                        axis=1,
+                                    )
 
-                                    mergedDict[selectKey].update({key:  tmp})
+                                    mergedDict[selectKey].update({key: tmp})
 
                                 else:
 
-                                    mergedDict[selectKey].update({key : dataDict[selectKey][key]})
+                                    mergedDict[selectKey].update(
+                                        {key: dataDict[selectKey][key]}
+                                    )
                             else:
 
-                                mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+                                mergedDict.update(
+                                    {selectKey: {key: dataDict[selectKey][key]}}
+                                )
         else:
             for selectKey in dataDict.keys():
                 for key in dataDict[selectKey].keys():
@@ -3684,20 +3884,25 @@ def multi_halo_merge_flat_wrt_time(  simList,
                     if selectKey in list(mergedDict.keys()):
                         if key in list(mergedDict[selectKey].keys()):
 
-                            #AXIS 0 now temporal axis, so concat on axis 1
-                            tmp = np.concatenate((mergedDict[selectKey][key],dataDict[selectKey][key]),axis=1)
+                            # AXIS 0 now temporal axis, so concat on axis 1
+                            tmp = np.concatenate(
+                                (mergedDict[selectKey][key], dataDict[selectKey][key]),
+                                axis=1,
+                            )
 
-                            mergedDict[selectKey].update({key:  tmp})
+                            mergedDict[selectKey].update({key: tmp})
 
                         else:
 
-                            mergedDict[selectKey].update({key : dataDict[selectKey][key]})
+                            mergedDict[selectKey].update(
+                                {key: dataDict[selectKey][key]}
+                            )
                     else:
 
-                        mergedDict.update({selectKey : {key : dataDict[selectKey][key]}})
+                        mergedDict.update({selectKey: {key: dataDict[selectKey][key]}})
 
-        print('MERGED')
-        print('debug',"mergedDict[selectKey]['trid']",mergedDict[selectKey]['trid'])
+        print("MERGED")
+        print("debug", "mergedDict[selectKey]['trid']", mergedDict[selectKey]["trid"])
 
     ### Check all sims contained same params ###
     paramFreqDict = collections.Counter(saveParams)
@@ -3706,7 +3911,9 @@ def multi_halo_merge_flat_wrt_time(  simList,
     if truthy == False:
         print("")
         print(f"Param Counts Dict: {paramFreqDict}")
-        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!")
+        raise Exception(
+            "[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!"
+        )
 
     ### Check all LOADED DATA contained same params ###
     paramFreqDict = collections.Counter(loadedParams)
@@ -3715,44 +3922,57 @@ def multi_halo_merge_flat_wrt_time(  simList,
     if truthy == False:
         print("")
         print(f"Param Counts Dict: {paramFreqDict}")
-        raise Exception("[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!")
-
+        raise Exception(
+            "[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!"
+        )
 
     saveParams = np.unique(np.array(saveParams)).tolist()
-    return mergedDict,saveParams
+    return mergedDict, saveParams
 
 
-def multi_halo_stats(dataDict,TRACERSPARAMS,saveParams,snapRange,Tlst,MiniDataPathSuffix = f".csv",TracersParamsPath = "TracersParams.csv",TracersMasterParamsPath ="TracersParamsMaster.csv",SelectedHaloesPath = "TracersSelectedHaloes.csv"):
+def multi_halo_stats(
+    dataDict,
+    TRACERSPARAMS,
+    saveParams,
+    snapRange,
+    Tlst,
+    MiniDataPathSuffix=f".csv",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
     statsData = {}
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         for ii in range(len(Tlst)):
             T = Tlst[ii]
-            key = (f'T{Tlst[ii]}',f"{rin}R{rout}")
+            key = (f"T{Tlst[ii]}", f"{rin}R{rout}")
             for snap in snapRange:
-                selectKey = (f'T{Tlst[ii]}',f"{rin}R{rout}",f"{snap}")
+                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}", f"{snap}")
                 dat = calculate_statistics(
-                        dataDict[selectKey],
-                        T,
-                        rin,
-                        rout,
-                        snapNumber=snap,
-                        TRACERSPARAMS=TRACERSPARAMS,
-                        saveParams = saveParams,
-                        DataSavepath=None,
-                        MiniDataPathSuffix=".csv",
-                        saveBool=False
+                    dataDict[selectKey],
+                    T,
+                    rin,
+                    rout,
+                    snapNumber=snap,
+                    TRACERSPARAMS=TRACERSPARAMS,
+                    saveParams=saveParams,
+                    DataSavepath=None,
+                    MiniDataPathSuffix=".csv",
+                    saveBool=False,
                 )
-                #Fix values to arrays to remove concat error of 0D arrays
+                # Fix values to arrays to remove concat error of 0D arrays
                 for k, val in dat.items():
                     dat[k] = np.array([val]).flatten()
 
-                if key in list(statsData.keys()) :
-                    for subkey,vals in dat.items():
+                if key in list(statsData.keys()):
+                    for subkey, vals in dat.items():
                         if subkey in list(statsData[key].keys()):
 
-                            statsData[key][subkey] = np.concatenate((statsData[key][subkey],dat[subkey]),axis=0)
+                            statsData[key][subkey] = np.concatenate(
+                                (statsData[key][subkey], dat[subkey]), axis=0
+                            )
                         else:
-                            statsData[key].update({subkey : dat[subkey]})
+                            statsData[key].update({subkey: dat[subkey]})
                 else:
                     statsData.update({key: dat})
 

@@ -53,9 +53,9 @@ Xdata = {}
 
 tlookback = []
 for snap in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1,
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+    1,
 ):
     minTemp = TRACERSPARAMS["targetTLst"][0]
     minrin = TRACERSPARAMS["Rinner"][0]
@@ -110,17 +110,13 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 tmpXdata.append(dataDict[key]["Lookback"][0])
                 tmpYdata.append(nTracers)
 
-
-
         ind_sorted = np.argsort(tmpXdata)
         maxN = np.nanmax(tmpYdata)
         tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
         tmpYarray = np.array(tmpYarray)
         tmpXarray = np.array(tmpXdata)
-        tmpYarray = np.flip(np.take_along_axis(tmpYarray,ind_sorted,axis=0), axis=0)
-        tmpXarray = np.flip(np.take_along_axis(tmpXarray,ind_sorted,axis=0), axis=0)
-
-
+        tmpYarray = np.flip(np.take_along_axis(tmpYarray, ind_sorted, axis=0), axis=0)
+        tmpXarray = np.flip(np.take_along_axis(tmpXarray, ind_sorted, axis=0), axis=0)
 
         # Add the full list of snaps data to temperature dependent dictionary.
         Xdata.update({f"T{T}": tmpXarray})
@@ -140,18 +136,18 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             [
                 xx
                 for xx in range(
-                int(TRACERSPARAMS["snapMin"]),
-                min(
-                    int(TRACERSPARAMS["snapMax"]) + 1,
-                    int(TRACERSPARAMS["finalSnap"]) + 1,
-                ),
-                1,
-            )
+                    int(TRACERSPARAMS["snapMin"]),
+                    min(
+                        int(TRACERSPARAMS["snapMax"]) + 1,
+                        int(TRACERSPARAMS["finalSnap"]) + 1,
+                    ),
+                    1,
+                )
             ]
         )
         selectionSnap = np.where(snapsRange == int(TRACERSPARAMS["selectSnap"]))
 
-        vline = tlookback [selectionSnap]
+        vline = tlookback[selectionSnap]
 
         T = TRACERSPARAMS["targetTLst"][ii]
 
@@ -182,11 +178,16 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
         currentAx.fill_between(
-            tlookback , tmpMinData, plotYdata, facecolor=colour, alpha=0.25, interpolate=False
+            tlookback,
+            tmpMinData,
+            plotYdata,
+            facecolor=colour,
+            alpha=0.25,
+            interpolate=False,
         )
 
         currentAx.plot(
-            tlookback ,
+            tlookback,
             plotYdata,
             label=r"$T = 10^{%3.0f} K$" % (float(temp)),
             color=colour,
@@ -226,13 +227,13 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, wspace=0.005)
     opslaan = (
-            "./"
-            + saveHalo
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-            + f"_WithinTemperature.pdf"
+        "./"
+        + saveHalo
+        + "/"
+        + f"{int(rin)}R{int(rout)}"
+        + "/"
+        + f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+        + f"_WithinTemperature.pdf"
     )
     plt.savefig(opslaan, dpi=DPI, transparent=False)
     print(opslaan)

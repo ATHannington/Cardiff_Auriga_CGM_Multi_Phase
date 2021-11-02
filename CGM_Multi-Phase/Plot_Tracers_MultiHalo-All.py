@@ -58,7 +58,7 @@ logParameters = [
     "tcross",
     "tff",
     "tcool_tff",
-    "mass"
+    "mass",
 ]
 # "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel = {
@@ -83,7 +83,7 @@ ylabel = {
     "rho_rhomean": r"$\rho / \langle \rho \rangle$",
     "dens": r"Density [$g$ $cm^{-3}$]",
     "ndens": r"Number density [$cm^{-3}$]",
-    "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]"
+    "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]",
 }
 
 for entry in logParameters:
@@ -95,7 +95,9 @@ for entry in logParameters:
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
 
 # Load Halo Selection Data
-SELECTEDHALOES, HALOPATHS = load_haloes_selected(HaloPathBase = TRACERSPARAMS['savepath'] ,SelectedHaloesPath=SelectedHaloesPath)
+SELECTEDHALOES, HALOPATHS = load_haloes_selected(
+    HaloPathBase=TRACERSPARAMS["savepath"], SelectedHaloesPath=SelectedHaloesPath
+)
 
 saveParams = TRACERSPARAMS[
     "saveParams"
@@ -103,38 +105,38 @@ saveParams = TRACERSPARAMS[
 
 DataSavepathSuffix = f".h5"
 
-snapRange = [snap for snap in range(
+snapRange = [
+    snap
+    for snap in range(
         int(TRACERSPARAMS["snapMin"]),
         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1)]
+        1,
+    )
+]
 
 
 # ==============================================================================#
 print("Load Non Time Flattened Data!")
-mergedDict, saveParams =  multi_halo_merge(SELECTEDHALOES,
-                            HALOPATHS,
-                            DataSavepathSuffix,
-                            snapRange,
-                            Tlst,
-                            TracersParamsPath
-                            )
+mergedDict, saveParams = multi_halo_merge(
+    SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
+)
 print("Done!")
 
-selectionSnap = np.array(snapRange)[np.where(np.array(snapRange)== int(TRACERSPARAMS["selectSnap"]))[0]]
-selectTimeKey =  (
-                f"T{Tlst[0]}",
-                f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
-                f"{int(selectionSnap)}",
-            )
-selectTime = abs(
-        mergedDict[selectTimeKey]["Lookback"][0]
-    )
+selectionSnap = np.array(snapRange)[
+    np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
+]
+selectTimeKey = (
+    f"T{Tlst[0]}",
+    f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
+    f"{int(selectionSnap)}",
+)
+selectTime = abs(mergedDict[selectTimeKey]["Lookback"][0])
 
 tlookback = []
 for snap in range(
-        int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-        1,
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+    1,
 ):
     minTemp = TRACERSPARAMS["targetTLst"][0]
     minrin = TRACERSPARAMS["Rinner"][0]
@@ -145,93 +147,158 @@ for snap in range(
 
 tlookback = np.array(tlookback)
 
-#==============================================================================#
+# ==============================================================================#
 #          Stats!
-#==============================================================================#
+# ==============================================================================#
 
-statsData = multi_halo_stats(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
+statsData = multi_halo_stats(mergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst)
 
-save_statistics_csv(statsData,TRACERSPARAMS,SELECTEDHALOES,HALOPATHS,Tlst,snapRange)
-#==============================================================================#
+save_statistics_csv(
+    statsData, TRACERSPARAMS, SELECTEDHALOES, HALOPATHS, Tlst, snapRange
+)
+# ==============================================================================#
 #                   Medians PLOT                                               #
-#==============================================================================#
+# ==============================================================================#
 
-medians_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+medians_plot(
+    mergedDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
+plt.close("all")
 
-#==============================================================================#
+# ==============================================================================#
 #                   Persistent Temperature PLOT                                #
-#==============================================================================#
+# ==============================================================================#
 
-persistant_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+persistant_temperature_plot(
+    mergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
-#==============================================================================#
+plt.close("all")
+# ==============================================================================#
 #                   Within Temperature PLOT                                    #
-#==============================================================================#
+# ==============================================================================#
 
-within_temperature_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst)
+within_temperature_plot(
+    mergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
-#==============================================================================#
+plt.close("all")
+# ==============================================================================#
 #                   Stacked PDF PLOT                                           #
-#==============================================================================#
+# ==============================================================================#
 
-stacked_pdf_plot(mergedDict,TRACERSPARAMS,saveParams,tlookback,snapRange,Tlst,logParameters,ylabel)
+stacked_pdf_plot(
+    mergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
-#==============================================================================#
+plt.close("all")
+# ==============================================================================#
 #                   Phase Diagrams PLOT                                        #
-#==============================================================================#
+# ==============================================================================#
 
 # phases_plot(mergedDict,TRACERSPARAMS,saveParams,snapRange,Tlst)
 # matplotlib.rc_file_defaults()
 # plt.close('all')
-#==============================================================================#
+# ==============================================================================#
 #                   Load Flattened Data                                        #
-#==============================================================================#
+# ==============================================================================#
 
 # del mergedDict
 
 print("Load Time Flattened Data!")
-flatMergedDict , _ = multi_halo_merge_flat_wrt_time(SELECTEDHALOES,
-                            HALOPATHS,
-                            DataSavepathSuffix,
-                            snapRange,
-                            Tlst,
-                            TracersParamsPath
-                            )
+flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
+    SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
+)
 print("Done!")
 
-selectTimeKey =  (
-                f"T{Tlst[0]}",
-                f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}"
-            )
+selectTimeKey = (
+    f"T{Tlst[0]}",
+    f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
+)
 
-#==============================================================================#
+# ==============================================================================#
 #                   Bar Chart PLOT                                             #
-#==============================================================================#
+# ==============================================================================#
 
-bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath)
+bars_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    DataSavepath,
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
+plt.close("all")
 
-bars_plot(flatMergedDict,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,DataSavepath,shortSnapRangeBool=True,shortSnapRangeNumber=1)
+bars_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    shortSnapRangeBool=True,
+    shortSnapRangeNumber=1,
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
+plt.close("all")
 
 # ################################################################################
 # ##                  EXPERIMENTAL                                              ##
 # ################################################################################
 matplotlib.rc_file_defaults()
-plt.close('all')
-hist_plot(mergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel)
+plt.close("all")
+hist_plot(
+    mergedDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
+plt.close("all")
 
 matplotlib.rc_file_defaults()
-plt.close('all')
-medians_phases_plot(flatMergedDict,statsData,TRACERSPARAMS,saveParams,tlookback,selectTime,snapRange,Tlst,logParameters,ylabel,weightKey = "L",analysisParam="R")
+plt.close("all")
+medians_phases_plot(
+    flatMergedDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    weightKey="L",
+    analysisParam="R",
+)
 matplotlib.rc_file_defaults()
-plt.close('all')
+plt.close("all")
