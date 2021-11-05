@@ -1,4 +1,4 @@
-"""
+x"""
 Author: A. T. Hannington
 Created: 29/07/2021
 
@@ -2334,7 +2334,7 @@ def medians_phases_plot(
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     Nbins=150,
     DPI=75,
-    weightKey="L",
+    weightKey="mass",
     analysisParam="R",
 ):
 
@@ -2370,8 +2370,7 @@ def medians_phases_plot(
         "dens": {"xmin": -30.0, "xmax": -22.0},
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
-    print("")
-    print("Loading Data!")
+
     # Create a plot for each Temperature
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
@@ -2389,6 +2388,7 @@ def medians_phases_plot(
         patchList = []
         labelList = []
 
+        breakFlag = False
         for (ii, T) in enumerate(Tlst):
             FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
 
@@ -2403,85 +2403,6 @@ def medians_phases_plot(
                 )
             )[0]
 
-            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-            #   Figure 1: Full Cells Data
-            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-            print(f"T{T} Sub-Plot!")
-
-            zmin = xlimDict[weightKey]["xmin"]
-            zmax = xlimDict[weightKey]["xmax"]
-
-            ydat = {
-                analysisParam: FlatDataDict[FullDictKey][analysisParam][:, whereGas]
-            }
-
-            ydat, whereReal = delete_nan_inf_axis(ydat, axis=0)
-
-            # Set y data points.
-            # Flip x and y and weightings' temporal ordering to match medians.
-            ydataCells = ydat[analysisParam]
-            whereReal = whereGas[whereReal[analysisParam]]
-            if analysisParam in logParameters:
-                ydataCells = np.log10(ydataCells)
-            ydataCells = np.flip(ydataCells, axis=0)
-
-            nDat = np.shape(ydataCells)[1]
-
-            # Set lookback time array for each data point in y
-            xdataCells = np.flip(
-                np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
-            )
-
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
-            weightDataCells = np.flip(
-                FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
-            )
-
-            if weightKey == "mass":
-                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
-                    xdataCells.flatten(),
-                    ydataCells.flatten(),
-                    bins=[len(snapRange) - 1, Nbins],
-                    weights=massCells.flatten(),
-                )
-            else:
-                mhistCells, _, _ = np.histogram2d(
-                    xdataCells.flatten(),
-                    ydataCells.flatten(),
-                    bins=[len(snapRange) - 1, Nbins],
-                    weights=massCells.flatten(),
-                )
-                histCells, xedgeCells, yedgeCells = np.histogram2d(
-                    xdataCells.flatten(),
-                    ydataCells.flatten(),
-                    bins=[len(snapRange) - 1, Nbins],
-                    weights=weightDataCells.flatten(),
-                )
-
-                finalHistCells = histCells / mhistCells
-
-            finalHistCells[finalHistCells == 0.0] = np.nan
-            if weightKey in logParameters:
-                finalHistCells = np.log10(finalHistCells)
-            finalHistCells = finalHistCells.T
-
-            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
-
-            img1 = currentAx.pcolormesh(
-                xcells,
-                ycells,
-                finalHistCells,
-                cmap=colourmapMain,
-                vmin=zmin,
-                vmax=zmax,
-                rasterized=True,
-            )
-
-            currentAx.set_title(
-                r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
-                % (float(T), TRACERSPARAMS["deltaT"]),
-                fontsize=12,
-            )
 
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
             plotData = statsData[selectKey].copy()
@@ -2545,26 +2466,21 @@ def medians_phases_plot(
             print("")
             print("Sub-Plot!")
 
-            if len(Tlst) == 1:
-                currentAx = ax
-            else:
-                currentAx = ax[ii]
-
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
                 loadPercentilesTypes[:midPercentile],
-                loadPercentilesTypes[midPercentile + 1 :],
+                loadPercentilesTypes[midPercentile + 1 :]
             )
-            for (LO, UP) in percentilesPairs:
+            for (LOO, UPP) in percentilesPairs:
                 currentAx.plot(
                     tlookback,
-                    plotData[UP],
+                    plotData[UPP],
                     color="black",
                     lineStyle=lineStylePercentiles,
                 )
                 currentAx.plot(
                     tlookback,
-                    plotData[LO],
+                    plotData[LOO],
                     color="black",
                     lineStyle=lineStylePercentiles,
                 )
@@ -2583,6 +2499,159 @@ def medians_phases_plot(
             currentAx.tick_params(which="both")
             #
 
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+            #   Figure 1: Full Cells Data
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+            print(f"T{T} Sub-Plot!")
+
+            ydat = {analysisParam: FlatDataDict[FullDictKey][analysisParam][:, whereGas]}
+            if analysisParam in logParameters:
+                ydat[analysisParam] = np.log10(ydat[analysisParam])
+
+            tmp, whereReal = delete_nan_inf_axis(ydat, axis=0)
+
+            # Set y data points.
+            # Flip x and y and weightings' temporal ordering to match medians.
+            ydataCells = tmp[analysisParam]
+            whereReal = whereGas[whereReal[analysisParam]]
+            ydataCells = np.flip(ydataCells, axis=0)
+            if (np.any(np.array(np.shape(ydataCells)) == 0)):
+                print("No Data! Skipping entry!")
+                breakFlag = True
+                continue
+
+            ymin = np.nanmin(ydataCells)
+            ymax = np.nanmax(ydataCells)
+            if (
+                (np.isinf(ymin) == True)
+                or (np.isinf(ymax) == True)
+                or (np.isnan(ymin) == True)
+                or (np.isnan(ymax) == True)
+            ):
+                print("Data All Inf/NaN! Skipping entry!")
+                breakFlag = True
+                continue
+
+            nDat = np.shape(ydataCells)[1]
+
+            # Set lookback time array for each data point in y
+            xdataCells = np.flip(
+                np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
+            )
+
+            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
+            weightDataCells = np.flip(
+                FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
+            )
+
+            if (np.any(np.array(np.shape(xdataCells)) == 0)):
+                print("No Data! Skipping entry!")
+                breakFlag = True
+                continue
+
+            xmin = np.nanmin(xdataCells)
+            xmax = np.nanmax(xdataCells)
+            if (
+                (np.isinf(xmin) == True)
+                or (np.isinf(xmax) == True)
+                or (np.isnan(xmin) == True)
+                or (np.isnan(xmax) == True)
+            ):
+                print("Data All Inf/NaN! Skipping entry!")
+                breakFlag = True
+                continue
+
+            if (np.any(np.array(np.shape(weightDataCells)) == 0)):
+                print("No Data! Skipping entry!")
+                breakFlag = True
+                continue
+            wmin = np.nanmin(weightDataCells)
+            wmax = np.nanmax(weightDataCells)
+            if (
+                (np.isinf(wmin) == True)
+                or (np.isinf(wmax) == True)
+                or (np.isnan(wmin) == True)
+                or (np.isnan(wmax) == True)
+            ):
+                print("Data All Inf/NaN! Skipping entry!")
+                breakFlag = True
+                continue
+
+            if (np.any(np.array(np.shape(massCells)) == 0)):
+                print("No Data! Skipping entry!")
+                breakFlag = True
+                continue
+
+            mmin = np.nanmin(massCells)
+            mmax = np.nanmax(massCells)
+            if (
+                (np.isinf(mmin) == True)
+                or (np.isinf(mmax) == True)
+                or (np.isnan(mmin) == True)
+                or (np.isnan(mmax) == True)
+            ):
+                print("Data All Inf/NaN! Skipping entry!")
+                breakFlag = True
+                continue
+
+
+
+            if weightKey == "mass":
+                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(xdataCells.flatten(),ydataCells.flatten(),bins=[len(snapRange) - 1, Nbins],weights=massCells.flatten())
+            else:
+                mhistCells, _, _ = np.histogram2d(
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=[len(snapRange) - 1, Nbins],
+                    weights=massCells.flatten(),
+                )
+                histCells, xedgeCells, yedgeCells = np.histogram2d(
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=[len(snapRange) - 1, Nbins],
+                    weights=weightDataCells.flatten(),
+                )
+
+                finalHistCells = histCells / mhistCells
+
+            finalHistCells[finalHistCells == 0.0] = np.nan
+            if weightKey in logParameters:
+                finalHistCells = np.log10(finalHistCells)
+            finalHistCells = finalHistCells.T
+
+            xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
+
+            if weightKey in list(xlimDict.keys()):
+                zmin = xlimDict[weightKey]["xmin"]
+                zmax = xlimDict[weightKey]["xmax"]
+                img1 = currentAx.pcolormesh(
+                    xcells,
+                    ycells,
+                    finalHistCells,
+                    cmap=colourmapMain,
+                    vmin=zmin,
+                    vmax=zmax,
+                    rasterized=True,
+                )
+            else:
+                img1 = currentAx.pcolormesh(
+                    xcells,
+                    ycells,
+                    finalHistCells,
+                    cmap=colourmapMain,
+                    rasterized=True,
+                )
+
+
+            currentAx.set_title(
+                r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
+                % (float(T), TRACERSPARAMS["deltaT"]),
+                fontsize=12,
+            )
+        if breakFlag == True:
+            print("Missing sub-plot! Skipping entry!")
+            continue
+            
         fig.suptitle(
             f"Cells Containing Tracers selected by: "
             + "\n"
@@ -2618,7 +2687,7 @@ def medians_phases_plot(
             continue
 
         custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
-        plt.setp(ax, ylim=custom_ylim)
+        plt.setp(ax, ylim=custom_ylim, xlim=(round(max(tlookback)), round(min(tlookback))))
         plt.tight_layout()
         plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
 

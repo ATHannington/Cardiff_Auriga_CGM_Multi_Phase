@@ -2673,7 +2673,6 @@ def plot_projections(
     # Set plot figure sizes
     xsize = 10.0
     ysize = 10.0
-    ageUniverse = 13.77
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
 
@@ -2709,7 +2708,7 @@ def plot_projections(
         r"Redshift $(z) =$"
         + f"{redshift:0.03f} "
         + " "
-        + r"$t_{Lookback Time}=$"
+        + r"$t_{Lookback}=$"
         + f"{tlookback :0.03f} Gyrs"
         + "\n"
         + f"Projections within {-1. * float(boxlos) / 2.}"
@@ -2918,11 +2917,18 @@ def tracer_plot(
     AxesLabels = ["x", "y", "z"]
 
     # Set plot figure sizes
-    xsize = 5.0
-    ysize = 5.0
-    ageUniverse = 13.77
+    xsize = 8.0
+    ysize = 8.0
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
+
+    colour = "white"
+    sizeMultiply = 20
+    sizeConst = 8
+
+    aspect = "equal"
+    fontsize = 10
+    fontsizeTitle = 12
 
     nullEntry = [np.nan, np.nan, np.nan]
 
@@ -2985,23 +2991,40 @@ def tracer_plot(
     omegabaryon0 = 0.048
 
     HaloID = int(TRACERSPARAMS["haloID"])
-    snapRange = range(
-    int(TRACERSPARAMS["snapMin"]),
-    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
 
-    # DPI Controlled by user as lower res needed for videos #
-    figOuter, axesOuter = plt.subplots(
-        nrows=1, ncols=3, figsize=(xsize*3., ysize), dpi=DPI
-    )
+    snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    #STOP2996
+    # snapRange = range(
+    # int(TRACERSPARAMS["snapMin"]),
+    # min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
 
-    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+    outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
-    kk = 0
+    # outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+
+    figureArray = []
+    axesArray = []
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        figureList = []
+        axisList = []
+        for targetT in TRACERSPARAMS["targetTLst"]:
+            # DPI Controlled by user as lower res needed for videos #
+            figi, axi = plt.subplots(
+            nrows=1, ncols=3, figsize=(xsize*1.5, ysize), dpi=DPI ,sharey = True)
+            figureList.append(figi)
+            axisList.append(axi)
+        figureArray.append(figureList)
+        axesArray.append(axisList)
+
+    figureArray = np.array(figureArray)
+    axesArray = np.array(axesArray)
+
+
+    ss = -1
 
     for snapNumber in snapRange:
         if snapNumber in outerPlotSnaps:
-            axOuter = axesOuter[kk]
-            kk += 1
+            ss += 1
         # --------------------------#
         ## Slices and Projections ##
         # --------------------------#
@@ -3159,11 +3182,18 @@ def tracer_plot(
         #           Grab positions of Tracer Subset
         #
         # ==============================================================================#
+        rr = -1
         for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+            rr+=1
+            tt = -1
             print(f"{rin}R{rout}")
             for targetT in TRACERSPARAMS["targetTLst"]:
                 print("")
                 print(f"Starting T{targetT} {rin}R{rout} analysis")
+                tt+=1
+                figOuter = figureArray[rr][tt]
+                axOuterObj = axesArray[rr][tt]
+                axOuter = axesArray[rr][tt][ss]
 
                 selectkey = (
                     f"T{targetT}",
@@ -3233,10 +3263,6 @@ def tracer_plot(
                     f"[@T{targetT}] @{rin}R{rout} @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
                 )
 
-                aspect = "equal"
-                fontsize = 12
-                fontsizeTitle = 16
-
                 print(
                     f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Loading Old Tracer Subset Data..."
                 )
@@ -3290,7 +3316,7 @@ def tracer_plot(
                     r"Redshift $(z) =$"
                     + f"{redshift:0.03f} "
                     + " "
-                    + r"$t_{Lookback Time}=$"
+                    + r"$t_{Lookback}=$"
                     + f"{tlookback :0.03f} Gyrs"
                     + "\n"
                     + f"Projections within {-1. * float(boxlos) / 2.}"
@@ -3300,7 +3326,7 @@ def tracer_plot(
                     + f"{float(boxlos) / 2.} kpc"
                     + "\n"
                     + f"Subset of {int(subset)} Tracers selected at "
-                    + r"$t_{Lookback Time}=$"
+                    + r"$t_{Lookback}=$"
                     + f"{selectlookback :0.03f} Gyrs"
                     + " as being at "
                     + "\n"
@@ -3311,7 +3337,7 @@ def tracer_plot(
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
                 if snapNumber in outerPlotSnaps:
-                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ " " + r"$t_{Lookback Time}=$"+ f"{tlookback :0.03f} Gyrs"
+                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ " " + r"$t_{Lookback}=$"+ f"{tlookback :0.03f} Gyrs"
 
                     axOuter.set_title(label=OUTERSUBTITLE)
                     axOuter.title.set_size(fontsize)
@@ -3339,7 +3365,6 @@ def tracer_plot(
                 #
                 # colourTracers = np.array(colourTracers)
 
-                colour = "white"
 
                 ax1 = axes
 
@@ -3365,8 +3390,6 @@ def tracer_plot(
                         cmap=cmap,
                         rasterized=True,
                     )
-                sizeMultiply = 25
-                sizeConst = 10
 
                 whereInRange = np.where(
                     (posData[:, zAxis[0]] <= (float(boxlos) / 2.0))
@@ -3397,7 +3420,7 @@ def tracer_plot(
                     axOuter.scatter(
                         posDataInRange[:, Axes[0]],
                         posDataInRange[:, Axes[1]],
-                        s=sizeData,
+                        s=sizeData*0.5,
                         c=colour,
                         marker="o",
                     )
@@ -3421,8 +3444,24 @@ def tracer_plot(
                     ax1.add_patch(innerCircle)
                     ax1.add_patch(outerCircle)
                     if snapNumber in outerPlotSnaps:
-                        axOuter.add_patch(innerCircle)
-                        axOuter.add_patch(outerCircle)
+                        innerCircle2 = matplotlib.patches.Circle(
+                            xy=(0, 0),
+                            radius=float(rin),
+                            facecolor="none",
+                            edgecolor="green",
+                            linewidth=2.5,
+                            linestyle="-.",
+                        )
+                        outerCircle2 = matplotlib.patches.Circle(
+                            xy=(0, 0),
+                            radius=float(rout),
+                            facecolor="none",
+                            edgecolor="green",
+                            linewidth=2.5,
+                            linestyle="-.",
+                        )
+                        axOuter.add_patch(innerCircle2)
+                        axOuter.add_patch(outerCircle2)
 
                 minSnap = int(snapNumber) - min(int(nOldSnaps), tailsLength)
 
@@ -3447,7 +3486,7 @@ def tracer_plot(
 
                     pathData = np.array([pos1[whereInRange], pos2[whereInRange]])
                     ntails = np.shape(pos1[whereInRange])[0]
-                    alph = float(jj) / float(max(1, min(int(nOldSnaps), tailsLength)) + 1.0)
+                    alph = min(1.0,(float(jj) / float(max(1, min(int(nOldSnaps), tailsLength)) + 1.0))*1.2)
                     jj += 1
 
                     for ii in range(0, int(ntails)):
@@ -3456,7 +3495,7 @@ def tracer_plot(
                             pathData[:, ii, Axes[1]],
                             c=colour,
                             alpha=alph,
-                            linewidth=(sizeMultiply//2)+sizeConst
+                            linewidth=2
                         )  # colourTracers[ii],alpha=alph)
                         if snapNumber in outerPlotSnaps:
                             axOuter.plot(
@@ -3464,7 +3503,7 @@ def tracer_plot(
                                 pathData[:, ii, Axes[1]],
                                 c=colour,
                                 alpha=alph,
-                                linewidth=(sizeMultiply//2)+sizeConst
+                                linewidth=1.5
                             )
 
                 print(
@@ -3482,7 +3521,6 @@ def tracer_plot(
                     axOuter.set_ylim(ymin=ymin, ymax=ymax)
                     axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
-                ax1.set_title(f"Temperature Projection", fontsize=fontsize)
                 cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
                 fig.colorbar(pcm1, cax=cax1, orientation="vertical").set_label(
                     label=r"$T$ [$K$]", size=fontsize, weight="bold"
@@ -3497,23 +3535,18 @@ def tracer_plot(
                 ax1.set_aspect(aspect)
 
                 if snapNumber in outerPlotSnaps:
-                    axOuter.set_title(f"Temperature Projection", fontsize=fontsize)
-                    caxOuter = inset_axes(axOuter, width="5%", height="95%", loc="right")
-                    fig.colorbar(pcm1, cax=caxOuter, orientation="vertical").set_label(
-                        label=r"$T$ [$K$]", size=fontsize, weight="bold"
-                    )
-                    caxOuter.yaxis.set_ticks_position("left")
-                    caxOuter.yaxis.set_label_position("left")
-                    caxOuter.yaxis.label.set_color("white")
-                    caxOuter.tick_params(axis="y", colors="white", labelsize=fontsize)
+                    if snapNumber == outerPlotSnaps[-1]:
+                        figOuter.colorbar(pcm1Outer,ax=axOuterObj.ravel().tolist(), orientation="horizontal", pad=0.1).set_label(
+                            label=r"$T$ [$K$]", size=fontsize, weight="bold"
+                        )
 
                     axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
                     axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
                     axOuter.set_aspect(aspect)
-                    figOuter.subplots_adjust(wspace=0.0, hspace=0.0, top=0.80)
-                    
+
                 # Pad snapnum with zeroes to enable easier video making
-                fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.80)
+                fig.tight_layout()
+                fig.subplots_adjust(hspace=0.0, wspace =0.1, top=0.85)
 
                 # fig.tight_layout()
 
@@ -3531,37 +3564,43 @@ def tracer_plot(
                 print(
                     f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...Tracer Plot done!"
                 )
+    rr = -1
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        rr+=1
+        tt=-1
+        for targetT in TRACERSPARAMS["targetTLst"]:
+            tt+=1
+            figOuter = figureArray[rr][tt]
+            TRIOTITLE = (
+                f"Projections within {-1. * float(boxlos) / 2.}"
+                + r"<"
+                + f"{AxesLabels[zAxis[0]]}-axis"
+                + r"<"
+                + f"{float(boxlos) / 2.} kpc"
+                + "\n"
+                + f"Subset of {int(subset)} Tracers selected at "
+                + r"$t_{Lookback}=$"
+                + f"{selectlookback :0.03f} Gyrs"
+                + " as being at "
+                + "\n"
+                + r"$T = 10^{%5.2f \pm %5.2f} K$"
+                % (targetT, TRACERSPARAMS["deltaT"])
+                + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+            )
 
-    # Add overall figure plot
-    TRIOTITLE = (
-        f"Projections within {-1. * float(boxlos) / 2.}"
-        + r"<"
-        + f"{AxesLabels[zAxis[0]]}-axis"
-        + r"<"
-        + f"{float(boxlos) / 2.} kpc"
-        + "\n"
-        + f"Subset of {int(subset)} Tracers selected at "
-        + r"$t_{Lookback Time}=$"
-        + f"{selectlookback :0.03f} Gyrs"
-        + " as being at "
-        + "\n"
-        + r"$T = 10^{%5.2f \pm %5.2f} K$"
-        % (targetT, TRACERSPARAMS["deltaT"])
-        + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
-    )
+            figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
+            # figOuter.tight_layout()
+            figOuter.subplots_adjust(top=0.90)
+            savePathOuter = (
+                DataSavepath
+                + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
+            )
 
-    figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
-
-    savePathOuter = (
-        DataSavepath
-        + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
-    )
-
-    print(
-        f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}"
-    )
-    figOuter.savefig(savePathOuter, transparent=False)
-    plt.close()
+            print(
+                f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}"
+            )
+            figOuter.savefig(savePathOuter, transparent=False)
+    plt.close("all")
     return
 
 

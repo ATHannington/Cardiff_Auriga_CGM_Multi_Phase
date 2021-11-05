@@ -196,18 +196,18 @@ plt.close("all")
 #                   Stacked PDF PLOT                                           #
 # ==============================================================================#
 
-stacked_pdf_plot(
-    mergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
-    logParameters,
-    ylabel,
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
+# stacked_pdf_plot(
+#     mergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     snapRange,
+#     Tlst,
+#     logParameters,
+#     ylabel,
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
 # ==============================================================================#
 #                   Phase Diagrams PLOT                                        #
 # ==============================================================================#
@@ -284,21 +284,26 @@ hist_plot(
 matplotlib.rc_file_defaults()
 plt.close("all")
 
-matplotlib.rc_file_defaults()
-plt.close("all")
-medians_phases_plot(
-    flatMergedDict,
-    statsData,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    selectTime,
-    snapRange,
-    Tlst,
-    logParameters,
-    ylabel,
-    weightKey="L",
-    analysisParam="R",
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
+for param in saveParams:
+    print("")
+    print("---")
+    print(f"medians_phases_plot : for {param} param")
+    print("---")
+    matplotlib.rc_file_defaults()
+    plt.close("all")
+    medians_phases_plot(
+        flatMergedDict,
+        statsData,
+        TRACERSPARAMS,
+        saveParams,
+        tlookback,
+        selectTime,
+        snapRange,
+        Tlst,
+        logParameters,
+        ylabel,
+        weightKey="mass",
+        analysisParam=param,
+    )
+    matplotlib.rc_file_defaults()
+    plt.close("all")

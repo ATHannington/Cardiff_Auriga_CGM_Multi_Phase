@@ -23,7 +23,7 @@ from random import sample
 import math
 from functools import reduce
 
-subset = 250
+subset = 100
 Ntails = 6
 numThreads = 12
 ageUniverse = 13.77  # [Gyr]
