@@ -57,13 +57,15 @@ def err_catcher(arg):
 
 
 if __name__ == "__main__":
+
     print("Flattening wrt time!")
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
         print("\n" + f"Sorting multi-core arguments!")
 
         print("Loading data!")
-        args_list = []
+        manager = mp.Manager()
+        args_list = manager.list()
 
         args_default = [
             rin,
@@ -75,8 +77,9 @@ if __name__ == "__main__":
             DataSavepathSuffix,
             True,  # saveBool
         ]
+
         for targetT in TRACERSPARAMS["targetTLst"]:
-            dataDict = {}
+            dataDict = manager.dict()
             for snap in range(
                 int(TRACERSPARAMS["snapMin"]),
                 min(
