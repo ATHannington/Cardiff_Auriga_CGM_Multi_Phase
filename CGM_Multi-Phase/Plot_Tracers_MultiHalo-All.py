@@ -196,18 +196,18 @@ plt.close("all")
 #                   Stacked PDF PLOT                                           #
 # ==============================================================================#
 
-# stacked_pdf_plot(
-#     mergedDict,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     snapRange,
-#     Tlst,
-#     logParameters,
-#     ylabel,
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
+stacked_pdf_plot(
+    mergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+)
+matplotlib.rc_file_defaults()
+plt.close("all")
 # ==============================================================================#
 #                   Phase Diagrams PLOT                                        #
 # ==============================================================================#

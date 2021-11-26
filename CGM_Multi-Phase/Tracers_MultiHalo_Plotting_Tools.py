@@ -1,4 +1,4 @@
-x"""
+"""
 Author: A. T. Hannington
 Created: 29/07/2021
 
@@ -222,7 +222,7 @@ def medians_plot(
             plt.setp(
                 ax,
                 ylim=custom_ylim,
-                xlim=(round(max(tlookback)), round(min(tlookback))),
+                xlim=(round(max(tlookback),1), round(min(tlookback),1)),
             )
             fig.legend(
                 handles=patchList,
@@ -446,7 +446,7 @@ def persistant_temperature_plot(
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
-                xmin=round(max(tlookback)), xmax=round(min(tlookback))
+                xmin=round(max(tlookback),1), xmax=round(min(tlookback),1)
             )
 
             fig.suptitle(
@@ -651,7 +651,7 @@ def within_temperature_plot(
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
-                xmin=round(max(tlookback)), xmax=round(min(tlookback))
+                xmin=round(max(tlookback),1), xmax=round(min(tlookback),1)
             )
 
             fig.suptitle(
@@ -2594,21 +2594,23 @@ def medians_phases_plot(
                 breakFlag = True
                 continue
 
+            xedges = np.linspace(np.min(xdataCells.flatten()),np.max(xdataCells.flatten()),len(snapRange)-1)
 
+            yedges = np.linspace(np.min(ydataCells.flatten()),np.max(ydataCells.flatten()),Nbins)
 
             if weightKey == "mass":
-                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(xdataCells.flatten(),ydataCells.flatten(),bins=[len(snapRange) - 1, Nbins],weights=massCells.flatten())
+                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(xdataCells.flatten(),ydataCells.flatten(),bins=(xedges,yedges),weights=massCells.flatten())
             else:
                 mhistCells, _, _ = np.histogram2d(
                     xdataCells.flatten(),
                     ydataCells.flatten(),
-                    bins=[len(snapRange) - 1, Nbins],
+                    bins=(xedges,yedges),
                     weights=massCells.flatten(),
                 )
                 histCells, xedgeCells, yedgeCells = np.histogram2d(
                     xdataCells.flatten(),
                     ydataCells.flatten(),
-                    bins=[len(snapRange) - 1, Nbins],
+                    bins=(xedges,yedges),
                     weights=weightDataCells.flatten(),
                 )
 
@@ -2618,6 +2620,7 @@ def medians_phases_plot(
             if weightKey in logParameters:
                 finalHistCells = np.log10(finalHistCells)
             finalHistCells = finalHistCells.T
+
 
             xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
@@ -2651,7 +2654,7 @@ def medians_phases_plot(
         if breakFlag == True:
             print("Missing sub-plot! Skipping entry!")
             continue
-            
+
         fig.suptitle(
             f"Cells Containing Tracers selected by: "
             + "\n"
@@ -2687,7 +2690,7 @@ def medians_phases_plot(
             continue
 
         custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
-        plt.setp(ax, ylim=custom_ylim, xlim=(round(max(tlookback)), round(min(tlookback))))
+        plt.setp(ax, ylim=custom_ylim, xlim=(round(max(tlookback),1), round(min(tlookback),1)))
         plt.tight_layout()
         plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
 
