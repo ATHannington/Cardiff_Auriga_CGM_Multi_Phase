@@ -1,5 +1,5 @@
-C FILE: where_duplicates.F90
-      SUBROUTINE where_duplicates(A,B,N,M,OUT,OUT_INDICES)
+C FILE: intersect_duplicates.F90
+      SUBROUTINE intersect_duplicates(A,B,N,M,OUT,OUT_INDICES)
 C
 C     Find common entries bewteen A and B including all duplicates
 C     Returns: OUT : Matching Values of A in B, -1 where no match
@@ -19,7 +19,7 @@ Cf2py     intent(out)           :: OUT, OUT_INDICES
 
             OUT = -1.d0
             OUT_INDICES = -1
-            
+
             DO ii=1,SIZE(B)
               DO jj=1, SIZE(A)
                 IF (A(jj) .EQ. B(ii)) THEN
@@ -29,5 +29,5 @@ Cf2py     intent(out)           :: OUT, OUT_INDICES
               END DO
             END DO
 
-      END SUBROUTINE where_duplicates
-C END FILE where_duplicates.F90
+      END SUBROUTINE intersect_duplicates
+C END FILE intersect_duplicates.F90
