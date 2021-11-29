@@ -2225,11 +2225,12 @@ def flatten_wrt_time(
         )
         for k, v in orderedData.items():
             if k in saveParams:
-                tracerData = v
+                tracerData = v[np.newaxis]
                 if k == "trid":
-                    tracerData = TracersReturned
+                    tracerData = TracersReturned[np.newaxis]
                 elif k == "prid":
-                    tracerData = ParentsReturned
+                    tracerData = ParentsReturned[np.newaxis]
+
                 if k in tmp.keys():
                     entry = tmp[k]
                     entry = np.concatenate((entry,tracerData),axis=0)
