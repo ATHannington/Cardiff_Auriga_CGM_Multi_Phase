@@ -2814,15 +2814,15 @@ def tracer_plot(
 
     HaloID = int(TRACERSPARAMS["haloID"])
 
-    snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    # snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
     #STOP2996
-    # snapRange = range(
-    # int(TRACERSPARAMS["snapMin"]),
-    # min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
+    snapRange = range(
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
 
-    outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    # outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
-    # outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
 
     figureArray = []
     axesArray = []
@@ -2832,7 +2832,7 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-            nrows=1, ncols=3, figsize=(xsize*1.5, ysize), dpi=DPI ,sharey = True)
+            nrows=1, ncols=3, figsize=(xsize*1.5, ysize*0.75), dpi=DPI ,sharey = True)
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -3361,14 +3361,15 @@ def tracer_plot(
                         figOuter.colorbar(pcm1Outer,ax=axOuterObj.ravel().tolist(), orientation="horizontal", pad=0.1).set_label(
                             label=r"$T$ [$K$]", size=fontsize, weight="bold"
                         )
+                    if snapNumber == outerPlotSnaps[0]:
+                        axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
 
-                    axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
                     axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
                     axOuter.set_aspect(aspect)
 
                 # Pad snapnum with zeroes to enable easier video making
                 fig.tight_layout()
-                fig.subplots_adjust(hspace=0.0, wspace =0.1, top=0.85)
+                fig.subplots_adjust(hspace=0.0, wspace = 0.0, top=0.90)
 
                 # fig.tight_layout()
 
@@ -3412,7 +3413,7 @@ def tracer_plot(
 
             figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
             # figOuter.tight_layout()
-            figOuter.subplots_adjust(top=0.90)
+            # figOuter.subplots_adjust(top=0.95)
             savePathOuter = (
                 DataSavepath
                 + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
