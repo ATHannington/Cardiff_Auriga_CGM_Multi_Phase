@@ -471,7 +471,7 @@ def test_individual_tracer_fake_data():
         np.all(np.isin(SelectedTracers1, trid)) == True
     ), "[@individual_tracerFakeData Full Set:], SelectedTracers1 contains non-trid entries!"
 
-    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param(
+    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param_v2(
         Tracers=trid,
         Parents=prid,
         CellIDs=id,
@@ -531,7 +531,7 @@ def test_individual_tracer_fake_data():
         np.all(np.isin(SelectedTracers1, trid)) == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:], SelectedTracers1 contains non-trid entries!"
 
-    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param(
+    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param_v2(
         Tracers=trid,
         Parents=prid,
         CellIDs=id,
@@ -603,7 +603,7 @@ def test_individual_tracer_fake_data():
         np.all(np.isin(SelectedTracers1, trid)) == True
     ), "[@individual_tracerFakeData Subset of Selected Tracers Present in Tracers:], SelectedTracers1 contains non-trid2 entries!"
 
-    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param(
+    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param_v2(
         Tracers=trid2,
         Parents=prid,
         CellIDs=id,
@@ -669,7 +669,7 @@ def test_individual_tracer():
     SelectedTracers1 = snapTracers.data["trid"][TracerNumberSelect]
     SelectedParents1 = snapTracers.data["prid"][TracerNumberSelect]
 
-    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param(
+    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param_v2(
         Tracers=snapTracers.data["trid"],
         Parents=snapTracers.data["prid"],
         CellIDs=snapGas.data["id"],
@@ -733,7 +733,7 @@ def test_individual_tracer():
 
     tempData = {'pos' : snapGas.data["pos"]}
 
-    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param(
+    data, TracersReturned, ParentsReturned = get_individual_cell_from_tracer_all_param_v2(
         Tracers=snapTracers.data["trid"],
         Parents=snapTracers.data["prid"],
         CellIDs=snapGas.data["id"],
