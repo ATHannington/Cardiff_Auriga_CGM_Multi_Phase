@@ -83,20 +83,7 @@ def medians_plot(
                 plotData = statsData[selectKey].copy()
                 # Temperature specific load path
 
-                snapRange = np.array(
-                    [
-                        xx
-                        for xx in range(
-                            int(TRACERSPARAMS["snapMin"]),
-                            min(
-                                int(TRACERSPARAMS["snapMax"]) + 1,
-                                int(TRACERSPARAMS["finalSnap"]) + 1,
-                            ),
-                            1,
-                        )
-                    ]
-                )
-                selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
+                selectionSnap = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))
 
                 vline = tlookback[selectionSnap]
 
@@ -271,19 +258,21 @@ def persistant_temperature_plot(
         for T in TRACERSPARAMS["targetTLst"]:
             print("")
             print(f"Starting T{T} analysis")
-            key = (f"T{T}", f"{rin}R{rout}", f"{int(TRACERSPARAMS['selectSnap'])}")
+            key = (f"T{T}", f"{rin}R{rout}")
 
-            whereGas = np.where(dataDict[key]["type"] == 0)[0]
-            data = dataDict[key]["T"][whereGas]
+            timeIndex =  np.where(np.array(snapRange) == int(TRACERSPARAMS['selectSnap']))[0]
+
+            whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
+            data = dataDict[key]["T"][timeIndex][0][whereGas]
 
             whereSelect = np.where(
                 (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
                 & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
             )
 
-            selectedCells = dataDict[key]["id"][whereSelect]
+            selectedCells = dataDict[key]["id"][timeIndex][0][whereSelect]
 
-            ParentsIndices = np.where(np.isin(dataDict[key]["prid"], selectedCells))
+            ParentsIndices = np.where(np.isin(dataDict[key]["prid"][timeIndex][0], selectedCells))
 
             tmpXdata = []
             tmpYdata = []
@@ -300,24 +289,25 @@ def persistant_temperature_plot(
 
             rangeSet = [snapRangeLow, snapRangeHi]
 
-            for snapRange in rangeSet:
-                key = (f"T{T}", f"{rin}R{rout}", f"{int(TRACERSPARAMS['selectSnap'])}")
-                SelectedTracers = dataDict[key]["trid"][ParentsIndices]
+            for tmpsnapRange in rangeSet:
+                key = (f"T{T}", f"{rin}R{rout}")
+                SelectedTracers = dataDict[key]["trid"][timeIndex][0] [ParentsIndices]
 
-                for snap in snapRange:
-                    key = (f"T{T}", f"{rin}R{rout}", f"{int(snap)}")
+                for snap in tmpsnapRange:
+                    key = (f"T{T}", f"{rin}R{rout}")
+                    timeIndex =  np.where(np.array(snapRange) == int(snap))[0]
 
-                    whereGas = np.where(dataDict[key]["type"] == 0)[0]
+                    whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
 
-                    data = dataDict[key]["T"][whereGas]
+                    data = dataDict[key]["T"][timeIndex][0][whereGas]
 
                     whereTrids = np.where(
-                        np.isin(dataDict[key]["trid"], SelectedTracers)
+                        np.isin(dataDict[key]["trid"][timeIndex][0], SelectedTracers)
                     )
-                    Parents = dataDict[key]["prid"][whereTrids]
+                    Parents = dataDict[key]["prid"][timeIndex][0][whereTrids]
 
                     whereCells = np.where(
-                        np.isin(dataDict[key]["id"][whereGas], Parents)
+                        np.isin(dataDict[key]["id"][timeIndex][0][whereGas], Parents)
                     )
 
                     data = data[whereCells]
@@ -329,21 +319,21 @@ def persistant_temperature_plot(
 
                     selectedData = data[selected]
 
-                    selectedIDs = dataDict[key]["id"][whereGas]
+                    selectedIDs = dataDict[key]["id"][timeIndex][0][whereGas]
                     selectedIDs = selectedIDs[selected]
 
                     selectedCellsIndices = np.where(
-                        np.isin(dataDict[key]["prid"], selectedIDs)
+                        np.isin(dataDict[key]["prid"][timeIndex][0], selectedIDs)
                     )
 
-                    finalTrids = dataDict[key]["trid"][selectedCellsIndices]
+                    finalTrids = dataDict[key]["trid"][timeIndex][0][selectedCellsIndices]
 
                     SelectedTracers = finalTrids
 
                     nTracers = len(finalTrids)
 
                     # Append the data from this snapshot to a temporary list
-                    tmpXdata.append(dataDict[key]["Lookback"][0])
+                    tmpXdata.append(tlookback[timeIndex][0])
                     tmpYdata.append(nTracers)
 
             ind_sorted = np.argsort(tmpXdata)
@@ -377,22 +367,10 @@ def persistant_temperature_plot(
 
         # Create a plot for each Temperature
         for ii in range(len(Tlst)):
-            snapRange = np.array(
-                [
-                    xx
-                    for xx in range(
-                        int(TRACERSPARAMS["snapMin"]),
-                        min(
-                            int(TRACERSPARAMS["snapMax"]) + 1,
-                            int(TRACERSPARAMS["finalSnap"]) + 1,
-                        ),
-                        1,
-                    )
-                ]
-            )
-            selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
 
-            vline = tlookback[selectionSnap]
+            timeIndex = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))
+
+            vline = tlookback[timeIndex]
 
             T = TRACERSPARAMS["targetTLst"][ii]
 
@@ -526,13 +504,13 @@ def within_temperature_plot(
 
             rangeSet = [snapRangeLow, snapRangeHi]
 
-            for snapRange in rangeSet:
-                for snap in snapRange:
-                    key = (f"T{T}", f"{rin}R{rout}", f"{int(snap)}")
+            for tmpsnapRange in rangeSet:
+                for snap in tmpsnapRange:
+                    key = (f"T{T}", f"{rin}R{rout}")
+                    timeIndex =  np.where(np.array(snapRange) == int(snap))[0]
+                    whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
 
-                    whereGas = np.where(dataDict[key]["type"] == 0)[0]
-
-                    data = dataDict[key]["T"][whereGas]
+                    data = dataDict[key]["T"][timeIndex][0][whereGas]
 
                     selected = np.where(
                         (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
@@ -540,15 +518,15 @@ def within_temperature_plot(
                     )
 
                     ParentsIndices = np.where(
-                        np.isin(dataDict[key]["prid"], dataDict[key]["id"][selected])
+                        np.isin(dataDict[key]["prid"][timeIndex][0], dataDict[key]["id"][timeIndex][0][selected])
                     )
 
-                    trids = dataDict[key]["trid"][ParentsIndices]
+                    trids = dataDict[key]["trid"][timeIndex][0][ParentsIndices]
 
                     nTracers = len(trids)
 
                     # Append the data from this snapshot to a temporary list
-                    tmpXdata.append(dataDict[key]["Lookback"][0])
+                    tmpXdata.append(tlookback[timeIndex][0])
                     tmpYdata.append(nTracers)
 
             ind_sorted = np.argsort(tmpXdata)
@@ -582,22 +560,9 @@ def within_temperature_plot(
 
         # Create a plot for each Temperature
         for ii in range(len(Tlst)):
-            snapRange = np.array(
-                [
-                    xx
-                    for xx in range(
-                        int(TRACERSPARAMS["snapMin"]),
-                        min(
-                            int(TRACERSPARAMS["snapMax"]) + 1,
-                            int(TRACERSPARAMS["finalSnap"]) + 1,
-                        ),
-                        1,
-                    )
-                ]
-            )
-            selectionSnap = np.where(snapRange == int(TRACERSPARAMS["selectSnap"]))
+            timeIndex = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
 
-            vline = tlookback[selectionSnap]
+            vline = tlookback[timeIndex]
 
             T = TRACERSPARAMS["targetTLst"][ii]
 
@@ -765,26 +730,16 @@ def stacked_pdf_plot(
                 selectKey = (
                     f"T{T}",
                     f"{rin}R{rout}",
-                    f"{int(TRACERSPARAMS['selectSnap'])}",
                 )
-                selectTime = abs(dataDict[selectKey]["Lookback"][0])
+                timeIndex =  np.where(np.array(snapRange) == int(TRACERSPARAMS['selectSnap']))[0]
+
+                selectTime = tlookback[timeIndex][0]
 
                 xmaxlist = []
                 xminlist = []
                 dataList = []
                 weightsList = []
-                snapRange = [
-                    xx
-                    for xx in range(
-                        int(TRACERSPARAMS["snapMin"]),
-                        int(
-                            min(
-                                TRACERSPARAMS["finalSnap"] + 1,
-                                TRACERSPARAMS["snapMax"] + 1,
-                            )
-                        ),
-                    )
-                ]
+
                 sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
                 fig, ax = plt.subplots(
                     nrows=len(snapRange),
@@ -797,28 +752,28 @@ def stacked_pdf_plot(
                 # Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
                 for (jj, snap) in enumerate(snapRange):
                     currentAx = ax[jj]
-                    dictkey = (f"T{T}", f"{rin}R{rout}", f"{int(snap)}")
+                    dictkey = (f"T{T}", f"{rin}R{rout}")
+                    timeIndex =  np.where(np.array(snapRange) == snap)[0]
+                    whereGas = np.where(dataDict[dictkey]["type"][timeIndex][0] == 0)
 
-                    whereGas = np.where(dataDict[dictkey]["type"] == 0)
-
-                    dataDict[dictkey]["age"][
-                        np.where(np.isnan(dataDict[dictkey]["age"]) == True)
+                    dataDict[dictkey]["age"][timeIndex][0][
+                        np.where(np.isnan(dataDict[dictkey]["age"][timeIndex][0]) == True)
                     ] = 0.0
 
                     whereStars = np.where(
-                        (dataDict[dictkey]["type"] == 4)
-                        & (dataDict[dictkey]["age"] >= 0.0)
+                        (dataDict[dictkey]["type"][timeIndex][0] == 4)
+                        & (dataDict[dictkey]["age"][timeIndex][0] >= 0.0)
                     )
 
-                    NGas = len(dataDict[dictkey]["type"][whereGas])
-                    NStars = len(dataDict[dictkey]["type"][whereStars])
+                    NGas = len(dataDict[dictkey]["type"][timeIndex][0][whereGas])
+                    NStars = len(dataDict[dictkey]["type"][timeIndex][0][whereStars])
                     Ntot = NGas + NStars
 
                     # Percentage in stars
                     percentage = (float(NStars) / (float(Ntot))) * 100.0
 
-                    data = dataDict[dictkey][dataKey][whereGas]
-                    weights = dataDict[dictkey]["mass"][whereGas]
+                    data = dataDict[dictkey][dataKey][timeIndex][0][whereGas]
+                    weights = dataDict[dictkey]["mass"][timeIndex][0][whereGas]
 
                     if dataKey in logParameters:
                         data = np.log10(data)
