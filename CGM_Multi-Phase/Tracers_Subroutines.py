@@ -1720,6 +1720,9 @@ def get_individual_cell_from_tracer_all_param(
     # to selectedCellIDs match, -1 where Tracer's cell not in snap.
     # This will allow for selection of Data with duplicates by
     # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
+    #
+    # A. T. Hannington solution - more generalised but slower
+    
     selectedCellIDs, selectedDataIndices = intersect_duplicates(SelectedPrids, CellIDs)
 
     # Grab location of index of match of SelectedPrids with CellIDs.
@@ -1785,8 +1788,124 @@ def get_individual_cell_from_tracer_all_param(
     return SelectedData, SelectedTrids, SelectedPrids
 
 
-# ------------------------------------------------------------------------------#
+# ------------------------------------------------------------------------------# ------------------------------------------------------------------------------
 
+def get_individual_cell_from_tracer_all_param_v2(
+    Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+):
+    """
+    Function to go from Tracers, Parents, CellIDs, Data
+    to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
+    [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
+    Selected Tracers is not in the CellIDs.
+    This should return a consistently ordered data set where we always Have
+    the data in the order of SelectedTracers and NaN's where that tracer
+    has been lost. This allows for a look over the individual tracer's
+    behaviour over time.
+
+    The intention is that we return the intersect of a & b, WITH DUPLICATES.
+    That is, if a value is in a multiple times, it should return the
+    corresponding index and value of b for each of those instances of the
+    matching value. This is similar to numpy.intersect1d, but we include
+    duplicates.
+    """
+
+    from scipy.interpolate import interp1d
+
+    # Select which of the SelectedTracers are in Tracers from this snap
+    SelectedTrids = np.where(np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
+
+    # Find the indices of Tracers included in SelectedTracers in this snap
+    # in the order, and shape, of SelectedTracers
+    _, SelectedIndices, TridIndices = np.intersect1d(
+        SelectedTracers, Tracers, return_indices=True
+    )
+
+    # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
+    # values (order SelectedTracers) to have the corresponding Parent ID from
+    # Parents (order Tracers)
+    pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
+    pridBlank[SelectedIndices] = Parents[TridIndices]
+
+    # Rename for clarity
+    SelectedPrids = pridBlank
+
+    # Use our Scipy interpolate function as described above to return the
+    # Index of the CellID to selectedCellIDs match, using a mapping provided by
+    # interp1d. This mapping works assuming all CellIDs are unique (they are).
+    # This allows for a unique mapping between id and index of id array.
+    # Thus, when handed prid, we return for every prid the matching index in id.
+    # This will allow for selection of Data with duplicates by
+    # Data[selectedDataIndices]
+    #
+    # Dr T. Davis solution as of 30/11/2021. Thanks Tim =)
+
+    func=interp1d(CellIDs,np.arange(CellIDs.size), kind='nearest')
+    selectedDataIndices = func(SelectedPrids[np.in1d(SelectedPrids,CellIDs)])
+    selectedDataIndices = selectedDataIndices.astype("int64")
+    selectedCellIDs = CellIDs[selectedDataIndices]
+
+    # Assign the non-blank data to the prepared NullEntry populated array
+    # of shape SelectedTracers. Again, this step is designed to
+    # copy duplicates of the data where a cell contains more than one tracer.
+    finalDataIndices = selectedDataIndices
+
+    tmp = {}
+    for key, values in Data.items():
+        if key == "Lookback":
+            tmp.update({"Lookback": values})
+        elif key == "Ntracers":
+            tmp.update({"Ntracers": values})
+        elif key == "Snap":
+            tmp.update({"Snap": values})
+        elif key == "id":
+            tmp.update({"id": selectedCellIDs})
+        elif key == "trid":
+            tmp.update({"trid" : SelectedTrids})
+        elif key == "prid":
+            tmp.update({"prid" : SelectedPrids})
+        else:
+            # Set up a blank data array of shape and order SelectedTracers.
+            # Fill this with the relevant sized entry of NaN as if selecting from
+            # true data.
+            #
+            # E.G. Temperature is scaler => NullEntry == np.nan
+            # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
+            if np.shape(np.shape(values))[0] == 1:
+                dimension = 1
+                NullEntry = np.nan
+                dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+            elif (np.shape(np.shape(values))[0] == 2) & (
+                (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
+            ):
+                dimension = 3
+                NullEntry = [np.nan for dd in range(dimension)]
+                dataBlank = np.full(
+                    shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+                )
+            else:
+                raise Exception(
+                    f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+                    )
+
+            dataBlank[whereIndexData] = values[finalDataIndices]
+            tracerData = dataBlank
+            # Rename for clarity
+            SelectedData = dataBlank
+            assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+
+            tmp.update({key: tracerData})
+
+
+    SelectedData = tmp
+    assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+    assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+
+
+    return SelectedData, SelectedTrids, SelectedPrids
+
+
+# -----------------------------------------------------------------------------
 
 def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     if np.shape(np.shape(Data))[0] == 1:
@@ -2086,7 +2205,14 @@ def calculate_statistics(
             # whereGas = np.where(FullDict[key]['type'] == 0)
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
-                stat = np.nanpercentile(v, percentile, axis=0)
+
+                truthy = np.all(np.isnan(v),axis=0)
+
+                if (truthy==False):
+                    stat = np.nanpercentile(v, percentile, axis=0)
+                else:
+                    stat = 0.
+
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
@@ -2216,7 +2342,7 @@ def flatten_wrt_time(
             orderedData,
             TracersReturned,
             ParentsReturned,
-        ) = get_individual_cell_from_tracer_all_param(
+        ) = get_individual_cell_from_tracer_all_param_v2(
             Tracers=dataDict[key]["trid"],
             Parents=dataDict[key]["prid"],
             CellIDs=dataDict[key]["id"],
@@ -3369,7 +3495,7 @@ def tracer_plot(
 
                 # Pad snapnum with zeroes to enable easier video making
                 fig.tight_layout()
-                fig.subplots_adjust(hspace=0.0, wspace = 0.0, top=0.90)
+                fig.subplots_adjust(hspace=0.0, wspace = 0.1, top=0.85)
 
                 # fig.tight_layout()
 
@@ -3808,10 +3934,21 @@ def multi_halo_stats(
         for ii in range(len(Tlst)):
             T = Tlst[ii]
             key = (f"T{Tlst[ii]}", f"{rin}R{rout}")
+            # print(f"Statistics of {key} !")
             for snap in snapRange:
-                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}", f"{snap}")
+                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
+                timeIndex =  np.where(np.array(snapRange) == snap)[0]
+                # print(f"Taking {snap} temporal Subset...")
+                timeDat = {}
+                for param,values in dataDict[selectKey].items():
+                    if np.shape(np.shape(values))[0]>1:
+                        timeDat.update({param: values[timeIndex].flatten()})
+                    else:
+                        timeDat.update({param: values})
+                # print(f"...done!")
+                # print(f"Calculating {snap} Statistics!")
                 dat = calculate_statistics(
-                    dataDict[selectKey],
+                    timeDat,
                     T,
                     rin,
                     rout,
@@ -3826,16 +3963,16 @@ def multi_halo_stats(
                 for k, val in dat.items():
                     dat[k] = np.array([val]).flatten()
 
-                if key in list(statsData.keys()):
+                if selectKey in list(statsData.keys()):
                     for subkey, vals in dat.items():
-                        if subkey in list(statsData[key].keys()):
+                        if subkey in list(statsData[selectKey].keys()):
 
-                            statsData[key][subkey] = np.concatenate(
-                                (statsData[key][subkey], dat[subkey]), axis=0
+                            statsData[selectKey][subkey] = np.concatenate(
+                                (statsData[selectKey][subkey], dat[subkey]), axis=0
                             )
                         else:
-                            statsData[key].update({subkey: dat[subkey]})
+                            statsData[selectKey].update({subkey: dat[subkey]})
                 else:
-                    statsData.update({key: dat})
+                    statsData.update({selectKey: dat})
 
     return statsData
