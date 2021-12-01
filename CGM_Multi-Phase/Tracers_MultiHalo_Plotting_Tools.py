@@ -177,7 +177,7 @@ def medians_plot(
                     f"Cells Containing Tracers selected by: "
                     + "\n"
                     + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                    + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                    + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
                     + "\n"
                     + f" and selected at {vline[0]:3.2f} Gyr",
                     fontsize=12,
@@ -431,7 +431,7 @@ def persistant_temperature_plot(
                 f"Percentage Tracers Still at \n Selection Temperature "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                + r" selected at $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -604,7 +604,7 @@ def within_temperature_plot(
             currentAx.plot(
                 tlookback,
                 plotYdata,
-                label=r"$T = 10^{%3.2f} K$" % (float(temp)),
+                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
                 lineStyle="-",
             )
@@ -623,7 +623,7 @@ def within_temperature_plot(
                 f"Percentage Tracers Within \n Selection Temperature Range "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                + r" selected at $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -919,7 +919,7 @@ def stacked_pdf_plot(
                     f"PDF of Cells Containing Tracers selected by: "
                     + "\n"
                     + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
-                    + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                    + r" and $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
                     + "\n"
                     + f" and selected at {selectTime:3.2f} Gyr",
                     fontsize=12,
@@ -1103,7 +1103,7 @@ def phases_plot(
                     colour = cmap(float(ii) / float(len(Tlst)))
 
                     plot_patch = matplotlib.patches.Patch(color=colour)
-                    plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
+                    plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
                     currentAx.legend(
                         handles=[plot_patch], labels=[plot_label], loc="upper left"
                     )
@@ -1132,7 +1132,7 @@ def phases_plot(
                     + f" at {currentTime:3.2f} Gyr"
                     + "\n"
                     + f"Tracers Data, selected at {selectTime:3.2f} Gyr as being"
-                    + r" $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+                    + r" $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
                     + r" and temperatures "
                     + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
                     fontsize=12,
@@ -1793,7 +1793,7 @@ def bars_plot(
 
         preDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels = [r"$10^{%3.2f}$" % (float(temp)) for temp in Tlst]
+        legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
@@ -1801,7 +1801,7 @@ def bars_plot(
             + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
+            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout),
             fontsize=12,
         )
 
@@ -1924,7 +1924,7 @@ def bars_plot(
 
         postDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
-        legendLabels = [r"$10^{%3.2f}$" % (float(temp)) for temp in Tlst]
+        legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         plt.title(
@@ -1932,7 +1932,7 @@ def bars_plot(
             + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout),
+            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout),
             fontsize=12,
         )
 
@@ -2221,7 +2221,7 @@ def hist_plot(
             f"Cells Containing Tracers selected by: "
             + "\n"
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
             + "\n"
             + f" and selected at {selectTime:3.2f} Gyr",
             fontsize=12,
@@ -2442,7 +2442,7 @@ def medians_phases_plot(
             currentAx.plot(
                 tlookback,
                 plotData[median],
-                label=r"$T = 10^{%3.2f} K$" % (float(temp)),
+                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color="black",
                 lineStyle=lineStyleMedian,
             )
@@ -2614,7 +2614,7 @@ def medians_phases_plot(
             f"Cells Containing Tracers selected by: "
             + "\n"
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.2f \leq R \leq %3.2f kpc $" % (rin, rout)
+            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
             + "\n"
             + f" and selected at {vline[0]:3.2f} Gyr",
             fontsize=12,

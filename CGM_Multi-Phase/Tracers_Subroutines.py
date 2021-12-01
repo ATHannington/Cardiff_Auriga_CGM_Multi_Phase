@@ -51,19 +51,12 @@ def snap_analysis(
 
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-    snap = gadget_readsnap(
-        snapNumber,
-        TRACERSPARAMS["simfile"],
-        hdf5=True,
-        loadonlytype=[0, 1, 4],
-        lazy_load=lazyLoadBool,
-        subfind=snap_subfind,
-    )
+    #       gas and stars (type 0 and 4) MUST be loaded first!!
     snapGas = gadget_readsnap(
         snapNumber,
         TRACERSPARAMS["simfile"],
         hdf5=True,
-        loadonlytype=[0, 4],
+        loadonlytype=[0, 4, 1],
         lazy_load=lazyLoadBool,
         subfind=snap_subfind,
     )
@@ -81,12 +74,6 @@ def snap_analysis(
     # But ensures 'id' is loaded into memory before halo_only_gas_select is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
-    tmp = snap.data["id"]
-    tmp = snap.data["age"]
-    tmp = snap.data["hrgm"]
-    tmp = snap.data["mass"]
-    tmp = snap.data["pos"]
-    tmp = snap.data["vol"]
 
     tmp = snapGas.data["id"]
     tmp = snapGas.data["age"]
@@ -96,27 +83,21 @@ def snap_analysis(
     tmp = snapGas.data["vol"]
     del tmp
 
-    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
+    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     # Centre the simulation on HaloID 0
-    snap = set_centre(
-        snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
-    )
-    snapGas = set_centre(
-        snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
-    )
+    # snapGas = set_centre(
+    #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
+    # )
 
+    snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+    snapGas.select_halo(snap_subfind, do_rotation=True)
     # --------------------------#
     ##    Units Conversion    ##
     # --------------------------#
 
     # Convert Units
     ## Make this a seperate function at some point??
-    snap.pos *= 1e3  # [kpc]
-    snap.vol *= 1e9  # [kpc^3]
-    snap.mass *= 1e10  # [Msol]
-    snap.hrgm *= 1e10  # [Msol]
-
     snapGas.pos *= 1e3  # [kpc]
     snapGas.vol *= 1e9  # [kpc^3]
     snapGas.mass *= 1e10  # [Msol]
@@ -125,7 +106,6 @@ def snap_analysis(
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
-        snap,
         elements,
         elements_Z,
         elements_mass,
@@ -134,8 +114,6 @@ def snap_analysis(
         omegabaryon0,
         snapNumber,
     )
-
-    del snap
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
@@ -295,19 +273,12 @@ def tracer_selection_snap_analysis(
 
     # load in the gas particles mass and position only for HaloID 0.
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-    snap = gadget_readsnap(
-        snapNumber,
-        TRACERSPARAMS["simfile"],
-        hdf5=True,
-        loadonlytype=[0, 1, 4],
-        lazy_load=lazyLoadBool,
-        subfind=snap_subfind,
-    )
+    #       gas and stars (type 0 and 4) MUST be loaded first!!
     snapGas = gadget_readsnap(
         snapNumber,
         TRACERSPARAMS["simfile"],
         hdf5=True,
-        loadonlytype=[0, 4],
+        loadonlytype=[0, 4, 1],
         lazy_load=lazyLoadBool,
         subfind=snap_subfind,
     )
@@ -325,13 +296,6 @@ def tracer_selection_snap_analysis(
     # But ensures 'id' is loaded into memory before halo_only_gas_select is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
-    tmp = snap.data["id"]
-    tmp = snap.data["age"]
-    tmp = snap.data["hrgm"]
-    tmp = snap.data["mass"]
-    tmp = snap.data["pos"]
-    tmp = snap.data["vol"]
-
     tmp = snapGas.data["id"]
     tmp = snapGas.data["age"]
     tmp = snapGas.data["hrgm"]
@@ -340,27 +304,21 @@ def tracer_selection_snap_analysis(
     tmp = snapGas.data["vol"]
     del tmp
 
-    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}")
+    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
 
     # Centre the simulation on HaloID 0
-    snap = set_centre(
-        snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
-    )
-    snapGas = set_centre(
-        snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
-    )
+    # snapGas = set_centre(
+    #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
+    # )
 
+    snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+    snapGas.select_halo(snap_subfind, do_rotation=True)
     # --------------------------#
     ##    Units Conversion    ##
     # --------------------------#
 
     # Convert Units
     ## Make this a seperate function at some point??
-    snap.pos *= 1e3  # [kpc]
-    snap.vol *= 1e9  # [kpc^3]
-    snap.mass *= 1e10  # [Msol]
-    snap.hrgm *= 1e10  # [Msol]
-
     snapGas.pos *= 1e3  # [kpc]
     snapGas.vol *= 1e9  # [kpc^3]
     snapGas.mass *= 1e10  # [Msol]
@@ -369,7 +327,6 @@ def tracer_selection_snap_analysis(
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
-        snap,
         elements,
         elements_Z,
         elements_mass,
@@ -378,8 +335,6 @@ def tracer_selection_snap_analysis(
         omegabaryon0,
         snapNumber,
     )
-
-    del snap
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
@@ -1102,7 +1057,6 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 # ------------------------------------------------------------------------------#
 def calculate_tracked_parameters(
     snapGas,
-    snap,
     elements,
     elements_Z,
     elements_mass,
@@ -1167,8 +1121,7 @@ def calculate_tracked_parameters(
     )
 
     # Radius [kpc]
-    snapGas.data["R"] = np.linalg.norm(snapGas.data["pos"][whereGas], axis=1)  # [Kpc]
-    snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1)  # [Kpc]
+    snapGas.data["R"] = np.linalg.norm(snapGas.data["pos"], axis=1)
 
     KpcTokm = 1e3 * c.parsec * 1e-5
     # Radial Velocity [km s^-1]
@@ -1253,22 +1206,21 @@ def calculate_tracked_parameters(
         / snapGas.data["csound"][whereGas]
     )
 
-    rsort = np.argsort(snap.data["R"])
+    rsort = np.argsort(snapGas.data["R"])
     runsort = np.argsort(rsort)
 
-    rhosorted = (3.0 * np.cumsum(snap.data["mass"][rsort])) / (
-        4.0 * pi * (snap.data["R"][rsort]) ** 3
+    rhosorted = (3.0 * np.cumsum(snapGas.data["mass"][rsort])) / (
+        4.0 * pi * (snapGas.data["R"][rsort]) ** 3
     )
     rho = rhosorted[runsort]
 
     # Free Fall time [Gyrs]
-    snap.data["tff"] = sqrt(
+    snapGas.data["tff"] = sqrt(
         (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
     ) * (1.0 / GyrToSeconds)
 
-    whereGasStars = np.where(np.isin(snap.type, [0, 4]) == True)
-    snapGas.data["tff"] = snap.data["tff"][whereGasStars].copy()
-    snapGas.data["tff"] = snapGas.data["tff"][whereGas]
+    whereNOTGas = np.where(snapGas.data['type'] != 0)[0]
+    snapGas.data["tff"][whereNOTGas] = np.nan
 
     # Cooling time over free fall time
     snapGas.data["tcool_tff"] = (
@@ -1276,6 +1228,17 @@ def calculate_tracked_parameters(
     )
     del tmp
 
+    #==================#
+    # Remove redundant
+    # DM (type==1) data
+    #==================#
+
+    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4])==True)[0]
+
+    for key,value in snapGas.data.items():
+        if value is not None:
+            if np.shape(value)[0] >= np.shape(whereStarsGas)[0]:
+                snapGas.data[key] = value[whereStarsGas]
     return snapGas
 
 
@@ -1722,7 +1685,7 @@ def get_individual_cell_from_tracer_all_param(
     # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
     #
     # A. T. Hannington solution - more generalised but slower
-    
+
     selectedCellIDs, selectedDataIndices = intersect_duplicates(SelectedPrids, CellIDs)
 
     # Grab location of index of match of SelectedPrids with CellIDs.
@@ -2864,9 +2827,24 @@ def tracer_plot(
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["x", "y", "z"]
 
+    #===============#
     # Set plot figure sizes
-    xsize = 8.0
-    ysize = 8.0
+    #===============#
+
+    xParam = 3.0 #Base equal aspect ratio image size
+    deltaX = 1.25 #Single Margin in x direc
+    fracX = 0.90 #How much margin (deltaX) to leave on left
+    xsize = 3.*xParam + deltaX #Compute image x size
+
+    leftParam = fracX*deltaX/xsize #Calculate left margin placement
+
+    hParam = 0.20 #How much space (%) to leave for title and colourbar (split)
+    topParam = 1. - (hParam/2.) #How much room to leave for title
+    bottomParam = (hParam/2.)#How much room to leave for colourbar
+    ysize = xParam * (1./(1.-hParam)) #Compute image y size
+
+    #===============#
+
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
 
@@ -2940,15 +2918,22 @@ def tracer_plot(
 
     HaloID = int(TRACERSPARAMS["haloID"])
 
-    # snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
-    #STOP2996
-    snapRange = range(
-    int(TRACERSPARAMS["snapMin"]),
-    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
+    #============#
+    #   # DEBUG: #
+    #============#
+    snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
-    # outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
-    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+
+    #============#
+    #   Actual:  #
+    #============#
+    # snapRange = range(
+    # int(TRACERSPARAMS["snapMin"]),
+    # min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
+
+    # outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
 
     figureArray = []
     axesArray = []
@@ -2958,7 +2943,7 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-            nrows=1, ncols=3, figsize=(xsize*1.5, ysize*0.75), dpi=DPI ,sharey = True)
+            nrows=1, ncols=3, figsize=(xsize, ysize), dpi=DPI ,sharey = True)
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -2983,43 +2968,20 @@ def tracer_plot(
 
         # load in the gas particles mass and position only for HaloID 0.
         #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
-        snap = gadget_readsnap(
-            snapNumber,
-            TRACERSPARAMS["simfile"],
-            hdf5=True,
-            loadonlytype=[0, 1, 4],
-            lazy_load=lazyLoadBool,
-            subfind=snap_subfind,
-        )
+        #       gas and stars (type 0 and 4) MUST be loaded first!!
         snapGas = gadget_readsnap(
             snapNumber,
             TRACERSPARAMS["simfile"],
             hdf5=True,
-            loadonlytype=[0, 4],
+            loadonlytype=[0, 4, 1],
             lazy_load=lazyLoadBool,
             subfind=snap_subfind,
-        )
-
-        # load tracers data
-        snapTracers = gadget_readsnap(
-            snapNumber,
-            TRACERSPARAMS["simfile"],
-            hdf5=True,
-            loadonlytype=[6],
-            lazy_load=lazyLoadBool,
         )
 
         # Load Cell IDs - avoids having to turn lazy_load off...
         # But ensures 'id' is loaded into memory before halo_only_gas_select is called
         #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
         #   Be in memory so taking the subset would be skipped.
-        tmp = snap.data["id"]
-        tmp = snap.data["age"]
-        tmp = snap.data["hrgm"]
-        tmp = snap.data["mass"]
-        tmp = snap.data["pos"]
-        tmp = snap.data["vol"]
-
         tmp = snapGas.data["id"]
         tmp = snapGas.data["age"]
         tmp = snapGas.data["hrgm"]
@@ -3029,19 +2991,20 @@ def tracer_plot(
         del tmp
 
         print(
-            f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}"
+            f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
         )
 
         # Centre the simulation on HaloID 0
-        snap = set_centre(
-            snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
-        )
-        snapGas = set_centre(
-            snap=snapGas,
-            snap_subfind=snap_subfind,
-            HaloID=HaloID,
-            snapNumber=snapNumber,
-        )
+
+        # snapGas = set_centre(
+        #     snap=snapGas,
+        #     snap_subfind=snap_subfind,
+        #     HaloID=HaloID,
+        #     snapNumber=snapNumber,
+        # )
+
+        snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+        snapGas.select_halo(snap_subfind, do_rotation=True)
 
         # --------------------------#
         ##    Units Conversion    ##
@@ -3049,10 +3012,6 @@ def tracer_plot(
 
         # Convert Units
         ## Make this a seperate function at some point??
-        snap.pos *= 1e3  # [kpc]
-        snap.vol *= 1e9  # [kpc^3]
-        snap.mass *= 1e10  # [Msol]
-        snap.hrgm *= 1e10  # [Msol]
 
         snapGas.pos *= 1e3  # [kpc]
         snapGas.vol *= 1e9  # [kpc^3]
@@ -3062,7 +3021,6 @@ def tracer_plot(
         # Calculate New Parameters and Load into memory others we want to track
         snapGas = calculate_tracked_parameters(
             snapGas,
-            snap,
             elements,
             elements_Z,
             elements_mass,
@@ -3278,9 +3236,9 @@ def tracer_plot(
                     + f"{selectlookback :0.03f} Gyrs"
                     + " as being at "
                     + "\n"
-                    + r"$T = 10^{%5.2f \pm %5.2f} K$"
+                    + r"$T = 10^{%3.2f \pm %3.2f} K$"
                     % (targetT, TRACERSPARAMS["deltaT"])
-                    + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+                    + r" and $ %3.0f < R < %3.0f $kpc" % (rin, rout)
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
@@ -3532,14 +3490,15 @@ def tracer_plot(
                 + f"{selectlookback :0.03f} Gyrs"
                 + " as being at "
                 + "\n"
-                + r"$T = 10^{%5.2f \pm %5.2f} K$"
+                + r"$T = 10^{%3.2f \pm %3.2f} K$"
                 % (targetT, TRACERSPARAMS["deltaT"])
-                + r" and $ %5.2f < R < %5.2f Kpc$" % (rin, rout)
+                + r" and $ %3.0f < R < %3.0f $kpc" % (rin, rout)
             )
 
             figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
             # figOuter.tight_layout()
-            # figOuter.subplots_adjust(top=0.95)
+            figOuter.subplots_adjust(hspace=0.0, wspace = 0.0, left=leftParam, top=topParam, bottom = bottomParam)
+
             savePathOuter = (
                 DataSavepath
                 + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
