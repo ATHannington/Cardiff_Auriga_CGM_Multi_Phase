@@ -1851,7 +1851,7 @@ def get_individual_cell_from_tracer_all_param_v2(
                     f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
                     )
 
-            dataBlank[whereIndexData] = values[finalDataIndices]
+            dataBlank[SelectedIndices] = values[finalDataIndices]
             tracerData = dataBlank
             # Rename for clarity
             SelectedData = dataBlank
@@ -2838,9 +2838,9 @@ def tracer_plot(
 
     leftParam = fracX*deltaX/xsize #Calculate left margin placement
 
-    hParam = 0.20 #How much space (%) to leave for title and colourbar (split)
-    topParam = 1. - (hParam/2.) #How much room to leave for title
-    bottomParam = (hParam/2.)#How much room to leave for colourbar
+    hParam = 0.50 #How much space (%) to leave for title and colourbar (split)
+    topParam = 1. - (hParam*0.4) #How much room to leave for title
+    bottomParam = (hParam*0.6) #How much room to leave for colourbar
     ysize = xParam * (1./(1.-hParam)) #Compute image y size
 
     #===============#
@@ -3497,7 +3497,7 @@ def tracer_plot(
 
             figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
             # figOuter.tight_layout()
-            figOuter.subplots_adjust(hspace=0.0, wspace = 0.0, left=leftParam, top=topParam, bottom = bottomParam)
+            figOuter.subplots_adjust(hspace=0.1, wspace = 0.0, left=leftParam, top=topParam, bottom = bottomParam)
 
             savePathOuter = (
                 DataSavepath
