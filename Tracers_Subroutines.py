@@ -1808,6 +1808,8 @@ def get_individual_cell_from_tracer_all_param_v2(
     selectedDataIndices = selectedDataIndices.astype("int64")
     selectedCellIDs = CellIDs[selectedDataIndices]
 
+    whereIndexData= np.in1d(SelectedPrids,CellIDs)
+
     # Assign the non-blank data to the prepared NullEntry populated array
     # of shape SelectedTracers. Again, this step is designed to
     # copy duplicates of the data where a cell contains more than one tracer.
@@ -1851,7 +1853,7 @@ def get_individual_cell_from_tracer_all_param_v2(
                     f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
                     )
 
-            dataBlank[SelectedIndices] = values[finalDataIndices]
+            dataBlank[whereIndexData] = values[finalDataIndices]
             tracerData = dataBlank
             # Rename for clarity
             SelectedData = dataBlank
