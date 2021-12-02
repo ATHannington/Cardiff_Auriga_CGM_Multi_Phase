@@ -2287,7 +2287,7 @@ def medians_phases_plot(
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
-    Nbins=150,
+    Nbins=100,
     DPI=75,
     weightKey="mass",
     analysisParam="R",
@@ -2305,6 +2305,7 @@ def medians_phases_plot(
     }
 
     xlimDict = {
+        "mass": {"xmin": 7.0, "xmax": 10.0},
         "L": {"xmin": 3.5, "xmax": 4.5},
         "T": {"xmin": 3.75, "xmax": 6.5},
         "R": {"xmin": 0, "xmax": 400},
@@ -2549,7 +2550,7 @@ def medians_phases_plot(
                 breakFlag = True
                 continue
 
-            xedges = np.linspace(np.min(xdataCells.flatten()),np.max(xdataCells.flatten()),len(snapRange)-1)
+            xedges = np.linspace(np.min(xdataCells.flatten()),np.max(xdataCells.flatten()),len(snapRange))
 
             yedges = np.linspace(np.min(ydataCells.flatten()),np.max(ydataCells.flatten()),Nbins)
 

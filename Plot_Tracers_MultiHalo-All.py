@@ -285,6 +285,7 @@ for param in saveParams:
         ylabel,
         weightKey="mass",
         analysisParam=param,
+        Nbins=100,
     )
     matplotlib.rc_file_defaults()
     plt.close("all")
