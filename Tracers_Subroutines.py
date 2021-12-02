@@ -2829,26 +2829,34 @@ def tracer_plot(
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["x", "y", "z"]
 
+    xsize = 7.0
+    ysize = 7.0
+
+
     #===============#
-    # Set plot figure sizes
+    # Set plot figure sizes of trio
     #===============#
 
     xParam = 3.0 #Base equal aspect ratio image size
-    deltaX = 1.25 #Single Margin in x direc
+    deltaX = 1.4 #Single Margin in x direc
     fracX = 0.90 #How much margin (deltaX) to leave on left
-    xsize = 3.*xParam + deltaX #Compute image x size
+    xsizeTrio = 3.*xParam + deltaX #Compute image x size
 
-    leftParam = fracX*deltaX/xsize #Calculate left margin placement
+    leftParam = fracX*deltaX/xsizeTrio #Calculate left margin placement
 
     hParam = 0.50 #How much space (%) to leave for title and colourbar (split)
     topParam = 1. - (hParam*0.4) #How much room to leave for title
     bottomParam = (hParam*0.6) #How much room to leave for colourbar
-    ysize = xParam * (1./(1.-hParam)) #Compute image y size
+    ysizeTrio = xParam * (1./(1.-hParam)) #Compute image y size
 
     #===============#
 
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
+
+
+    fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
+    fudgeTicks = fullTicks[1:]
 
     colour = "white"
     sizeMultiply = 20
@@ -2923,19 +2931,19 @@ def tracer_plot(
     #============#
     #   # DEBUG: #
     #============#
-    snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
-
-    outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    # snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
+    #
+    # outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
 
     #============#
     #   Actual:  #
     #============#
-    # snapRange = range(
-    # int(TRACERSPARAMS["snapMin"]),
-    # min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
+    snapRange = range(
+    int(TRACERSPARAMS["snapMin"]),
+    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
 
-    # outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
 
     figureArray = []
     axesArray = []
@@ -2945,7 +2953,7 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-            nrows=1, ncols=3, figsize=(xsize, ysize), dpi=DPI ,sharey = True)
+            nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI ,sharey = True)
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -3227,11 +3235,11 @@ def tracer_plot(
                     + r"$t_{Lookback}=$"
                     + f"{tlookback :0.03f} Gyrs"
                     + "\n"
-                    + f"Projections within {-1. * float(boxlos) / 2.}"
+                    + f"Projections within {-1. * float(boxlos) / 2.:3.0f}"
                     + r"<"
                     + f"{AxesLabels[zAxis[0]]}-axis"
                     + r"<"
-                    + f"{float(boxlos) / 2.} kpc"
+                    + f"{float(boxlos) / 2.:3.0f} kpc"
                     + "\n"
                     + f"Subset of {int(subset)} Tracers selected at "
                     + r"$t_{Lookback}=$"
@@ -3240,12 +3248,12 @@ def tracer_plot(
                     + "\n"
                     + r"$T = 10^{%3.2f \pm %3.2f} K$"
                     % (targetT, TRACERSPARAMS["deltaT"])
-                    + r" and $ %3.0f < R < %3.0f $kpc" % (rin, rout)
+                    + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
                 if snapNumber in outerPlotSnaps:
-                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ " " + r"$t_{Lookback}=$"+ f"{tlookback :0.03f} Gyrs"
+                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ "\n" + r"$t_{Lookback}=$"+ f"{tlookback :0.03f} Gyrs"
 
                     axOuter.set_title(label=OUTERSUBTITLE)
                     axOuter.title.set_size(fontsize)
@@ -3429,14 +3437,9 @@ def tracer_plot(
                     axOuter.set_ylim(ymin=ymin, ymax=ymax)
                     axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
-                cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
-                fig.colorbar(pcm1, cax=cax1, orientation="vertical").set_label(
+                fig.colorbar(pcm1, ax=ax1, orientation="vertical").set_label(
                     label=r"$T$ [$K$]", size=fontsize, weight="bold"
                 )
-                cax1.yaxis.set_ticks_position("left")
-                cax1.yaxis.set_label_position("left")
-                cax1.yaxis.label.set_color("white")
-                cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
                 ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
                 ax1.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
@@ -3453,9 +3456,17 @@ def tracer_plot(
                     axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
                     axOuter.set_aspect(aspect)
 
+                    #Fix/fudge x-axis ticks
+                    if snapNumber > outerPlotSnaps[0]:
+                        plt.sca(axOuter)
+                        plt.xticks(fudgeTicks)
+                    else:
+                        plt.sca(axOuter)
+                        plt.xticks(fullTicks)
+
                 # Pad snapnum with zeroes to enable easier video making
                 fig.tight_layout()
-                fig.subplots_adjust(hspace=0.0, wspace = 0.1, top=0.85)
+                fig.subplots_adjust(hspace=0.1, wspace = 0.1, top=0.80)
 
                 # fig.tight_layout()
 
@@ -3481,11 +3492,11 @@ def tracer_plot(
             tt+=1
             figOuter = figureArray[rr][tt]
             TRIOTITLE = (
-                f"Projections within {-1. * float(boxlos) / 2.}"
+                f"Projections within {-1. * float(boxlos) / 2.:3.0f}"
                 + r"<"
                 + f"{AxesLabels[zAxis[0]]}-axis"
                 + r"<"
-                + f"{float(boxlos) / 2.} kpc"
+                + f"{float(boxlos) / 2.:3.0f} kpc"
                 + "\n"
                 + f"Subset of {int(subset)} Tracers selected at "
                 + r"$t_{Lookback}=$"
@@ -3494,7 +3505,7 @@ def tracer_plot(
                 + "\n"
                 + r"$T = 10^{%3.2f \pm %3.2f} K$"
                 % (targetT, TRACERSPARAMS["deltaT"])
-                + r" and $ %3.0f < R < %3.0f $kpc" % (rin, rout)
+                + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
             )
 
             figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
