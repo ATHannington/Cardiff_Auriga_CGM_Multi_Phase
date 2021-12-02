@@ -150,7 +150,7 @@ def medians_plot(
                 currentAx.plot(
                     tlookback,
                     plotData[median],
-                    label=r"$T = 10^{%3.2f} K$" % (float(temp)),
+                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
@@ -169,7 +169,7 @@ def medians_plot(
                 #     # STOP160IF
 
                 plot_patch = matplotlib.patches.Patch(color=colour)
-                plot_label = r"$T = 10^{%3.2f} K$" % (float(temp))
+                plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
                 patchList.append(plot_patch)
                 labelList.append(plot_label)
 
@@ -177,7 +177,7 @@ def medians_plot(
                     f"Cells Containing Tracers selected by: "
                     + "\n"
                     + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                    + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
+                    + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
                     + "\n"
                     + f" and selected at {vline[0]:3.2f} Gyr",
                     fontsize=12,
@@ -431,7 +431,7 @@ def persistant_temperature_plot(
                 f"Percentage Tracers Still at \n Selection Temperature "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
+                + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -623,7 +623,7 @@ def within_temperature_plot(
                 f"Percentage Tracers Within \n Selection Temperature Range "
                 + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
                 + "\n"
-                + r" selected at $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
+                + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=12,
             )
@@ -878,7 +878,7 @@ def stacked_pdf_plot(
 
                 plt.xlim(xmin, xmax)
                 #
-                # plot_label = r"$T = 10^{%3.2f} K$" % (float(T))
+                # plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
                 # plt.text(
                 #     0.75,
                 #     0.95,
@@ -919,7 +919,7 @@ def stacked_pdf_plot(
                     f"PDF of Cells Containing Tracers selected by: "
                     + "\n"
                     + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
-                    + r" and $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
+                    + r" and $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
                     + "\n"
                     + f" and selected at {selectTime:3.2f} Gyr",
                     fontsize=12,
@@ -1132,7 +1132,7 @@ def phases_plot(
                     + f" at {currentTime:3.2f} Gyr"
                     + "\n"
                     + f"Tracers Data, selected at {selectTime:3.2f} Gyr as being"
-                    + r" $%3.0f \leq R \leq %3.0f $kpc" % (rin, rout)
+                    + r" $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
                     + r" and temperatures "
                     + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
                     fontsize=12,
@@ -1801,7 +1801,7 @@ def bars_plot(
             + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout),
+            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
             fontsize=12,
         )
 
@@ -1932,7 +1932,7 @@ def bars_plot(
             + f"={selectTime:3.2f} Gyr"
             + "\n"
             + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout),
+            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
             fontsize=12,
         )
 
@@ -2221,7 +2221,7 @@ def hist_plot(
             f"Cells Containing Tracers selected by: "
             + "\n"
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
+            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
             + "\n"
             + f" and selected at {selectTime:3.2f} Gyr",
             fontsize=12,
@@ -2615,7 +2615,7 @@ def medians_phases_plot(
             f"Cells Containing Tracers selected by: "
             + "\n"
             + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $kpc " % (rin, rout)
+            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
             + "\n"
             + f" and selected at {vline[0]:3.2f} Gyr",
             fontsize=12,
