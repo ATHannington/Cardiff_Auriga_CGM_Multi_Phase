@@ -191,7 +191,7 @@ def medians_plot(
                 axis0 = ax[len(Tlst) - 1]
                 midax = ax[(len(Tlst) - 1) // 2]
 
-            axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+            axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
             midax.set_ylabel(ylabel[analysisParam], fontsize=10)
             finalymin = np.nanmin(yminlist)
             finalymax = np.nanmax(ymaxlist)
@@ -445,7 +445,7 @@ def persistant_temperature_plot(
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
         midax.set_ylabel(
             r"Percentage Tracers Still at Selection Temperature",
             fontsize=10,
@@ -637,7 +637,7 @@ def within_temperature_plot(
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
         midax.set_ylabel(
             r"Percentage Tracers Still Within Selection Temperature Range",
             fontsize=10,
@@ -984,9 +984,9 @@ def phases_plot(
     xmin = 1.0  # [Log10 rho_rhomean]
     xmax = 7.0  # [Log10 rho_rhomean]
     labelDict = {
-        "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]",
-        "gz": r"Log10 Average Metallicity per pixel [$Z/Z_{\odot}$]",
-        "tcool": r"Log10 Cooling Time per pixel [$Gyr$]",
+        "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
+        "gz": r"Log10 Average Metallicity per pixel [Z/Z$_{\odot}$]",
+        "tcool": "Log10 Cooling Time per pixel [Gyr]",
         "tcool_tff": r"Cooling Time over Free Fall Time",
     }
 
@@ -1091,10 +1091,10 @@ def phases_plot(
                     # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
                     currentAx.set_xlabel(
-                        r"Log10 Density [$\rho / \langle \rho \rangle $]",
+                        r"Log10 Density [$ \rho / \langle \rho \rangle $]",
                         fontsize=fontsize,
                     )
-                    currentAx.set_ylabel(r"Log10 Temperatures [$K$]", fontsize=fontsize)
+                    currentAx.set_ylabel("Log10 Temperatures [K]", fontsize=fontsize)
 
                     currentAx.set_ylim(ymin, ymax)
                     currentAx.set_xlim(xmin, xmax)
@@ -1131,7 +1131,7 @@ def phases_plot(
                     f"Temperature Density Diagram, weighted by {weightKey}"
                     + f" at {currentTime:3.2f} Gyr"
                     + "\n"
-                    + f"Tracers Data, selected at {selectTime:3.2f} Gyr as being"
+                    + f"Tracers Data, selected at {selectTime:3.2f} Gyr with"
                     + r" $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
                     + r" and temperatures "
                     + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
@@ -2297,11 +2297,11 @@ def medians_phases_plot(
     fontsize = 10
 
     labelDict = {
-        "mass": r"Log10 Mass per pixel [$M/M_{\odot}$]",
-        "gz": r"Log10 Average Metallicity per pixel [$Z/Z_{\odot}$]",
-        "tcool": r"Log10 Cooling Time per pixel [$Gyr$]",
+        "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
+        "gz": r"Log10 Average Metallicity per pixel [Z/Z$_{\odot}$]",
+        "tcool": r"Log10 Cooling Time per pixel [Gyr]",
         "tcool_tff": r"Cooling Time over Free Fall Time",
-        "L": r"Specific Angular Momentum [$kpc$ $km$ $s^{-1}$]",
+        "L": r"Specific Angular Momentum [kpc km s$^{-1}$]",
     }
 
     xlimDict = {
@@ -2632,7 +2632,7 @@ def medians_phases_plot(
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel(r"Lookback Time [$Gyrs$]", fontsize=10)
+        axis0.set_xlabel(r"Lookback Time [Gyrs]", fontsize=10)
         midax.set_ylabel(ylabel[analysisParam], fontsize=10)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)

@@ -1169,7 +1169,7 @@ def calculate_tracked_parameters(
     )
 
     snapGas.data["ndens"] = snapGas.data["dens"][whereGas] / (meanweight * c.amu)
-    # Thermal Pressure : P/k_B = n T [$ # K cm^-3]
+    # Thermal Pressure : P/k_B = n T [ # K cm^-3]
     snapGas.data["P_thermal"] = snapGas.data["ndens"] * snapGas.T
 
     # Magnetic Pressure [P/k_B K cm^-3]
@@ -2655,15 +2655,15 @@ def plot_projections(
     ax1.set_title(f"Temperature Projection", fontsize=fontsize)
     cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
     fig.colorbar(pcm1, cax=cax1, orientation="vertical").set_label(
-        label=r"$T$ [$K$]", size=fontsize, weight="bold"
+        label="T [K]", size=fontsize, weight="bold"
     )
     cax1.yaxis.set_ticks_position("left")
     cax1.yaxis.set_label_position("left")
     cax1.yaxis.label.set_color("white")
     cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
-    # ax1.set_xlabel(f'{AxesLabels[Axes[0]]}"+r" [$kpc$]"', fontsize = fontsize)
+    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+" [kpc]", fontsize=fontsize)
+    # ax1.set_xlabel(f'{AxesLabels[Axes[0]]}"+" [kpc]"', fontsize = fontsize)
     # ax1.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2692,14 +2692,14 @@ def plot_projections(
 
     cax2 = inset_axes(ax2, width="5%", height="95%", loc="right")
     fig.colorbar(pcm2, cax=cax2, orientation="vertical").set_label(
-        label=r"$n_H$ [$cm^{-3}$]", size=fontsize, weight="bold"
+        label=r"n$_H$ [cm$^{-3}$]", size=fontsize, weight="bold"
     )
     cax2.yaxis.set_ticks_position("left")
     cax2.yaxis.set_label_position("left")
     cax2.yaxis.label.set_color("white")
     cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
-    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [$kpc$]"', fontsize=fontsize)
-    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} "+r" [$kpc$]"', fontsize=fontsize)
+    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [kpc]"', fontsize=fontsize)
+    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} "+r" [kpc]"', fontsize=fontsize)
     # ax2.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2735,8 +2735,8 @@ def plot_projections(
     cax3.yaxis.label.set_color("white")
     cax3.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} "+r" [$kpc$]", fontsize=fontsize)
-    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [$kpc$]", fontsize=fontsize)
+    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} "+r" [kpc]", fontsize=fontsize)
+    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [kpc]", fontsize=fontsize)
 
     # ax3.set_aspect(aspect)
 
@@ -2766,15 +2766,15 @@ def plot_projections(
 
     cax4 = inset_axes(ax4, width="5%", height="95%", loc="right")
     fig.colorbar(pcm4, cax=cax4, orientation="vertical").set_label(
-        label=r"$B$ [$\mu G$]", size=fontsize, weight="bold"
+        label=r"B [$ \mu $G]", size=fontsize, weight="bold"
     )
     cax4.yaxis.set_ticks_position("left")
     cax4.yaxis.set_label_position("left")
     cax4.yaxis.label.set_color("white")
     cax4.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [$kpc$]"', fontsize=fontsize)
-    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [$kpc$]", fontsize=fontsize)
+    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [kpc]"', fontsize=fontsize)
+    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [kpc]", fontsize=fontsize)
     # ax4.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -3244,7 +3244,7 @@ def tracer_plot(
                     + f"Subset of {int(subset)} Tracers selected at "
                     + r"$t_{Lookback}=$"
                     + f"{selectlookback :0.03f} Gyrs"
-                    + " as being at "
+                    + " with "
                     + "\n"
                     + r"$T = 10^{%3.2f \pm %3.2f} K$"
                     % (targetT, TRACERSPARAMS["deltaT"])
@@ -3438,22 +3438,22 @@ def tracer_plot(
                     axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
                 fig.colorbar(pcm1, ax=ax1, orientation="vertical").set_label(
-                    label=r"$T$ [$K$]", size=fontsize, weight="bold"
+                    label=r"T [K]", size=fontsize, weight="bold"
                 )
 
-                ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
-                ax1.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
+                ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [kpc]", fontsize=fontsize)
+                ax1.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [kpc]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
 
                 if snapNumber in outerPlotSnaps:
                     if snapNumber == outerPlotSnaps[-1]:
                         figOuter.colorbar(pcm1Outer,ax=axOuterObj.ravel().tolist(), orientation="horizontal", pad=0.1).set_label(
-                            label=r"$T$ [$K$]", size=fontsize, weight="bold"
+                            label=r"T [K]", size=fontsize, weight="bold"
                         )
                     if snapNumber == outerPlotSnaps[0]:
-                        axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [$kpc$]", fontsize=fontsize)
+                        axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [kpc]", fontsize=fontsize)
 
-                    axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [$kpc$]", fontsize=fontsize)
+                    axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [kpc]", fontsize=fontsize)
                     axOuter.set_aspect(aspect)
 
                     #Fix/fudge x-axis ticks
@@ -3501,7 +3501,7 @@ def tracer_plot(
                 + f"Subset of {int(subset)} Tracers selected at "
                 + r"$t_{Lookback}=$"
                 + f"{selectlookback :0.03f} Gyrs"
-                + " as being at "
+                + " with "
                 + "\n"
                 + r"$T = 10^{%3.2f \pm %3.2f} K$"
                 % (targetT, TRACERSPARAMS["deltaT"])
