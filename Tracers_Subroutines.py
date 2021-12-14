@@ -83,14 +83,16 @@ def snap_analysis(
     tmp = snapGas.data["vol"]
     del tmp
 
-    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(
+        f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
+    )
 
     # Centre the simulation on HaloID 0
     # snapGas = set_centre(
     #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     # )
 
-    snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+    snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
     snapGas.select_halo(snap_subfind, do_rotation=True)
     # --------------------------#
     ##    Units Conversion    ##
@@ -304,14 +306,16 @@ def tracer_selection_snap_analysis(
     tmp = snapGas.data["vol"]
     del tmp
 
-    print(f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print(
+        f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
+    )
 
     # Centre the simulation on HaloID 0
     # snapGas = set_centre(
     #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     # )
 
-    snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+    snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
     snapGas.select_halo(snap_subfind, do_rotation=True)
     # --------------------------#
     ##    Units Conversion    ##
@@ -1219,7 +1223,7 @@ def calculate_tracked_parameters(
         (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
     ) * (1.0 / GyrToSeconds)
 
-    whereNOTGas = np.where(snapGas.data['type'] != 0)[0]
+    whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
     snapGas.data["tff"][whereNOTGas] = np.nan
 
     # Cooling time over free fall time
@@ -1228,14 +1232,14 @@ def calculate_tracked_parameters(
     )
     del tmp
 
-    #==================#
+    # ==================#
     # Remove redundant
     # DM (type==1) data
-    #==================#
+    # ==================#
 
-    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4])==True)[0]
+    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
 
-    for key,value in snapGas.data.items():
+    for key, value in snapGas.data.items():
         if value is not None:
             if np.shape(value)[0] >= np.shape(whereStarsGas)[0]:
                 snapGas.data[key] = value[whereStarsGas]
@@ -1536,6 +1540,7 @@ def load_haloes_selected(HaloPathBase, SelectedHaloesPath):
 
 # ------------------------------------------------------------------------------
 
+
 def get_individual_cell_from_tracer_single_param(
     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
@@ -1632,6 +1637,7 @@ def get_individual_cell_from_tracer_single_param(
 
 # ------------------------------------------------------------------------------
 
+
 def get_individual_cell_from_tracer_all_param(
     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
@@ -1707,9 +1713,9 @@ def get_individual_cell_from_tracer_all_param(
         elif key == "id":
             tmp.update({"id": selectedCellIDs})
         elif key == "trid":
-            tmp.update({"trid" : SelectedTrids})
+            tmp.update({"trid": SelectedTrids})
         elif key == "prid":
-            tmp.update({"prid" : SelectedPrids})
+            tmp.update({"prid": SelectedPrids})
         else:
             # Set up a blank data array of shape and order SelectedTracers.
             # Fill this with the relevant sized entry of NaN as if selecting from
@@ -1720,19 +1726,22 @@ def get_individual_cell_from_tracer_all_param(
             if np.shape(np.shape(values))[0] == 1:
                 dimension = 1
                 NullEntry = np.nan
-                dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+                dataBlank = np.full(
+                    shape=np.shape(SelectedTracers), fill_value=NullEntry
+                )
             elif (np.shape(np.shape(values))[0] == 2) & (
                 (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
             ):
                 dimension = 3
                 NullEntry = [np.nan for dd in range(dimension)]
                 dataBlank = np.full(
-                    shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+                    shape=(np.shape(SelectedTracers)[0], dimension),
+                    fill_value=NullEntry,
                 )
             else:
                 raise Exception(
                     f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
-                    )
+                )
 
             dataBlank[whereIndexData] = values[finalDataIndices]
             tracerData = dataBlank
@@ -1742,16 +1751,15 @@ def get_individual_cell_from_tracer_all_param(
 
             tmp.update({key: tracerData})
 
-
     SelectedData = tmp
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
-
 
     return SelectedData, SelectedTrids, SelectedPrids
 
 
 # ------------------------------------------------------------------------------# ------------------------------------------------------------------------------
+
 
 def get_individual_cell_from_tracer_all_param_v2(
     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
@@ -1803,12 +1811,12 @@ def get_individual_cell_from_tracer_all_param_v2(
     #
     # Dr T. Davis solution as of 30/11/2021. Thanks Tim =)
 
-    func=interp1d(CellIDs,np.arange(CellIDs.size), kind='nearest')
-    selectedDataIndices = func(SelectedPrids[np.in1d(SelectedPrids,CellIDs)])
+    func = interp1d(CellIDs, np.arange(CellIDs.size), kind="nearest")
+    selectedDataIndices = func(SelectedPrids[np.in1d(SelectedPrids, CellIDs)])
     selectedDataIndices = selectedDataIndices.astype("int64")
     selectedCellIDs = CellIDs[selectedDataIndices]
 
-    whereIndexData= np.in1d(SelectedPrids,CellIDs)
+    whereIndexData = np.in1d(SelectedPrids, CellIDs)
 
     # Assign the non-blank data to the prepared NullEntry populated array
     # of shape SelectedTracers. Again, this step is designed to
@@ -1826,9 +1834,9 @@ def get_individual_cell_from_tracer_all_param_v2(
         elif key == "id":
             tmp.update({"id": selectedCellIDs})
         elif key == "trid":
-            tmp.update({"trid" : SelectedTrids})
+            tmp.update({"trid": SelectedTrids})
         elif key == "prid":
-            tmp.update({"prid" : SelectedPrids})
+            tmp.update({"prid": SelectedPrids})
         else:
             # Set up a blank data array of shape and order SelectedTracers.
             # Fill this with the relevant sized entry of NaN as if selecting from
@@ -1839,19 +1847,22 @@ def get_individual_cell_from_tracer_all_param_v2(
             if np.shape(np.shape(values))[0] == 1:
                 dimension = 1
                 NullEntry = np.nan
-                dataBlank = np.full(shape=np.shape(SelectedTracers), fill_value=NullEntry)
+                dataBlank = np.full(
+                    shape=np.shape(SelectedTracers), fill_value=NullEntry
+                )
             elif (np.shape(np.shape(values))[0] == 2) & (
                 (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
             ):
                 dimension = 3
                 NullEntry = [np.nan for dd in range(dimension)]
                 dataBlank = np.full(
-                    shape=(np.shape(SelectedTracers)[0], dimension), fill_value=NullEntry
+                    shape=(np.shape(SelectedTracers)[0], dimension),
+                    fill_value=NullEntry,
                 )
             else:
                 raise Exception(
                     f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
-                    )
+                )
 
             dataBlank[whereIndexData] = values[finalDataIndices]
             tracerData = dataBlank
@@ -1861,16 +1872,15 @@ def get_individual_cell_from_tracer_all_param_v2(
 
             tmp.update({key: tracerData})
 
-
     SelectedData = tmp
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
-
 
     return SelectedData, SelectedTrids, SelectedPrids
 
 
 # -----------------------------------------------------------------------------
+
 
 def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     if np.shape(np.shape(Data))[0] == 1:
@@ -1905,7 +1915,9 @@ def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
 
     parentsEqualsCellIDs = np.array_equal(SelectedCells, CellIDs)
     if parentsEqualsCellIDs == False:
-        selectedCellIDs, selectedDataIndices = intersect_duplicates(SelectedCells, CellIDs)
+        selectedCellIDs, selectedDataIndices = intersect_duplicates(
+            SelectedCells, CellIDs
+        )
 
         whereIndexData = np.where(selectedDataIndices != -1.0)[0]
 
@@ -2171,12 +2183,12 @@ def calculate_statistics(
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
 
-                truthy = np.all(np.isnan(v),axis=0)
+                truthy = np.all(np.isnan(v), axis=0)
 
-                if (truthy==False):
+                if truthy == False:
                     stat = np.nanpercentile(v, percentile, axis=0)
                 else:
-                    stat = 0.
+                    stat = 0.0
 
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
@@ -2274,6 +2286,7 @@ def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
 
     return flattened_dict
 
+
 def flatten_wrt_time(
     targetT,
     dataDict,
@@ -2324,7 +2337,7 @@ def flatten_wrt_time(
 
                 if k in tmp.keys():
                     entry = tmp[k]
-                    entry = np.concatenate((entry,tracerData),axis=0)
+                    entry = np.concatenate((entry, tracerData), axis=0)
                     tmp.update({k: entry})
                 else:
                     tmp.update({k: tracerData})
@@ -2356,6 +2369,7 @@ def flatten_wrt_time(
 
 
 # ------------------------------------------------------------------------------#
+
 
 def multi_halo_flatten_wrt_time(
     dataDict,
@@ -2662,7 +2676,7 @@ def plot_projections(
     cax1.yaxis.label.set_color("white")
     cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+" [kpc]", fontsize=fontsize)
+    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + " [kpc]", fontsize=fontsize)
     # ax1.set_xlabel(f'{AxesLabels[Axes[0]]}"+" [kpc]"', fontsize = fontsize)
     # ax1.set_aspect(aspect)
 
@@ -2735,8 +2749,8 @@ def plot_projections(
     cax3.yaxis.label.set_color("white")
     cax3.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} "+r" [kpc]", fontsize=fontsize)
-    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [kpc]", fontsize=fontsize)
+    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} " + r" [kpc]", fontsize=fontsize)
+    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" [kpc]", fontsize=fontsize)
 
     # ax3.set_aspect(aspect)
 
@@ -2774,7 +2788,7 @@ def plot_projections(
     cax4.tick_params(axis="y", colors="white", labelsize=fontsize)
 
     # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [kpc]"', fontsize=fontsize)
-    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} "+r" [kpc]", fontsize=fontsize)
+    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" [kpc]", fontsize=fontsize)
     # ax4.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2832,28 +2846,26 @@ def tracer_plot(
     xsize = 7.0
     ysize = 7.0
 
-
-    #===============#
+    # ===============#
     # Set plot figure sizes of trio
-    #===============#
+    # ===============#
 
-    xParam = 3.0 #Base equal aspect ratio image size
-    deltaX = 1.4 #Single Margin in x direc
-    fracX = 0.90 #How much margin (deltaX) to leave on left
-    xsizeTrio = 3.*xParam + deltaX #Compute image x size
+    xParam = 3.0  # Base equal aspect ratio image size
+    deltaX = 1.4  # Single Margin in x direc
+    fracX = 0.90  # How much margin (deltaX) to leave on left
+    xsizeTrio = 3.0 * xParam + deltaX  # Compute image x size
 
-    leftParam = fracX*deltaX/xsizeTrio #Calculate left margin placement
+    leftParam = fracX * deltaX / xsizeTrio  # Calculate left margin placement
 
-    hParam = 0.50 #How much space (%) to leave for title and colourbar (split)
-    topParam = 1. - (hParam*0.4) #How much room to leave for title
-    bottomParam = (hParam*0.6) #How much room to leave for colourbar
-    ysizeTrio = xParam * (1./(1.-hParam)) #Compute image y size
+    hParam = 0.50  # How much space (%) to leave for title and colourbar (split)
+    topParam = 1.0 - (hParam * 0.4)  # How much room to leave for title
+    bottomParam = hParam * 0.6  # How much room to leave for colourbar
+    ysizeTrio = xParam * (1.0 / (1.0 - hParam))  # Compute image y size
 
-    #===============#
+    # ===============#
 
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
-
 
     fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
     fudgeTicks = fullTicks[1:]
@@ -2928,22 +2940,26 @@ def tracer_plot(
 
     HaloID = int(TRACERSPARAMS["haloID"])
 
-    #============#
+    # ============#
     #   # DEBUG: #
-    #============#
+    # ============#
     # snapRange= [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
     #
     # outerPlotSnaps = [int(TRACERSPARAMS["selectSnap"])-1,int(TRACERSPARAMS["selectSnap"]),int(TRACERSPARAMS["selectSnap"])+1]
 
-
-    #============#
+    # ============#
     #   Actual:  #
-    #============#
+    # ============#
     snapRange = range(
-    int(TRACERSPARAMS["snapMin"]),
-    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)))
+        int(TRACERSPARAMS["snapMin"]),
+        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"] + 1)),
+    )
 
-    outerPlotSnaps = [int(min(snapRange) + ((max(snapRange)-min(snapRange))//4)),int(TRACERSPARAMS["selectSnap"]), int(min(snapRange) + (3*(max(snapRange)-min(snapRange))//4))]
+    outerPlotSnaps = [
+        int(min(snapRange) + ((max(snapRange) - min(snapRange)) // 4)),
+        int(TRACERSPARAMS["selectSnap"]),
+        int(min(snapRange) + (3 * (max(snapRange) - min(snapRange)) // 4)),
+    ]
 
     figureArray = []
     axesArray = []
@@ -2953,7 +2969,8 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-            nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI ,sharey = True)
+                nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI, sharey=True
+            )
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -2961,7 +2978,6 @@ def tracer_plot(
 
     figureArray = np.array(figureArray)
     axesArray = np.array(axesArray)
-
 
     ss = -1
 
@@ -3013,7 +3029,7 @@ def tracer_plot(
         #     snapNumber=snapNumber,
         # )
 
-        snapGas.calc_sf_indizes(snap_subfind,halolist=[HaloID])
+        snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
         snapGas.select_halo(snap_subfind, do_rotation=True)
 
         # --------------------------#
@@ -3100,13 +3116,13 @@ def tracer_plot(
         # ==============================================================================#
         rr = -1
         for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-            rr+=1
+            rr += 1
             tt = -1
             print(f"{rin}R{rout}")
             for targetT in TRACERSPARAMS["targetTLst"]:
                 print("")
                 print(f"Starting T{targetT} {rin}R{rout} analysis")
-                tt+=1
+                tt += 1
                 figOuter = figureArray[rr][tt]
                 axOuterObj = axesArray[rr][tt]
                 axOuter = axesArray[rr][tt][ss]
@@ -3253,7 +3269,13 @@ def tracer_plot(
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
                 if snapNumber in outerPlotSnaps:
-                    OUTERSUBTITLE = r"Redshift $(z) =$" + f"{redshift:0.03f} "+ "\n" + r"$t_{Lookback}=$"+ f"{tlookback :0.03f} Gyrs"
+                    OUTERSUBTITLE = (
+                        r"Redshift $(z) =$"
+                        + f"{redshift:0.03f} "
+                        + "\n"
+                        + r"$t_{Lookback}=$"
+                        + f"{tlookback :0.03f} Gyrs"
+                    )
 
                     axOuter.set_title(label=OUTERSUBTITLE)
                     axOuter.title.set_size(fontsize)
@@ -3281,9 +3303,7 @@ def tracer_plot(
                 #
                 # colourTracers = np.array(colourTracers)
 
-
                 ax1 = axes
-
 
                 pcm1 = ax1.pcolormesh(
                     proj_T["x"],
@@ -3336,7 +3356,7 @@ def tracer_plot(
                     axOuter.scatter(
                         posDataInRange[:, Axes[0]],
                         posDataInRange[:, Axes[1]],
-                        s=sizeData*0.5,
+                        s=sizeData * 0.5,
                         c=colour,
                         marker="o",
                     )
@@ -3402,7 +3422,14 @@ def tracer_plot(
 
                     pathData = np.array([pos1[whereInRange], pos2[whereInRange]])
                     ntails = np.shape(pos1[whereInRange])[0]
-                    alph = min(1.0,(float(jj) / float(max(1, min(int(nOldSnaps), tailsLength)) + 1.0))*1.2)
+                    alph = min(
+                        1.0,
+                        (
+                            float(jj)
+                            / float(max(1, min(int(nOldSnaps), tailsLength)) + 1.0)
+                        )
+                        * 1.2,
+                    )
                     jj += 1
 
                     for ii in range(0, int(ntails)):
@@ -3411,7 +3438,7 @@ def tracer_plot(
                             pathData[:, ii, Axes[1]],
                             c=colour,
                             alpha=alph,
-                            linewidth=2
+                            linewidth=2,
                         )  # colourTracers[ii],alpha=alph)
                         if snapNumber in outerPlotSnaps:
                             axOuter.plot(
@@ -3419,7 +3446,7 @@ def tracer_plot(
                                 pathData[:, ii, Axes[1]],
                                 c=colour,
                                 alpha=alph,
-                                linewidth=1.5
+                                linewidth=1.5,
                             )
 
                 print(
@@ -3441,22 +3468,29 @@ def tracer_plot(
                     label=r"T [K]", size=fontsize, weight="bold"
                 )
 
-                ax1.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [kpc]", fontsize=fontsize)
-                ax1.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [kpc]", fontsize=fontsize)
+                ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize)
+                ax1.set_xlabel(f"{AxesLabels[Axes[0]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
 
                 if snapNumber in outerPlotSnaps:
                     if snapNumber == outerPlotSnaps[-1]:
-                        figOuter.colorbar(pcm1Outer,ax=axOuterObj.ravel().tolist(), orientation="horizontal", pad=0.1).set_label(
-                            label=r"T [K]", size=fontsize, weight="bold"
-                        )
+                        figOuter.colorbar(
+                            pcm1Outer,
+                            ax=axOuterObj.ravel().tolist(),
+                            orientation="horizontal",
+                            pad=0.1,
+                        ).set_label(label=r"T [K]", size=fontsize, weight="bold")
                     if snapNumber == outerPlotSnaps[0]:
-                        axOuter.set_ylabel(f"{AxesLabels[Axes[1]]}"+r" [kpc]", fontsize=fontsize)
+                        axOuter.set_ylabel(
+                            f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize
+                        )
 
-                    axOuter.set_xlabel(f"{AxesLabels[Axes[0]]}"+r" [kpc]", fontsize=fontsize)
+                    axOuter.set_xlabel(
+                        f"{AxesLabels[Axes[0]]}" + r" [kpc]", fontsize=fontsize
+                    )
                     axOuter.set_aspect(aspect)
 
-                    #Fix/fudge x-axis ticks
+                    # Fix/fudge x-axis ticks
                     if snapNumber > outerPlotSnaps[0]:
                         plt.sca(axOuter)
                         plt.xticks(fudgeTicks)
@@ -3466,7 +3500,7 @@ def tracer_plot(
 
                 # Pad snapnum with zeroes to enable easier video making
                 fig.tight_layout()
-                fig.subplots_adjust(hspace=0.1, wspace = 0.1, top=0.80)
+                fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.80)
 
                 # fig.tight_layout()
 
@@ -3486,10 +3520,10 @@ def tracer_plot(
                 )
     rr = -1
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-        rr+=1
-        tt=-1
+        rr += 1
+        tt = -1
         for targetT in TRACERSPARAMS["targetTLst"]:
-            tt+=1
+            tt += 1
             figOuter = figureArray[rr][tt]
             TRIOTITLE = (
                 f"Projections within {-1. * float(boxlos) / 2.:3.0f}"
@@ -3503,23 +3537,21 @@ def tracer_plot(
                 + f"{selectlookback :0.03f} Gyrs"
                 + " with "
                 + "\n"
-                + r"$T = 10^{%3.2f \pm %3.2f} K$"
-                % (targetT, TRACERSPARAMS["deltaT"])
+                + r"$T = 10^{%3.2f \pm %3.2f} K$" % (targetT, TRACERSPARAMS["deltaT"])
                 + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
             )
 
             figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
             # figOuter.tight_layout()
-            figOuter.subplots_adjust(hspace=0.1, wspace = 0.0, left=leftParam, top=topParam, bottom = bottomParam)
+            figOuter.subplots_adjust(
+                hspace=0.1, wspace=0.0, left=leftParam, top=topParam, bottom=bottomParam
+            )
 
             savePathOuter = (
-                DataSavepath
-                + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
+                DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
             )
 
-            print(
-                f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}"
-            )
+            print(f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}")
             figOuter.savefig(savePathOuter, transparent=False)
     plt.close("all")
     return
@@ -3909,11 +3941,11 @@ def multi_halo_stats(
             # print(f"Statistics of {key} !")
             for snap in snapRange:
                 selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
-                timeIndex =  np.where(np.array(snapRange) == snap)[0]
+                timeIndex = np.where(np.array(snapRange) == snap)[0]
                 # print(f"Taking {snap} temporal Subset...")
                 timeDat = {}
-                for param,values in dataDict[selectKey].items():
-                    if np.shape(np.shape(values))[0]>1:
+                for param, values in dataDict[selectKey].items():
+                    if np.shape(np.shape(values))[0] > 1:
                         timeDat.update({param: values[timeIndex].flatten()})
                     else:
                         timeDat.update({param: values})
