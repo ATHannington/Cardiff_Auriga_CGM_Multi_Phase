@@ -83,7 +83,9 @@ def medians_plot(
                 plotData = statsData[selectKey].copy()
                 # Temperature specific load path
 
-                selectionSnap = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))
+                selectionSnap = np.where(
+                    np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+                )
 
                 vline = tlookback[selectionSnap]
 
@@ -209,7 +211,7 @@ def medians_plot(
             plt.setp(
                 ax,
                 ylim=custom_ylim,
-                xlim=(round(max(tlookback),1), round(min(tlookback),1)),
+                xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
             )
             fig.legend(
                 handles=patchList,
@@ -260,7 +262,9 @@ def persistant_temperature_plot(
             print(f"Starting T{T} analysis")
             key = (f"T{T}", f"{rin}R{rout}")
 
-            timeIndex =  np.where(np.array(snapRange) == int(TRACERSPARAMS['selectSnap']))[0]
+            timeIndex = np.where(
+                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+            )[0]
 
             whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
             data = dataDict[key]["T"][timeIndex][0][whereGas]
@@ -272,7 +276,9 @@ def persistant_temperature_plot(
 
             selectedCells = dataDict[key]["id"][timeIndex][0][whereSelect]
 
-            ParentsIndices = np.where(np.isin(dataDict[key]["prid"][timeIndex][0], selectedCells))
+            ParentsIndices = np.where(
+                np.isin(dataDict[key]["prid"][timeIndex][0], selectedCells)
+            )
 
             tmpXdata = []
             tmpYdata = []
@@ -291,11 +297,11 @@ def persistant_temperature_plot(
 
             for tmpsnapRange in rangeSet:
                 key = (f"T{T}", f"{rin}R{rout}")
-                SelectedTracers = dataDict[key]["trid"][timeIndex][0] [ParentsIndices]
+                SelectedTracers = dataDict[key]["trid"][timeIndex][0][ParentsIndices]
 
                 for snap in tmpsnapRange:
                     key = (f"T{T}", f"{rin}R{rout}")
-                    timeIndex =  np.where(np.array(snapRange) == int(snap))[0]
+                    timeIndex = np.where(np.array(snapRange) == int(snap))[0]
 
                     whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
 
@@ -326,7 +332,9 @@ def persistant_temperature_plot(
                         np.isin(dataDict[key]["prid"][timeIndex][0], selectedIDs)
                     )
 
-                    finalTrids = dataDict[key]["trid"][timeIndex][0][selectedCellsIndices]
+                    finalTrids = dataDict[key]["trid"][timeIndex][0][
+                        selectedCellsIndices
+                    ]
 
                     SelectedTracers = finalTrids
 
@@ -368,7 +376,9 @@ def persistant_temperature_plot(
         # Create a plot for each Temperature
         for ii in range(len(Tlst)):
 
-            timeIndex = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))
+            timeIndex = np.where(
+                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+            )
 
             vline = tlookback[timeIndex]
 
@@ -424,7 +434,7 @@ def persistant_temperature_plot(
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
-                xmin=round(max(tlookback),1), xmax=round(min(tlookback),1)
+                xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
             )
 
             fig.suptitle(
@@ -507,7 +517,7 @@ def within_temperature_plot(
             for tmpsnapRange in rangeSet:
                 for snap in tmpsnapRange:
                     key = (f"T{T}", f"{rin}R{rout}")
-                    timeIndex =  np.where(np.array(snapRange) == int(snap))[0]
+                    timeIndex = np.where(np.array(snapRange) == int(snap))[0]
                     whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
 
                     data = dataDict[key]["T"][timeIndex][0][whereGas]
@@ -518,7 +528,10 @@ def within_temperature_plot(
                     )
 
                     ParentsIndices = np.where(
-                        np.isin(dataDict[key]["prid"][timeIndex][0], dataDict[key]["id"][timeIndex][0][selected])
+                        np.isin(
+                            dataDict[key]["prid"][timeIndex][0],
+                            dataDict[key]["id"][timeIndex][0][selected],
+                        )
                     )
 
                     trids = dataDict[key]["trid"][timeIndex][0][ParentsIndices]
@@ -560,7 +573,9 @@ def within_temperature_plot(
 
         # Create a plot for each Temperature
         for ii in range(len(Tlst)):
-            timeIndex = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
+            timeIndex = np.where(
+                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+            )[0]
 
             vline = tlookback[timeIndex]
 
@@ -616,7 +631,7 @@ def within_temperature_plot(
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
-                xmin=round(max(tlookback),1), xmax=round(min(tlookback),1)
+                xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
             )
 
             fig.suptitle(
@@ -731,7 +746,9 @@ def stacked_pdf_plot(
                     f"T{T}",
                     f"{rin}R{rout}",
                 )
-                timeIndex =  np.where(np.array(snapRange) == int(TRACERSPARAMS['selectSnap']))[0]
+                timeIndex = np.where(
+                    np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+                )[0]
 
                 selectTime = tlookback[timeIndex][0]
 
@@ -753,11 +770,13 @@ def stacked_pdf_plot(
                 for (jj, snap) in enumerate(snapRange):
                     currentAx = ax[jj]
                     dictkey = (f"T{T}", f"{rin}R{rout}")
-                    timeIndex =  np.where(np.array(snapRange) == snap)[0]
+                    timeIndex = np.where(np.array(snapRange) == snap)[0]
                     whereGas = np.where(dataDict[dictkey]["type"][timeIndex][0] == 0)
 
                     dataDict[dictkey]["age"][timeIndex][0][
-                        np.where(np.isnan(dataDict[dictkey]["age"][timeIndex][0]) == True)
+                        np.where(
+                            np.isnan(dataDict[dictkey]["age"][timeIndex][0]) == True
+                        )
                     ] = 0.0
 
                     whereStars = np.where(
@@ -2359,7 +2378,6 @@ def medians_phases_plot(
                 )
             )[0]
 
-
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
             plotData = statsData[selectKey].copy()
             # Temperature specific load path
@@ -2425,7 +2443,7 @@ def medians_phases_plot(
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
                 loadPercentilesTypes[:midPercentile],
-                loadPercentilesTypes[midPercentile + 1 :]
+                loadPercentilesTypes[midPercentile + 1 :],
             )
             for (LOO, UPP) in percentilesPairs:
                 currentAx.plot(
@@ -2460,7 +2478,9 @@ def medians_phases_plot(
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
             print(f"T{T} Sub-Plot!")
 
-            ydat = {analysisParam: FlatDataDict[FullDictKey][analysisParam][:, whereGas]}
+            ydat = {
+                analysisParam: FlatDataDict[FullDictKey][analysisParam][:, whereGas]
+            }
             if analysisParam in logParameters:
                 ydat[analysisParam] = np.log10(ydat[analysisParam])
 
@@ -2471,7 +2491,7 @@ def medians_phases_plot(
             ydataCells = tmp[analysisParam]
             whereReal = whereGas[whereReal[analysisParam]]
             ydataCells = np.flip(ydataCells, axis=0)
-            if (np.any(np.array(np.shape(ydataCells)) == 0)):
+            if np.any(np.array(np.shape(ydataCells)) == 0):
                 print("No Data! Skipping entry!")
                 breakFlag = True
                 continue
@@ -2500,7 +2520,7 @@ def medians_phases_plot(
                 FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
             )
 
-            if (np.any(np.array(np.shape(xdataCells)) == 0)):
+            if np.any(np.array(np.shape(xdataCells)) == 0):
                 print("No Data! Skipping entry!")
                 breakFlag = True
                 continue
@@ -2517,7 +2537,7 @@ def medians_phases_plot(
                 breakFlag = True
                 continue
 
-            if (np.any(np.array(np.shape(weightDataCells)) == 0)):
+            if np.any(np.array(np.shape(weightDataCells)) == 0):
                 print("No Data! Skipping entry!")
                 breakFlag = True
                 continue
@@ -2533,7 +2553,7 @@ def medians_phases_plot(
                 breakFlag = True
                 continue
 
-            if (np.any(np.array(np.shape(massCells)) == 0)):
+            if np.any(np.array(np.shape(massCells)) == 0):
                 print("No Data! Skipping entry!")
                 breakFlag = True
                 continue
@@ -2550,23 +2570,35 @@ def medians_phases_plot(
                 breakFlag = True
                 continue
 
-            xedges = np.linspace(np.min(xdataCells.flatten()),np.max(xdataCells.flatten()),len(snapRange))
+            xstep = np.array(
+                [np.absolute(x1 - x2) for x1, x2 in zip(tlookback[1:], tlookback[:-1])]
+            )
+            xstep = np.append(xstep[0], xstep)
 
-            yedges = np.linspace(np.min(ydataCells.flatten()),np.max(ydataCells.flatten()),Nbins)
+            xedges = np.flip(np.append(tlookback + xstep / 2.0, [0]), axis=0)
+
+            yedges = np.linspace(
+                xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"], Nbins
+            )
 
             if weightKey == "mass":
-                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(xdataCells.flatten(),ydataCells.flatten(),bins=(xedges,yedges),weights=massCells.flatten())
+                finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
+                    xdataCells.flatten(),
+                    ydataCells.flatten(),
+                    bins=(xedges, yedges),
+                    weights=massCells.flatten(),
+                )
             else:
                 mhistCells, _, _ = np.histogram2d(
                     xdataCells.flatten(),
                     ydataCells.flatten(),
-                    bins=(xedges,yedges),
+                    bins=(xedges, yedges),
                     weights=massCells.flatten(),
                 )
                 histCells, xedgeCells, yedgeCells = np.histogram2d(
                     xdataCells.flatten(),
                     ydataCells.flatten(),
-                    bins=(xedges,yedges),
+                    bins=(xedges, yedges),
                     weights=weightDataCells.flatten(),
                 )
 
@@ -2576,7 +2608,6 @@ def medians_phases_plot(
             if weightKey in logParameters:
                 finalHistCells = np.log10(finalHistCells)
             finalHistCells = finalHistCells.T
-
 
             xcells, ycells = np.meshgrid(xedgeCells, yedgeCells)
 
@@ -2600,7 +2631,6 @@ def medians_phases_plot(
                     cmap=colourmapMain,
                     rasterized=True,
                 )
-
 
             currentAx.set_title(
                 r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
@@ -2646,7 +2676,11 @@ def medians_phases_plot(
             continue
 
         custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
-        plt.setp(ax, ylim=custom_ylim, xlim=(round(max(tlookback),1), round(min(tlookback),1)))
+        plt.setp(
+            ax,
+            ylim=custom_ylim,
+            xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
+        )
         plt.tight_layout()
         plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
 
