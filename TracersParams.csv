@@ -13,7 +13,7 @@ phasesSnaps "221, 235, 251"                                                     
 deltaT 0.25                                                                      # Set delta dex for Temperature as given in above form
 Rinner "25.0, 75.0, 125.0"                                                       # Inner Radius of selection kpc
 Router "75.0, 125.0, 175.0"                                                      # Outer Radius of selection kpc
-Axes "0,2"                                                                       # Axis for Plots 0 = x, 1 = y, 2 = z whichever is not chosen will be used as line of sight axis
+Axes "2,0"                                                                       # Axis for Plots 0 = x, 1 = y, 2 = z whichever is not chosen will be used as line of sight axis
 QuadPlotBool 1                                                                  # "Boolean" for whether to plot QUAD plot. 0 = False, 1 = True
 boxsize 400                                                                      # Plots box size (+/- boxsize/2 kpc on each edge)
 boxlos 50                                                                        # Plots Line of sight box size (+/- boxlos/2 kpc centred on galaxy centre)

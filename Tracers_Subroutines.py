@@ -2660,7 +2660,7 @@ def plot_projections(
         proj_T["y"],
         np.transpose(proj_T["grid"] / proj_dens["grid"]),
         vmin=1e4,
-        vmax=1e7,
+        vmax=1e6,
         norm=matplotlib.colors.LogNorm(),
         cmap=cmap,
         rasterized=True,
@@ -2841,7 +2841,7 @@ def tracer_plot(
         cmap = CMAP
 
     # Axes Labels to allow for adaptive axis selection
-    AxesLabels = ["x", "y", "z"]
+    AxesLabels = ["y", "z", "x"]
 
     xsize = 7.0
     ysize = 7.0
@@ -3310,7 +3310,7 @@ def tracer_plot(
                     proj_T["y"],
                     np.transpose(proj_T["grid"] / proj_dens["grid"]),
                     vmin=1e4,
-                    vmax=1e7,
+                    vmax=1e6,
                     norm=matplotlib.colors.LogNorm(),
                     cmap=cmap,
                     rasterized=True,
@@ -3321,7 +3321,7 @@ def tracer_plot(
                         proj_T["y"],
                         np.transpose(proj_T["grid"] / proj_dens["grid"]),
                         vmin=1e4,
-                        vmax=1e7,
+                        vmax=1e6,
                         norm=matplotlib.colors.LogNorm(),
                         cmap=cmap,
                         rasterized=True,
