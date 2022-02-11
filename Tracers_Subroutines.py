@@ -2660,7 +2660,7 @@ def plot_projections(
         proj_T["y"],
         np.transpose(proj_T["grid"] / proj_dens["grid"]),
         vmin=1e4,
-        vmax=1e6,
+        vmax=10**(6.5),
         norm=matplotlib.colors.LogNorm(),
         cmap=cmap,
         rasterized=True,
@@ -2870,7 +2870,7 @@ def tracer_plot(
     fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
     fudgeTicks = fullTicks[1:]
 
-    colour = "white"
+    colour = "tab:gray"
     sizeMultiply = 20
     sizeConst = 8
 
@@ -2969,7 +2969,7 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-                nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI, sharey=True
+                nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI*2, sharey=True
             )
             figureList.append(figi)
             axisList.append(axi)
@@ -3251,11 +3251,11 @@ def tracer_plot(
                     + r"$t_{Lookback}=$"
                     + f"{tlookback :0.03f} Gyrs"
                     + "\n"
-                    + f"Projections within {-1. * float(boxlos) / 2.:3.0f}"
+                    + f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
                     + r"<"
-                    + f"{AxesLabels[zAxis[0]]}-axis"
+                    + f" {AxesLabels[zAxis[0]]}-axis "
                     + r"<"
-                    + f"{float(boxlos) / 2.:3.0f} kpc"
+                    + f" {float(boxlos) / 2.:3.0f} kpc"
                     + "\n"
                     + f"Subset of {int(subset)} Tracers selected at "
                     + r"$t_{Lookback}=$"
@@ -3310,7 +3310,7 @@ def tracer_plot(
                     proj_T["y"],
                     np.transpose(proj_T["grid"] / proj_dens["grid"]),
                     vmin=1e4,
-                    vmax=1e6,
+                    vmax=10**(6.5),
                     norm=matplotlib.colors.LogNorm(),
                     cmap=cmap,
                     rasterized=True,
@@ -3321,7 +3321,7 @@ def tracer_plot(
                         proj_T["y"],
                         np.transpose(proj_T["grid"] / proj_dens["grid"]),
                         vmin=1e4,
-                        vmax=1e6,
+                        vmax=10**(6.5),
                         norm=matplotlib.colors.LogNorm(),
                         cmap=cmap,
                         rasterized=True,
@@ -3365,7 +3365,7 @@ def tracer_plot(
                         xy=(0, 0),
                         radius=float(rin),
                         facecolor="none",
-                        edgecolor="green",
+                        edgecolor="blue",
                         linewidth=5,
                         linestyle="-.",
                     )
@@ -3373,7 +3373,7 @@ def tracer_plot(
                         xy=(0, 0),
                         radius=float(rout),
                         facecolor="none",
-                        edgecolor="green",
+                        edgecolor="blue",
                         linewidth=5,
                         linestyle="-.",
                     )
@@ -3384,7 +3384,7 @@ def tracer_plot(
                             xy=(0, 0),
                             radius=float(rin),
                             facecolor="none",
-                            edgecolor="green",
+                            edgecolor="blue",
                             linewidth=2.5,
                             linestyle="-.",
                         )
@@ -3392,7 +3392,7 @@ def tracer_plot(
                             xy=(0, 0),
                             radius=float(rout),
                             facecolor="none",
-                            edgecolor="green",
+                            edgecolor="blue",
                             linewidth=2.5,
                             linestyle="-.",
                         )
@@ -3464,22 +3464,25 @@ def tracer_plot(
                     axOuter.set_ylim(ymin=ymin, ymax=ymax)
                     axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
-                fig.colorbar(pcm1, ax=ax1, orientation="vertical").set_label(
-                    label=r"T [K]", size=fontsize, weight="bold"
-                )
-
+                cbarfig = fig.colorbar(pcm1, ax=ax1, ticks=[1e4, 1e5, 1e6, 10**(6.5)], orientation="vertical")
+                cbarfig.set_label(
+                    label=r"T [K]", size=fontsize)
                 ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_xlabel(f"{AxesLabels[Axes[0]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
+                cbarfig.ax.set_yticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'])
 
                 if snapNumber in outerPlotSnaps:
                     if snapNumber == outerPlotSnaps[-1]:
-                        figOuter.colorbar(
+                        cbarfigOuter = figOuter.colorbar(
                             pcm1Outer,
                             ax=axOuterObj.ravel().tolist(),
+                            ticks=[1e4, 1e5, 1e6, 10**(6.5)],
                             orientation="horizontal",
                             pad=0.1,
-                        ).set_label(label=r"T [K]", size=fontsize, weight="bold")
+                        )
+                        cbarfigOuter.set_label(label=r"T [K]", size=fontsize)
+                        cbarfigOuter.ax.set_xticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'])
                     if snapNumber == outerPlotSnaps[0]:
                         axOuter.set_ylabel(
                             f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize
@@ -3526,11 +3529,11 @@ def tracer_plot(
             tt += 1
             figOuter = figureArray[rr][tt]
             TRIOTITLE = (
-                f"Projections within {-1. * float(boxlos) / 2.:3.0f}"
+                f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
                 + r"<"
-                + f"{AxesLabels[zAxis[0]]}-axis"
+                + f" {AxesLabels[zAxis[0]]}-axis "
                 + r"<"
-                + f"{float(boxlos) / 2.:3.0f} kpc"
+                + f" {float(boxlos) / 2.:3.0f} kpc"
                 + "\n"
                 + f"Subset of {int(subset)} Tracers selected at "
                 + r"$t_{Lookback}=$"
@@ -3548,7 +3551,7 @@ def tracer_plot(
             )
 
             savePathOuter = (
-                DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.png"
+                DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.pdf"
             )
 
             print(f"[@T{targetT} @{rin}R{rout}]: Save {savePathOuter}")
@@ -3922,7 +3925,7 @@ def multi_halo_merge_flat_wrt_time(
     return mergedDict, saveParams
 
 
-def multi_halo_stats(
+def multi_halo_statistics(
     dataDict,
     TRACERSPARAMS,
     saveParams,

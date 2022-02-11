@@ -2302,6 +2302,7 @@ def medians_phases_plot(
     Tlst,
     logParameters,
     ylabel,
+    SELECTEDHALOES,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -2324,13 +2325,13 @@ def medians_phases_plot(
     }
 
     xlimDict = {
-        "mass": {"xmin": 7.0, "xmax": 10.0},
+        "mass": {"xmin": 5.0, "xmax": 9.0},
         "L": {"xmin": 3.5, "xmax": 4.5},
         "T": {"xmin": 3.75, "xmax": 6.5},
         "R": {"xmin": 0, "xmax": 400},
-        "n_H": {"xmin": -6.0, "xmax": 0.0},
+        "n_H": {"xmin": -6.0, "xmax": 1.0},
         "B": {"xmin": -6.0, "xmax": 2.0},
-        "vrad": {"xmin": -250.0, "xmax": 250.0},
+        "vrad": {"xmin": -400.0, "xmax": 400.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
         "P_thermal": {"xmin": -1.0, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
@@ -2345,6 +2346,8 @@ def medians_phases_plot(
         "dens": {"xmin": -30.0, "xmax": -22.0},
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
+
+    nHaloes = float(len(SELECTEDHALOES))
 
     # Create a plot for each Temperature
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
@@ -2515,7 +2518,7 @@ def medians_phases_plot(
                 np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
             )
 
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
+            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0) / nHaloes
             weightDataCells = np.flip(
                 FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
             )
@@ -2577,9 +2580,14 @@ def medians_phases_plot(
 
             xedges = np.flip(np.append(tlookback + xstep / 2.0, [0]), axis=0)
 
-            yedges = np.linspace(
-                xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"], Nbins
-            )
+            if weightKey in list(xlimDict.keys()):
+                yedges = np.linspace(
+                    xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"], Nbins
+                )
+            else:
+                yedges = np.linspace(
+                    np.nanmin(ydataCells), np.nanmax(ydataCells), Nbins
+                )
 
             if weightKey == "mass":
                 finalHistCells, xedgeCells, yedgeCells = np.histogram2d(
