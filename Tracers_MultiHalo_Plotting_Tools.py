@@ -48,8 +48,7 @@ def medians_plot(
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",
-):
+    SelectedHaloesPath="TracersSelectedHaloes.csv",):
 
     tmpxsize = xsize + 2.0
 
@@ -239,251 +238,14 @@ def medians_plot(
 
     return
 
-
-def persistant_temperature_plot(
+def currently_or_persistently_at_temperature_plot(
     dataDict,
     TRACERSPARAMS,
     saveParams,
     tlookback,
     snapRange,
     Tlst,
-    DataSavepathSuffix=f".h5",
-    TracersParamsPath="TracersParams.csv",
-    TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",
-):
-    Ydata = {}
-    Xdata = {}
-    # Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
-    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-        print(f"{rin}R{rout}")
-        for T in TRACERSPARAMS["targetTLst"]:
-            print("")
-            print(f"Starting T{T} analysis")
-            key = (f"T{T}", f"{rin}R{rout}")
-
-            timeIndex = np.where(
-                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
-            )[0]
-
-            whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
-            data = dataDict[key]["T"][timeIndex][0][whereGas]
-
-            whereSelect = np.where(
-                (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
-            )
-
-            selectedCells = dataDict[key]["id"][timeIndex][0][whereSelect]
-
-            ParentsIndices = np.where(
-                np.isin(dataDict[key]["prid"][timeIndex][0], selectedCells)
-            )
-
-            tmpXdata = []
-            tmpYdata = []
-            snapRangeLow = range(
-                int(TRACERSPARAMS["selectSnap"]), int(TRACERSPARAMS["snapMin"] - 1), -1
-            )
-            snapRangeHi = range(
-                int(TRACERSPARAMS["selectSnap"] + 1),
-                min(
-                    int(TRACERSPARAMS["snapMax"] + 1),
-                    int(TRACERSPARAMS["finalSnap"] + 1),
-                ),
-            )
-
-            rangeSet = [snapRangeLow, snapRangeHi]
-
-            for tmpsnapRange in rangeSet:
-                key = (f"T{T}", f"{rin}R{rout}")
-                SelectedTracers = dataDict[key]["trid"][timeIndex][0][ParentsIndices]
-
-                for snap in tmpsnapRange:
-                    key = (f"T{T}", f"{rin}R{rout}")
-                    timeIndex = np.where(np.array(snapRange) == int(snap))[0]
-
-                    whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
-
-                    data = dataDict[key]["T"][timeIndex][0][whereGas]
-
-                    whereTrids = np.where(
-                        np.isin(dataDict[key]["trid"][timeIndex][0], SelectedTracers)
-                    )
-                    Parents = dataDict[key]["prid"][timeIndex][0][whereTrids]
-
-                    whereCells = np.where(
-                        np.isin(dataDict[key]["id"][timeIndex][0][whereGas], Parents)
-                    )
-
-                    data = data[whereCells]
-
-                    selected = np.where(
-                        (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                        & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
-                    )
-
-                    selectedData = data[selected]
-
-                    selectedIDs = dataDict[key]["id"][timeIndex][0][whereGas]
-                    selectedIDs = selectedIDs[selected]
-
-                    selectedCellsIndices = np.where(
-                        np.isin(dataDict[key]["prid"][timeIndex][0], selectedIDs)
-                    )
-
-                    finalTrids = dataDict[key]["trid"][timeIndex][0][
-                        selectedCellsIndices
-                    ]
-
-                    SelectedTracers = finalTrids
-
-                    nTracers = len(finalTrids)
-
-                    # Append the data from this snapshot to a temporary list
-                    tmpXdata.append(tlookback[timeIndex][0])
-                    tmpYdata.append(nTracers)
-
-            ind_sorted = np.argsort(tmpXdata)
-            maxN = np.nanmax(tmpYdata)
-            tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
-            tmpYarray = np.array(tmpYarray)
-            tmpXarray = np.array(tmpXdata)
-            tmpYarray = np.flip(
-                np.take_along_axis(tmpYarray, ind_sorted, axis=0), axis=0
-            )
-            tmpXarray = np.flip(
-                np.take_along_axis(tmpXarray, ind_sorted, axis=0), axis=0
-            )
-
-            # Add the full list of snaps data to temperature dependent dictionary.
-            Xdata.update({f"T{T}": tmpXarray})
-            Ydata.update({f"T{T}": tmpYarray})
-
-        # ==============================================================================#
-        #           PLOT!!
-        # ==============================================================================#
-
-        fig, ax = plt.subplots(
-            nrows=len(Tlst),
-            ncols=1,
-            sharex=True,
-            sharey=True,
-            figsize=(xsize, ysize),
-            dpi=DPI,
-        )
-
-        # Create a plot for each Temperature
-        for ii in range(len(Tlst)):
-
-            timeIndex = np.where(
-                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
-            )
-
-            vline = tlookback[timeIndex]
-
-            T = TRACERSPARAMS["targetTLst"][ii]
-
-            # Get number of temperatures
-            NTemps = float(len(Tlst))
-
-            # Get temperature
-            temp = TRACERSPARAMS["targetTLst"][ii]
-
-            plotYdata = Ydata[f"T{temp}"]
-            plotXdata = Xdata[f"T{temp}"]
-
-            cmap = matplotlib.cm.get_cmap(colourmapMain)
-            colour = cmap(float(ii) / float(len(Tlst)))
-            colourTracers = "tab:gray"
-
-            datamin = 0.0
-            datamax = np.nanmax(plotYdata)
-
-            print("")
-            print("Sub-Plot!")
-
-            if len(Tlst) == 1:
-                currentAx = ax
-            else:
-                currentAx = ax[ii]
-
-            tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
-
-            currentAx.fill_between(
-                tlookback,
-                tmpMinData,
-                plotYdata,
-                facecolor=colour,
-                alpha=0.25,
-                interpolate=False,
-            )
-
-            currentAx.plot(
-                tlookback,
-                plotYdata,
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
-                color=colour,
-                lineStyle="-",
-            )
-
-            currentAx.axvline(x=vline, c="red")
-            currentAx.xaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(which="both")
-
-            currentAx.set_ylim(ymin=datamin, ymax=datamax)
-            currentAx.set_xlim(
-                xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
-            )
-
-            fig.suptitle(
-                f"Percentage Tracers Still at \n Selection Temperature "
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + "\n"
-                + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                + f" and selected at {vline[0]:3.2f} Gyr",
-                fontsize=12,
-            )
-            currentAx.legend(loc="upper right")
-
-        # Only give 1 x-axis a label, as they sharex
-        if len(Tlst) == 1:
-            axis0 = ax
-            midax = ax
-        else:
-            axis0 = ax[len(Tlst) - 1]
-            midax = ax[(len(Tlst) - 1) // 2]
-
-        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
-        midax.set_ylabel(
-            r"Percentage Tracers Still at Selection Temperature",
-            fontsize=10,
-        )
-        plt.tight_layout(h_pad=0.0)
-        opslaan = (
-            "./"
-            + "MultiHalo"
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-            + f"_PersistantTemperature.pdf"
-        )
-        plt.savefig(opslaan, dpi=DPI, transparent=False)
-        print(opslaan)
-        plt.close()
-
-    return
-
-
-def within_temperature_plot(
-    dataDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
+    persistenceBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -514,30 +276,40 @@ def within_temperature_plot(
 
             rangeSet = [snapRangeLow, snapRangeHi]
 
+            key = (f"T{T}", f"{rin}R{rout}")
+            timeIndexSelect = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
+            whereGas = np.where(dataDict[key]["type"][timeIndexSelect][0] == 0)[0]
+
+            data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
+
+            selectedAtSelection = np.where(
+                (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"])))[0]
+
             for tmpsnapRange in rangeSet:
+                currentSelection = selectedAtSelection
                 for snap in tmpsnapRange:
                     key = (f"T{T}", f"{rin}R{rout}")
                     timeIndex = np.where(np.array(snapRange) == int(snap))[0]
                     whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
 
-                    data = dataDict[key]["T"][timeIndex][0][whereGas]
+                    if persistenceBool is True:
+                        data = dataDict[key]["T"][timeIndex][0][whereGas]
+                        selected = np.where(
+                            (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                            & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"])))[0]
+                        currentSelection = np.intersect1d(selected,currentSelection)
+                        nTracers = int(np.shape(currentSelection)[0])
 
-                    selected = np.where(
-                        (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                        & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
-                    )
+                    else:
+                        data = dataDict[key]["T"][timeIndex][0][whereGas]
 
-                    ParentsIndices = np.where(
-                        np.isin(
-                            dataDict[key]["prid"][timeIndex][0],
-                            dataDict[key]["id"][timeIndex][0][selected],
-                        )
-                    )
+                        selected = np.where(
+                            (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                            & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"])))[0]
+                        nTracers = int(np.shape(selected)[0])
 
-                    trids = dataDict[key]["trid"][timeIndex][0][ParentsIndices]
-
-                    nTracers = len(trids)
-
+                    print("nTracers",nTracers)
                     # Append the data from this snapshot to a temporary list
                     tmpXdata.append(tlookback[timeIndex][0])
                     tmpYdata.append(nTracers)
@@ -633,15 +405,24 @@ def within_temperature_plot(
             currentAx.set_xlim(
                 xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
             )
-
-            fig.suptitle(
-                f"Percentage Tracers Within \n Selection Temperature Range "
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + "\n"
-                + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                + f" and selected at {vline[0]:3.2f} Gyr",
-                fontsize=12,
-            )
+            if persistenceBool is True:
+                fig.suptitle(
+                    f"Percentage Tracers Persistently Within \n Selection Temperature Range "
+                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                    + "\n"
+                    + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                    + f" and selected at {vline[0]:3.2f} Gyr",
+                    fontsize=12,
+                )
+            else:
+                fig.suptitle(
+                    f"Percentage Tracers Currently Within \n Selection Temperature Range "
+                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                    + "\n"
+                    + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                    + f" and selected at {vline[0]:3.2f} Gyr",
+                    fontsize=12,
+                )
             currentAx.legend(loc="upper right")
 
         # Only give 1 x-axis a label, as they sharex
@@ -659,15 +440,26 @@ def within_temperature_plot(
         )
 
         plt.tight_layout(h_pad=0.0)
-        opslaan = (
-            "./"
-            + "MultiHalo"
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-            + f"_WithinTemperature.pdf"
-        )
+        if persistenceBool is True:
+            opslaan = (
+                "./"
+                + "MultiHalo"
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+                + f"_Persistently_within_Temperature.pdf"
+            )
+        else:
+            opslaan = (
+                "./"
+                + "MultiHalo"
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+                + f"_Currently_within_Temperature.pdf"
+            )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()

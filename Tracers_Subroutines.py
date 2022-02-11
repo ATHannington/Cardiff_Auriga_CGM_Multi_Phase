@@ -2870,7 +2870,7 @@ def tracer_plot(
     fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
     fudgeTicks = fullTicks[1:]
 
-    colour = "tab:gray"
+    colour = "black"
     sizeMultiply = 20
     sizeConst = 8
 

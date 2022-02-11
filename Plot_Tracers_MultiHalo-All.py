@@ -177,11 +177,11 @@ selectTimeKey = (
 # =============================================================================#
 #                     Stats!                                                  # ==============================================================================#
 
-statsData = multi_halo_statistics(flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst)
-
-save_statistics_csv(
-    statsData, TRACERSPARAMS, SELECTEDHALOES, HALOPATHS, Tlst, snapRange
-)
+# statsData = multi_halo_statistics(flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst)
+#
+# save_statistics_csv(
+#     statsData, TRACERSPARAMS, SELECTEDHALOES, HALOPATHS, Tlst, snapRange
+# )
 # # ============================================================================#
 # #                   Medians PLOT                                              # #=============================================================================#
 # matplotlib.rc_file_defaults()
@@ -200,25 +200,25 @@ save_statistics_csv(
 # matplotlib.rc_file_defaults()
 # plt.close("all")
 #
-# # ==============================================================================#
-# #                   Persistent Temperature PLOT                               #
-# # =============================================================================#
-#
-# persistant_temperature_plot(
-#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # =============================================================================#
-# #                   Within Temperature PLOT                                   #
-# # =============================================================================#
-#
-# within_temperature_plot(
-#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # ============================================================================#
+# ==============================================================================#
+#                   Persistently Temperature PLOT                             #
+# ============================================================================#
+
+currently_or_persistently_at_temperature_plot(
+    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
+    persistenceBool = True)
+matplotlib.rc_file_defaults()
+plt.close("all")
+# ============================================================================#
+#                   Currently Temperature PLOT                                #
+# ============================================================================#
+
+currently_or_persistently_at_temperature_plot(
+    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
+    persistenceBool = False)
+matplotlib.rc_file_defaults()
+plt.close("all")
+# ============================================================================#
 # #                   Stacked PDF PLOT                                          #
 # # =============================================================================#
 #
@@ -269,29 +269,29 @@ save_statistics_csv(
 # =============================================================================#
 #                Medians and Phases Combo                                     #
 # =============================================================================#
-
-for param in saveParams:
-    print("")
-    print("---")
-    print(f"medians_phases_plot : for {param} param")
-    print("---")
-    matplotlib.rc_file_defaults()
-    plt.close("all")
-    medians_phases_plot(
-        flatMergedDict,
-        statsData,
-        TRACERSPARAMS,
-        saveParams,
-        tlookback,
-        selectTime,
-        snapRange,
-        Tlst,
-        logParameters,
-        ylabel,
-        SELECTEDHALOES,
-        weightKey="mass",
-        analysisParam=param,
-        Nbins=100,
-    )
-    matplotlib.rc_file_defaults()
-    plt.close("all")
+#
+# for param in saveParams:
+#     print("")
+#     print("---")
+#     print(f"medians_phases_plot : for {param} param")
+#     print("---")
+#     matplotlib.rc_file_defaults()
+#     plt.close("all")
+#     medians_phases_plot(
+#         flatMergedDict,
+#         statsData,
+#         TRACERSPARAMS,
+#         saveParams,
+#         tlookback,
+#         selectTime,
+#         snapRange,
+#         Tlst,
+#         logParameters,
+#         ylabel,
+#         SELECTEDHALOES,
+#         weightKey="mass",
+#         analysisParam=param,
+#         Nbins=100,
+#     )
+#     matplotlib.rc_file_defaults()
+#     plt.close("all")
