@@ -5,7 +5,7 @@ import matplotlib
 matplotlib.use("Agg")  # For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from itertools import combinations
+import itertools
 import time
 import torch
 import torch.nn as nn
@@ -17,7 +17,6 @@ from gadget import *
 from gadget_subfind import *
 import h5py
 from Tracers_Subroutines import *
-from Tracers_MultiHaloPlottingTools import *
 import random
 import math
 
@@ -26,8 +25,8 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-batch_limit = 1e3
-printpercent = 1.0
+batch_limit = 1e4
+printpercent = 10.0
 
 random.seed(1234)
 # ------------------------------------------------------------------------------#
@@ -35,10 +34,11 @@ def DTW_prep(M):
     """
     Function to obtain unique combinations of time series.
     Will return time series index in Matrix m (0,1,2....) and unique partner (0,1,2...) ignoring (1,2)==(2,1) etc
-    Returns pairs as list of tuples
+    Returns pairs as list of tuples in iterator
     """
+
     elements = range(np.shape(M)[0])
-    iterator = combinations(elements, r=2)
+    iterator = itertools.combinations(elements,r=2)
 
     return iterator
 
@@ -92,11 +92,12 @@ cuda = torch.device("cuda")
 
 n_gpus = torch.cuda.device_count()
 print(f"Running on {n_gpus} GPUs")
-multi_batch_limit = n_gpus * batch_limit
+
+multi_batch_limit = int(n_gpus * batch_limit)
 n_pairs = int(batch_limit ** 3)
 while True:
     last_batch_size = n_pairs % multi_batch_limit
-    if last_batch_size > 1:
+    if (last_batch_size > 1) and (multi_batch_limit%32 == 0):
         break
     else:
         multi_batch_limit -= 1
@@ -106,6 +107,8 @@ print("multi_batch_limit", multi_batch_limit)
 analysisDict = {}
 tridDict = {}
 pridDict = {}
+
+
 for T in Tlst:
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         for analysisParam in dtwParams:
@@ -124,6 +127,15 @@ for T in Tlst:
 
 analysisDict, whereDict = delete_nan_inf_axis(analysisDict, axis=1)
 
+for key, value in tridDict.items():
+    if value is not None:
+        whereEntry = np.where(whereDict[key])[0]
+        tridDict.update({key: tridDict[key][:,whereEntry]})
+
+for key, value in pridDict.items():
+    if value is not None:
+        whereEntry = np.where(whereDict[key])[0]
+        pridDict.update({key: pridDict[key][:,whereEntry]})
 
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")
@@ -148,16 +160,17 @@ for T in Tlst:
             print(f"Shape of tridData : {np.shape(tridData)}")
             print(f"Shape of pridData : {np.shape(pridData)}")
 
+
             print("Prep iterator!")
             iterator = DTW_prep(M)
 
             print("Load DTW instance!")
-            dtw = nn.DataParallel(SoftDTW(use_cuda=True, gamma=1e-10, normalize=True))
+            dtw = SoftDTW(use_cuda=True, gamma=1e-10, normalize=True)
 
-            print("Send M to Mtens cuda!")
-            Mtens = torch.tensor(M, device=cuda).view(np.shape(M)[0], np.shape(M)[1], 1)
+            # print("Send M to Mtens cuda!")
+            # Mtens = torch.tensor(M, device=cuda).view(np.shape(M)[0], np.shape(M)[1], 1)
             print("Make blank list!")
-            out = []
+            out_device = torch.empty((0), dtype=torch.float64, device=cuda)
             print("Let's do the Time Warp...")
             start = time.time()
 
@@ -166,29 +179,58 @@ for T in Tlst:
             xlist = []
             ylist = []
 
-            for (xx, yy) in iterator:
-                xlist.append(xx)
-                ylist.append(yy)
-                percentage = float(xx) / float(np.shape(M)[0]) * 100.0
+            nn = np.shape(M)[0]
+            n_xy = np.prod((np.arange(nn-2, nn)+1))//2
+            endofiter = False
+            ii = 0
+            while endofiter == False:
+                select = np.array(list(itertools.islice(iterator,multi_batch_limit)))
+                if select.size == 0:
+                    endofiter == True
+                    break
+                ii += select.shape[0]
+                xlist = select[:,0].tolist()
+                ylist = select[:,1].tolist()
+                percentage = float(ii) / float(n_xy) * 100.0
                 if percentage >= percent:
                     print(f"{percentage:2.0f}%")
                     percent += printpercent
                 if len(xlist) >= multi_batch_limit:
+                    # print("x y!")
+                    x = torch.tensor(M[xlist], device=cuda).view(len(xlist), np.shape(M)[1], 1)
+                    y = torch.tensor(M[ylist], device=cuda).view(len(ylist), np.shape(M)[1], 1)
                     # print("Time Warping!")
-                    x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
-                    y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
-                    out_tmp = dtw.forward(x, y)
-                    out_tmp = out_tmp.cpu().detach().numpy().tolist()
-                    out += out_tmp
+                    out_tmp = dtw(x, y)
+                    # print("Done!")
+                    out_device = torch.cat((out_device, out_tmp), 0)
                     xlist = []
                     ylist = []
 
+            # for ii, (xx, yy) in enumerate(iterator):
+            #     xlist.append(xx)
+            #     ylist.append(yy)
+            #     percentage = float(ii) / float(n_xy) * 100.0
+            #     if percentage >= percent:
+            #         print(f"{percentage:2.0f}%")
+            #         percent += printpercent
+            #     if len(xlist) >= multi_batch_limit:
+            #         # print("x y!")
+            #         x = torch.tensor(M[xlist], device=cuda).view(len(xlist), np.shape(M)[1], 1)
+            #         y = torch.tensor(M[ylist], device=cuda).view(len(ylist), np.shape(M)[1], 1)
+            #         # print("Time Warping!")
+            #         out_tmp = dtw(x, y)
+            #         # print("Done!")
+            #         out_device = torch.cat((out_device, out_tmp), 0)
+            #         xlist = []
+            #         ylist = []
+
             print("Finishing up...")
-            x = Mtens[xlist].view(len(xlist), np.shape(M)[1], 1)
-            y = Mtens[ylist].view(len(ylist), np.shape(M)[1], 1)
-            out_tmp = dtw.forward(x, y)
-            out_tmp = out_tmp.cpu().detach().numpy().tolist()
-            out += out_tmp
+            x = torch.tensor(M[xlist], device=cuda).view(len(xlist), np.shape(M)[1], 1)
+            y = torch.tensor(M[ylist], device=cuda).view(len(ylist), np.shape(M)[1], 1)
+            out_tmp = dtw(x, y)
+            out_device = torch.cat((out_device, out_tmp), 0)
+
+            out = out_device.cpu().detach().numpy().tolist()
 
             end = time.time()
             elapsed = end - start
