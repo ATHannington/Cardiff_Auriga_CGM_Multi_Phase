@@ -127,6 +127,8 @@ for T in Tlst:
 
 analysisDict, whereDict = delete_nan_inf_axis(analysisDict, axis=1)
 
+del dataDict
+
 for key, value in tridDict.items():
     if value is not None:
         whereEntry = np.where(whereDict[key])[0]
@@ -150,9 +152,9 @@ for T in Tlst:
             else:
                 key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
 
-            M = analysisDict[key].copy()
-            tridData = tridDict[key].T.copy()
-            pridData = pridDict[key].T.copy()
+            M = analysisDict[key]
+            tridData = tridDict[key].T
+            pridData = pridDict[key].T
 
             print("...Loaded M matrix!")
 
@@ -230,15 +232,16 @@ for T in Tlst:
             out_tmp = dtw(x, y)
             out_device = torch.cat((out_device, out_tmp), 0)
 
-            out = out_device.cpu().detach().numpy().tolist()
+            del xlist,ylist,x,y,out_tmp
+
+            out = out_device.cpu().detach().numpy()
 
             end = time.time()
             elapsed = end - start
             print(f"Elapsed time in DTW = {elapsed}s")
 
-            D = np.array(out)
             saveSubDict = {
-                "distance_matrix": D,
+                "distance_matrix": out,
                 "trid": tridData,
                 "prid": pridData,
                 "data": M,
