@@ -97,7 +97,8 @@ snapRange = [
 ]
 
 
-snapNumber = int(TRACERSPARAMS["selectSnap"])
+snapNumber = int(TRACERSPARAMS["snapMin"])
+#int(TRACERSPARAMS["selectSnap"])
 
 
 rinList = []
