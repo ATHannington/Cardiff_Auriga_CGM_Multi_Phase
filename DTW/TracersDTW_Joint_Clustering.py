@@ -122,7 +122,7 @@ for snap in range(
 
 tlookback = np.array(tlookback)
 
-# del dataDict
+del mergedDict
 
 for T in Tlst:
     dtw_MDict = {}
@@ -159,24 +159,24 @@ for T in Tlst:
 
             dtwDict = hdf5_load(loadPath)
 
-            D = dtwDict[loadKey]["distance_matrix"].copy()
+            D = dtwDict[loadKey]["distance_matrix"]
 
-            M = dtwDict[loadKey]["data"].copy()
+            M = dtwDict[loadKey]["data"]
 
             if analysisParam in logParams:
                 dtw_MDict.update({f"log10{analysisParam}": M})
                 dtw_DDict.update({f"log10{analysisParam}": D})
                 dtw_PridDict.update(
-                    {f"log10{analysisParam}": dtwDict[loadKey]["prid"].copy()}
+                    {f"log10{analysisParam}": dtwDict[loadKey]["prid"] }
                 )
                 dtw_TridDict.update(
-                    {f"log10{analysisParam}": dtwDict[loadKey]["trid"].copy()}
+                    {f"log10{analysisParam}": dtwDict[loadKey]["trid"] }
                 )
             else:
                 dtw_MDict.update({f"{analysisParam}": M})
                 dtw_DDict.update({f"{analysisParam}": D})
-                dtw_PridDict.update({f"{analysisParam}": dtwDict[loadKey]["prid"].copy()})
-                dtw_TridDict.update({f"{analysisParam}": dtwDict[loadKey]["trid"].copy()})
+                dtw_PridDict.update({f"{analysisParam}": dtwDict[loadKey]["prid"] })
+                dtw_TridDict.update({f"{analysisParam}": dtwDict[loadKey]["trid"] })
 
         paramstring = "+".join(dtwParams)
         plt.close("all")
@@ -191,6 +191,8 @@ for T in Tlst:
 
         intersect = reduce(np.intersect1d, trid_list)
         intersectDict = {}
+        MDict_nn = {}
+        not_in_Dict = {}
         for analysisParam in dtwParams:
             if analysisParam in logParams:
                 key = f"log10{analysisParam}"
@@ -198,6 +200,8 @@ for T in Tlst:
                 key = f"{analysisParam}"
             trids = dtw_TridDict[key][:, 0]
             entry, a_ind, b_ind = np.intersect1d(trids, intersect, return_indices=True)
+            MDict_nn.update({key: np.shape(dtw_MDict[key])[0]})
+            not_in_Dict.update({key: trids[np.where(np.isin(trids,entry)==False)[0]]})
             dtw_MDict.update({key: dtw_MDict[key][a_ind]})
             intersectDict.update({key: a_ind})
 
@@ -214,7 +218,19 @@ for T in Tlst:
             print(f"{key}")
             whereTracers = intersectDict[key]
             print(f"Shape whereTracers {np.shape(whereTracers)}")
-            entry = squareform(value)[whereTracers[:, np.newaxis], whereTracers]
+            nn = MDict_nn[key]
+            not_in = not_in_Dict[key]
+            A1 = np.prod((np.arange(nn-2, nn)+1))//2
+            not_in_values_indices = []
+            for ii in not_in:
+                for jj in range(0,nn):
+                    index = A1 - np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2 + (int(jj) - int(ii) - 1)
+                    not_in_values_indices.append(index)
+
+            whereValues = np.array([ii for ii in range(0,len(value),1) if ii not in not_in_values_indices])
+            # entry = squareform(value)[whereTracers[:, np.newaxis], whereTracers]
+            entry = value[whereValues]
+
             maxD = np.nanmax(entry)
             entry = entry / maxD
             if kk == 0:
@@ -222,7 +238,7 @@ for T in Tlst:
             Djoint += entry
             kk += 1
 
-        Djoint = squareform(Djoint)
+        # Djoint = squareform(Djoint)
 
         print("Joint Linkage!")
         Zjoint = linkage(Djoint, method=method)
@@ -238,7 +254,7 @@ for T in Tlst:
             )
         plt.xlabel("Sample Index")
         plt.ylabel("Distance")
-        print("Joint dendrogram!")
+        print("Joint dendrogram! This may take a while...")
         ddata = dendrogram(Zjoint, color_threshold=1.0)
 
         # prefixList = TRACERSPARAMS["savepath"].split("/")
