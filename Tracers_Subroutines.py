@@ -3779,17 +3779,12 @@ def multi_halo_merge_flat_wrt_time(
                 if padFlag is False:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(
-                        int(saveHalo) * 10 ** (1 + index)
-                    )
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + float(int(saveHalo) * 10 ** (1 + index))
                 else:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = (
-                        dataDict[selectKey][key]
-                        + int(int(saveHalo) * 10 ** (1 + index))
-                        + int(9 * 10 ** (3 + index))
-                    )
+                    dataDict[selectKey][key] = dataDict[selectKey][key] + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (3 + index))
+
                 # np.array([
                 # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 # ])
