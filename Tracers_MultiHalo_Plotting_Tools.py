@@ -309,7 +309,7 @@ def currently_or_persistently_at_temperature_plot(
                             & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"])))[0]
                         nTracers = int(np.shape(selected)[0])
 
-                    print("nTracers",nTracers)
+                    # print("nTracers",nTracers)
                     # Append the data from this snapshot to a temporary list
                     tmpXdata.append(tlookback[timeIndex][0])
                     tmpYdata.append(nTracers)

@@ -3625,21 +3625,28 @@ def multi_halo_merge(
         print("PAD")
         for selectKey in dataDict.keys():
             for key in ["id", "prid", "trid"]:
+                    
+                if key == "trid":
+                    # print("Check trids are unique!")
+                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
+                    # print("Done!")
+
+
                 ## Add Halo Number plus one zero to start of every number ##
                 if padFlag is False:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + int(
-                        int(saveHalo) * 10 ** (1 + index)
-                    )
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
                 else:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = (
-                        dataDict[selectKey][key]
-                        + int(int(saveHalo) * 10 ** (1 + index))
-                        + int(9 * 10 ** (3 + index))
-                    )
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
+
+                if key == "trid":
+                    # print("Check trids are unique!")
+                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
                 # np.array([
                 # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 # ])
@@ -3775,16 +3782,29 @@ def multi_halo_merge_flat_wrt_time(
         print("PAD")
         for selectKey in dataDict.keys():
             for key in ["id", "prid", "trid"]:
+
+                if key == "trid":
+                    # print("Check trids are unique!")
+                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
+                    # print("Done!")
+
+
                 ## Add Halo Number plus one zero to start of every number ##
                 if padFlag is False:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + float(int(saveHalo) * 10 ** (1 + index))
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
                 else:
                     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key] + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (3 + index))
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
 
+                if key == "trid":
+                    # print("Check trids are unique!")
+                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
+                    # print("Done!")
                 # np.array([
                 # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
                 # ])
