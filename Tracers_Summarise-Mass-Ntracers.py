@@ -118,6 +118,7 @@ summaryDict = {
     "Log10(T)": np.array(fullTList),
     "N_tracers selected": blankList.copy(),
     "Gas mass selected [msol]": blankList.copy(),
+    "Gas mass per temperature [msol]": blankList.copy(),
     "Total gas mass (all haloes) available in spherical shell [msol]": blankList.copy(),
     "Total N_tracers (all haloes) in spherical shell": blankList.copy(),
     "Total N_tracers (all haloes) within selection radii": blankList.copy(),
@@ -336,6 +337,19 @@ for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
 
             summaryDict["N_tracers selected"][dictRowSelect] += Ntracersselected
             summaryDict["Gas mass selected [msol]"][dictRowSelect] += massselected
+
+            Cond = np.where(
+                (snap.data["R"][whereGas] >= rin)
+                & (snap.data["R"][whereGas] <= rout)
+                & (snap.data["R"][whereGas] <= rout)
+                & (snap.data["T"][whereGas] >= 1.0 * 10 ** (float(T) - TRACERSPARAMS["deltaT"]))
+                & (snap.data["T"][whereGas] <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"]))
+                & (np.isin(snap.data["SubHaloID"], np.array([-1.0, 0.0])))
+            )[0]
+
+            massRT = np.sum(snap.data["mass"][Cond])
+            summaryDict["Gas mass per temperature [msol]"][dictRowSelect] += massRT
+            print(f"Total mass (all haloes) in spherical shell per temperature [msol] = ",FullDictKey, massRT)
 
     print("summaryDict = ", summaryDict)
 

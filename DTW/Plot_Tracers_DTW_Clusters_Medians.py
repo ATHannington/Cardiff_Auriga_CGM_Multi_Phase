@@ -28,42 +28,19 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-sort_level = 0
-maxmimally_distinct_bool = True
-
-method = "ward"
 xsize = 5.0
 ysize = 6.0
 tmpxsize = xsize + 2.0
 DPI = 100
 
 # Set style options
-opacityPercentiles = 0.25
+opacityPercentiles = 0.10
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
 
+
 colourmapMain = "plasma"
 
-
-
-#==============================================================================#
-def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
-    distance_levels = np.array(abs(Z[:-1, 2] - Z[1:, 2]))
-
-    if maxmimally_distinct_bool == True:
-        sorted_distance_levels_index = np.argsort(distance_levels)
-
-        level = -1 - sort_level
-
-        biggest_diff_loc = sorted_distance_levels_index[level]
-
-        d_crit = Z[biggest_diff_loc, 2] + (0.01 * distance_levels[biggest_diff_loc])
-    else:
-        level = -1 - sort_level
-        d_crit = Z[level, 2] - 1e-5 * Z[level - 1, 2]
-
-    print(f"d_crit = {d_crit:0.010f}")
-    return d_crit
 #==============================================================================#
 
 
@@ -349,8 +326,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
                 #edited to only take 1 sigma percentiles to minimise plot noise
                 percentilesPairs = zip(
-                    loadPercentilesTypes[midPercentile-1:midPercentile],
-                    loadPercentilesTypes[midPercentile + 1 :midPercentile+2],
+                    loadPercentilesTypes[:midPercentile],
+                    loadPercentilesTypes[midPercentile + 1 :],
                 )
                 for (LO, UP) in percentilesPairs:
                     currentAx.fill_between(
@@ -361,6 +338,18 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                         alpha=opacityPercentiles,
                         interpolate=False,
                     )
+                    # currentAx.plot(
+                    #     tlookback,
+                    #     plotData[UP],
+                    #     color=colour,
+                    #     lineStyle=lineStylePercentiles,
+                    # )
+                    # currentAx.plot(
+                    #     tlookback,
+                    #     plotData[LO],
+                    #     color=colour,
+                    #     lineStyle=lineStylePercentiles,
+                    # )
                 currentAx.plot(
                     tlookback,
                     plotData[median],

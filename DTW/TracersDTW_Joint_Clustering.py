@@ -12,6 +12,7 @@ from scipy.spatial.distance import squareform
 from itertools import combinations
 import time
 from functools import reduce
+import sys
 
 import const as c
 from gadget import *
@@ -26,10 +27,10 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-sort_level = 0
+sort_level = 1
 maxmimally_distinct_bool = True
 
-method = "ward"
+method = "average"
 DPI = 50
 xsize = 50
 ysize = 20
@@ -38,7 +39,7 @@ colour = "tab:gray"
 rgbcolour = mcolors.to_rgb(colour)
 opacity = 0.5
 
-subset = 50
+subset = 100
 #==============================================================================#
 def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
     distance_levels = np.array(abs(Z[:-1, 2] - Z[1:, 2]))
@@ -125,12 +126,12 @@ tlookback = np.array(tlookback)
 del mergedDict
 
 for T in Tlst:
-    dtw_MDict = {}
-    dtw_DDict = {}
-    dtw_PridDict = {}
-    dtw_TridDict = {}
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"\n *  {rin}R{rout}!  *")
+        dtw_MDict = {}
+        dtw_DDict = {}
+        dtw_PridDict = {}
+        dtw_TridDict = {}
         for analysisParam in dtwParams:
             if analysisParam in logParams:
                 loadKey = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
@@ -227,9 +228,8 @@ for T in Tlst:
                     index = A1 - np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2 + (int(jj) - int(ii) - 1)
                     not_in_values_indices.append(index)
 
-            whereValues = np.array([ii for ii in range(0,len(value),1) if ii not in not_in_values_indices])
             # entry = squareform(value)[whereTracers[:, np.newaxis], whereTracers]
-            entry = value[whereValues]
+            entry = np.delete(value,np.array(not_in_values_indices).astype(np.int32))
 
             maxD = np.nanmax(entry)
             entry = entry / maxD
@@ -254,8 +254,10 @@ for T in Tlst:
             )
         plt.xlabel("Sample Index")
         plt.ylabel("Distance")
+
         print("Joint dendrogram! This may take a while...")
-        ddata = dendrogram(Zjoint, color_threshold=1.0)
+
+        ddata = dendrogram(Zjoint, color_threshold=0.0)
 
         # prefixList = TRACERSPARAMS["savepath"].split("/")
         # prefixList = prefixList[(-4):-2]
