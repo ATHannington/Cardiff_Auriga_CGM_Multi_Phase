@@ -123,6 +123,7 @@ summaryDict = {
     "N_tracers selected": blankList.copy(),
     "Gas mass selected [msol]": blankList.copy(),
     "Gas mass per temperature [msol]": blankList.copy(),
+    "Gas n_H density per temperature [cm-3]": blankList.copy(),
     "Total gas mass (all haloes) available in spherical shell [msol]": blankList.copy(),
     "Total N_tracers (all haloes) in spherical shell": blankList.copy(),
     "Total N_tracers (all haloes) within selection radii": blankList.copy(),
@@ -214,6 +215,8 @@ for snapNumber in snapRange:
             (snap.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
         )  # [g cm^-3]
         gasX = snap.gmet[whereGas, 0][0]
+
+        snap.data["n_H"] = snap.data["dens"][whereGas] / c.amu * gasX  # cm^-3
 
         # Temperature = U / (3/2 * N KB) [K]
         snap.data["T"] = (snap.u[whereGas] * 1e10) / (Tfac)  # K
@@ -363,12 +366,16 @@ for snapNumber in snapRange:
                 massRT = np.sum(snap.data["mass"][Cond])
                 summaryDict["Gas mass per temperature [msol]"][dictRowSelect] += massRT
                 print(f"Total mass (all haloes) in spherical shell per temperature [msol] = ",FullDictKey, massRT)
+
+
+                n_H_RT = np.median(snap.data["n_H"][Cond])
+                summaryDict["Gas n_H density per temperature [cm-3]"][dictRowSelect] += n_H_RT
     # print("summaryDict = ", summaryDict)
 #
 
 df = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
 
-df = df.groupby(['R_inner','R_outer','Log10(T)']).median()
+df = df.groupby(['R_inner','R_outer','Log10(T)']).sum()
 
 df["%Available tracers in spherical shell selected"] = (
     df["N_tracers selected"].astype("float64")
