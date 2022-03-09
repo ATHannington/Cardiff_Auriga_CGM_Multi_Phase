@@ -3625,10 +3625,10 @@ def multi_halo_merge(
         print("PAD")
         for selectKey in dataDict.keys():
             for key in ["id", "prid", "trid"]:
-                    
+
                 if key == "trid":
                     # print("Check trids are unique!")
-                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    u,c = np.unique(dataDict[selectKey][key][0],return_counts=True)
                     assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
                     # print("Done!")
 
@@ -3645,7 +3645,7 @@ def multi_halo_merge(
 
                 if key == "trid":
                     # print("Check trids are unique!")
-                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    u,c = np.unique(dataDict[selectKey][key][0],return_counts=True)
                     assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
                 # np.array([
                 # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
@@ -3785,7 +3785,7 @@ def multi_halo_merge_flat_wrt_time(
 
                 if key == "trid":
                     # print("Check trids are unique!")
-                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    u,c = np.unique(dataDict[selectKey][key][0],return_counts=True)
                     assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
                     # print("Done!")
 
@@ -3802,7 +3802,7 @@ def multi_halo_merge_flat_wrt_time(
 
                 if key == "trid":
                     # print("Check trids are unique!")
-                    u,c = np.unique(dataDict[selectKey][key][0,:],return_counts=True)
+                    u,c = np.unique(dataDict[selectKey][key][0],return_counts=True)
                     assert np.shape(np.where(c>1)[0])[0]<=0, f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
                     # print("Done!")
                 # np.array([
