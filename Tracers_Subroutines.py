@@ -2834,6 +2834,7 @@ def tracer_plot(
     MaxSubset=100,
     lazyLoadBool=True,
     tailsLength=3,
+    trioTitleBool = True,
 ):
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
@@ -3268,17 +3269,18 @@ def tracer_plot(
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
-                if snapNumber in outerPlotSnaps:
-                    OUTERSUBTITLE = (
-                        r"Redshift $(z) =$"
-                        + f"{redshift:0.03f} "
-                        + "\n"
-                        + r"$t_{Lookback}=$"
-                        + f"{tlookback :0.03f} Gyrs"
-                    )
+                if trioTitleBool is True:
+                    if snapNumber in outerPlotSnaps:
+                        OUTERSUBTITLE = (
+                            r"Redshift $(z) =$"
+                            + f"{redshift:0.03f} "
+                            + "\n"
+                            + r"$t_{Lookback}=$"
+                            + f"{tlookback :0.03f} Gyrs"
+                        )
 
-                    axOuter.set_title(label=OUTERSUBTITLE)
-                    axOuter.title.set_size(fontsize)
+                        axOuter.set_title(label=OUTERSUBTITLE)
+                        axOuter.title.set_size(fontsize)
 
                 # cmap = plt.get_cmap(CMAP)
                 cmap.set_bad(color="grey")
@@ -3501,12 +3503,12 @@ def tracer_plot(
                         plt.sca(axOuter)
                         plt.xticks(fullTicks)
 
-                # Pad snapnum with zeroes to enable easier video making
                 fig.tight_layout()
                 fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.80)
 
                 # fig.tight_layout()
 
+                # Pad snapnum with zeroes to enable easier video making
                 SaveSnapNumber = str(snapNumber).zfill(4)
                 savePath = (
                     DataSavepath
@@ -3528,27 +3530,33 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             tt += 1
             figOuter = figureArray[rr][tt]
-            TRIOTITLE = (
-                f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
-                + r"<"
-                + f" {AxesLabels[zAxis[0]]}-axis "
-                + r"<"
-                + f" {float(boxlos) / 2.:3.0f} kpc"
-                + "\n"
-                + f"Subset of {int(subset)} Tracers selected at "
-                + r"$t_{Lookback}=$"
-                + f"{selectlookback :0.03f} Gyrs"
-                + " with "
-                + "\n"
-                + r"$T = 10^{%3.2f \pm %3.2f} K$" % (targetT, TRACERSPARAMS["deltaT"])
-                + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
-            )
+            if trioTitleBool is True:
+                TRIOTITLE = (
+                    f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
+                    + r"<"
+                    + f" {AxesLabels[zAxis[0]]}-axis "
+                    + r"<"
+                    + f" {float(boxlos) / 2.:3.0f} kpc"
+                    + "\n"
+                    + f"Subset of {int(subset)} Tracers selected at "
+                    + r"$t_{Lookback}=$"
+                    + f"{selectlookback :0.03f} Gyrs"
+                    + " with "
+                    + "\n"
+                    + r"$T = 10^{%3.2f \pm %3.2f} K$" % (targetT, TRACERSPARAMS["deltaT"])
+                    + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
+                )
 
-            figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
+                figOuter.suptitle(TRIOTITLE, fontsize=fontsizeTitle)
             # figOuter.tight_layout()
-            figOuter.subplots_adjust(
-                hspace=0.1, wspace=0.0, left=leftParam, top=topParam, bottom=bottomParam
-            )
+            if trioTitleBool is True:
+                figOuter.subplots_adjust(
+                    hspace=0.1, wspace=0.0, left=leftParam, top=topParam, bottom=bottomParam
+                )
+            else:
+                figOuter.subplots_adjust(
+                    hspace=0.1, wspace=0.0, left=leftParam, bottom=bottomParam
+                )
 
             savePathOuter = (
                 DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.pdf"

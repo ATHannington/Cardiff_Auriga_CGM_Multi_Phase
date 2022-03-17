@@ -23,6 +23,9 @@ from random import sample
 import math
 from functools import reduce
 
+#Toggle Trio titles
+trioTitleBool = False
+
 subset = 100
 Ntails = 6
 numThreads = 12
@@ -128,4 +131,5 @@ tracer_plot(
     numThreads=numThreads,
     MaxSubset=subset,
     tailsLength=Ntails,
+    trioTitleBool = trioTitleBool
 )

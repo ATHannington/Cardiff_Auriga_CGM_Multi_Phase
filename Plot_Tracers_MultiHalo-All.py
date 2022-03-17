@@ -30,6 +30,9 @@ opacityPercentiles = 0.25
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
 
+#Toggle Titles
+titleBool = False
+
 ageUniverse = 13.77  # [Gyr]
 
 colourmapMain = "plasma"
@@ -196,30 +199,31 @@ save_statistics_csv(
 #     Tlst,
 #     logParameters,
 #     ylabel,
+#     titleBool
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
-# #
-# ==============================================================================#
-#                   Persistently Temperature PLOT                             #
-# ============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-currently_or_persistently_at_temperature_plot(
-    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
-    persistenceBool = True)
-matplotlib.rc_file_defaults()
-plt.close("all")
-# ============================================================================#
-#                   Currently Temperature PLOT                                #
-# ============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-currently_or_persistently_at_temperature_plot(
-    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
-    persistenceBool = False)
-matplotlib.rc_file_defaults()
-plt.close("all")
+#
+# # ==============================================================================#
+# #                   Persistently Temperature PLOT                             #
+# # ============================================================================#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# currently_or_persistently_at_temperature_plot(
+#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
+#     persistenceBool = True, titleBool = titleBool)
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# # ============================================================================#
+# #                   Currently Temperature PLOT                                #
+# # ============================================================================#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# currently_or_persistently_at_temperature_plot(
+#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
+#     persistenceBool = False, titleBool = titleBool)
+# matplotlib.rc_file_defaults()
+# plt.close("all")
 # ============================================================================#
 # #                   Stacked PDF PLOT                                          #
 # # =============================================================================#
@@ -234,14 +238,15 @@ plt.close("all")
 #     Tlst,
 #     logParameters,
 #     ylabel,
+#     titleBool
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
 # # # ============================================================================#
 # # #                   Bar Chart PLOT                                            #
 # # # =============================================================================#
-#matplotlib.rc_file_defaults()
-#plt.close("all")
+# matplotlib.rc_file_defaults()
+# plt.close("all")
 # bars_plot(
 #     flatMergedDict,
 #     TRACERSPARAMS,
@@ -251,6 +256,7 @@ plt.close("all")
 #     snapRange,
 #     Tlst,
 #     DataSavepath,
+#     titleBool = titleBool
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
@@ -266,11 +272,12 @@ plt.close("all")
 #     DataSavepath,
 #     shortSnapRangeBool=True,
 #     shortSnapRangeNumber=1,
+#     titleBool = titleBool
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
-#
-# # =============================================================================#
+
+# =============================================================================#
 # #                Medians and Phases Combo                                     #
 # # =============================================================================#
 #
@@ -296,6 +303,7 @@ plt.close("all")
 #         weightKey="mass",
 #         analysisParam=param,
 #         Nbins=100,
+#         titleBool = titleBool
 #     )
 #     matplotlib.rc_file_defaults()
 #     plt.close("all")
@@ -314,7 +322,8 @@ temperature_variation_plot(
     Tlst,
     logParameters,
     ylabel,
-)
+    titleBool = titleBool
+    )
+
 matplotlib.rc_file_defaults()
 plt.close("all")
-#

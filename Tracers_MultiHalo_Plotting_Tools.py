@@ -45,6 +45,7 @@ def medians_plot(
     Tlst,
     logParameters,
     ylabel,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -174,15 +175,16 @@ def medians_plot(
                 patchList.append(plot_patch)
                 labelList.append(plot_label)
 
-                fig.suptitle(
-                    f"Cells Containing Tracers selected by: "
-                    + "\n"
-                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                    + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-                    + "\n"
-                    + f" and selected at {vline[0]:3.2f} Gyr",
-                    fontsize=12,
-                )
+                if titleBool is True:
+                    fig.suptitle(
+                        f"Cells Containing Tracers selected by: "
+                        + "\n"
+                        + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                        + "\n"
+                        + f" and selected at {vline[0]:3.2f} Gyr",
+                        fontsize=12,
+                    )
 
             # Only give 1 x-axis a label, as they sharex
             if len(Tlst) == 1:
@@ -220,7 +222,10 @@ def medians_plot(
                 framealpha=1,
             )
             plt.tight_layout()
-            plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
+            if titleBool is True:
+                plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
+            else:
+                plt.subplots_adjust(right=0.80, hspace=0.1)
 
             opslaan = (
                 "./"
@@ -246,6 +251,7 @@ def currently_or_persistently_at_temperature_plot(
     snapRange,
     Tlst,
     persistenceBool,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -405,24 +411,25 @@ def currently_or_persistently_at_temperature_plot(
             currentAx.set_xlim(
                 xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
             )
-            if persistenceBool is True:
-                fig.suptitle(
-                    f"Percentage Tracers Persistently \n Within Temperature Range "
-                    + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
-                    + "\n"
-                    + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                    + f" and selected at {vline[0]:3.2f} Gyr",
-                    fontsize=12,
-                )
-            else:
-                fig.suptitle(
-                    f"Percentage Tracers Currently \n Within Temperature Range "
-                    + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
-                    + "\n"
-                    + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                    + f" and selected at {vline[0]:3.2f} Gyr",
-                    fontsize=12,
-                )
+            if titleBool is True:
+                if persistenceBool is True:
+                    fig.suptitle(
+                        f"Percentage Tracers Persistently \n Within Temperature Range "
+                        + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                        + "\n"
+                        + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + f" and selected at {vline[0]:3.2f} Gyr",
+                        fontsize=12,
+                    )
+                else:
+                    fig.suptitle(
+                        f"Percentage Tracers Currently \n Within Temperature Range "
+                        + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                        + "\n"
+                        + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + f" and selected at {vline[0]:3.2f} Gyr",
+                        fontsize=12,
+                    )
             currentAx.legend(loc="upper right")
 
         # Only give 1 x-axis a label, as they sharex
@@ -475,6 +482,7 @@ def stacked_pdf_plot(
     Tlst,
     logParameters,
     ylabel,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -726,20 +734,23 @@ def stacked_pdf_plot(
                 )
                 fig.transFigure
 
-                fig.suptitle(
-                    f"PDF of Cells Containing Tracers selected by: "
-                    + "\n"
-                    + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
-                    + r" and $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                    + "\n"
-                    + f" and selected at {selectTime:3.2f} Gyr",
-                    fontsize=12,
-                )
+                if titleBool is True:
+                    fig.suptitle(
+                        f"PDF of Cells Containing Tracers selected by: "
+                        + "\n"
+                        + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + "\n"
+                        + f" and selected at {selectTime:3.2f} Gyr",
+                        fontsize=12,
+                    )
                 # ax.axvline(x=vline, c='red')
 
                 plt.tight_layout()
-                plt.subplots_adjust(top=0.90, bottom=0.05, hspace=-0.25)
-
+                if titleBool is True:
+                    plt.subplots_adjust(top=0.90, bottom=0.05, hspace=-0.25)
+                else:
+                    plt.subplots_adjust(bottom=0.05, hspace=-0.25)
                 opslaan = (
                     "./"
                     + "MultiHalo"
@@ -761,6 +772,7 @@ def phases_plot(
     saveParams,
     snapRange,
     Tlst,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -938,16 +950,17 @@ def phases_plot(
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
                 #   Temperature Figure: Finishing up
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-                fig.suptitle(
-                    f"Temperature Density Diagram, weighted by {weightKey}"
-                    + f" at {currentTime:3.2f} Gyr"
-                    + "\n"
-                    + f"Tracers Data, selected at {selectTime:3.2f} Gyr with"
-                    + r" $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
-                    + r" and temperatures "
-                    + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
-                    fontsize=12,
-                )
+                if titleBool is True:
+                    fig.suptitle(
+                        f"Temperature Density Diagram, weighted by {weightKey}"
+                        + f" at {currentTime:3.2f} Gyr"
+                        + "\n"
+                        + f"Tracers Data, selected at {selectTime:3.2f} Gyr with"
+                        + r" $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + r" and temperatures "
+                        + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
+                        fontsize=12,
+                    )
 
                 plt.tight_layout()
 
@@ -1521,6 +1534,7 @@ def bars_plot(
     DataSavepath,
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
+    titleBool = True,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -1607,14 +1621,15 @@ def bars_plot(
         legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
-        plt.title(
-            r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
-            + f"={selectTime:3.2f} Gyr"
-            + "\n"
-            + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
-            fontsize=12,
-        )
+        if titleBool is True:
+            plt.title(
+                r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
+                + f"={selectTime:3.2f} Gyr"
+                + "\n"
+                + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
+                fontsize=12,
+            )
 
         plt.annotate(
             text="",
@@ -1706,7 +1721,11 @@ def bars_plot(
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
-        plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
+
+        if titleBool is True:
+            plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
+        else:
+            plt.subplots_adjust(bottom=0.30, left=0.10, right=0.90)
         if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
                 "./"
@@ -1738,14 +1757,15 @@ def bars_plot(
         legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
-        plt.title(
-            r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"
-            + f"={selectTime:3.2f} Gyr"
-            + "\n"
-            + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
-            fontsize=12,
-        )
+        if titleBool is True:
+            plt.title(
+                r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"
+                + f"={selectTime:3.2f} Gyr"
+                + "\n"
+                + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
+                fontsize=12,
+            )
 
         plt.annotate(
             text="",
@@ -1837,7 +1857,10 @@ def bars_plot(
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
-        plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
+        if titleBool is True:
+            plt.subplots_adjust(top=0.90, bottom=0.30, left=0.10, right=0.90)
+        else:
+            plt.subplots_adjust(bottom=0.30, left=0.10, right=0.90)
 
         if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
@@ -1879,6 +1902,7 @@ def hist_plot(
     Tlst,
     logParameters,
     ylabel,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -2027,16 +2051,16 @@ def hist_plot(
                     fontsize=fontsize,
                 )
                 currentAx.transAxes
-
-        fig.suptitle(
-            f"Cells Containing Tracers selected by: "
-            + "\n"
-            + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-            + "\n"
-            + f" and selected at {selectTime:3.2f} Gyr",
-            fontsize=12,
-        )
+        if titleBool is True:
+            fig.suptitle(
+                f"Cells Containing Tracers selected by: "
+                + "\n"
+                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                + "\n"
+                + f" and selected at {selectTime:3.2f} Gyr",
+                fontsize=12,
+            )
 
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
@@ -2059,9 +2083,13 @@ def hist_plot(
             xlim=(xlimDict[xanalysisParam]["xmin"], xlimDict[xanalysisParam]["xmax"]),
         )
         plt.tight_layout()
-        plt.subplots_adjust(
-            top=0.90, bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
-        )
+        if titleBool is True:
+            plt.subplots_adjust(
+                top=0.90, bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
+            )
+        else:
+            plt.subplots_adjust(bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
+            )
 
         opslaan = (
             "./"
@@ -2100,6 +2128,7 @@ def medians_phases_plot(
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     Nbins=100,
+    titleBool = True,
     DPI=75,
     weightKey="mass",
     analysisParam="R",
@@ -2441,15 +2470,16 @@ def medians_phases_plot(
             print("Missing sub-plot! Skipping entry!")
             continue
 
-        fig.suptitle(
-            f"Cells Containing Tracers selected by: "
-            + "\n"
-            + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-            + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-            + "\n"
-            + f" and selected at {vline[0]:3.2f} Gyr",
-            fontsize=12,
-        )
+        if titleBool is True:
+            fig.suptitle(
+                f"Cells Containing Tracers selected by: "
+                + "\n"
+                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                + "\n"
+                + f" and selected at {vline[0]:3.2f} Gyr",
+                fontsize=12,
+            )
         fig.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
             label=labelDict[weightKey], size=fontsize
         )
@@ -2482,7 +2512,10 @@ def medians_phases_plot(
             xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
         )
         plt.tight_layout()
-        plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
+        if titleBool is True:
+            plt.subplots_adjust(top=0.80, right=0.75, hspace=0.25)
+        else:
+            plt.subplots_adjust(right=0.75, hspace=0.25)
 
         opslaan = (
             "./"
@@ -2509,13 +2542,16 @@ def temperature_variation_plot(
     Tlst,
     logParameters,
     ylabel,
+    titleBool,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",):
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+    StatsDataPathSuffix = ".csv"):
 
     tmpxsize = xsize + 2.0
 
+    statsDF = pd.DataFrame()
 
     print("")
     print("Loading Data!")
@@ -2645,15 +2681,16 @@ def temperature_variation_plot(
             patchList.append(plot_patch)
             labelList.append(plot_label)
 
-            fig.suptitle(
-                f"Cells Containing Tracers selected by: "
-                + "\n"
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-                + "\n"
-                + f" and selected at {vline[0]:3.2f} Gyr",
-                fontsize=12,
-            )
+            if titleBool is True:
+                fig.suptitle(
+                    f"Cells Containing Tracers selected by: "
+                    + "\n"
+                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                    + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                    + "\n"
+                    + f" and selected at {vline[0]:3.2f} Gyr",
+                    fontsize=12,
+                )
 
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
@@ -2692,7 +2729,10 @@ def temperature_variation_plot(
             framealpha=1,
         )
         plt.tight_layout()
-        plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
+        if titleBool is True:
+            plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
+        else:
+            plt.subplots_adjust(right=0.80, hspace=0.1)
 
         opslaan = (
             "./"
@@ -2707,4 +2747,14 @@ def temperature_variation_plot(
         print(opslaan)
         plt.close()
 
+        plotData.update({"Snap Number" : np.array(snapRange)})
+        statsDF = pd.concat((statsDF,plotData), axis=0, ignore_index=True)
+
+
+    #### Output statsDF as .csv ####
+    HaloPathBase = TRACERSPARAMS["savepath"]
+    savePath = HaloPathBase + f"Data_Tracers_MultiHalo_Temperature_Variation_Statistics-Table" + StatsDataPathSuffix
+
+    statsDF.to_csv(savePath, index=False)
+    
     return
