@@ -2222,10 +2222,9 @@ def calculate_statistics(
 def save_statistics_csv(
     statsData,
     TRACERSPARAMS,
-    simList,
-    haloPathList,
     Tlst,
     snapRange,
+    savePathInsert = "",
     StatsDataPathSuffix=".csv",
 ):
 
@@ -2256,7 +2255,7 @@ def save_statistics_csv(
     dfOut = pd.concat(dfList, axis=0)
 
     savePath = (
-        HaloPathBase + f"Data_Tracers_MultiHalo_Statistics-Table" + StatsDataPathSuffix
+        HaloPathBase + f"Data_Tracers_MultiHalo_"+savePathInsert+"Statistics-Table" + StatsDataPathSuffix
     )
 
     print(f"Saving Statistics to csv as: {savePath}")
@@ -3269,18 +3268,17 @@ def tracer_plot(
                 )
 
                 fig.suptitle(TITLE, fontsize=fontsizeTitle)
-                if trioTitleBool is True:
-                    if snapNumber in outerPlotSnaps:
-                        OUTERSUBTITLE = (
-                            r"Redshift $(z) =$"
-                            + f"{redshift:0.03f} "
-                            + "\n"
-                            + r"$t_{Lookback}=$"
-                            + f"{tlookback :0.03f} Gyrs"
-                        )
+                if snapNumber in outerPlotSnaps:
+                    OUTERSUBTITLE = (
+                        r"Redshift $(z) =$"
+                        + f"{redshift:0.03f} "
+                        + "\n"
+                        + r"$t_{Lookback}=$"
+                        + f"{tlookback :0.03f} Gyrs"
+                    )
 
-                        axOuter.set_title(label=OUTERSUBTITLE)
-                        axOuter.title.set_size(fontsize)
+                    axOuter.set_title(label=OUTERSUBTITLE)
+                    axOuter.title.set_size(fontsize)
 
                 # cmap = plt.get_cmap(CMAP)
                 cmap.set_bad(color="grey")

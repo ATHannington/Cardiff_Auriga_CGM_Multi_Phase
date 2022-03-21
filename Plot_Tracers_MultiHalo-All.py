@@ -21,21 +21,19 @@ from Tracers_MultiHalo_Plotting_Tools import *
 from random import sample
 import math
 
-xsize = 5.0
-ysize = 6.0
-DPI = 100
 
-# Set style options
+DPI = 150
+xsize = 7.0
+ysize = 4.0
 opacityPercentiles = 0.25
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
+colourmapMain = "plasma"
 
 #Toggle Titles
 titleBool = False
 
-ageUniverse = 13.77  # [Gyr]
 
-colourmapMain = "plasma"
 # Input parameters path:
 TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
@@ -120,7 +118,7 @@ snapRange = [
 
 # ==============================================================================#
 print("Load Non Time Flattened Data 1st Halo ONLY!")
-mergedDict, saveParams = multi_halo_merge(
+mergedDict, _ = multi_halo_merge(
     SELECTEDHALOES[:1],
     HALOPATHS[:1],
     DataSavepathSuffix,
@@ -183,66 +181,98 @@ selectTimeKey = (
 statsData = multi_halo_statistics(flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst)
 
 save_statistics_csv(
-    statsData, TRACERSPARAMS, SELECTEDHALOES, HALOPATHS, Tlst, snapRange
+    statsData, TRACERSPARAMS, Tlst, snapRange
 )
 # ============================================================================#
 # #                   Medians PLOT                                              # #=============================================================================#
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# medians_plot(
-#     flatMergedDict,
-#     statsData,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     snapRange,
-#     Tlst,
-#     logParameters,
-#     ylabel,
-#     titleBool
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-#
-# # ==============================================================================#
+matplotlib.rc_file_defaults()
+plt.close("all")
+medians_plot(
+    flatMergedDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    titleBool = titleBool,
+    DPI = DPI,
+    xsize = xsize,
+    ysize = ysize,
+    opacityPercentiles = opacityPercentiles,
+    lineStyleMedian = lineStyleMedian,
+    lineStylePercentiles = lineStylePercentiles,
+    colourmapMain = colourmapMain
+    )
+matplotlib.rc_file_defaults()
+plt.close("all")
+
+# ==============================================================================#
 # #                   Persistently Temperature PLOT                             #
 # # ============================================================================#
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# currently_or_persistently_at_temperature_plot(
-#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
-#     persistenceBool = True, titleBool = titleBool)
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # ============================================================================#
-# #                   Currently Temperature PLOT                                #
-# # ============================================================================#
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# currently_or_persistently_at_temperature_plot(
-#     flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
-#     persistenceBool = False, titleBool = titleBool)
-# matplotlib.rc_file_defaults()
-# plt.close("all")
+matplotlib.rc_file_defaults()
+plt.close("all")
+currently_or_persistently_at_temperature_plot(
+    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
+    persistenceBool = True,
+    titleBool = titleBool,
+    DPI = DPI,
+    xsize = xsize,
+    ysize = ysize,
+    opacityPercentiles = opacityPercentiles,
+    lineStyleMedian = lineStyleMedian,
+    lineStylePercentiles = lineStylePercentiles,
+    colourmapMain = colourmapMain)
+matplotlib.rc_file_defaults()
+plt.close("all")
+
 # ============================================================================#
-# #                   Stacked PDF PLOT                                          #
-# # =============================================================================#
-#matplotlib.rc_file_defaults()
-#plt.close("all")
-# stacked_pdf_plot(
-#     flatMergedDict,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     snapRange,
-#     Tlst,
-#     logParameters,
-#     ylabel,
-#     titleBool
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # # ============================================================================#
+#                   Currently Temperature PLOT                                #
+# ============================================================================#
+matplotlib.rc_file_defaults()
+plt.close("all")
+currently_or_persistently_at_temperature_plot(
+    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,     persistenceBool = False,
+    titleBool = titleBool,
+    DPI = DPI,
+    xsize = xsize,
+    ysize = ysize,
+    opacityPercentiles = opacityPercentiles,
+    lineStyleMedian = lineStyleMedian,
+    lineStylePercentiles = lineStylePercentiles,
+    colourmapMain = colourmapMain)
+matplotlib.rc_file_defaults()
+plt.close("all")
+
+# ============================================================================#
+#       Temperature Variation PLOT                                              # #=============================================================================#
+matplotlib.rc_file_defaults()
+plt.close("all")
+temperature_variation_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    titleBool = titleBool,
+    DPI = DPI,
+    xsize = xsize,
+    ysize = ysize,
+    opacityPercentiles = opacityPercentiles,
+    lineStyleMedian = lineStyleMedian,
+    lineStylePercentiles = lineStylePercentiles,
+    colourmapMain = colourmapMain
+    )
+
+matplotlib.rc_file_defaults()
+plt.close("all")
+
+# ============================================================================#
 # # #                   Bar Chart PLOT                                            #
 # # # =============================================================================#
 # matplotlib.rc_file_defaults()
@@ -256,7 +286,12 @@ save_statistics_csv(
 #     snapRange,
 #     Tlst,
 #     DataSavepath,
-#     titleBool = titleBool
+#     titleBool = titleBool,
+#     DPI = DPI,
+#     opacityPercentiles = opacityPercentiles,
+#     lineStyleMedian = lineStyleMedian,
+#     lineStylePercentiles = lineStylePercentiles,
+#     colourmapMain = colourmapMain
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
@@ -272,10 +307,48 @@ save_statistics_csv(
 #     DataSavepath,
 #     shortSnapRangeBool=True,
 #     shortSnapRangeNumber=1,
-#     titleBool = titleBool
+#     titleBool = titleBool,
+#     DPI = DPI,
+#     opacityPercentiles = opacityPercentiles,
+#     lineStyleMedian = lineStyleMedian,
+#     lineStylePercentiles = lineStylePercentiles,
+#     colourmapMain = colourmapMain
 # )
 # matplotlib.rc_file_defaults()
 # plt.close("all")
+# ============================================================================#
+# ============================================================================#
+# #                         Non-Paper Plots
+# #
+# ============================================================================#
+# ============================================================================#
+
+
+
+
+
+
+
+# ============================================================================#
+# #                   Stacked PDF PLOT                                          #
+# # =============================================================================#
+#matplotlib.rc_file_defaults()
+#plt.close("all")
+# stacked_pdf_plot(
+#     flatMergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     snapRange,
+#     Tlst,
+#     logParameters,
+#     ylabel,
+#     titleBool,
+#     DPI
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# # #
 
 # =============================================================================#
 # #                Medians and Phases Combo                                     #
@@ -300,6 +373,7 @@ save_statistics_csv(
 #         logParameters,
 #         ylabel,
 #         SELECTEDHALOES,
+#         DPI,
 #         weightKey="mass",
 #         analysisParam=param,
 #         Nbins=100,
@@ -307,23 +381,3 @@ save_statistics_csv(
 #     )
 #     matplotlib.rc_file_defaults()
 #     plt.close("all")
-
-
-# ============================================================================#
-#       Temperature Variation PLOT                                              # #=============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-temperature_variation_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
-    logParameters,
-    ylabel,
-    titleBool = titleBool
-    )
-
-matplotlib.rc_file_defaults()
-plt.close("all")

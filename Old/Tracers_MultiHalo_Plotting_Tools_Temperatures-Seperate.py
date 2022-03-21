@@ -21,6 +21,20 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
+xsize = 5.0
+ysize = 6.0
+DPI = 100
+
+# Set style options
+opacityPercentiles = 0.25
+lineStyleMedian = "solid"
+lineStylePercentiles = "-."
+
+ageUniverse = 13.77  # [Gyr]
+
+colourmapMain = "plasma"
+
+
 def medians_plot(
     dataDict,
     statsData,
@@ -32,18 +46,12 @@ def medians_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI=100,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",):
 
+    tmpxsize = xsize + 2.0
 
     for analysisParam in saveParams:
         print("")
@@ -56,11 +64,11 @@ def medians_plot(
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
-                nrows=1,
+                nrows=len(Tlst),
                 ncols=1,
                 sharex=True,
                 sharey=True,
-                figsize=(xsize, ysize),
+                figsize=(tmpxsize, ysize),
                 dpi=DPI,
             )
             yminlist = []
@@ -122,9 +130,10 @@ def medians_plot(
                 print("")
                 print("Sub-Plot!")
 
-
-                currentAx = ax
-
+                if len(Tlst) == 1:
+                    currentAx = ax
+                else:
+                    currentAx = ax[ii]
 
                 midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
                 percentilesPairs = zip(
@@ -161,10 +170,10 @@ def medians_plot(
                 #     plt.gcf().canvas.draw()
                 #     # STOP160IF
 
-                # plot_patch = matplotlib.patches.Patch(color=colour)
-                # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
-                # patchList.append(plot_patch)
-                # labelList.append(plot_label)
+                plot_patch = matplotlib.patches.Patch(color=colour)
+                plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
+                patchList.append(plot_patch)
+                labelList.append(plot_label)
 
                 if titleBool is True:
                     fig.suptitle(
@@ -178,8 +187,12 @@ def medians_plot(
                     )
 
             # Only give 1 x-axis a label, as they sharex
-            axis0 = ax
-            midax = ax
+            if len(Tlst) == 1:
+                axis0 = ax
+                midax = ax
+            else:
+                axis0 = ax[len(Tlst) - 1]
+                midax = ax[(len(Tlst) - 1) // 2]
 
             axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
             midax.set_ylabel(ylabel[analysisParam], fontsize=10)
@@ -201,13 +214,18 @@ def medians_plot(
                 ylim=custom_ylim,
                 xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
             )
-            axis0.legend(loc="upper right")
-
+            fig.legend(
+                handles=patchList,
+                labels=labelList,
+                loc="center right",
+                facecolor="white",
+                framealpha=1,
+            )
             plt.tight_layout()
             if titleBool is True:
-                plt.subplots_adjust(top=0.875, hspace=0.1)
+                plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
             else:
-                plt.subplots_adjust(hspace=0.1)
+                plt.subplots_adjust(right=0.80, hspace=0.1)
 
             opslaan = (
                 "./"
@@ -234,13 +252,6 @@ def currently_or_persistently_at_temperature_plot(
     Tlst,
     persistenceBool,
     titleBool,
-    DPI=100,
-    xsize = 5.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -330,7 +341,7 @@ def currently_or_persistently_at_temperature_plot(
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=1, #len(Tlst),
+            nrows=len(Tlst),
             ncols=1,
             sharex=True,
             sharey=True,
@@ -367,8 +378,10 @@ def currently_or_persistently_at_temperature_plot(
             print("")
             print("Sub-Plot!")
 
-            currentAx = ax
-
+            if len(Tlst) == 1:
+                currentAx = ax
+            else:
+                currentAx = ax[ii]
 
             tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
@@ -417,21 +430,22 @@ def currently_or_persistently_at_temperature_plot(
                         + f" and selected at {vline[0]:3.2f} Gyr",
                         fontsize=12,
                     )
+            currentAx.legend(loc="upper right")
 
         # Only give 1 x-axis a label, as they sharex
-        # if len(Tlst) == 1:
-        axis0 = ax
-        midax = ax
-        # else:
-        #     axis0 = ax[len(Tlst) - 1]
-        #     midax = ax[(len(Tlst) - 1) // 2]
+        if len(Tlst) == 1:
+            axis0 = ax
+            midax = ax
+        else:
+            axis0 = ax[len(Tlst) - 1]
+            midax = ax[(len(Tlst) - 1) // 2]
 
         axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
         midax.set_ylabel(
             r"Percentage Tracers Within Temperature Range",
             fontsize=10,
         )
-        axis0.legend(loc="upper right")
+
         plt.tight_layout(h_pad=0.0)
         if persistenceBool is True:
             opslaan = (
@@ -469,19 +483,14 @@ def stacked_pdf_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI=100,
-    xsize = 5.0,
-    ysize = 10.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
 ):
-
+    xsize = 5.0
+    ysize = 10.0
+    ageUniverse = 13.77  # [Gyr]
     opacity = 0.75
     selectColour = "red"
     selectStyle = "-."
@@ -764,13 +773,6 @@ def phases_plot(
     snapRange,
     Tlst,
     titleBool,
-    DPI=100,
-    xsize = 20.0,
-    ysize = 5.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -781,8 +783,15 @@ def phases_plot(
     Author: A. T. Hannington
     Created: 21/07/2020
 
+    Known Bugs:
+        pandas read_csv loading data as nested dict. . Have added flattening to fix
+
     """
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+    xsize = 10.0
+    ysize = 5.0
+    fontsize = 10
 
     # Paramters to weight the 2D hist by
     weightKeys = ["mass", "tcool", "gz", "tcool_tff"]
@@ -840,7 +849,7 @@ def phases_plot(
                 fig, ax = plt.subplots(
                     nrows=1,
                     ncols=int(len(Tlst)),
-                    figsize=(xsize, ysize),
+                    figsize=(xsize * 2, ysize),
                     dpi=DPI,
                     sharey=True,
                     sharex=True,
@@ -906,9 +915,9 @@ def phases_plot(
 
                     currentAx.set_xlabel(
                         r"Log10 Density [$ \rho / \langle \rho \rangle $]",
-                        fontsize=10,
+                        fontsize=fontsize,
                     )
-                    currentAx.set_ylabel("Log10 Temperatures [K]", fontsize=10)
+                    currentAx.set_ylabel("Log10 Temperatures [K]", fontsize=fontsize)
 
                     currentAx.set_ylim(ymin, ymax)
                     currentAx.set_xlim(xmin, xmax)
@@ -924,12 +933,12 @@ def phases_plot(
 
                     cax1 = inset_axes(currentAx, width="5%", height="95%", loc="right")
                     fig.colorbar(img1, cax=cax1, orientation="vertical").set_label(
-                        label=labelDict[weightKey], size=10
+                        label=labelDict[weightKey], size=fontsize
                     )
                     cax1.yaxis.set_ticks_position("left")
                     cax1.yaxis.set_label_position("left")
                     cax1.yaxis.label.set_color("black")
-                    cax1.tick_params(axis="y", colors="black", labelsize=10)
+                    cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
 
                     currentAx.set_title(
                         r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
@@ -1523,13 +1532,6 @@ def bars_plot(
     snapRange,
     Tlst,
     DataSavepath,
-    DPI=100,
-    xsize = 15.0,
-    ysize = 5.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
     titleBool = True,
@@ -1538,6 +1540,9 @@ def bars_plot(
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
 ):
+    xsize = 15.0
+    ysize = 5.0
+    DPI = 100
     colourmapMain = "plasma"
     # Input parameters path:
     TracersParamsPath = "TracersParams.csv"
@@ -1898,24 +1903,21 @@ def hist_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI = 75,
-    xsize = 10.0,
-    ysize = 24.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
-    Nbins=150
+    Nbins=150,
+    DPI=75,
 ):
 
+    tmpysize = ysize * 4.0
+    tmpxsize = xsize * 2.0
     weightKey = "mass"
     xanalysisParam = "L"
     yanalysisParam = "R"
 
+    fontsize = 10
     xlimDict = {
         "T": {"xmin": 3.75, "xmax": 6.5},
         "R": {"xmin": 0, "xmax": 250},
@@ -1965,7 +1967,7 @@ def hist_plot(
             ncols=len(Tlst),
             sharex=True,
             sharey=True,
-            figsize=(xsize, ysize),
+            figsize=(tmpxsize, tmpysize),
             dpi=DPI,
         )
         for (jj, snap) in enumerate(selectSnaps):
@@ -2037,7 +2039,7 @@ def hist_plot(
                     currentAx.set_title(
                         r"$ 10^{%03.2f \pm %3.2f} K $"
                         % (float(T), TRACERSPARAMS["deltaT"]),
-                        fontsize=12,
+                        fontsize=fontsize + 2,
                     )
 
                 currentAx.annotate(
@@ -2046,7 +2048,7 @@ def hist_plot(
                     xytext=(0.10, 0.90),
                     textcoords=currentAx.transAxes,
                     annotation_clip=False,
-                    fontsize=10,
+                    fontsize=fontsize,
                 )
                 currentAx.transAxes
         if titleBool is True:
@@ -2072,7 +2074,7 @@ def hist_plot(
         midax.set_ylabel(ylabel[yanalysisParam], fontsize=10)
 
         plt.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
-            label=ylabel[weightKey], size=10
+            label=ylabel[weightKey], size=fontsize
         )
 
         plt.setp(
@@ -2121,22 +2123,19 @@ def medians_phases_plot(
     logParameters,
     ylabel,
     SELECTEDHALOES,
-    DPI = 75,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     Nbins=100,
     titleBool = True,
+    DPI=75,
     weightKey="mass",
     analysisParam="R",
 ):
+
+    tmpxsize = xsize + 2.0
+    fontsize = 10
 
     labelDict = {
         "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
@@ -2180,7 +2179,7 @@ def medians_phases_plot(
             ncols=1,
             sharex=True,
             sharey=True,
-            figsize=(xsize, ysize),
+            figsize=(tmpxsize, ysize),
             dpi=DPI,
         )
         yminlist = []
@@ -2482,7 +2481,7 @@ def medians_phases_plot(
                 fontsize=12,
             )
         fig.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
-            label=labelDict[weightKey], size=10
+            label=labelDict[weightKey], size=fontsize
         )
 
         # Only give 1 x-axis a label, as they sharex
@@ -2544,18 +2543,13 @@ def temperature_variation_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI=100,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     StatsDataPathSuffix = ".csv"):
+
+    tmpxsize = xsize + 2.0
 
     statsData = {}
 
@@ -2566,11 +2560,11 @@ def temperature_variation_plot(
         print(f"{rin}R{rout}")
 
         fig, ax = plt.subplots(
-            nrows=1,#len(Tlst),
+            nrows=len(Tlst),
             ncols=1,
             sharex=True,
             sharey=True,
-            figsize=(xsize, ysize),
+            figsize=(tmpxsize, ysize),
             dpi=DPI,
         )
         yminlist = []
@@ -2643,8 +2637,10 @@ def temperature_variation_plot(
             print("")
             print("Sub-Plot!")
 
-            currentAx = ax
-
+            if len(Tlst) == 1:
+                currentAx = ax
+            else:
+                currentAx = ax[ii]
 
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
@@ -2681,10 +2677,10 @@ def temperature_variation_plot(
             #     plt.gcf().canvas.draw()
             #     # STOP160IF
 
-            # plot_patch = matplotlib.patches.Patch(color=colour)
-            # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
-            # patchList.append(plot_patch)
-            # labelList.append(plot_label)
+            plot_patch = matplotlib.patches.Patch(color=colour)
+            plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
+            patchList.append(plot_patch)
+            labelList.append(plot_label)
 
             if titleBool is True:
                 fig.suptitle(
@@ -2703,9 +2699,12 @@ def temperature_variation_plot(
 
 
         # Only give 1 x-axis a label, as they sharex
-        axis0 = ax
-        midax = ax
-
+        if len(Tlst) == 1:
+            axis0 = ax
+            midax = ax
+        else:
+            axis0 = ax[len(Tlst) - 1]
+            midax = ax[(len(Tlst) - 1) // 2]
 
         ylabelhere = r"$\Delta$" + r"$\left(Log_{10}(\mathrm{T})\right)$" + " - Temperature "+ "Variation [K]"
         axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
@@ -2728,13 +2727,18 @@ def temperature_variation_plot(
             ylim=custom_ylim,
             xlim=(round(max(xData), 1), round(min(xData), 1)),
         )
-        axis0.legend(loc="upper right")
-
+        fig.legend(
+            handles=patchList,
+            labels=labelList,
+            loc="center right",
+            facecolor="white",
+            framealpha=1,
+        )
         plt.tight_layout()
         if titleBool is True:
-            plt.subplots_adjust(top=0.875, hspace=0.1)
+            plt.subplots_adjust(top=0.875, right=0.80, hspace=0.1)
         else:
-            plt.subplots_adjust(hspace=0.1)
+            plt.subplots_adjust(right=0.80, hspace=0.1)
 
         opslaan = (
             "./"
