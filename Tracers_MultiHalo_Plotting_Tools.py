@@ -44,6 +44,29 @@ def medians_plot(
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",):
 
+    xlimDict = {
+        "mass": {"xmin": 5.0, "xmax": 9.0},
+        "L": {"xmin": 3.0, "xmax": 4.5},
+        "T": {"xmin": 3.75, "xmax": 6.5},
+        "R": {"xmin": 0, "xmax": 250},
+        "n_H": {"xmin": -5.0, "xmax": 0.0},
+        "B": {"xmin": -2.0, "xmax": 1.0},
+        "vrad": {"xmin": -150.0, "xmax": 150.0},
+        "gz": {"xmin": -1.5, "xmax": 0.5},
+        "P_thermal": {"xmin": 1.0, "xmax": 4.0},
+        "P_magnetic": {"xmin": -1.5, "xmax": 5.0},
+        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
+        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "Pthermal_Pmagnetic": {"xmin": -2.0, "xmax": 3.0},
+        "tcool": {"xmin": -5.0, "xmax": 2.0},
+        "theat": {"xmin": -4.0, "xmax": 4.0},
+        "tff": {"xmin": -1.5, "xmax": 0.5},
+        "tcool_tff": {"xmin": -4.0, "xmax": 2.0},
+        "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
+        "dens": {"xmin": -30.0, "xmax": -22.0},
+        "ndens": {"xmin": -6.0, "xmax": 2.0},
+    }
+
 
     for analysisParam in saveParams:
         print("")
@@ -181,10 +204,10 @@ def medians_plot(
             axis0 = ax
             midax = ax
 
-            axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
+            axis0.set_xlabel("Lookback Time (Gyr)", fontsize=10)
             midax.set_ylabel(ylabel[analysisParam], fontsize=10)
-            finalymin = np.nanmin(yminlist)
-            finalymax = np.nanmax(ymaxlist)
+            finalymin = min(np.nanmin(yminlist),xlimDict[analysisParam]['xmin'])
+            finalymax = max(np.nanmax(ymaxlist),xlimDict[analysisParam]['xmax'])
             if (
                 (np.isinf(finalymin) == True)
                 or (np.isinf(finalymax) == True)
@@ -426,7 +449,7 @@ def currently_or_persistently_at_temperature_plot(
         #     axis0 = ax[len(Tlst) - 1]
         #     midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
+        axis0.set_xlabel("Lookback Time (Gyr)", fontsize=10)
         midax.set_ylabel(
             r"Percentage Tracers Within Temperature Range",
             fontsize=10,
@@ -908,7 +931,7 @@ def phases_plot(
                         r"Log10 Density [$ \rho / \langle \rho \rangle $]",
                         fontsize=10,
                     )
-                    currentAx.set_ylabel("Log10 Temperatures [K]", fontsize=10)
+                    currentAx.set_ylabel("Log10 Temperatures (K)", fontsize=10)
 
                     currentAx.set_ylim(ymin, ymax)
                     currentAx.set_xlim(xmin, xmax)
@@ -1067,7 +1090,7 @@ def flat_analyse_time_averages(
             gas.append([gaspre, gaspost])
 
             print("Heating & Cooling")
-            epsilonT = float(TRACERSPARAMS["deltaT"])  # [k]
+            epsilonT = float(TRACERSPARAMS["deltaT"])  # (K)
 
             # Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
             rowspre, colspre = np.where(
@@ -1614,7 +1637,7 @@ def bars_plot(
         preDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
         legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
+        ax.legend(legendLabels, loc="center left", title="T (K)", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         if titleBool is True:
             plt.title(
@@ -1750,7 +1773,7 @@ def bars_plot(
         postDF.T.plot.bar(rot=0, ax=ax, color=colour)
 
         legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="center left", title="T [K]", fontsize=10)
+        ax.legend(legendLabels, loc="center left", title="T (K)", fontsize=10)
         plt.xticks(rotation=90, ha="right", fontsize=10)
         if titleBool is True:
             plt.title(
@@ -2493,7 +2516,7 @@ def medians_phases_plot(
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel(r"Lookback Time [Gyrs]", fontsize=10)
+        axis0.set_xlabel(r"Lookback Time (Gyr)", fontsize=10)
         midax.set_ylabel(ylabel[analysisParam], fontsize=10)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
@@ -2707,8 +2730,8 @@ def temperature_variation_plot(
         midax = ax
 
 
-        ylabelhere = r"$\Delta$" + r"$\left(Log_{10}(\mathrm{T})\right)$" + " - Temperature "+ "Variation [K]"
-        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
+        ylabelhere = r"$\Delta$" + r"$\left(Log_{10}(\mathrm{T})\right)$" + " - Temperature "+ "Variation (K)"
+        axis0.set_xlabel("Lookback Time (Gyr)", fontsize=10)
         midax.set_ylabel(ylabelhere, fontsize=10)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
