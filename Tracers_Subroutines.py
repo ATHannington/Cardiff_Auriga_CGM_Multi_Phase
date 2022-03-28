@@ -2853,12 +2853,17 @@ def tracer_plot(
     xParam = 3.0  # Base equal aspect ratio image size
     deltaX = 1.4  # Single Margin in x direc
     fracX = 0.90  # How much margin (deltaX) to leave on left
+    hParam = 0.50  # How much space (%) to leave for title and colourbar (split)
+
     xsizeTrio = 3.0 * xParam + deltaX  # Compute image x size
 
     leftParam = fracX * deltaX / xsizeTrio  # Calculate left margin placement
 
-    hParam = 0.50  # How much space (%) to leave for title and colourbar (split)
-    topParam = 1.0 - (hParam * 0.4)  # How much room to leave for title
+    if trioTitleBool is True:
+        topParam = 1.0 - (hParam * 0.4)  # How much room to leave for title
+    else:
+        topParam = 0.95
+
     bottomParam = hParam * 0.6  # How much room to leave for colourbar
     ysizeTrio = xParam * (1.0 / (1.0 - hParam))  # Compute image y size
 
@@ -2875,8 +2880,8 @@ def tracer_plot(
     sizeConst = 8
 
     aspect = "equal"
-    fontsize = 10
-    fontsizeTitle = 12
+    fontsize = 12
+    fontsizeTitle = 14
 
     nullEntry = [np.nan, np.nan, np.nan]
 
@@ -3553,8 +3558,7 @@ def tracer_plot(
                 )
             else:
                 figOuter.subplots_adjust(
-                    hspace=0.1, wspace=0.0, left=leftParam, bottom=bottomParam
-                )
+                    hspace=0.1, wspace=0.0, left=leftParam, top=topParam, bottom=bottomParam)
 
             savePathOuter = (
                 DataSavepath + f"_T{targetT}_{rin}R{rout}_Tracer_Subset_Plot_Trio.pdf"
