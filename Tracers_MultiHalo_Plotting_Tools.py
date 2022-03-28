@@ -946,7 +946,7 @@ def phases_plot(
                     plot_patch = matplotlib.patches.Patch(color=colour)
                     plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
                     currentAx.legend(
-                        handles=[plot_patch], labels=[plot_label], loc="upper left"
+                        handles=[plot_patch], labels=[plot_label], loc="upper right"
                     )
 
                     cax1 = inset_axes(currentAx, width="5%", height="95%", loc="right")
@@ -1267,11 +1267,11 @@ def flat_analyse_time_averages(
             print("Radius")
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][pre, :] < rmin)
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < rmin)
             )
             diskpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][post, :] < rmin)
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < rmin)
             )
             diskpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1279,11 +1279,11 @@ def flat_analyse_time_averages(
             disk.append([diskpre, diskpost])
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][pre, :] >= rmin) &         (FlatDataDict[Tkey]["R"][pre, :] <= rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= rmin) &         (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
             )
             cgmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][post, :] >= rmin) & (FlatDataDict[Tkey]["R"][post, :] <= rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= rmin) & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
             )
             cgmpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1291,11 +1291,11 @@ def flat_analyse_time_averages(
             cgm.append([cgmpre, cgmpost])
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][pre, :] > rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] > rmax)
             )
             igmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][post, :] > rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] > rmax)
             )
             igmpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1627,28 +1627,28 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(outflow)[:, 0],
                 "Post-Selection": np.array(outflow)[:, 1],
             },
-            "<3/4(Z_solar)": {
+            "<3/4(Z_Solar)": {
                 "Pre-Selection": np.array(belowZ)[:, 0],
                 "Post-Selection": np.array(belowZ)[:, 1],
             },
-            ">3/4(Z_solar)": {
+            ">3/4(Z_Solar)": {
                 "Pre-Selection": np.array(aboveZ)[:, 0],
                 "Post-Selection": np.array(aboveZ)[:, 1],
             },
 
-            "(tcool/tff)<10": {
+            "(tCool/tFF)<10": {
                 "Pre-Selection": np.array(tcool_tff_LO)[:, 0],
                 "Post-Selection": np.array(tcool_tff_LO)[:, 1],
             },
-            "(tcool/tff)>10": {
+            "(tCool/tFF)>10": {
                 "Pre-Selection": np.array(tcool_tff_UP)[:, 0],
                 "Post-Selection": np.array(tcool_tff_UP)[:, 1],
             },
-            "(Ptherm/Pmagn)<1": {
+            "(PTherm/PMag)<1": {
                 "Pre-Selection": np.array(ptherm_pmag_LO)[:, 0],
                 "Post-Selection": np.array(ptherm_pmag_LO)[:, 1],
             },
-            "(Ptherm/Pmagn)>1": {
+            "(PTherm/PMag)>1": {
                 "Pre-Selection": np.array(ptherm_pmag_UP)[:, 0],
                 "Post-Selection": np.array(ptherm_pmag_UP)[:, 1],
             },
@@ -1722,9 +1722,10 @@ def bars_plot(
     Tlst,
     DataSavepath,
     DPI=100,
-    xsize = 9.0,
-    ysize = 5.0,
-    bottomParam = 0.39,
+    xsize = 7.0,
+    ysize = 6.0,
+    bottomParam = 0.35,
+    barwidth=0.80,
     opacityPercentiles = 0.25,
     lineStyleMedian = "solid",
     lineStylePercentiles = "-.",
@@ -1810,10 +1811,10 @@ def bars_plot(
             nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True
         )
 
-        preDF.T.plot.bar(rot=0, ax=ax, color=colour, align='center')
+        preDF.T.plot.bar(width=barwidth,rot=0, ax=ax, color=colour, align='center')
 
-        legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="center left", title="T (K)", fontsize=fontsize)
+        legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
+        ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         if titleBool is True:
             plt.title(
@@ -1827,8 +1828,8 @@ def bars_plot(
 
         plt.annotate(
             text="Ever Matched Feature",
-            xy=(0.12, 0.02),
-            xytext=(0.12, 0.02),
+            xy=(0.10, 0.02),
+            xytext=(0.10, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -1836,15 +1837,15 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.37, 0.01),
+            xytext=(0.38, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.375, bottomParam),
-            xytext=(0.375, 0.05),
+            xy=(0.385, bottomParam),
+            xytext=(0.385, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1860,16 +1861,16 @@ def bars_plot(
         )
         plt.annotate(
             text="",
-            xy=(0.38, 0.01),
-            xytext=(0.64, 0.01),
+            xy=(0.39, 0.01),
+            xytext=(0.665, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.635, bottomParam),
-            xytext=(0.635, 0.05),
+            xy=(0.6675, bottomParam),
+            xytext=(0.6675, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1877,16 +1878,16 @@ def bars_plot(
 
         plt.annotate(
             text="-1 Snapshot Feature",
-            xy=(0.67, 0.02),
-            xytext=(0.67, 0.02),
+            xy=(0.675, 0.02),
+            xytext=(0.675, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.64, 0.01),
-            xytext=(0.90, 0.01),
+            xy=(0.67, 0.01),
+            xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1901,9 +1902,9 @@ def bars_plot(
         plt.tight_layout()
 
         if titleBool is True:
-            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.90)
+            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10,right=0.95)
         else:
-            plt.subplots_adjust(bottom=bottomParam, left=0.10, right=0.90)
+            plt.subplots_adjust(bottom=bottomParam, left=0.10,right=0.95)
         if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
                 "./"
@@ -1930,10 +1931,10 @@ def bars_plot(
             nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True
         )
 
-        postDF.T.plot.bar( rot=0, ax=ax, color=colour, align='center')
+        postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align='center')
 
-        legendLabels = [r"$10^{%3.0f}$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="center left", title="T (K)", fontsize=fontsize)
+        legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
+        ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         if titleBool is True:
             plt.title(
@@ -1947,8 +1948,8 @@ def bars_plot(
 
         plt.annotate(
             text="Ever Matched Feature",
-            xy=(0.12, 0.02),
-            xytext=(0.12, 0.02),
+            xy=(0.10, 0.02),
+            xytext=(0.10, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -1956,15 +1957,15 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.37, 0.01),
+            xytext=(0.38, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.375, bottomParam),
-            xytext=(0.375, 0.05),
+            xy=(0.385, bottomParam),
+            xytext=(0.385, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1980,16 +1981,16 @@ def bars_plot(
         )
         plt.annotate(
             text="",
-            xy=(0.38, 0.01),
-            xytext=(0.64, 0.01),
+            xy=(0.39, 0.01),
+            xytext=(0.665, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.635, bottomParam),
-            xytext=(0.635, 0.05),
+            xy=(0.6675, bottomParam),
+            xytext=(0.6675, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1997,16 +1998,16 @@ def bars_plot(
 
         plt.annotate(
             text="+1 Snapshot Feature",
-            xy=(0.67, 0.02),
-            xytext=(0.67, 0.02),
+            xy=(0.675, 0.02),
+            xytext=(0.675, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.64, 0.01),
-            xytext=(0.90, 0.01),
+            xy=(0.67, 0.01),
+            xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -2081,15 +2082,15 @@ def bars_plot(
         # plt.annotate(
         #     text="",
         #     xy=(0.74, 0.01),
-        #     xytext=(0.90, 0.01),
+        #     xytext=(0.95, 0.01),
         #     arrowprops=dict(arrowstyle="<->"),
         #     xycoords=fig.transFigure,
         #     annotation_clip=False,
         # )
         # plt.annotate(
         #     text="",
-        #     xy=(0.90, bottomParam),
-        #     xytext=(0.90, 0.05),
+        #     xy=(0.95, bottomParam),
+        #     xytext=(0.95, 0.05),
         #     arrowprops=dict(arrowstyle="-"),
         #     xycoords=fig.transFigure,
         #     annotation_clip=False,
@@ -2103,9 +2104,9 @@ def bars_plot(
         plt.ylabel("% of Tracers Selected Following Feature")
         plt.tight_layout()
         if titleBool is True:
-            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.90)
+            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.95)
         else:
-            plt.subplots_adjust(bottom=bottomParam, left=0.10, right=0.90)
+            plt.subplots_adjust(bottom=bottomParam, left=0.10, right=0.95)
 
         if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
@@ -2957,7 +2958,7 @@ def temperature_variation_plot(
         midax = ax
 
 
-        ylabelhere = r"$\Delta$" + r"$\left(Log_{10}(\mathrm{T})\right)$" + " - Temperature "+ "Variation (K)"
+        ylabelhere = r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$" + " - Temperature "+ "Variation (K)"
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(ylabelhere, fontsize=fontsize)
         finalymin = np.nanmin(yminlist)

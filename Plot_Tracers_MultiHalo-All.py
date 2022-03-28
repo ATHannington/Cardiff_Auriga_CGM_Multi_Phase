@@ -329,55 +329,55 @@ plt.close("all")
 
 
 
-# ============================================================================#
-# #                   Stacked PDF PLOT                                          #
+# # ============================================================================#
+# # #                   Stacked PDF PLOT                                          #
+# # # =============================================================================#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# stacked_pdf_plot(
+#     flatMergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     snapRange,
+#     Tlst,
+#     logParameters,
+#     ylabel,
+#     titleBool,
+#     DPI
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# # #
+#
+# #=============================================================================#
+# #                Medians and Phases Combo                                     #
 # # =============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-stacked_pdf_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
-    logParameters,
-    ylabel,
-    titleBool,
-    DPI
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
-# #
-
-#=============================================================================#
-#                Medians and Phases Combo                                     #
-# =============================================================================#
-
-for param in saveParams:
-    print("")
-    print("---")
-    print(f"medians_phases_plot : for {param} param")
-    print("---")
-    matplotlib.rc_file_defaults()
-    plt.close("all")
-    medians_phases_plot(
-        flatMergedDict,
-        statsData,
-        TRACERSPARAMS,
-        saveParams,
-        tlookback,
-        selectTime,
-        snapRange,
-        Tlst,
-        logParameters,
-        ylabel,
-        SELECTEDHALOES,
-        DPI,
-        weightKey="mass",
-        analysisParam=param,
-        Nbins=100,
-        titleBool = titleBool
-    )
-    matplotlib.rc_file_defaults()
-    plt.close("all")
+#
+# for param in saveParams:
+#     print("")
+#     print("---")
+#     print(f"medians_phases_plot : for {param} param")
+#     print("---")
+#     matplotlib.rc_file_defaults()
+#     plt.close("all")
+#     medians_phases_plot(
+#         flatMergedDict,
+#         statsData,
+#         TRACERSPARAMS,
+#         saveParams,
+#         tlookback,
+#         selectTime,
+#         snapRange,
+#         Tlst,
+#         logParameters,
+#         ylabel,
+#         SELECTEDHALOES,
+#         DPI,
+#         weightKey="mass",
+#         analysisParam=param,
+#         Nbins=100,
+#         titleBool = titleBool
+#     )
+#     matplotlib.rc_file_defaults()
+#     plt.close("all")
