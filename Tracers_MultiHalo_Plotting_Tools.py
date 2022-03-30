@@ -21,7 +21,7 @@ from Tracers_Subroutines import *
 from random import sample
 import math
 
-fontsize = 12
+fontsize = 13
 fontsizeTitle = 14
 
 def medians_plot(
@@ -178,7 +178,7 @@ def medians_plot(
 
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-                currentAx.tick_params(which="both")
+                currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
                 #
                 # #Delete text string for first y_axis label for all but last panel
                 # plt.gcf().canvas.draw()
@@ -228,13 +228,13 @@ def medians_plot(
                 ylim=custom_ylim,
                 xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
             )
-            axis0.legend(loc="upper right")
+            axis0.legend(loc="upper right",fontsize=fontsize)
 
             plt.tight_layout()
             if titleBool is True:
-                plt.subplots_adjust(top=0.875, hspace=0.1)
+                plt.subplots_adjust(top=0.875, hspace=0.1,left=0.15)
             else:
-                plt.subplots_adjust(hspace=0.1)
+                plt.subplots_adjust(hspace=0.1,left=0.15)
 
             opslaan = (
                 "./"
@@ -419,7 +419,7 @@ def currently_or_persistently_at_temperature_plot(
             currentAx.axvline(x=vline, c="red")
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(which="both")
+            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
@@ -428,7 +428,7 @@ def currently_or_persistently_at_temperature_plot(
             if titleBool is True:
                 if persistenceBool is True:
                     fig.suptitle(
-                        f"Percentage Tracers Persistently \n Within Temperature Range "
+                        f"Percentage Tracers Persistently Within Temperature Range "
                         + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
                         + "\n"
                         + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
@@ -437,7 +437,7 @@ def currently_or_persistently_at_temperature_plot(
                     )
                 else:
                     fig.suptitle(
-                        f"Percentage Tracers Currently \n Within Temperature Range "
+                        f"Percentage Tracers Currently Within Temperature Range "
                         + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
                         + "\n"
                         + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
@@ -455,11 +455,12 @@ def currently_or_persistently_at_temperature_plot(
 
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(
-            r"Percentage Tracers Within Temperature Range",
+            f"Percentage Tracers Within"+f"\n"+f"Temperature Range",
             fontsize=fontsize,
         )
-        axis0.legend(loc="upper right")
+        axis0.legend(loc="upper right",fontsize=fontsize)
         plt.tight_layout(h_pad=0.0)
+        plt.subplots_adjust(left=0.15)
         if persistenceBool is True:
             opslaan = (
                 "./"
@@ -591,24 +592,6 @@ def stacked_pdf_plot(
                     timeIndex = np.where(np.array(snapRange) == snap)[0]
                     whereGas = np.where(dataDict[dictkey]["type"][timeIndex][0] == 0)
 
-                    dataDict[dictkey]["age"][timeIndex][0][
-                        np.where(
-                            np.isnan(dataDict[dictkey]["age"][timeIndex][0]) == True
-                        )
-                    ] = 0.0
-
-                    whereStars = np.where(
-                        (dataDict[dictkey]["type"][timeIndex][0] == 4)
-                        & (dataDict[dictkey]["age"][timeIndex][0] >= 0.0)
-                    )
-
-                    NGas = len(dataDict[dictkey]["type"][timeIndex][0][whereGas])
-                    NStars = len(dataDict[dictkey]["type"][timeIndex][0][whereStars])
-                    Ntot = NGas + NStars
-
-                    # Percentage in stars
-                    percentage = (float(NStars) / (float(Ntot))) * 100.0
-
                     data = dataDict[dictkey][dataKey][timeIndex][0][whereGas]
                     weights = dataDict[dictkey]["mass"][timeIndex][0][whereGas]
 
@@ -666,7 +649,6 @@ def stacked_pdf_plot(
                     inrangedf = df.loc[(df["x"] >= xmin) & (df["x"] <= xmax)]
                     aboverangedf = df.loc[(df["x"] > xmax)]
 
-                    ### Use a rolling window over the last outofrangePercentOfxRange % of data to attempt to create peaks in kdeplot at ends ###
 
                     belowrangedf = belowrangedf.assign(x=xmin)
                     aboverangedf = aboverangedf.assign(x=xmax)
@@ -708,6 +690,7 @@ def stacked_pdf_plot(
                     currentAx.set_ylabel("")
                     # currentAx.set_ylim(mainplotylim)
                     currentAx.set_xlabel(xlabel[dataKey], fontsize=fontsize)
+                    currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
                     sns.despine(bottom=True, left=True)
 
                 xmin = np.nanmin(xminlist)
@@ -728,7 +711,7 @@ def stacked_pdf_plot(
                 #     fontsize=fontsize,
                 # )
 
-                time_label = r"Time [Gyr]"
+                time_label = r"Time (Gyr)"
                 plt.text(
                     0.08,
                     0.525,
@@ -766,9 +749,9 @@ def stacked_pdf_plot(
 
                 plt.tight_layout()
                 if titleBool is True:
-                    plt.subplots_adjust(top=0.90, bottom=0.05, hspace=-0.25)
+                    plt.subplots_adjust(top=0.90, bottom=0.075, hspace=-0.25)
                 else:
-                    plt.subplots_adjust(bottom=0.05, hspace=-0.25)
+                    plt.subplots_adjust(top=0.98, bottom=0.075, hspace=-0.25)
                 opslaan = (
                     "./"
                     + "MultiHalo"
@@ -791,6 +774,7 @@ def phases_plot(
     snapRange,
     Tlst,
     titleBool,
+    ylabel,
     DPI=100,
     xsize = 20.0,
     ysize = 5.0,
@@ -824,12 +808,7 @@ def phases_plot(
     ymax = 7.5  # [Log10 T]
     xmin = 1.0  # [Log10 rho_rhomean]
     xmax = 7.0  # [Log10 rho_rhomean]
-    labelDict = {
-        "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
-        "gz": r"Log10 Average Metallicity per pixel [Z/Z$_{\odot}$]",
-        "tcool": "Log10 Cooling Time per pixel [Gyr]",
-        "tcool_tff": r"Cooling Time over Free Fall Time",
-    }
+    labelDict = ylabel
 
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
@@ -932,13 +911,14 @@ def phases_plot(
                     # ,extent=[np.min(xedgeCells),np.max(xedgeCells),np.min(yedgeCells),np.max(yedgeCells)],origin='lower')
 
                     currentAx.set_xlabel(
-                        r"Log10 Density [$ \rho / \langle \rho \rangle $]",
+                        r"Log10 Density ($ \rho / \langle \rho \rangle $)",
                         fontsize=fontsize,
                     )
                     currentAx.set_ylabel("Log10 Temperatures (K)", fontsize=fontsize)
 
                     currentAx.set_ylim(ymin, ymax)
                     currentAx.set_xlim(xmin, xmax)
+                    currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
 
                     cmap = matplotlib.cm.get_cmap(colourmapMain)
                     colour = cmap(float(ii) / float(len(Tlst)))
@@ -946,17 +926,17 @@ def phases_plot(
                     plot_patch = matplotlib.patches.Patch(color=colour)
                     plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
                     currentAx.legend(
-                        handles=[plot_patch], labels=[plot_label], loc="upper right"
+                        handles=[plot_patch], labels=[plot_label], loc="upper right", fontsize=fontsize
                     )
 
                     cax1 = inset_axes(currentAx, width="5%", height="95%", loc="right")
                     fig.colorbar(img1, cax=cax1, orientation="vertical").set_label(
-                        label=labelDict[weightKey], size=10
+                        label=labelDict[weightKey], size=fontsize
                     )
                     cax1.yaxis.set_ticks_position("left")
                     cax1.yaxis.set_label_position("left")
                     cax1.yaxis.label.set_color("black")
-                    cax1.tick_params(axis="y", colors="black", labelsize=10)
+                    cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
 
                     currentAx.set_title(
                         r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
@@ -1816,6 +1796,7 @@ def bars_plot(
         legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
+        ax.tick_params(axis="both",which="both",labelsize=fontsize)
         if titleBool is True:
             plt.title(
                 r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
@@ -1837,15 +1818,15 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.38, 0.01),
+            xytext=(0.385, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.385, bottomParam),
-            xytext=(0.385, 0.05),
+            xy=(0.39, bottomParam),
+            xytext=(0.39, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1861,7 +1842,7 @@ def bars_plot(
         )
         plt.annotate(
             text="",
-            xy=(0.39, 0.01),
+            xy=(0.395, 0.01),
             xytext=(0.665, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
@@ -1896,9 +1877,11 @@ def bars_plot(
         fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(which="both")
+        ax.tick_params(axis="both",which="both",labelsize=fontsize)
+
+
         plt.grid(which="both", axis="y")
-        plt.ylabel("% of Tracers Selected Following Feature")
+        plt.ylabel("% of Tracers Selected Following Feature", fontsize=fontsize)
         plt.tight_layout()
 
         if titleBool is True:
@@ -1936,6 +1919,8 @@ def bars_plot(
         legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
         ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
+        ax.tick_params(axis="both",which="both",labelsize=fontsize)
+
         if titleBool is True:
             plt.title(
                 r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"
@@ -1945,7 +1930,6 @@ def bars_plot(
                 + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
                 fontsize=fontsizeTitle,
             )
-
         plt.annotate(
             text="Ever Matched Feature",
             xy=(0.10, 0.02),
@@ -1957,15 +1941,15 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.38, 0.01),
+            xytext=(0.385, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.385, bottomParam),
-            xytext=(0.385, 0.05),
+            xy=(0.39, bottomParam),
+            xytext=(0.39, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -1981,7 +1965,7 @@ def bars_plot(
         )
         plt.annotate(
             text="",
-            xy=(0.39, 0.01),
+            xy=(0.395, 0.01),
             xytext=(0.665, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
@@ -2012,8 +1996,6 @@ def bars_plot(
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
-        fig.transFigure
         #     text="",
         #     xy=(0.10, bottomParam),
         #     xytext=(0.10, 0.05),
@@ -2099,9 +2081,9 @@ def bars_plot(
         # fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(which="both")
+        ax.tick_params(axis="both",which="both",labelsize=fontsize)
         plt.grid(which="both", axis="y")
-        plt.ylabel("% of Tracers Selected Following Feature")
+        plt.ylabel("% of Tracers Selected Following Feature", fontsize=fontsize)
         plt.tight_layout()
         if titleBool is True:
             plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.95)
@@ -2323,7 +2305,7 @@ def hist_plot(
         midax.set_ylabel(ylabel[yanalysisParam], fontsize=fontsize)
 
         plt.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
-            label=ylabel[weightKey], size=10
+            label=ylabel[weightKey], size=fontsize
         )
 
         plt.setp(
@@ -2389,13 +2371,7 @@ def medians_phases_plot(
     analysisParam="R",
 ):
 
-    labelDict = {
-        "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
-        "gz": r"Log10 Average Metallicity per pixel [Z/Z$_{\odot}$]",
-        "tcool": r"Log10 Cooling Time per pixel [Gyr]",
-        "tcool_tff": r"Cooling Time over Free Fall Time",
-        "L": r"Specific Angular Momentum [kpc km s$^{-1}$]",
-    }
+    labelDict = ylabel
 
     xlimDict = {
         "mass": {"xmin": 5.0, "xmax": 9.0},
@@ -2546,7 +2522,8 @@ def medians_phases_plot(
 
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(which="both")
+            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+
             #
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -2733,7 +2710,7 @@ def medians_phases_plot(
                 fontsize=fontsizeTitle,
             )
         fig.colorbar(img1, ax=ax.ravel().tolist(), orientation="vertical").set_label(
-            label=labelDict[weightKey], size=10
+            label=labelDict[weightKey], size=fontsize
         )
 
         # Only give 1 x-axis a label, as they sharex
@@ -2923,7 +2900,7 @@ def temperature_variation_plot(
 
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(which="both")
+            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
             #
             # #Delete text string for first y_axis label for all but last panel
             # plt.gcf().canvas.draw()
@@ -2958,7 +2935,7 @@ def temperature_variation_plot(
         midax = ax
 
 
-        ylabelhere = r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$" + " - Temperature "+ "Variation (K)"
+        ylabelhere = r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$" + "\n" + "Temperature "+ "Variation (K)"
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(ylabelhere, fontsize=fontsize)
         finalymin = np.nanmin(yminlist)
@@ -2979,13 +2956,13 @@ def temperature_variation_plot(
             ylim=custom_ylim,
             xlim=(round(max(xData), 1), round(min(xData), 1)),
         )
-        axis0.legend(loc="upper right")
+        axis0.legend(loc="upper right",fontsize=fontsize)
 
         plt.tight_layout()
         if titleBool is True:
-            plt.subplots_adjust(top=0.875, hspace=0.1)
+            plt.subplots_adjust(top=0.875, hspace=0.1,left=0.15)
         else:
-            plt.subplots_adjust(hspace=0.1)
+            plt.subplots_adjust(hspace=0.1,left=0.15)
 
         opslaan = (
             "./"

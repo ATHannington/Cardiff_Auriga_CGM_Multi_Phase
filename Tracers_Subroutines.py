@@ -1090,8 +1090,8 @@ def calculate_tracked_parameters(
     )
 
     # Mean weight [amu]
-    meanweight = sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
-        sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
+    meanweight = np.sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
+        np.sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
         + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
     )
 
@@ -1155,7 +1155,7 @@ def calculate_tracked_parameters(
     snapGas.data["tcool"][zeroChangeGas] = np.nan
 
     snapGas.data["theat"][coolingGas] = np.nan
-    snapGas.data["theat"][heatingGas] = abs(snapGas.data["theat"][heatingGas])
+    snapGas.data["theat"][heatingGas] = np.abs(snapGas.data["theat"][heatingGas])
     snapGas.data["theat"][zeroChangeGas] = np.nan
 
     # Load in metallicity
@@ -1166,9 +1166,9 @@ def calculate_tracked_parameters(
     tmp = snapGas.data["sfr"]
 
     # Specific Angular Momentum [kpc km s^-1]
-    snapGas.data["L"] = sqrt(
+    snapGas.data["L"] = np.sqrt(
         (
-            cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
+            np.cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
         ).sum(axis=1)
     )
 
@@ -1199,7 +1199,7 @@ def calculate_tracked_parameters(
     )
 
     # Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
-    snapGas.data["csound"] = sqrt(
+    snapGas.data["csound"] = np.sqrt(
         ((5.0 / 3.0) * c.KB * snapGas.data["T"][whereGas]) / (meanweight * c.amu * 1e5)
     )
 
@@ -1219,7 +1219,7 @@ def calculate_tracked_parameters(
     rho = rhosorted[runsort]
 
     # Free Fall time [Gyrs]
-    snapGas.data["tff"] = sqrt(
+    snapGas.data["tff"] = np.sqrt(
         (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
     ) * (1.0 / GyrToSeconds)
 
@@ -2843,8 +2843,8 @@ def tracer_plot(
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["y", "z", "x"]
 
-    xsize = 7.0
-    ysize = 7.0
+    xsize = 4.0
+    ysize = 4.0
 
     # ===============#
     # Set plot figure sizes of trio
@@ -2872,7 +2872,7 @@ def tracer_plot(
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
 
-    fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
+    fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 5)]
     fudgeTicks = fullTicks[1:]
 
     colour = "black"
@@ -2880,7 +2880,7 @@ def tracer_plot(
     sizeConst = 8
 
     aspect = "equal"
-    fontsize = 12
+    fontsize = 13
     fontsizeTitle = 14
 
     nullEntry = [np.nan, np.nan, np.nan]
@@ -3475,7 +3475,7 @@ def tracer_plot(
                 ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_xlabel(f"{AxesLabels[Axes[0]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
-                cbarfig.ax.set_yticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'])
+                cbarfig.ax.set_yticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'],fontdict={'fontsize':fontsize})
 
                 if snapNumber in outerPlotSnaps:
                     if snapNumber == outerPlotSnaps[-1]:
@@ -3484,7 +3484,7 @@ def tracer_plot(
                             ax=axOuterObj.ravel().tolist(),
                             ticks=[1e4, 1e5, 1e6, 10**(6.5)],
                             orientation="horizontal",
-                            pad=0.1,
+                            pad=0.15,
                         )
                         cbarfigOuter.set_label(label=r"T [K]", size=fontsize)
                         cbarfigOuter.ax.set_xticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'])
@@ -3505,7 +3505,8 @@ def tracer_plot(
                     else:
                         plt.sca(axOuter)
                         plt.xticks(fullTicks)
-
+                    ax1.tick_params(axis="both",which="both",labelsize=fontsize)
+                    axOuter.tick_params(axis="both",which="both",labelsize=fontsize)
                 fig.tight_layout()
                 fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.80)
 
