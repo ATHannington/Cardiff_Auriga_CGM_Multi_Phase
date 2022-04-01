@@ -1499,7 +1499,7 @@ def load_tracers_parameters(TracersParamsPath):
     Tlst = [str(item) for item in TRACERSPARAMS["targetTLst"]]
     Tstr = "-".join(Tlst)
 
-    # This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to be plotted/manipulated
+    # This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to  be plotted/manipulated
     DataSavepath = (
         TRACERSPARAMS["savepath"]
         + f"Data_selectSnap{int(TRACERSPARAMS['selectSnap'])}_targetT{Tstr}"
@@ -2463,6 +2463,7 @@ def plot_projections(
     TRACERSPARAMS,
     DataSavepath,
     FullDataPathSuffix,
+    titleBool = True,
     Axes=[0, 1],
     zAxis=[2],
     boxsize=400.0,
@@ -2474,7 +2475,7 @@ def plot_projections(
     numThreads=2,
 ):
     print(
-        f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Starting Projections Video Plots!"
+        f"[@{int(snapNumber)}]: Starting Projections Video Plots!"
     )
 
     if CMAP == None:
@@ -2491,7 +2492,7 @@ def plot_projections(
     # --------------------------#
     ## Slices and Projections ##
     # --------------------------#
-    print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Slices and Projections!")
+    print(f"[@{int(snapNumber)}]: Slices and Projections!")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
@@ -2506,7 +2507,7 @@ def plot_projections(
 
     print(
         "\n"
-        + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Projection 1 of {nprojections}"
+        + f"[@{int(snapNumber)}]: Projection 1 of {nprojections}"
     )
 
     proj_T = snapGas.get_Aslice(
@@ -2524,7 +2525,7 @@ def plot_projections(
 
     print(
         "\n"
-        + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Projection 2 of {nprojections}"
+        + f"[@{int(snapNumber)}]: Projection 2 of {nprojections}"
     )
 
     proj_dens = snapGas.get_Aslice(
@@ -2542,7 +2543,7 @@ def plot_projections(
 
     print(
         "\n"
-        + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Projection 3 of {nprojections}"
+        + f"[@{int(snapNumber)}]: Projection 3 of {nprojections}"
     )
 
     proj_nH = snapGas.get_Aslice(
@@ -2560,7 +2561,7 @@ def plot_projections(
 
     print(
         "\n"
-        + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Projection 4 of {nprojections}"
+        + f"[@{int(snapNumber)}]: Projection 4 of {nprojections}"
     )
 
     proj_B = snapGas.get_Aslice(
@@ -2578,7 +2579,7 @@ def plot_projections(
 
     print(
         "\n"
-        + f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Projection 5 of {nprojections}"
+        + f"[@{int(snapNumber)}]: Projection 5 of {nprojections}"
     )
 
     proj_gz = snapGas.get_Aslice(
@@ -2602,20 +2603,21 @@ def plot_projections(
     # Define halfsize for histogram ranges which are +/-
     halfbox = boxsize / 2.0
 
-    # Redshift
-    redshift = snapGas.redshift  # z
-    aConst = 1.0 / (1.0 + redshift)  # [/]
+    if titleBool is True:
+        # Redshift
+        redshift = snapGas.redshift  # z
+        aConst = 1.0 / (1.0 + redshift)  # [/]
 
-    # [0] to remove from numpy array for purposes of plot title
-    tlookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
-        0
-    ]  # [Gyrs]
+        # [0] to remove from numpy array for purposes of plot title
+        tlookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
+            0
+        ]  # [Gyrs]
     # ==============================================================================#
     #
     #           Quad Plot for standard video
     #
     # ==============================================================================#
-    print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Quad Plot...")
+    print(f"[@{int(snapNumber)}]: Quad Plot...")
 
     fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 9)]
     fudgeTicks = fullTicks[1:]
@@ -2629,21 +2631,22 @@ def plot_projections(
         nrows=2, ncols=2, figsize=(xsize, ysize), dpi=DPI, sharex=True, sharey=True
     )
 
-    # Add overall figure plot
-    TITLE = (
-        r"Redshift $(z) =$"
-        + f"{redshift:0.03f} "
-        + " "
-        + r"$t_{Lookback}=$"
-        + f"{tlookback :0.03f} Gyrs"
-        + "\n"
-        + f"Projections within {-1. * float(boxlos) / 2.}"
-        + r"<"
-        + f"{AxesLabels[zAxis[0]]}-axis"
-        + r"<"
-        + f"{float(boxlos) / 2.} kpc"
-    )
-    fig.suptitle(TITLE, fontsize=fontsizeTitle)
+    if titleBool is True:
+        # Add overall figure plot
+        TITLE = (
+            r"Redshift $(z) =$"
+            + f"{redshift:0.03f} "
+            + " "
+            + r"$t_{Lookback}=$"
+            + f"{tlookback :0.03f} Gyrs"
+            + "\n"
+            + f"Projections within {-1. * float(boxlos) / 2.}"
+            + r"<"
+            + f"{AxesLabels[zAxis[0]]}-axis"
+            + r"<"
+            + f"{float(boxlos) / 2.} kpc"
+        )
+        fig.suptitle(TITLE, fontsize=fontsizeTitle)
 
     # cmap = plt.get_cmap(CMAP)
     cmap.set_bad(color="grey")
@@ -2797,17 +2800,21 @@ def plot_projections(
 
     # print("snapnum")
     # Pad snapnum with zeroes to enable easier video making
-    fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.90)
+    if titleBool is True:
+        fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.90)
+    else:
+        fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.95)
+
     # fig.tight_layout()
 
     SaveSnapNumber = str(snapNumber).zfill(4)
     savePath = DataSavepath + f"_Quad_Plot_{int(SaveSnapNumber)}.png"
 
-    print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: Save {savePath}")
+    print(f"[@{int(snapNumber)}]: Save {savePath}")
     plt.savefig(savePath, transparent=False)
     plt.close()
 
-    print(f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: ...done!")
+    print(f"[@{int(snapNumber)}]: ...done!")
 
     return
 
@@ -3197,7 +3204,7 @@ def tracer_plot(
                 ]  # [Gyrs]
 
                 print(
-                    f"[@T{targetT}] @{rin}R{rout} @{int(snapNumber)} : SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
+                    f"[@T{targetT} @{rin}R{rout} @{int(snapNumber)}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
                 )
 
                 print(
@@ -3476,12 +3483,17 @@ def tracer_plot(
                 ax1.set_xlabel(f"{AxesLabels[Axes[0]]}" + r" [kpc]", fontsize=fontsize)
                 ax1.set_aspect(aspect)
                 cbarfig.ax.set_yticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'],fontdict={'fontsize':fontsize})
-
                 if snapNumber in outerPlotSnaps:
-                    if snapNumber == outerPlotSnaps[-1]:
+                    nOuterAx = int(len(outerPlotSnaps))
+
+                    # For middle Axis make all subplot spanning colorbar
+                    # that is 100% width of subplots, and 5% in height
+                    if snapNumber == outerPlotSnaps[(nOuterAx-1)//2]:
+                        cax = inset_axes(axOuter, bbox_to_anchor=(leftParam,1.-leftParam, bottomParam, bottomParam+0.05), bbox_transform= figOuter.transFigure, width=f"100%", height="100%", loc="lower center")
                         cbarfigOuter = figOuter.colorbar(
                             pcm1Outer,
-                            ax=axOuterObj.ravel().tolist(),
+                            cax = cax,
+                            # ax=axOuterObj.ravel().tolist(),
                             ticks=[1e4, 1e5, 1e6, 10**(6.5)],
                             orientation="horizontal",
                             pad=0.15,
