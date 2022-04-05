@@ -1249,35 +1249,35 @@ def calculate_tracked_parameters(
     deleteKeys = []
     for key, value in snapGas.data.items():
         if value is not None:
-            print("")
-            print(key)
-            print("NDM,NGas,NStars")
-            print(NDM,NGas,NStars)
-            print(np.shape(value))
+            # print("")
+            # print(key)
+            # print("NDM,NGas,NStars")
+            # print(NDM,NGas,NStars)
+            # print(np.shape(value))
             if np.shape(value)[0] == (NDM + NGas + NStars):
-                print("All")
+                # print("All")
                 snapGas.data[key] = value.copy()[whereStarsGas]
             elif np.shape(value)[0] == (NGas + NDM) :
-                print("Gas")
+                # print("Gas")
                 snapGas.data[key] = value.copy()[whereGas]
             elif np.shape(value)[0] == (NStars + NDM):
-                print("Stars")
+                # print("Stars")
                 snapGas.data[key] = value.copy()[whereStars]
             elif np.shape(value)[0] == (NDM):
-                print("DM")
+                # print("DM")
                 deleteKeys.append(key)
             elif np.shape(value)[0] == (NGas + NStars):
-                print("Stars and Gas")
+                # print("Stars and Gas")
                 pass
             else:
-                print("Gas or Stars")
+                # print("Gas or Stars")
                 pass
-            print(np.shape(snapGas.data[key]))
+            # print(np.shape(snapGas.data[key]))
 
     for key in deleteKeys:
         del snapGas.data[key]
 
-    print(np.unique(snapGas.type))
+    # print(np.unique(snapGas.type))
 
     return snapGas
 
@@ -2540,7 +2540,7 @@ def plot_projections(
     #  axes = Axes, proj = False, numthreads=16)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     nprojections = 5
-    print(np.unique(snapGas.type))
+    # print(np.unique(snapGas.type))
     print(
         "\n"
         + f"[@{int(snapNumber)}]: Projection 1 of {nprojections}"
@@ -3520,16 +3520,16 @@ def tracer_plot(
                 ax1.set_aspect(aspect)
                 cbarfig.ax.set_yticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'],fontdict={'fontsize':fontsize})
                 if snapNumber in outerPlotSnaps:
-                    nOuterAx = int(len(outerPlotSnaps))
+
 
                     # For middle Axis make all subplot spanning colorbar
                     # that is 100% width of subplots, and 5% in height
-                    if snapNumber == outerPlotSnaps[(nOuterAx-1)//2]:
-                        cax = inset_axes(axOuter, bbox_to_anchor=(leftParam,1.-leftParam, bottomParam, bottomParam+0.05), bbox_transform= figOuter.transFigure, width=f"100%", height="100%", loc="lower center")
+                    if snapNumber == outerPlotSnaps[-1]:
+                        cax = figOuter.add_axes([leftParam,bottomParam,1.-(2.*leftParam),0.05])
                         cbarfigOuter = figOuter.colorbar(
                             pcm1Outer,
                             cax = cax,
-                            # ax=axOuterObj.ravel().tolist(),
+                            ax = axOuterObj.ravel().tolist(),
                             ticks=[1e4, 1e5, 1e6, 10**(6.5)],
                             orientation="horizontal",
                             pad=0.15,
