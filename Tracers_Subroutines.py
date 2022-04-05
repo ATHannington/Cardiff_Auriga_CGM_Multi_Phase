@@ -1238,11 +1238,47 @@ def calculate_tracked_parameters(
     # ==================#
 
     whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+    whereDM = np.where(snapGas.type == 1)[0]
+    whereGas = np.where(snapGas.type == 0)[0]
+    whereStars = np.where(snapGas.type == 4)[0]
 
+    NDM = len(whereDM)
+    NGas = len(whereGas)
+    NStars = len(whereStars)
+
+    deleteKeys = []
     for key, value in snapGas.data.items():
         if value is not None:
-            if np.shape(value)[0] >= np.shape(whereStarsGas)[0]:
-                snapGas.data[key] = value[whereStarsGas]
+            print("")
+            print(key)
+            print("NDM,NGas,NStars")
+            print(NDM,NGas,NStars)
+            print(np.shape(value))
+            if np.shape(value)[0] == (NDM + NGas + NStars):
+                print("All")
+                snapGas.data[key] = value.copy()[whereStarsGas]
+            elif np.shape(value)[0] == (NGas + NDM) :
+                print("Gas")
+                snapGas.data[key] = value.copy()[whereGas]
+            elif np.shape(value)[0] == (NStars + NDM):
+                print("Stars")
+                snapGas.data[key] = value.copy()[whereStars]
+            elif np.shape(value)[0] == (NDM):
+                print("DM")
+                deleteKeys.append(key)
+            elif np.shape(value)[0] == (NGas + NStars):
+                print("Stars and Gas")
+                pass
+            else:
+                print("Gas or Stars")
+                pass
+            print(np.shape(snapGas.data[key]))
+
+    for key in deleteKeys:
+        del snapGas.data[key]
+
+    print(np.unique(snapGas.type))
+
     return snapGas
 
 
@@ -1270,7 +1306,7 @@ def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
     #
     # selected = selectGas + selectStars
 
-    # Take only data from above HaloID
+    # Take only data from above HaloID/
     for key, value in snapGas.data.items():
         if value is not None:
             snapGas.data[key] = value[whereHalo]
@@ -2504,7 +2540,7 @@ def plot_projections(
     #  axes = Axes, proj = False, numthreads=16)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     nprojections = 5
-
+    print(np.unique(snapGas.type))
     print(
         "\n"
         + f"[@{int(snapNumber)}]: Projection 1 of {nprojections}"
