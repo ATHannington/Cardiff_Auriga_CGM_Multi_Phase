@@ -2367,11 +2367,14 @@ def flatten_wrt_time(
                 tracerData = v[np.newaxis]
                 if k == "trid":
                     tracerData = TracersReturned[np.newaxis]
-                elif k == "prid":
+                elif (k == "prid") or ( k == "id"):
                     tracerData = ParentsReturned[np.newaxis]
-
+                # print(key)
+                # print(k)
                 if k in tmp.keys():
                     entry = tmp[k]
+                    # print(np.shape(entry))
+                    # print(np.shape(tracerData))
                     entry = np.concatenate((entry, tracerData), axis=0)
                     tmp.update({k: entry})
                 else:
@@ -2674,7 +2677,7 @@ def plot_projections(
             + f"{redshift:0.03f} "
             + " "
             + r"$t_{Lookback}=$"
-            + f"{tlookback :0.03f} Gyrs"
+            + f"{tlookback :0.03f} Gyr"
             + "\n"
             + f"Projections within {-1. * float(boxlos) / 2.}"
             + r"<"
@@ -2707,14 +2710,14 @@ def plot_projections(
     ax1.set_title(f"Temperature Projection", fontsize=fontsize)
     cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
     fig.colorbar(pcm1, cax=cax1, orientation="vertical").set_label(
-        label="T [K]", size=fontsize, weight="bold"
+        label="T (K)", size=fontsize, weight="bold"
     )
     cax1.yaxis.set_ticks_position("left")
     cax1.yaxis.set_label_position("left")
     cax1.yaxis.label.set_color("white")
     cax1.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + " [kpc]", fontsize=fontsize)
+    ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + " (kpc)", fontsize=fontsize)
     # ax1.set_xlabel(f'{AxesLabels[Axes[0]]}"+" [kpc]"', fontsize = fontsize)
     # ax1.set_aspect(aspect)
 
@@ -2744,14 +2747,14 @@ def plot_projections(
 
     cax2 = inset_axes(ax2, width="5%", height="95%", loc="right")
     fig.colorbar(pcm2, cax=cax2, orientation="vertical").set_label(
-        label=r"n$_H$ [cm$^{-3}$]", size=fontsize, weight="bold"
+        label=r"n$_H$ (cm$^{-3}$)", size=fontsize, weight="bold"
     )
     cax2.yaxis.set_ticks_position("left")
     cax2.yaxis.set_label_position("left")
     cax2.yaxis.label.set_color("white")
     cax2.tick_params(axis="y", colors="white", labelsize=fontsize)
-    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [kpc]"', fontsize=fontsize)
-    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} "+r" [kpc]"', fontsize=fontsize)
+    # ax2.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" (kpc)"', fontsize=fontsize)
+    # ax2.set_xlabel(f'{AxesLabels[Axes[0]]} "+r" (kpc)"', fontsize=fontsize)
     # ax2.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -2787,8 +2790,8 @@ def plot_projections(
     cax3.yaxis.label.set_color("white")
     cax3.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} " + r" [kpc]", fontsize=fontsize)
-    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" [kpc]", fontsize=fontsize)
+    ax3.set_ylabel(f"{AxesLabels[Axes[1]]} " + r" (kpc)", fontsize=fontsize)
+    ax3.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" (kpc)", fontsize=fontsize)
 
     # ax3.set_aspect(aspect)
 
@@ -2818,15 +2821,15 @@ def plot_projections(
 
     cax4 = inset_axes(ax4, width="5%", height="95%", loc="right")
     fig.colorbar(pcm4, cax=cax4, orientation="vertical").set_label(
-        label=r"B [$ \mu $G]", size=fontsize, weight="bold"
+        label=r"B ($ \mu $G)", size=fontsize, weight="bold"
     )
     cax4.yaxis.set_ticks_position("left")
     cax4.yaxis.set_label_position("left")
     cax4.yaxis.label.set_color("white")
     cax4.tick_params(axis="y", colors="white", labelsize=fontsize)
 
-    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" [kpc]"', fontsize=fontsize)
-    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" [kpc]", fontsize=fontsize)
+    # ax4.set_ylabel(f'{AxesLabels[Axes[1]]} "+r" (kpc)"', fontsize=fontsize)
+    ax4.set_xlabel(f"{AxesLabels[Axes[0]]} " + r" (kpc)", fontsize=fontsize)
     # ax4.set_aspect(aspect)
 
     # Fudge the tick labels...
@@ -3525,7 +3528,7 @@ def tracer_plot(
                     # For middle Axis make all subplot spanning colorbar
                     # that is 100% width of subplots, and 5% in height
                     if snapNumber == outerPlotSnaps[-1]:
-                        cax = figOuter.add_axes([leftParam,bottomParam,1.-(2.*leftParam),0.05])
+                        cax = figOuter.add_axes([leftParam,bottomParam*0.5,0.90 - leftParam,0.075])
                         cbarfigOuter = figOuter.colorbar(
                             pcm1Outer,
                             cax = cax,
@@ -3535,7 +3538,7 @@ def tracer_plot(
                             pad=0.15,
                         )
                         cbarfigOuter.set_label(label=r"T [K]", size=fontsize)
-                        cbarfigOuter.ax.set_xticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'])
+                        cbarfigOuter.ax.set_xticklabels([r'$10^{4}$', r'$10^{5}$', r'$10^{6}$', r'$10^{6.5}$'],fontsize=fontsize)
                     if snapNumber == outerPlotSnaps[0]:
                         axOuter.set_ylabel(
                             f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize
@@ -3654,7 +3657,7 @@ def multi_halo_merge(
     mergedDict = {}
     saveParams = []
     loadedParams = []
-    for sim, loadPath in zip(simList, haloPathList):
+    for (saveHalo,sim), loadPath in zip(enumerate(simList), haloPathList):
         loadPath += "/"
 
         TRACERSPARAMS, DataSavepath, _ = load_tracers_parameters(
@@ -3662,12 +3665,12 @@ def multi_halo_merge(
         )
         saveParams += TRACERSPARAMS["saveParams"]
 
-        saveHalo = (sim.split("_"))[-1]
-        if "L" in saveHalo:
-            saveHalo = saveHalo.split("L")[-1]
-            padFlag = True
-        else:
-            padFlag = False
+        # saveHalo = (sim.split("_"))[-1]
+        # if "L" in saveHalo:
+        #     saveHalo = saveHalo.split("L")[-1]
+        #     padFlag = True
+        # else:
+        #     padFlag = False
 
         print("")
         print(f"Loading {sim} Data!")
@@ -3693,14 +3696,14 @@ def multi_halo_merge(
 
 
                 ## Add Halo Number plus one zero to start of every number ##
-                if padFlag is False:
-                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                # if padFlag is False:
+                index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
-                else:
-                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
-
-                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
+                dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
+                # else:
+                #     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                #
+                #     dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
 
                 if key == "trid":
                     # print("Check trids are unique!")
@@ -3802,20 +3805,20 @@ def multi_halo_merge_flat_wrt_time(
     mergedDict = {}
     saveParams = []
     loadedParams = []
-    for sim, loadPath in zip(simList, haloPathList):
+    for (saveHalo,sim), loadPath in zip(enumerate(simList), haloPathList):
         loadPath += "/"
 
         TRACERSPARAMS, DataSavepath, _ = load_tracers_parameters(
             loadPath + TracersParamsPath
         )
         saveParams += TRACERSPARAMS["saveParams"]
-
-        saveHalo = (sim.split("_"))[-1]
-        if "L" in saveHalo:
-            saveHalo = saveHalo.split("L")[-1]
-            padFlag = True
-        else:
-            padFlag = False
+    #
+    #     saveHalo = (sim.split("_"))[-1]
+    #     if "L" in saveHalo:
+    #         saveHalo = saveHalo.split("L")[-1]
+    #         padFlag = True
+    #     else:
+    #         padFlag = False
 
         print("")
         print(f"Loading {sim} Data!")
@@ -3850,14 +3853,14 @@ def multi_halo_merge_flat_wrt_time(
 
 
                 ## Add Halo Number plus one zero to start of every number ##
-                if padFlag is False:
-                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                # if padFlag is False:
+                index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
-                else:
-                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
-
-                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
+                dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index))
+                # else:
+                #     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                #
+                #     dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
 
                 if key == "trid":
                     # print("Check trids are unique!")

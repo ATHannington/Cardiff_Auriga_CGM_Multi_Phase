@@ -97,10 +97,24 @@ if __name__ == "__main__":
                 dataDict.update(data)
             args_list.append([targetT, dataDict] + args_default)
 
+        # for args in args_list:
+        #
+        #     flatten_wrt_time(
+        #         args[0],
+        #         args[1],
+        #         rin,
+        #         rout,
+        #         TRACERSPARAMS,
+        #         saveParams,
+        #         snapRange,
+        #         DataSavepath,
+        #         DataSavepathSuffix,
+        #         saveBool=False,
+        #     )
         # out = flatten_wrt_time(targetT, dataDict,rin,rout,TRACERSPARAMS,saveParams,snapRange, DataSavepath,DataSavepathSuffix,False)
         # STOP101
         # Open multiprocesssing pool
-        # flatten_wrt_time(4.0,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix)
+        # # flatten_wrt_time(4.0,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix)
         print("\n" + f"Opening {n_processes} core Pool!")
         pool = mp.Pool(processes=n_processes)
         print("Pool opened!")
