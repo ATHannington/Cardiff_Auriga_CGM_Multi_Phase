@@ -179,17 +179,26 @@ def snap_analysis(
 
             hdf5_save(savePath, out)
 
-            calculate_statistics(
+            statsdat = calculate_statistics(
                 CellsCFT,
-                targetT,
-                rin,
-                rout,
                 snapNumber,
-                TRACERSPARAMS,
-                saveParams,
-                DataSavepath,
-                MiniDataPathSuffix,
+                TRACERSPARAMS
             )
+            # Generate our savepath
+            statsSavePath = (
+                DataSavepath
+                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
+                + MiniDataPathSuffix
+            )
+            print(
+                "\n"
+                + f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Saving Statistics as: "
+                + statsSavePath
+            )
+
+            statsout = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): statsdat}
+
+            hdf5_save(statsSavePath, statsout)
 
             if (
                 (TRACERSPARAMS["QuadPlotBool"] == True)
@@ -2186,21 +2195,13 @@ def pad_non_entries(snapGas, snapNumber):
 
 def calculate_statistics(
     Cells,
-    targetT,
-    rin,
-    rout,
-    snapNumber,
     TRACERSPARAMS,
-    saveParams,
-    DataSavepath=None,
-    MiniDataPathSuffix=".h5",
-    saveBool=True,
-):
+    saveParams):
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
     # ------------------------------------------------------------------------------#
     print("")
-    print(f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Analysing Statistics!")
+    print(f"Analysing Statistics!")
 
     statsData = {}
 
@@ -2230,27 +2231,6 @@ def calculate_statistics(
                     statsData.update({saveKey: stat})
                 else:
                     statsData[saveKey] = np.append(statsData[saveKey], stat)
-        # ------------------------------------------------------------------------------#
-    #       Save stats as .csv files for a given temperature
-    # ------------------------------------------------------------------------------#
-
-    if saveBool == True:
-        # Generate our savepath
-        savePath = (
-            DataSavepath
-            + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
-            + MiniDataPathSuffix
-        )
-        print(
-            "\n"
-            + f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Saving Statistics as: "
-            + savePath
-        )
-
-        out = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): statsData}
-
-        hdf5_save(savePath, out)
-
     return statsData
 
 
@@ -4033,15 +4013,8 @@ def multi_halo_statistics(
                 # print(f"Calculating {snap} Statistics!")
                 dat = calculate_statistics(
                     timeDat,
-                    T,
-                    rin,
-                    rout,
-                    snapNumber=snap,
                     TRACERSPARAMS=TRACERSPARAMS,
-                    saveParams=saveParams,
-                    DataSavepath=None,
-                    MiniDataPathSuffix=".csv",
-                    saveBool=False,
+                    saveParams=saveParams
                 )
                 # Fix values to arrays to remove concat error of 0D arrays
                 for k, val in dat.items():
