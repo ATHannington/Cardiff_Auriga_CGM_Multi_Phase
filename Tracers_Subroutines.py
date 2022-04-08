@@ -117,6 +117,51 @@ def snap_analysis(
         snapNumber,
     )
 
+    # ==================#
+    # Remove redundant
+    # DM (type==1) data
+    # ==================#
+
+    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+    whereDM = np.where(snapGas.type == 1)[0]
+    whereGas = np.where(snapGas.type == 0)[0]
+    whereStars = np.where(snapGas.type == 4)[0]
+
+    NDM = len(whereDM)
+    NGas = len(whereGas)
+    NStars = len(whereStars)
+
+    deleteKeys = []
+    for key, value in snapGas.data.items():
+        if value is not None:
+            # print("")
+            # print(key)
+            # print("NDM,NGas,NStars")
+            # print(NDM,NGas,NStars)
+            # print(np.shape(value))
+            if np.shape(value)[0] == (NDM + NGas + NStars):
+                # print("All")
+                snapGas.data[key] = value.copy()[whereStarsGas]
+            elif np.shape(value)[0] == (NGas + NDM) :
+                # print("Gas")
+                snapGas.data[key] = value.copy()[whereGas]
+            elif np.shape(value)[0] == (NStars + NDM):
+                # print("Stars")
+                snapGas.data[key] = value.copy()[whereStars]
+            elif np.shape(value)[0] == (NDM):
+                # print("DM")
+                deleteKeys.append(key)
+            elif np.shape(value)[0] == (NGas + NStars):
+                # print("Stars and Gas")
+                pass
+            else:
+                # print("Gas or Stars")
+                pass
+            # print(np.shape(snapGas.data[key]))
+
+    for key in deleteKeys:
+        del snapGas.data[key]
+
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
 
@@ -348,6 +393,46 @@ def tracer_selection_snap_analysis(
         omegabaryon0,
         snapNumber,
     )
+    
+    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+    whereDM = np.where(snapGas.type == 1)[0]
+    whereGas = np.where(snapGas.type == 0)[0]
+    whereStars = np.where(snapGas.type == 4)[0]
+
+    NDM = len(whereDM)
+    NGas = len(whereGas)
+    NStars = len(whereStars)
+
+    deleteKeys = []
+    for key, value in snapGas.data.items():
+        if value is not None:
+            # print("")
+            # print(key)
+            # print("NDM,NGas,NStars")
+            # print(NDM,NGas,NStars)
+            # print(np.shape(value))
+            if np.shape(value)[0] == (NDM + NGas + NStars):
+                # print("All")
+                snapGas.data[key] = value.copy()[whereStarsGas]
+            elif np.shape(value)[0] == (NGas + NDM) :
+                # print("Gas")
+                snapGas.data[key] = value.copy()[whereGas]
+            elif np.shape(value)[0] == (NStars + NDM):
+                # print("Stars")
+                snapGas.data[key] = value.copy()[whereStars]
+            elif np.shape(value)[0] == (NDM):
+                # print("DM")
+                deleteKeys.append(key)
+            elif np.shape(value)[0] == (NGas + NStars):
+                # print("Stars and Gas")
+                pass
+            else:
+                # print("Gas or Stars")
+                pass
+            # print(np.shape(snapGas.data[key]))
+
+    for key in deleteKeys:
+        del snapGas.data[key]
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
@@ -1241,51 +1326,6 @@ def calculate_tracked_parameters(
     )
     del tmp
 
-    # ==================#
-    # Remove redundant
-    # DM (type==1) data
-    # ==================#
-
-    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
-    whereDM = np.where(snapGas.type == 1)[0]
-    whereGas = np.where(snapGas.type == 0)[0]
-    whereStars = np.where(snapGas.type == 4)[0]
-
-    NDM = len(whereDM)
-    NGas = len(whereGas)
-    NStars = len(whereStars)
-
-    deleteKeys = []
-    for key, value in snapGas.data.items():
-        if value is not None:
-            # print("")
-            # print(key)
-            # print("NDM,NGas,NStars")
-            # print(NDM,NGas,NStars)
-            # print(np.shape(value))
-            if np.shape(value)[0] == (NDM + NGas + NStars):
-                # print("All")
-                snapGas.data[key] = value.copy()[whereStarsGas]
-            elif np.shape(value)[0] == (NGas + NDM) :
-                # print("Gas")
-                snapGas.data[key] = value.copy()[whereGas]
-            elif np.shape(value)[0] == (NStars + NDM):
-                # print("Stars")
-                snapGas.data[key] = value.copy()[whereStars]
-            elif np.shape(value)[0] == (NDM):
-                # print("DM")
-                deleteKeys.append(key)
-            elif np.shape(value)[0] == (NGas + NStars):
-                # print("Stars and Gas")
-                pass
-            else:
-                # print("Gas or Stars")
-                pass
-            # print(np.shape(snapGas.data[key]))
-
-    for key in deleteKeys:
-        del snapGas.data[key]
-
     # print(np.unique(snapGas.type))
 
     return snapGas
@@ -1311,6 +1351,8 @@ def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
 
 
 # ------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
 def high_res_only_gas_select(snapGas, snapNumber):
     """
     Grab only snapGas entries for gas where high res gas mass (hrgm)
@@ -1319,13 +1361,8 @@ def high_res_only_gas_select(snapGas, snapNumber):
     """
     print(f"[@{snapNumber}]: Select High Res Gas Only!")
 
-    types = np.unique(snapGas.data["type"]).astype("int32")
-    if 0 not in types:
-        raise Exception("[@high_res_only_gas_select]: WARNING! CRITICAL! Cannot select high res gas, as no gas data found!")
-
     whereGas = np.where(snapGas.data["type"] == 0)
-    others = types[np.where(types!=0)[0]]
-    whereOthers = np.where(snp.isin(napGas.data["type"],others)==True)[0]
+    whereOthers = np.where(snapGas.data["type"] != 0)
 
     whereHighRes = np.where(
         snapGas.data["hrgm"][whereGas] >= 0.90 * snapGas.data["mass"][whereGas]
@@ -3095,6 +3132,51 @@ def tracer_plot(
             omegabaryon0,
             snapNumber,
         )
+
+        # ==================#
+        # Remove redundant
+        # DM (type==1) data
+        # ==================#
+
+        whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+        whereDM = np.where(snapGas.type == 1)[0]
+        whereGas = np.where(snapGas.type == 0)[0]
+        whereStars = np.where(snapGas.type == 4)[0]
+
+        NDM = len(whereDM)
+        NGas = len(whereGas)
+        NStars = len(whereStars)
+
+        deleteKeys = []
+        for key, value in snapGas.data.items():
+            if value is not None:
+                # print("")
+                # print(key)
+                # print("NDM,NGas,NStars")
+                # print(NDM,NGas,NStars)
+                # print(np.shape(value))
+                if np.shape(value)[0] == (NDM + NGas + NStars):
+                    # print("All")
+                    snapGas.data[key] = value.copy()[whereStarsGas]
+                elif np.shape(value)[0] == (NGas + NDM) :
+                    # print("Gas")
+                    snapGas.data[key] = value.copy()[whereGas]
+                elif np.shape(value)[0] == (NStars + NDM):
+                    # print("Stars")
+                    snapGas.data[key] = value.copy()[whereStars]
+                elif np.shape(value)[0] == (NDM):
+                    # print("DM")
+                    deleteKeys.append(key)
+                elif np.shape(value)[0] == (NGas + NStars):
+                    # print("Stars and Gas")
+                    pass
+                else:
+                    # print("Gas or Stars")
+                    pass
+                # print(np.shape(snapGas.data[key]))
+
+        for key in deleteKeys:
+            del snapGas.data[key]
 
         # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
         snapGas = pad_non_entries(snapGas, snapNumber)
