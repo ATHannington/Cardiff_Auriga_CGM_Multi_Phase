@@ -2,7 +2,7 @@ simfile /home/universe/spxfv/Auriga/level4_MHD_reruns/halo_26/output/           
 savepath /home/universe/c1838736/Tracers/V9-1/halo_26/                        # Set path to save data
 saveParams "rho_rhomean,ndens,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,Pthermal_Pmagnetic,tcool,theat,tff,tcool_tff"
 saveTracersOnly "sfr,age"                                                 # Optional Tracer only (no stats in .csv) parameters to be saved. nCannot guarantee that all Plotting and post-processing are independent of these. Will attempt to ensure any necessary parameters are stored in ESSENTIALS
-saveEssentials "FoFHaloID,SubHaloID,Lookback,Ntracers,Snap,id,prid,trid,type,mass,pos"                #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+saveEssentials "halo,subhalo,Lookback,Ntracers,Snap,id,prid,trid,type,mass,pos"                #SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
 finalSnap 251                                                                    # Max number of snapshots in simulation
 selectSnap 235                                                                   # Set snapshot to select data from
 snapMin 221                                                                      # Set minimum snap (largest lookback time) to look at

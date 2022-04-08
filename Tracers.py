@@ -79,7 +79,7 @@ print(saveTracersOnly)
 # SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
 saveEssentials = TRACERSPARAMS[
     "saveEssentials"
-]  # ['FoFHaloID','SubHaloID','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
+]  # ['halo','subhalo','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
 
 print("")
 print("ESSENTIAL Saved Parameters in this Analysis:")

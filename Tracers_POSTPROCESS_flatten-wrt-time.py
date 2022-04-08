@@ -94,6 +94,8 @@ if __name__ == "__main__":
                     + DataSavepathSuffix
                 )
                 data = hdf5_load(loadPath)
+                data = halo_param_names_adjust(data)
+
                 dataDict.update(data)
             args_list.append([targetT, dataDict] + args_default)
 
@@ -135,4 +137,7 @@ if __name__ == "__main__":
         print(f"Final Error checks")
         success = [result.successful() for result in res]
         assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
-        print("Done! End of Post-Processing :)")
+
+
+        
+    print("Done! End of Post-Processing :)")

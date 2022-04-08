@@ -127,7 +127,7 @@ def snap_analysis(
     # selected tracers are originally in the Halo, but allows for tracers
     # to leave (outflow) or move inwards (inflow) from Halo.
 
-    # Assign SubHaloID and FoFHaloIDs
+    # Assign subhalo and halos
     snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber)
 
     if snapNumber == int(TRACERSPARAMS["selectSnap"]):
@@ -354,7 +354,7 @@ def tracer_selection_snap_analysis(
 
     snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
-    # Assign SubHaloID and FoFHaloIDs
+    # Assign subhalo and halos
     snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
 
     ### Exclude values outside halo 0 ###
@@ -482,7 +482,7 @@ def tracer_selection_snap_analysis(
 #     #selected tracers are originally in the Halo, but allows for tracers
 #     #to leave (outflow) or move inwards (inflow) from Halo.
 #
-#     #Assign SubHaloID and FoFHaloIDs
+#     #Assign subhalo and halos
 #     snapGas = halo_id_finder(snapGas,snap_subfind,snapNumber)
 #
 #     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
@@ -597,7 +597,7 @@ def tracer_selection_snap_analysis(
 #     #Select only gas in High Res Zoom Region
 #     snapGas = high_res_only_gas_select(snapGas,snapNumber)
 #
-#     #Assign SubHaloID and FoFHaloIDs
+#     #Assign subhalo and halos
 #     snapGas = halo_id_finder(snapGas,snap_subfind,snapNumber,OnlyHalo=HaloID)
 #
 #     ### Exclude values outside halo 0 ###
@@ -1300,20 +1300,7 @@ def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
     print(f"[@{snapNumber}]: Select only Halo {Halo} and 'unbound' Gas!")
 
     HaloList = [float(Halo), -1.0]
-    whereHalo = np.where(np.isin(snapGas.data["SubHaloID"], HaloList))[0]
-
-    # #Find length of the first n entries of particle type 0 that are associated with HaloID 0: ['HaloID', 'particle type']
-    # gaslength = snap_subfind.data['slty'][Halo,0]
-    #
-    # whereGas = np.where(snapGas.type==0)[0]
-    # whereStars = np.where(snapGas.type==4)[0]
-    # NGas = len(snapGas.type[whereGas])
-    # NStars = len(snapGas.type[whereStars])
-    #
-    # selectGas = [ii for ii in range(0,gaslength)]
-    # selectStars = [ii for ii in range(NGas,NStars)]
-    #
-    # selected = selectGas + selectStars
+    whereHalo = np.where(np.isin(snapGas.data["subhalo"], HaloList))[0]
 
     # Take only data from above HaloID/
     for key, value in snapGas.data.items():
@@ -1332,14 +1319,19 @@ def high_res_only_gas_select(snapGas, snapNumber):
     """
     print(f"[@{snapNumber}]: Select High Res Gas Only!")
 
+    types = np.unique(snapGas.data["type"]).astype("int32")
+    if 0 not in types:
+        raise Exception("[@high_res_only_gas_select]: WARNING! CRITICAL! Cannot select high res gas, as no gas data found!")
+
     whereGas = np.where(snapGas.data["type"] == 0)
-    whereStars = np.where(snapGas.data["type"] == 4)
+    others = types[np.where(types!=0)[0]]
+    whereOthers = np.where(snp.isin(napGas.data["type"],others)==True)[0]
 
     whereHighRes = np.where(
         snapGas.data["hrgm"][whereGas] >= 0.90 * snapGas.data["mass"][whereGas]
     )
 
-    selected = np.array(whereHighRes[0].tolist() + whereStars[0].tolist())
+    selected = np.array(whereHighRes[0].tolist() + whereOthers[0].tolist())
 
     for key, value in snapGas.data.items():
         if value is not None:
@@ -1351,9 +1343,9 @@ def high_res_only_gas_select(snapGas, snapNumber):
 # ------------------------------------------------------------------------------#
 def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
     """
-    Assign a unique ID value to each SubFind SubHalo --> SubHaloID
-    Assign a unique ID value to each FoF Halo --> FoFHaloID
-    Assign -1 to SubHaloID for unbound matter
+    Assign a unique ID value to each SubFind SubHalo --> subhalo
+    Assign a unique ID value to each FoF Halo --> halo
+    Assign -1 to subhalo for unbound matter
     Assign NaN to unclassified (no halo) gas and stars
 
     Inputs: snapGas, snap_subfind
@@ -1373,10 +1365,10 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
 
     # Create some blank ID arrays, and set NaN to all values.
 
-    snapGas.data["FoFHaloID"] = np.full(
+    snapGas.data["halo"] = np.full(
         shape=np.shape(snapGas.data["type"]), fill_value=np.nan
     )
-    snapGas.data["SubHaloID"] = np.full(
+    snapGas.data["subhalo"] = np.full(
         shape=np.shape(snapGas.data["type"]), fill_value=np.nan
     )
 
@@ -1385,7 +1377,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
     slty = snap_subfind.data["slty"]
 
     # Select only Halo == OnlyHalo
-    if OnlyHalo != None:
+    if OnlyHalo is not None:
         fnsh = np.array(fnsh[OnlyHalo])
         flty = np.array(flty[OnlyHalo, :])
 
@@ -1461,7 +1453,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
                     # This notation allows us to select the entries for the subhalo, from the particle type tp list.
                     #   Double slicing [whereType][lo:up] fails as it modifies the outer copy but doesn't alter original
                     whereSelectSH = whereType[0][lo:up]
-                snapGas.data["SubHaloID"][whereSelectSH] = subhalo
+                snapGas.data["subhalo"][whereSelectSH] = subhalo
                 subhalo += 1
 
             # Assign the whole csflty range a FoFhalo number
@@ -1470,7 +1462,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             else:
                 whereSelectSHFoF = whereType[0][lower[0] : upper[-1]]
 
-            snapGas.data["FoFHaloID"][whereSelectSHFoF] = fofhalo
+            snapGas.data["halo"][whereSelectSHFoF] = fofhalo
 
             # Provided there exists more than one entry, assign the difference between slty and flty indices a "-1"
             #   This will effectively discriminate between unbound gas (-1) and unassigned gas (NaN).
@@ -1479,7 +1471,7 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             else:
                 whereSelectSHunassigned = whereType[0][lower[-1] : upper[-1]]
 
-            snapGas.data["SubHaloID"][whereSelectSHunassigned] = -1
+            snapGas.data["subhalo"][whereSelectSHunassigned] = -1
 
     return snapGas
 
@@ -1527,6 +1519,13 @@ def load_tracers_parameters(TracersParamsPath):
         else:
             # Convert values to floats
             TRACERSPARAMS.update({key: float(value)})
+
+    for paramList in [TRACERSPARAMS['saveParams'],TRACERSPARAMS['saveTracersOnly'], TRACERSPARAMS['saveEssentials']]:
+        for defunctParam,newParam in zip(["SubHaloID","FoFHaloID"],["subhalo","halo"]):
+            if defunctParam in paramList:
+                paramList.remove(defunctParam)
+                paramList.append(newParam)
+
 
     TRACERSPARAMS["Axes"] = [int(axis) for axis in TRACERSPARAMS["Axes"]]
 
@@ -2062,9 +2061,19 @@ def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
                 data = hdf5_load(loadPath)
                 FullDict.update(data)
 
+        FullDict = halo_param_names_adjust(FullDict)
+
     return FullDict
 
-
+def halo_param_names_adjust(dataDict):
+        out = {}
+        for key, val in dataDict.items():
+            for defunctParam,newParam in zip(["SubHaloID","FoFHaloID"],["subhalo","halo"]):
+                if defunctParam in list(val.keys()):
+                    val.update({newParam : val[defunctParam].copy()})
+                    del val[defunctParam]
+            out.update({key: val})
+    return out
 # ------------------------------------------------------------------------------#
 
 
@@ -3661,6 +3670,7 @@ def multi_halo_merge(
 
         print("LOADED")
 
+        dataDict = halo_param_names_adjust(dataDict)
         # Pad id, prid, and trid, with unique Auriga halo      #
         # prefix. This should ensure there are no repeat id    #
         # numbers.
@@ -3818,6 +3828,7 @@ def multi_halo_merge_flat_wrt_time(
 
         print("LOADED")
 
+        dataDict = halo_param_names_adjust(dataDict)
         # Pad id, prid, and trid, with unique Auriga halo      #
         # prefix. This should ensure there are no repeat id    #
         # numbers.

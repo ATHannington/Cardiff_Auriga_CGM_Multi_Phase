@@ -1090,12 +1090,12 @@ def flat_analyse_time_averages(
 
             print("Halo0")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
                 == int(TRACERSPARAMS["haloID"])
             )
             halo0post = (
@@ -1105,13 +1105,13 @@ def flat_analyse_time_averages(
 
             print("Unbound")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] == -1
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] == -1
             )
             unboundpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] == -1
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] == -1
             )
             unboundpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1121,12 +1121,12 @@ def flat_analyse_time_averages(
             print("OtherHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
+                    FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1)
                 & (
-                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :])
+                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :])
                     == False
                 )
             )
@@ -1135,12 +1135,12 @@ def flat_analyse_time_averages(
             )
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
+                    FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1)
                 & (
-                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :])
+                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
                     == False
                 )
             )
@@ -1152,24 +1152,24 @@ def flat_analyse_time_averages(
             print("NoHalo")
             rowspre, colspre = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :]
+                    FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1)
                 & (
-                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][pre, :])
+                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :])
                     == True
                 )
             )
             noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
                 (
-                    FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :]
+                    FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
                     != int(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1)
                 & (
-                    np.isnan(FlatDataDict[Tkey]["SubHaloID"][:, whereGas][post, :])
+                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
                     == True
                 )
             )
