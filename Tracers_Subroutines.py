@@ -2066,13 +2066,13 @@ def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
     return FullDict
 
 def halo_param_names_adjust(dataDict):
-        out = {}
-        for key, val in dataDict.items():
-            for defunctParam,newParam in zip(["SubHaloID","FoFHaloID"],["subhalo","halo"]):
-                if defunctParam in list(val.keys()):
-                    val.update({newParam : val[defunctParam].copy()})
-                    del val[defunctParam]
-            out.update({key: val})
+    out = {}
+    for key, val in dataDict.items():
+        for defunctParam,newParam in zip(["SubHaloID","FoFHaloID"],["subhalo","halo"]):
+            if defunctParam in list(val.keys()):
+                val.update({newParam : val[defunctParam].copy()})
+                del val[defunctParam]
+        out.update({key: val})
     return out
 # ------------------------------------------------------------------------------#
 
