@@ -393,7 +393,7 @@ def tracer_selection_snap_analysis(
         omegabaryon0,
         snapNumber,
     )
-    
+
     whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
     whereDM = np.where(snapGas.type == 1)[0]
     whereGas = np.where(snapGas.type == 0)[0]
@@ -1361,14 +1361,14 @@ def high_res_only_gas_select(snapGas, snapNumber):
     """
     print(f"[@{snapNumber}]: Select High Res Gas Only!")
 
-    whereGas = np.where(snapGas.data["type"] == 0)
-    whereOthers = np.where(snapGas.data["type"] != 0)
+    whereGas = np.where(snapGas.data["type"] == 0)[0]
+    whereOthers = np.where(snapGas.data["type"] != 0)[0]
 
     whereHighRes = np.where(
         snapGas.data["hrgm"][whereGas] >= 0.90 * snapGas.data["mass"][whereGas]
-    )
+    ) [0]
 
-    selected = np.array(whereHighRes[0].tolist() + whereOthers[0].tolist())
+    selected = np.concatenate((whereHighRes,whereOthers),axis=0)
 
     for key, value in snapGas.data.items():
         if value is not None:
@@ -2246,8 +2246,8 @@ def calculate_statistics(
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
     # ------------------------------------------------------------------------------#
-    print("")
-    print(f"Analysing Statistics!")
+    # print("")
+    # print(f"Analysing Statistics!")
 
     statsData = {}
 
