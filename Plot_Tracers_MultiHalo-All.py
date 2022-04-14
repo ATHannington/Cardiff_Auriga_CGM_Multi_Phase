@@ -198,6 +198,32 @@ medians_plot(
     logParameters,
     ylabel,
     titleBool = titleBool,
+    radialSummaryBool = False,
+    DPI = DPI,
+    xsize = xsize,
+    ysize = ysize,
+    opacityPercentiles = opacityPercentiles,
+    lineStyleMedian = lineStyleMedian,
+    lineStylePercentiles = lineStylePercentiles,
+    colourmapMain = colourmapMain
+    )
+matplotlib.rc_file_defaults()
+plt.close("all")
+
+matplotlib.rc_file_defaults()
+plt.close("all")
+medians_plot(
+    flatMergedDict,
+    statsData,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    titleBool = titleBool,
+    radialSummaryBool = True,
     DPI = DPI,
     xsize = xsize,
     ysize = ysize,

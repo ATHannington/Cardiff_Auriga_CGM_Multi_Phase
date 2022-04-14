@@ -34,7 +34,9 @@ def medians_plot(
     Tlst,
     logParameters,
     ylabel,
-    titleBool,
+    titleBool=False,
+    radialSummaryBool=False,
+    radialSummaryFirstLastBool = True,
     DPI=100,
     xsize = 7.0,
     ysize = 6.0,
@@ -70,6 +72,9 @@ def medians_plot(
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
 
+    from itertools import cycle
+    lines = ["--","-.",":"]
+    linecycler = cycle(lines)
 
     for analysisParam in saveParams:
         print("")
@@ -77,8 +82,12 @@ def medians_plot(
 
         print("")
         print("Loading Data!")
-        # Create a plot for each Temperature
-        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+
+        radialPlotData = {}
+        labelList = []
+
+        lineStyleList =[]
+        for (jj,(rin, rout)) in enumerate(zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"])):
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
@@ -92,14 +101,22 @@ def medians_plot(
             yminlist = []
             ymaxlist = []
             patchList = []
-            labelList = []
+
+            rLineStyle = next(linecycler)
+            lineStyleList.append(rLineStyle)
+
+            if  (radialSummaryBool is True):
+                plot_line = matplotlib.lines.Line2D([0],[0],color="black", lineStyle = rLineStyle, label = f"{rin}<R<{rout}")
+                labelList.append(plot_line)
+
+
+            radialPlotData.update({f"{rin}R{rout}":{}})
             for ii in range(len(Tlst)):
                 print(f"T{Tlst[ii]}")
                 T = float(Tlst[ii])
 
                 selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
                 plotData = statsData[selectKey].copy()
-                # Temperature specific load path
 
                 selectionSnap = np.where(
                     np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
@@ -131,6 +148,9 @@ def medians_plot(
                 if analysisParam in logParameters:
                     for k, v in plotData.items():
                         plotData.update({k: np.log10(v)})
+
+                if (jj < len(TRACERSPARAMS["Rinner"])) & (radialSummaryBool is True):
+                    radialPlotData[f"{rin}R{rout}"].update({f"T{Tlst[ii]}": plotData})
 
                 ymin = np.nanmin(plotData[LO])
                 ymax = np.nanmax(plotData[UP])
@@ -173,24 +193,42 @@ def medians_plot(
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
-
+                if (jj>0)&(radialSummaryBool is True):
+                    nRadialData = len(list(radialPlotData.keys()))
+                    for (kk,(key, rData)) in enumerate(radialPlotData.items()):
+                        if (radialSummaryFirstLastBool is True)&((kk == 0)|(kk==nRadialData)):
+                            data = rData[f"T{Tlst[ii]}"]
+                            currentAx.plot(
+                                tlookback,
+                                data[median],
+                                color=colour,
+                                lineStyle=lineStyleList[kk],
+                            )
+                        elif radialSummaryFirstLastBool is False:
+                            data = rData[f"T{Tlst[ii]}"]
+                            currentAx.plot(
+                                tlookback,
+                                data[median],
+                                color=colour,
+                                lineStyle=lineStyleList[kk],
+                            )
+                        else:
+                            pass
                 currentAx.axvline(x=vline, c="red")
 
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
                 #
-                # #Delete text string for first y_axis label for all but last panel
+                #Delete text string for first y_axis label for all but last panel
                 # plt.gcf().canvas.draw()
                 # if (int(ii)<len(Tlst)-1):
                 #     plt.setp(currentAx.get_xticklabels(),visible = False)
                 #     plt.gcf().canvas.draw()
                 #     # STOP160IF
 
-                # plot_patch = matplotlib.patches.Patch(color=colour)
-                # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
-                # patchList.append(plot_patch)
-                # labelList.append(plot_label)
+                plot_patch = matplotlib.patches.Patch(color=colour, label = r"$T = 10^{%3.0f} K$" % (float(temp)))
+                patchList.append(plot_patch)
 
                 if titleBool is True:
                     fig.suptitle(
@@ -228,7 +266,19 @@ def medians_plot(
                 ylim=custom_ylim,
                 xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
             )
-            axis0.legend(loc="upper right",fontsize=fontsize)
+            if (radialSummaryBool is True):
+                if jj > 0 :
+                    currentLabel = matplotlib.lines.Line2D([0],[0],color="black", lineStyle = lineStyleMedian, label = f"{rin}<R<{rout}")
+                    if radialSummaryFirstLastBool is True:
+                        handles = patchList+labelList[:1]+[currentLabel]
+                    else:
+                        handles = patchList+labelList[:jj]+[currentLabel]
+                else:
+                    handles = patchList
+                axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=2)
+
+            else:
+                axis0.legend(loc="upper right",fontsize=fontsize)
 
             plt.tight_layout()
             if titleBool is True:
@@ -236,16 +286,29 @@ def medians_plot(
             else:
                 plt.subplots_adjust(hspace=0.1,left=0.15)
 
-            opslaan = (
-                "./"
-                + "MultiHalo"
-                + "/"
-                + f"{int(rin)}R{int(rout)}"
-                + "/"
-                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                + analysisParam
-                + f"_Medians.pdf"
-            )
+            if (radialSummaryBool is True)&(jj>0):
+                opslaan = (
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                    + analysisParam
+                    + f"_Medians_Radial_Summary.pdf"
+                )
+            else:
+                opslaan = (
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                    + analysisParam
+                    + f"_Medians.pdf"
+                )
+
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
             plt.close()
@@ -1555,10 +1618,10 @@ def flat_analyse_time_averages(
             "T": dfdat[
                 "T"
             ],  # "%Gas": {"Pre-Selection" : np.array(gas)[:,0],"Post-Selection" : np.array(gas)[:,1]} , \
-            "Halo0": {
-                "Pre-Selection": np.array(halo0)[:, 0],
-                "Post-Selection": np.array(halo0)[:, 1],
-            },
+            # "Halo0": {
+            #     "Pre-Selection": np.array(halo0)[:, 0],
+            #     "Post-Selection": np.array(halo0)[:, 1],
+            # },
             "Unbound": {
                 "Pre-Selection": np.array(unbound)[:, 0],
                 "Post-Selection": np.array(unbound)[:, 1],
@@ -1567,34 +1630,35 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(otherHalo)[:, 0],
                 "Post-Selection": np.array(otherHalo)[:, 1],
             },
-            "NoHalo": {
+            "IGM": {
                 "Pre-Selection": np.array(noHalo)[:, 0],
                 "Post-Selection": np.array(noHalo)[:, 1],
-            },
-            "Stars": {
-                "Pre-Selection": np.array(stars)[:, 0],
-                "Post-Selection": np.array(stars)[:, 1],
-            },
-            "Wind": {
-                "Pre-Selection": np.array(wind)[:, 0],
-                "Post-Selection": np.array(wind)[:, 1],
             },
             "ISM": {
                 "Pre-Selection": np.array(ism)[:, 0],
                 "Post-Selection": np.array(ism)[:, 1],
             },
-            "Disk": {
-                "Pre-Selection": np.array(disk)[:, 0],
-                "Post-Selection": np.array(disk)[:, 1],
+            "Stars": {
+                "Pre-Selection": np.array(stars)[:, 0],
+                "Post-Selection": np.array(stars)[:, 1],
             },
-            "CGM": {
-                "Pre-Selection": np.array(cgm)[:, 0],
-                "Post-Selection": np.array(cgm)[:, 1],
-            },
-            "IGM": {
-                "Pre-Selection": np.array(igm)[:, 0],
-                "Post-Selection": np.array(igm)[:, 1],
-            },
+            # "Wind": {
+            #     "Pre-Selection": np.array(wind)[:, 0],
+            #     "Post-Selection": np.array(wind)[:, 1],
+            # },
+
+            # "Disk": {
+            #     "Pre-Selection": np.array(disk)[:, 0],
+            #     "Post-Selection": np.array(disk)[:, 1],
+            # },
+            # "CGM": {
+            #     "Pre-Selection": np.array(cgm)[:, 0],
+            #     "Post-Selection": np.array(cgm)[:, 1],
+            # },
+            # "IGM": {
+            #     "Pre-Selection": np.array(igm)[:, 0],
+            #     "Post-Selection": np.array(igm)[:, 1],
+            # },
             "Inflow": {
                 "Pre-Selection": np.array(inflow)[:, 0],
                 "Post-Selection": np.array(inflow)[:, 1],
@@ -1607,31 +1671,31 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(outflow)[:, 0],
                 "Post-Selection": np.array(outflow)[:, 1],
             },
-            "<3/4(Z_Solar)": {
-                "Pre-Selection": np.array(belowZ)[:, 0],
-                "Post-Selection": np.array(belowZ)[:, 1],
-            },
-            ">3/4(Z_Solar)": {
-                "Pre-Selection": np.array(aboveZ)[:, 0],
-                "Post-Selection": np.array(aboveZ)[:, 1],
-            },
-
-            "(tCool/tFF)<10": {
-                "Pre-Selection": np.array(tcool_tff_LO)[:, 0],
-                "Post-Selection": np.array(tcool_tff_LO)[:, 1],
-            },
-            "(tCool/tFF)>10": {
-                "Pre-Selection": np.array(tcool_tff_UP)[:, 0],
-                "Post-Selection": np.array(tcool_tff_UP)[:, 1],
-            },
-            "(PTherm/PMag)<1": {
-                "Pre-Selection": np.array(ptherm_pmag_LO)[:, 0],
-                "Post-Selection": np.array(ptherm_pmag_LO)[:, 1],
-            },
-            "(PTherm/PMag)>1": {
-                "Pre-Selection": np.array(ptherm_pmag_UP)[:, 0],
-                "Post-Selection": np.array(ptherm_pmag_UP)[:, 1],
-            },
+            # "<3/4(Z_Solar)": {
+            #     "Pre-Selection": np.array(belowZ)[:, 0],
+            #     "Post-Selection": np.array(belowZ)[:, 1],
+            # },
+            # ">3/4(Z_Solar)": {
+            #     "Pre-Selection": np.array(aboveZ)[:, 0],
+            #     "Post-Selection": np.array(aboveZ)[:, 1],
+            # },
+            #
+            # "(tCool/tFF)<10": {
+            #     "Pre-Selection": np.array(tcool_tff_LO)[:, 0],
+            #     "Post-Selection": np.array(tcool_tff_LO)[:, 1],
+            # },
+            # "(tCool/tFF)>10": {
+            #     "Pre-Selection": np.array(tcool_tff_UP)[:, 0],
+            #     "Post-Selection": np.array(tcool_tff_UP)[:, 1],
+            # },
+            # "(PTherm/PMag)<1": {
+            #     "Pre-Selection": np.array(ptherm_pmag_LO)[:, 0],
+            #     "Post-Selection": np.array(ptherm_pmag_LO)[:, 1],
+            # },
+            # "(PTherm/PMag)>1": {
+            #     "Pre-Selection": np.array(ptherm_pmag_UP)[:, 0],
+            #     "Post-Selection": np.array(ptherm_pmag_UP)[:, 1],
+            # },
             "Cooling": {
                 "Pre-Selection": np.array(cooling)[:, 0],
                 "Post-Selection": np.array(cooling)[:, 1],
@@ -1644,31 +1708,30 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(heating)[:, 0],
                 "Post-Selection": np.array(heating)[:, 1],
             },
-            "Dispersing": {
-                "Pre-Selection": np.array(dispersing)[:, 0],
-                "Post-Selection": np.array(dispersing)[:, 1],
-            },
-
-            "StableDensity": {
-                "Pre-Selection": np.array(stabledensity)[:, 0],
-                "Post-Selection": np.array(stabledensity)[:, 1],
-            },
             "Condensing": {
                 "Pre-Selection": np.array(condensing)[:, 0],
                 "Post-Selection": np.array(condensing)[:, 1],
             },
-            "|B|Decreasing": {
-                "Pre-Selection": np.array(bdecreasing)[:, 0],
-                "Post-Selection": np.array(bdecreasing)[:, 1],
+            "StableDensity": {
+                "Pre-Selection": np.array(stabledensity)[:, 0],
+                "Post-Selection": np.array(stabledensity)[:, 1],
             },
-            "Stable|B|": {
-                "Pre-Selection": np.array(bstable)[:, 0],
-                "Post-Selection": np.array(bstable)[:, 1],
+            "Dispersing": {
+                "Pre-Selection": np.array(dispersing)[:, 0],
+                "Post-Selection": np.array(dispersing)[:, 1],
             },
-            "|B|Increasing": {
-                "Pre-Selection": np.array(bincreasing)[:, 0],
-                "Post-Selection": np.array(bincreasing)[:, 1],
-            },
+            # "|B|Decreasing": {
+            #     "Pre-Selection": np.array(bdecreasing)[:, 0],
+            #     "Post-Selection": np.array(bdecreasing)[:, 1],
+            # },
+            # "Stable|B|": {
+            #     "Pre-Selection": np.array(bstable)[:, 0],
+            #     "Post-Selection": np.array(bstable)[:, 1],
+            # },
+            # "|B|Increasing": {
+            #     "Pre-Selection": np.array(bincreasing)[:, 0],
+            #     "Post-Selection": np.array(bincreasing)[:, 1],
+            # },
         }
 
         for key, value in outinner.items():
