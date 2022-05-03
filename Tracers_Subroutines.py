@@ -2242,12 +2242,26 @@ def pad_non_entries(snapGas, snapNumber):
 def calculate_statistics(
     Cells,
     TRACERSPARAMS,
-    saveParams):
+    saveParams,
+    weightedStatsBool = False):
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
     # ------------------------------------------------------------------------------#
     # print("")
     # print(f"Analysing Statistics!")
+
+    nonMassWeightDict = {
+    "n_H": "vol",
+    "ndens": "vol",
+    "dens": "vol",
+    "rho_rhomean": "vol",
+    "B": "vol",
+    "P_kinetic": "vol",
+    "P_thermal": "vol",
+    "P_magnetic": "vol",
+    "P_tot": "vol",
+    "Pthermal_Pmagnetic": "vol"
+    }
 
     statsData = {}
 
@@ -2268,11 +2282,23 @@ def calculate_statistics(
 
                 truthy = np.all(np.isnan(v), axis=0)
 
-                if truthy == False:
-                    stat = np.nanpercentile(v, percentile, axis=0)
+                if weightedStatsBool is False:
+                    if truthy == False:
+                        stat = np.nanpercentile(v, percentile, axis=0)
+                    else:
+                        stat = np.array([0.0])
                 else:
-                    stat = 0.0
+                    if truthy == False:
+                        try:
+                            weightKey = nonMassWeightDict[k]
+                            weightData = Cells[weightKey]
+                        except:
+                            weightKey = "mass"
+                            weightData = Cells[weightKey]
 
+                        stat =  weighted_percentile(v, weights=weightData, perc=percentile, key=k)
+                    else:
+                        stat = np.array([0.0])
                 if saveKey not in statsData.keys():
                     statsData.update({saveKey: stat})
                 else:
