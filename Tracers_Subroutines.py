@@ -1331,9 +1331,11 @@ def calculate_tracked_parameters(
     # P_CR = (gamma_c - 1) * e_C
     # where e_c = energy density
     try:
-        snapGas.data['P_CR'] = ((4./3.) - 1.) * snapGas.data["cren"]
+        snapGas.data['P_CR'] = ((4./3.) - 1.) * snapGas.data["cren"][whereGas]
+        snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
     except:
         snapGas.data["P_CR"] = np.array([np.nan])
+        snapGas.data["PCR_Pthermal"] = np.array([np.nan])
 
     # print(np.unique(snapGas.type))
 
