@@ -273,12 +273,13 @@ def medians_plot(
                         handles = patchList+labelList[:1]+[currentLabel]
                     else:
                         handles = patchList+labelList[:jj]+[currentLabel]
+                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=2)
                 else:
                     handles = patchList
-                axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=2)
+                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=1)
 
             else:
-                axis0.legend(loc="upper right",fontsize=fontsize)
+                axis0.legend(loc="upper right",fontsize=fontsize,ncol=1)
 
             plt.tight_layout()
             if titleBool is True:
@@ -1857,9 +1858,11 @@ def bars_plot(
         preDF.T.plot.bar(width=barwidth,rot=0, ax=ax, color=colour, align='center')
 
         legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
+        ax.legend(legendLabels, loc="upper left", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         ax.tick_params(axis="both",which="both",labelsize=fontsize)
+        ax.set_ylim(0.,100.)
+
         if titleBool is True:
             plt.title(
                 r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
@@ -1871,9 +1874,9 @@ def bars_plot(
             )
 
         plt.annotate(
-            text="Ever Matched Feature",
-            xy=(0.10, 0.02),
-            xytext=(0.10, 0.02),
+            text="Ever Matched"+"\n"+"Feature",
+            xy=(0.15, 0.02),
+            xytext=(0.15, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -1896,7 +1899,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="On Average Feature",
+            text="On Average"+"\n"+"Feature",
             xy=(0.40, 0.02),
             xytext=(0.40, 0.02),
             textcoords=fig.transFigure,
@@ -1906,31 +1909,31 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.395, 0.01),
-            xytext=(0.665, 0.01),
+            xytext=(0.570, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.6675, bottomParam),
-            xytext=(0.6675, 0.05),
+            xy=(0.575, bottomParam),
+            xytext=(0.575, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
 
         plt.annotate(
-            text="-1 Snapshot Feature",
-            xy=(0.675, 0.02),
-            xytext=(0.675, 0.02),
+            text="-1 Snapshot"+"\n"+"Feature",
+            xy=(0.70, 0.02),
+            xytext=(0.70, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.67, 0.01),
+            xy=(0.580, 0.01),
             xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
@@ -1980,9 +1983,10 @@ def bars_plot(
         postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align='center')
 
         legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="upper right", fontsize=fontsize)
+        ax.legend(legendLabels, loc="upper left", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         ax.tick_params(axis="both",which="both",labelsize=fontsize)
+        ax.set_ylim(0.,100.)
 
         if titleBool is True:
             plt.title(
@@ -1993,10 +1997,11 @@ def bars_plot(
                 + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
                 fontsize=fontsizeTitle,
             )
+
         plt.annotate(
-            text="Ever Matched Feature",
-            xy=(0.10, 0.02),
-            xytext=(0.10, 0.02),
+            text="Ever Matched"+"\n"+"Feature",
+            xy=(0.15, 0.02),
+            xytext=(0.15, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -2019,7 +2024,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="On Average Feature",
+            text="On Average"+"\n"+"Feature",
             xy=(0.40, 0.02),
             xytext=(0.40, 0.02),
             textcoords=fig.transFigure,
@@ -2029,36 +2034,38 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.395, 0.01),
-            xytext=(0.665, 0.01),
+            xytext=(0.570, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="",
-            xy=(0.6675, bottomParam),
-            xytext=(0.6675, 0.05),
+            xy=(0.575, bottomParam),
+            xytext=(0.575, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
 
         plt.annotate(
-            text="+1 Snapshot Feature",
-            xy=(0.675, 0.02),
-            xytext=(0.675, 0.02),
+            text="+1 Snapshot"+"\n"+"Feature",
+            xy=(0.70, 0.02),
+            xytext=(0.70, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.67, 0.01),
+            xy=(0.580, 0.01),
             xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
+        fig.transFigure
         #     text="",
         #     xy=(0.10, bottomParam),
         #     xytext=(0.10, 0.05),
