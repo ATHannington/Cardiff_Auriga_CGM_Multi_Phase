@@ -1327,18 +1327,18 @@ def calculate_tracked_parameters(
     del tmp
 
     # Cosmic Ray Pressure
-    # (gamma_c = 4/3)
-    # P_CR = (gamma_c - 1) * e_C
-    # where e_c = energy density
+    # gamm_c = 4./3.
+    # P_CR / kb= (gamm_c - 1)^-1 n T
+    #
     try:
-        snapGas.data['P_CR'] = ((4./3.) - 1.) * snapGas.data["cren"][whereGas]
+        snapGas.data['P_CR'] = (snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]) / ((((4./3. - 1.)**-1)* c.KB)/(meanweight * c.amu))
         snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
     except:
-        snapGas.data["P_CR"] = np.array([np.nan])
-        snapGas.data["PCR_Pthermal"] = np.array([np.nan])
-
+        # snapGas.data["P_CR"] = np.array([np.nan])
+        # snapGas.data["PCR_Pthermal"] = np.array([np.nan])
+        pass
     # print(np.unique(snapGas.type))
-
+    # stop1340
     return snapGas
 
 
