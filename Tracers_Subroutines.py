@@ -2261,19 +2261,12 @@ def calculate_statistics(
     # print("")
     # print(f"Analysing Statistics!")
 
-    nonMassWeightDict = {
-    "n_H": "vol",
-    "ndens": "vol",
-    "dens": "vol",
-    "rho_rhomean": "vol",
-    "B": "vol",
-    "P_kinetic": "vol",
-    "P_thermal": "vol",
-    "P_magnetic": "vol",
-    "P_tot": "vol",
-    "Pthermal_Pmagnetic": "vol"
-    }
-
+    try:
+        nonMassWeightDict = TRACERSPARAMS['nonMassWeightDict']
+    except:
+        pass
+    else:
+        pass
     statsData = {}
 
     for k, v in Cells.items():
