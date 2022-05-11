@@ -35,6 +35,7 @@ def medians_plot(
     logParameters,
     ylabel,
     titleBool=False,
+    separateLegend = False,
     radialSummaryBool=False,
     radialSummaryFirstLastBool = True,
     DPI=100,
@@ -273,13 +274,17 @@ def medians_plot(
                         handles = patchList+labelList[:1]+[currentLabel]
                     else:
                         handles = patchList+labelList[:jj]+[currentLabel]
-                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=2)
+                    lcol = len(Tlst) + 2
+                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=lcol)
                 else:
+                    lcol = len(Tlst) + 1
                     handles = patchList
-                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=1)
+                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=lcol)
 
             else:
-                axis0.legend(loc="upper right",fontsize=fontsize,ncol=1)
+                lcol = len(Tlst) + 1
+                handles = patchList
+                axis0.legend(handles = handles, loc="upper right",fontsize=fontsize,ncol=lcol)
 
             plt.tight_layout()
             if titleBool is True:
@@ -310,7 +315,32 @@ def medians_plot(
                     + f"_Medians.pdf"
                 )
 
-            plt.savefig(opslaan, dpi=DPI, transparent=False)
+
+            if (separateLegend == True):
+                axis0.get_legend().remove()
+
+                figl, axl = plt.subplots(figsize = (lcol*2.5,1))
+                axl.axis(False)
+                axl.legend(handles = handles, ncol=lcol, loc="center", bbox_to_anchor=(0.5, 0.5), fontsize=fontsize)
+                plt.tight_layout()
+                if (radialSummaryBool is True)&(jj>0):
+                    figl.savefig("./"
+                        + "MultiHalo"
+                        + "/"
+                        + f"{int(rin)}R{int(rout)}"
+                        + "/"
+                        + f"Medians_Radial_Summary_Legend.pdf"
+                    )
+                else:
+                    figl.savefig("./"
+                        + "MultiHalo"
+                        + "/"
+                        + f"{int(rin)}R{int(rout)}"
+                        + "/"
+                        + f"Medians_Legend.pdf"
+                    )
+
+            fig.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
             plt.close()
 
@@ -1777,6 +1807,7 @@ def bars_plot(
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
     titleBool = True,
+    separateLegend = False,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -1857,8 +1888,9 @@ def bars_plot(
 
         preDF.T.plot.bar(width=barwidth,rot=0, ax=ax, color=colour, align='center')
 
-        legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="upper left", fontsize=fontsize)
+        cmap = matplotlib.cm.get_cmap(colourmapMain)
+        patchList = [matplotlib.patches.Patch(color = cmap(float(ii) / float(len(Tlst))), label = r"$T = 10^{%3.0f} K$" % (float(temp))) for ii, temp in enumerate(Tlst)]
+        ax.legend(handles = patchList, loc="upper left", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         ax.tick_params(axis="both",which="both",labelsize=fontsize)
         ax.set_ylim(0.,100.)
@@ -1972,9 +2004,16 @@ def bars_plot(
                 + "/"
                 + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
             )
-        plt.savefig(opslaan, dpi=DPI, transparent=False)
+
+
+        if (separateLegend == True):
+            ax.get_legend().remove()
+
+        fig.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
+
+
 
         fig, ax = plt.subplots(
             nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True
@@ -1982,8 +2021,10 @@ def bars_plot(
 
         postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align='center')
 
-        legendLabels = [r"$T = 10^{%3.0f} K$" % (float(temp)) for temp in Tlst]
-        ax.legend(legendLabels, loc="upper left", fontsize=fontsize)
+        cmap = matplotlib.cm.get_cmap(colourmapMain)
+        patchList = [matplotlib.patches.Patch(color = cmap(float(ii) / float(len(Tlst))), label = r"$T = 10^{%3.0f} K$" % (float(temp))) for ii, temp in enumerate(Tlst)]
+        ax.legend(handles = patchList, loc="upper left", fontsize=fontsize)
+
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
         ax.tick_params(axis="both",which="both",labelsize=fontsize)
         ax.set_ylim(0.,100.)
@@ -2178,7 +2219,27 @@ def bars_plot(
                 + "/"
                 + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
             )
-        plt.savefig(opslaan, dpi=DPI, transparent=False)
+
+        if (separateLegend == True):
+            # get handles and labels for reuse
+            label_params = ax.get_legend_handles_labels()
+
+            ax.get_legend().remove()
+
+            lcol = len(Tlst)
+            figl, axl = plt.subplots(figsize = (lcol*2.5,1))
+            axl.axis(False)
+            axl.legend(handles = patchList, ncol = lcol, loc="center", bbox_to_anchor=(0.5, 0.5), fontsize=fontsize)
+            plt.tight_layout()
+            figl.savefig("./"
+                + "MultiHalo"
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Stats-Bars_Legend.pdf"
+            )
+
+        fig.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
     return

@@ -30,9 +30,10 @@ lineStyleMedian = "solid"
 lineStylePercentiles = "-."
 colourmapMain = "plasma"
 
-#Toggle Titles
+# Toggle Titles
 titleBool = False
-
+# Toggle separate legend output pdf
+separateLegend = True
 
 # Input parameters path:
 TracersParamsPath = "TracersParams.csv"
@@ -198,6 +199,7 @@ medians_plot(
     logParameters,
     ylabel,
     titleBool = titleBool,
+    separateLegend = separateLegend,
     radialSummaryBool = False,
     DPI = DPI,
     xsize = xsize,
@@ -223,6 +225,7 @@ medians_plot(
     logParameters,
     ylabel,
     titleBool = titleBool,
+    separateLegend = separateLegend,
     radialSummaryBool = True,
     DPI = DPI,
     xsize = xsize,
@@ -313,6 +316,7 @@ bars_plot(
     Tlst,
     DataSavepath,
     titleBool = titleBool,
+    separateLegend = separateLegend,
     DPI = DPI,
     opacityPercentiles = opacityPercentiles,
     lineStyleMedian = lineStyleMedian,
@@ -334,6 +338,7 @@ bars_plot(
     shortSnapRangeBool=True,
     shortSnapRangeNumber=1,
     titleBool = titleBool,
+    separateLegend = separateLegend,
     DPI = DPI,
     opacityPercentiles = opacityPercentiles,
     lineStyleMedian = lineStyleMedian,
