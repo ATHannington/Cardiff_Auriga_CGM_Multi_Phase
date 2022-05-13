@@ -221,7 +221,7 @@ def medians_plot(
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
 
-                if analysisParam in ["tcool", "tcool_tff"]:
+                if "tcool" in analysisParam.split("_"):
                     currentAx.text(0.9, 0.10, 'for subset'+'\n'+r' $t_{Cool} > 0$',horizontalalignment='center',verticalalignment='center',transform=currentAx.transAxes, fontsize=fontsize)
 
 
@@ -1984,7 +1984,7 @@ def bars_plot(
 
 
         plt.grid(which="both", axis="y")
-        plt.ylabel("% of Tracers Selected Following Feature", fontsize=fontsize)
+        plt.ylabel("% of Tracers", fontsize=fontsize)
         plt.tight_layout()
 
         if titleBool is True:
@@ -2199,7 +2199,7 @@ def bars_plot(
         ax.yaxis.set_minor_locator(AutoMinorLocator())
         ax.tick_params(axis="both",which="both",labelsize=fontsize)
         plt.grid(which="both", axis="y")
-        plt.ylabel("% of Tracers Selected Following Feature", fontsize=fontsize)
+        plt.ylabel("% of Tracers", fontsize=fontsize)
         plt.tight_layout()
         if titleBool is True:
             plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.95)
