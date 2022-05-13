@@ -220,7 +220,12 @@ def medians_plot(
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
-                #
+
+                if analysisParam in ["tcool", "tcool_tff"]:
+                    currentAx.text(0.9, 0.10, 'for subset'+'\n'+r' $t_{Cool} > 0$',horizontalalignment='center',verticalalignment='center',transform=currentAx.transAxes, fontsize=fontsize)
+
+
+
                 #Delete text string for first y_axis label for all but last panel
                 # plt.gcf().canvas.draw()
                 # if (int(ii)<len(Tlst)-1):
