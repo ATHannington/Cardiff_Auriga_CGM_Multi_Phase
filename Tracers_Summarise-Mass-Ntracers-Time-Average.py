@@ -121,6 +121,7 @@ summaryDict = {
     "Log10(T)": np.array(fullTList),
     "Snap": np.array(fullSnapRangeList),
     "N_tracers selected": blankList.copy(),
+    "N_tracers per temperature": blankList.copy(),
     "Gas mass selected [msol]": blankList.copy(),
     "Gas mass per temperature [msol]": blankList.copy(),
     "Gas n_H density per temperature [cm-3]": blankList.copy(),
@@ -231,7 +232,7 @@ for snapNumber in snapRange:
             (snap.data["R"] <= Rmax)
             & (snap.data["R"] >= Rmin)
             & (snap.data["sfr"] <= 0.0)
-            & (np.isin(snap.data["SubHaloID"], np.array([-1.0, 0.0])))
+            & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
         )[0]
 
         CellIDs = snap.id[Cond]
@@ -292,7 +293,7 @@ for snapNumber in snapRange:
                 (snap.data["R"][whereGas] >= rin)
                 & (snap.data["R"][whereGas] <= rout)
                 & (snap.data["sfr"][whereGas] <= 0)
-                & (np.isin(snap.data["SubHaloID"], np.array([-1.0, 0.0])))
+                & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
             )[0]
 
             massR = np.sum(snap.data["mass"][Cond])
@@ -360,12 +361,30 @@ for snapNumber in snapRange:
                     & (snap.data["R"][whereGas] <= rout)
                     & (snap.data["T"][whereGas] >= 1.0 * 10 ** (float(T) - TRACERSPARAMS["deltaT"]))
                     & (snap.data["T"][whereGas] <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"]))
-                    & (np.isin(snap.data["SubHaloID"], np.array([-1.0, 0.0])))
+                    & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
                 )[0]
 
                 massRT = np.sum(snap.data["mass"][Cond])
                 summaryDict["Gas mass per temperature [msol]"][dictRowSelect] += massRT
                 print(f"Total mass (all haloes) in spherical shell per temperature [msol] = ",FullDictKey, massRT)
+
+                CellIDs = snap.id[Cond]
+
+                # Select Parent IDs in Cond list
+                #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
+                ParentsIndices = np.where(np.isin(snapTracers.prid, CellIDs))
+
+                # Select Tracers and Parent IDs from cells that meet condition and contain tracers
+                Tracers = snapTracers.trid[ParentsIndices]
+                Parents = snapTracers.prid[ParentsIndices]
+
+                # Get Gas meeting Cond AND with tracers
+                CellsIndices = np.where(np.isin(snap.id, Parents))
+                CellIDs = snap.id[CellsIndices]
+
+                nTracersRT = np.shape(Tracers)[0]
+                summaryDict["N_tracers per temperature"][dictRowSelect] += nTracersRT
+                print(f"Total N_tracers (all haloes) per temperature = ",FullDictKey, nTracersRT)
 
 
                 n_H_RT = np.median(snap.data["n_H"][Cond])
@@ -395,7 +414,9 @@ df["Number of Haloes"] = nHaloes
 df["Average N_tracers selected (per halo)"] = (
     df["N_tracers selected"].astype("float64") / nHaloes
 )
-
+df["Average N_tracers per temperature (per halo)"] = (
+    df["N_tracers per temperature"].astype("float64") / nHaloes
+)
 df["Average gas mass selected (per halo) [msol]"] = (
     df["Gas mass selected [msol]"].astype("float64") / nHaloes
 )
