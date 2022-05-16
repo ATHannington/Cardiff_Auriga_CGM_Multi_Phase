@@ -392,6 +392,12 @@ for snapNumber in snapRange:
     # print("summaryDict = ", summaryDict)
 #
 
+nSnaps = float(len(snapRange))
+for key,value in summaryDict.items():
+    if key not in ["R_inner","R_outer","Log10(T)"]:
+        summaryDict[key] = value/nSnaps
+
+
 df = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
 
 df = df.groupby(['R_inner','R_outer','Log10(T)']).sum()
@@ -419,6 +425,9 @@ df["Average N_tracers per temperature (per halo)"] = (
 )
 df["Average gas mass selected (per halo) [msol]"] = (
     df["Gas mass selected [msol]"].astype("float64") / nHaloes
+)
+df["Average gas mass available (per halo) [msol]"] = (
+    df["Gas mass per temperature [msol]"].astype("float64") / nHaloes
 )
 
 # summaryDict = {'R_inner':
