@@ -1143,12 +1143,15 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 
     snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1)
 
-    whereGas = np.where(snap.type == 0)
-    # Adjust to galaxy centred velocity
-    (wheredisc,) = np.where(
-        (snap.data["R"][whereGas] < 20.0) & (snap.data["sfr"] > 0.0)
-    )
-    snap.vel = snap.vel - np.nanmedian(snap.vel[wheredisc], axis=0)
+    try:
+        whereGas = np.where(snap.type == 0)
+        # Adjust to galaxy centred velocity
+        (wheredisc,) = np.where(
+            (snap.data["R"][whereGas] < 20.0) & (snap.data["sfr"] > 0.0)
+        )
+        snap.vel = snap.vel - np.nanmedian(snap.vel[wheredisc], axis=0)
+    except:
+        pass
     return snap
 
 
