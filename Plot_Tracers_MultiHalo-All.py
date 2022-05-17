@@ -16,6 +16,7 @@ import const as c
 from gadget import *
 from gadget_subfind import *
 import h5py
+import os
 from Tracers_Subroutines import *
 from Tracers_MultiHalo_Plotting_Tools import *
 from random import sample
@@ -170,6 +171,19 @@ selectTimeKey = (
     f"T{Tlst[0]}",
     f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
 )
+
+for rin, rout in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+    savePath = f"./MultiHalo/{int(rin)}R{int(rout)}/"
+    tmp = "./"
+    for savePathChunk in savePath.split("/")[1:-1]:
+        tmp += savePathChunk + "/"
+        try:
+            os.mkdir(tmp)
+        except:
+            pass
+        else:
+            pass
+
 
 # Debug test
 # for snap in snapRange:
