@@ -16,6 +16,7 @@ from gadget import *
 from gadget_subfind import *
 import h5py
 import sys
+import os
 import logging
 import math
 import random
@@ -223,27 +224,27 @@ def snap_analysis(
             )
 
             hdf5_save(savePath, out)
-
-            statsdat = calculate_statistics(
-                CellsCFT,
-                snapNumber,
-                TRACERSPARAMS
-            )
-            # Generate our savepath
-            statsSavePath = (
-                DataSavepath
-                + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
-                + MiniDataPathSuffix
-            )
-            print(
-                "\n"
-                + f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Saving Statistics as: "
-                + statsSavePath
-            )
-
-            statsout = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): statsdat}
-
-            hdf5_save(statsSavePath, statsout)
+            #
+            # statsdat = calculate_statistics(
+            #     CellsCFT,
+            #     snapNumber,
+            #     TRACERSPARAMS
+            # )
+            # # Generate our savepath
+            # statsSavePath = (
+            #     DataSavepath
+            #     + f"_T{targetT}_{rin}R{rout}_{int(snapNumber)}_Statistics"
+            #     + MiniDataPathSuffix
+            # )
+            # print(
+            #     "\n"
+            #     + f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Saving Statistics as: "
+            #     + statsSavePath
+            # )
+            #
+            # statsout = {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): statsdat}
+            #
+            # hdf5_save(statsSavePath, statsout)
 
             if (
                 (TRACERSPARAMS["QuadPlotBool"] == True)
@@ -1171,7 +1172,7 @@ def calculate_tracked_parameters(
     """
     print(f"[@{snapNumber}]: Calculate Tracked Parameters!")
 
-    whereGas = np.where(snapGas.type == 0)
+    whereGas = np.where(snapGas.type == 0)[0]
     # Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = (
         3.0
@@ -1187,9 +1188,9 @@ def calculate_tracked_parameters(
     )
 
     # Mean weight [amu]
-    meanweight = np.sum(snapGas.gmet[whereGas, 0:9][0], axis=1) / (
-        np.sum(snapGas.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
-        + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0][0]
+    meanweight = np.sum(snapGas.gmet[whereGas, 0:9], axis=1) / (
+        np.sum(snapGas.gmet[whereGas, 0:9] / elements_mass[0:9], axis=1)
+        + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0]
     )
 
     # 3./2. N KB
@@ -1198,7 +1199,7 @@ def calculate_tracked_parameters(
     snapGas.data["dens"] = (
         (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
     )  # [g cm^-3]
-    gasX = snapGas.gmet[whereGas, 0][0]
+    gasX = snapGas.gmet[whereGas, 0]
 
     # Temperature = U / (3/2 * N KB) [K]
     snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
@@ -1593,6 +1594,18 @@ def load_tracers_parameters(TracersParamsPath):
     # Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
     Tlst = [str(item) for item in TRACERSPARAMS["targetTLst"]]
     Tstr = "-".join(Tlst)
+
+    # Generate halo directory
+    savePath = TRACERSPARAMS["savepath"]
+    tmp = "/"
+    for savePathChunk in savePath.split("/")[1:-1]:
+        tmp += savePathChunk + "/"
+        try:
+            os.mkdir(tmp)
+        except:
+            pass
+        else:
+            pass
 
     # This rather horrible savepath ensures the data can only be combined with the right input file, TracersParams.csv, to  be plotted/manipulated
     DataSavepath = (
