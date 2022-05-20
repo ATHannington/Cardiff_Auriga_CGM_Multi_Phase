@@ -188,7 +188,7 @@ for snapNumber in snapRange:
         # [Kpc]
         snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1)  # [Kpc]
 
-        whereGas = np.where(snap.type == 0)
+        whereGas = np.where(snap.type == 0)[0]
         # Density is rho/ <rho> where <rho> is average baryonic density
         rhocrit = (
             3.0
@@ -204,9 +204,9 @@ for snapNumber in snapRange:
         )
 
         # Mean weight [amu]
-        meanweight = sum(snap.gmet[whereGas, 0:9][0], axis=1) / (
-            sum(snap.gmet[whereGas, 0:9][0] / elements_mass[0:9], axis=1)
-            + snap.ne[whereGas] * snap.gmet[whereGas, 0][0]
+        meanweight = sum(snap.gmet[whereGas, 0:9], axis=1) / (
+            sum(snap.gmet[whereGas, 0:9] / elements_mass[0:9], axis=1)
+            + snap.ne[whereGas] * snap.gmet[whereGas, 0]
         )
 
         # 3./2. N KB

@@ -35,7 +35,7 @@ FullDataPathSuffix = f".h5"
 lazyLoadBool = True
 
 # Number of cores to run on:
-n_processes = 4
+n_processes = 2
 
 # ==============================================================================#
 #       Prepare for analysis

@@ -2583,7 +2583,7 @@ def plot_projections(
     pixreslos=4,
     DPI=100,
     CMAP=None,
-    numThreads=2,
+    numThreads=3,
 ):
     print(
         f"[@{int(snapNumber)}]: Starting Projections Video Plots!"
