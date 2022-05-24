@@ -174,7 +174,7 @@ def snap_analysis(
     # to leave (outflow) or move inwards (inflow) from Halo.
 
     # Assign subhalo and halos
-    snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber)
+    # snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber)
 
     if snapNumber == int(TRACERSPARAMS["selectSnap"]):
         snapGas = halo_only_gas_select(snapGas, snap_subfind, HaloID, snapNumber)
@@ -441,7 +441,7 @@ def tracer_selection_snap_analysis(
     snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
     # Assign subhalo and halos
-    snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
+    # snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
 
     ### Exclude values outside halo 0 ###
     if loadonlyhalo is True:
@@ -1476,7 +1476,15 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
                 lowest = cumsumflty[fofhalo - 1, tp]
 
             # Find the cumulative sum (and thus index ranges) of the subhaloes for THIS FoFhalo ONLY!
-            cslty = np.cumsum(snap_subfind.data["slty"][nshLO:nshUP, tp], axis=0)
+            if nshLO==nshUP:
+                cslty = snap_subfind.data["slty"][nshLO,tp]
+            else:
+                cslty = np.cumsum(snap_subfind.data["slty"][nshLO:nshUP, tp], axis=0)
+
+            # Skip where subfind data goes beyond what we have in memory
+            maxWhereType = np.nanmax(whereType[0])
+            if (lowest>maxWhereType)|(np.nanmax(cslty)>maxWhereType)|(csflty>maxWhereType):
+                continue
 
             # Start the data selection from end of previous FoFHalo and continue lower bound to last slty entry
             lower = np.append(np.array(lowest), cslty + lowest)
@@ -1497,6 +1505,10 @@ def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
             #  a subhalo number
             #       In the case where only 1 index is returned we opt to assign this single gas cell its own subhalo number
             for (lo, up) in zip(lower[:-1], upper[:-1]):
+                            # Skip where subfind data goes beyond what we have in memory
+
+                if (lo>maxWhereType)|(up>maxWhereType):
+                    continue
                 # print(f"lo {lo} : up {up} --> subhalo {subhalo}")
 
                 if lo == up:
