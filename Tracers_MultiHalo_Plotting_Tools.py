@@ -596,6 +596,7 @@ def stacked_pdf_plot(
     logParameters,
     ylabel,
     titleBool,
+    Nbins = 150,
     DPI=100,
     xsize = 5.0,
     ysize = 10.0,
@@ -617,26 +618,28 @@ def stacked_pdf_plot(
     percentileUP = 99.0
 
     xlimDict = {
+        "mass": {"xmin": 5.0, "xmax": 9.0},
+        "L": {"xmin": 3.0, "xmax": 4.5},
         "T": {"xmin": 3.75, "xmax": 6.5},
         "R": {"xmin": 0, "xmax": 250},
-        "n_H": {"xmin": -6.0, "xmax": 0.0},
-        "B": {"xmin": -6.0, "xmax": 2.0},
-        "vrad": {"xmin": -250.0, "xmax": 250.0},
-        "gz": {"xmin": -4.0, "xmax": 1.0},
-        "L": {"xmin": 0.0, "xmax": 5.0},
-        "P_thermal": {"xmin": -1.0, "xmax": 7.0},
-        "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
+        "n_H": {"xmin": -5.0, "xmax": 0.0},
+        "B": {"xmin": -2.0, "xmax": 1.0},
+        "vrad": {"xmin": -150.0, "xmax": 150.0},
+        "gz": {"xmin": -1.5, "xmax": 0.5},
+        "P_thermal": {"xmin": 1.0, "xmax": 4.0},
+        "P_magnetic": {"xmin": -1.5, "xmax": 5.0},
         "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
         "P_tot": {"xmin": -1.0, "xmax": 7.0},
-        "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
-        "tcool": {"xmin": -6.0, "xmax": 3.0},
+        "Pthermal_Pmagnetic": {"xmin": -2.0, "xmax": 3.0},
+        "tcool": {"xmin": -5.0, "xmax": 2.0},
         "theat": {"xmin": -4.0, "xmax": 4.0},
-        "tff": {"xmin": -3.0, "xmax": 1.0},
-        "tcool_tff": {"xmin": -6.0, "xmax": 3.0},
+        "tff": {"xmin": -1.5, "xmax": 0.5},
+        "tcool_tff": {"xmin": -4.0, "xmax": 2.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
         "dens": {"xmin": -30.0, "xmax": -22.0},
         "ndens": {"xmin": -6.0, "xmax": 2.0},
     }
+
     import seaborn as sns
     import scipy.stats as stats
 
@@ -734,48 +737,76 @@ def stacked_pdf_plot(
                         lineStyle = "-"
                         linewidth = 2
 
-                    tmpdict = {"x": data, "y": weights}
-                    df = pd.DataFrame(tmpdict)
+                    # tmpdict = {"x": data, "y": weights}
+                    # df = pd.DataFrame(tmpdict)
 
                     xmin = xlimDict[dataKey]["xmin"]
                     xmax = xlimDict[dataKey]["xmax"]
-
+                    try:
+                        xBins = np.linspace(start=xlimDict[dataKey]['xmin'], stop=xlimDict[dataKey]['xmax'], num=Nbins)
+                    except:
+                        xBins = np.linspace(start=xmin, stop=xmax, num=Nbins)
+                    else:
+                        pass
                     ###############################
                     ##### aggregate endpoints #####
                     ###############################
 
-                    belowrangedf = df.loc[(df["x"] < xmin)]
-                    inrangedf = df.loc[(df["x"] >= xmin) & (df["x"] <= xmax)]
-                    aboverangedf = df.loc[(df["x"] > xmax)]
+                    whereData = np.where(data<xmin)[0]
+                    data[whereData] = xmin
 
+                    whereData = np.where(data>xmax)[0]
+                    data[whereData] = xmax
 
-                    belowrangedf = belowrangedf.assign(x=xmin)
-                    aboverangedf = aboverangedf.assign(x=xmax)
+                    # belowrangedf = df.loc[(df["x"] < xmin)]
+                    # inrangedf = df.loc[(df["x"] >= xmin) & (df["x"] <= xmax)]
+                    # aboverangedf = df.loc[(df["x"] > xmax)]
+                    #
+                    #
+                    # belowrangedf = belowrangedf.assign(x=xmin)
+                    # aboverangedf = aboverangedf.assign(x=xmax)
 
-                    df = pd.concat(
-                        [belowrangedf, inrangedf, aboverangedf],
-                        axis=0,
-                        ignore_index=True,
-                    )
+                    # df = pd.concat(
+                    #     [belowrangedf, inrangedf, aboverangedf],
+                    #     axis=0,
+                    #     ignore_index=True,
+                    # )
 
                     xminlist.append(xmin)
                     xmaxlist.append(xmax)
+
+                    hist, bin_edges = np.histogram(data, bins=xBins, weights = weights, density=True)
+
+                    # if densityBool is False:
+                    #   hist = np.log10(hist)
+
+                    xFromBins = np.array([(x1+x2)/2. for (x1,x2) in zip(bin_edges[:-1],bin_edges[1:])])
+
+                    currentAx.plot(xFromBins, hist, color=colour, linestyle= lineStyleMedian, linewidth=linewidth)
+
+                    currentAx.fill_between(
+                        xFromBins,
+                        hist,
+                        facecolor=colour,
+                        alpha=opacity,
+                        interpolate=False,
+                    )
                     # Draw the densities in a few steps
                     ## MAIN KDE ##
-                    mainplot = sns.kdeplot(
-                        df["x"],
-                        weights=df["y"],
-                        ax=currentAx,
-                        bw_adjust=0.1,
-                        clip=(xmin, xmax),
-                        alpha=opacity,
-                        fill=True,
-                        lw=linewidth,
-                        color=colour,
-                        linestyle=lineStyle,
-                        shade=True,
-                        common_norm=True,
-                    )
+                    # mainplot = sns.kdeplot(
+                    #     df["x"],
+                    #     weights=df["y"],
+                    #     ax=currentAx,
+                    #     bw_adjust=0.1,
+                    #     clip=(xmin, xmax),
+                    #     alpha=opacity,
+                    #     fill=True,
+                    #     lw=linewidth,
+                    #     color=colour,
+                    #     linestyle=lineStyle,
+                    #     shade=True,
+                    #     common_norm=True,
+                    # )
                     # mainplotylim = mainplot.get_ylim()
                     currentAx.axhline(
                         y=0,
@@ -788,9 +819,10 @@ def stacked_pdf_plot(
                     currentAx.set_yticks([])
                     currentAx.set_ylabel("")
                     # currentAx.set_ylim(mainplotylim)
-                    currentAx.set_xlabel(xlabel[dataKey], fontsize=fontsize)
                     currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
                     sns.despine(bottom=True, left=True)
+
+                currentAx.set_xlabel(xlabel[dataKey], fontsize=fontsize)
 
                 xmin = np.nanmin(xminlist)
                 xmax = np.nanmax(xmaxlist)

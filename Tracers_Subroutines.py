@@ -2952,6 +2952,7 @@ def tracer_plot(
     lazyLoadBool=True,
     tailsLength=3,
     trioTitleBool = True,
+    titleBool = False,
 ):
     if CMAP == None:
         cmap = plt.get_cmap("inferno")
@@ -3411,31 +3412,32 @@ def tracer_plot(
                     nrows=1, ncols=1, figsize=(xsize, ysize), dpi=DPI
                 )
 
-                # Add overall figure plot
-                TITLE = (
-                    r"Redshift $(z) =$"
-                    + f"{redshift:0.03f} "
-                    + " "
-                    + r"$t_{Lookback}=$"
-                    + f"{tlookback :0.03f} Gyrs"
-                    + "\n"
-                    + f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
-                    + r"<"
-                    + f" {AxesLabels[zAxis[0]]}-axis "
-                    + r"<"
-                    + f" {float(boxlos) / 2.:3.0f} kpc"
-                    + "\n"
-                    + f"Subset of {int(subset)} Tracers selected at "
-                    + r"$t_{Lookback}=$"
-                    + f"{selectlookback :0.03f} Gyrs"
-                    + " with "
-                    + "\n"
-                    + r"$T = 10^{%3.2f \pm %3.2f} K$"
-                    % (targetT, TRACERSPARAMS["deltaT"])
-                    + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
-                )
+                if titleBool is True:
+                    # Add overall figure plot
+                    TITLE = (
+                        r"Redshift $(z) =$"
+                        + f"{redshift:0.03f} "
+                        + " "
+                        + r"$t_{Lookback}=$"
+                        + f"{tlookback :0.03f} Gyrs"
+                        + "\n"
+                        + f"Projections within {-1. * float(boxlos) / 2.:3.0f} "
+                        + r"<"
+                        + f" {AxesLabels[zAxis[0]]}-axis "
+                        + r"<"
+                        + f" {float(boxlos) / 2.:3.0f} kpc"
+                        + "\n"
+                        + f"Subset of {int(subset)} Tracers selected at "
+                        + r"$t_{Lookback}=$"
+                        + f"{selectlookback :0.03f} Gyrs"
+                        + " with "
+                        + "\n"
+                        + r"$T = 10^{%3.2f \pm %3.2f} K$"
+                        % (targetT, TRACERSPARAMS["deltaT"])
+                        + r" and $ %3.0f < R < %3.0f $ kpc" % (rin, rout)
+                    )
 
-                fig.suptitle(TITLE, fontsize=fontsizeTitle)
+                    fig.suptitle(TITLE, fontsize=fontsizeTitle)
                 if snapNumber in outerPlotSnaps:
                     OUTERSUBTITLE = (
                         r"Redshift $(z) =$"
@@ -3632,7 +3634,8 @@ def tracer_plot(
                     axOuter.set_ylim(ymin=ymin, ymax=ymax)
                     axOuter.set_xlim(xmin=xmin, xmax=xmax)
 
-                cbarfig = fig.colorbar(pcm1, ax=ax1, ticks=[1e4, 1e5, 1e6, 10**(6.5)], orientation="vertical")
+                cax1 = inset_axes(ax1, width="5%", height="95%", loc="right")
+                cbarfig = fig.colorbar(pcm1, cax=cax1, ticks=[1e4, 1e5, 1e6, 10**(6.5)], orientation="vertical")
                 cbarfig.set_label(
                     label=r"T [K]", size=fontsize)
                 ax1.set_ylabel(f"{AxesLabels[Axes[1]]}" + r" [kpc]", fontsize=fontsize)
@@ -3676,7 +3679,10 @@ def tracer_plot(
                     ax1.tick_params(axis="both",which="both",labelsize=fontsize)
                     axOuter.tick_params(axis="both",which="both",labelsize=fontsize)
                 fig.tight_layout()
-                fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.80)
+                if titleBool is True:
+                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.90, top=0.80)
+                else:
+                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.90)
 
                 # fig.tight_layout()
 

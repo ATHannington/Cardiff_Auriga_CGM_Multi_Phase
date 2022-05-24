@@ -14,7 +14,9 @@ from Tracers_Subroutines import *
 TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
-# ==============================================================================#
+timeAverageBool = True
+
+#==============================================================================#
 #       Chemical Properties
 # ==============================================================================#
 # element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
@@ -87,17 +89,17 @@ saveParams = TRACERSPARAMS[
 
 DataSavepathSuffix = f".h5"
 
-# snapRange = [
-#     snap
-#     for snap in range(
-#         int(TRACERSPARAMS["snapMin"]),
-#         min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
-#         1,
-#     )
-# ]
-
-
-snapRange = [int(TRACERSPARAMS["selectSnap"])]
+if timeAverageBool is True:
+    snapRange = [
+        snap
+        for snap in range(
+            int(TRACERSPARAMS["snapMin"]),
+            min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+            1,
+        )
+    ]
+else:
+    snapRange = [int(TRACERSPARAMS["selectSnap"])]
 #int(TRACERSPARAMS["selectSnap"])
 
 
@@ -215,7 +217,7 @@ for snapNumber in snapRange:
         snap.data["dens"] = (
             (snap.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
         )  # [g cm^-3]
-        gasX = snap.gmet[whereGas, 0][0]
+        gasX = snap.gmet[whereGas, 0]
 
         snap.data["n_H"] = snap.data["dens"][whereGas] / c.amu * gasX  # cm^-3
 
@@ -462,4 +464,7 @@ df["Average gas mass (per halo) within selection radii [msol]"] = (
 )
 
 print(df.head(n=20))
-df.to_csv("Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv", index=False)
+if timeAverageBool is True:
+    df.to_csv("Data_Tracers_MultiHalo_Mass-Ntracers-Summary_Time-Average.csv", index=False)
+else:
+    df.to_csv("Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv", index=False)

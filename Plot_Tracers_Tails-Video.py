@@ -25,10 +25,11 @@ from functools import reduce
 
 #Toggle Trio titles
 trioTitleBool = False
+titleBool = False
 
 subset = 100
-Ntails = 6
-numThreads = 12
+Ntails = 4
+numThreads = 10
 ageUniverse = 13.77  # [Gyr]
 
 TracersParamsPath = "TracersParams.csv"
@@ -131,5 +132,7 @@ tracer_plot(
     numThreads=numThreads,
     MaxSubset=subset,
     tailsLength=Ntails,
-    trioTitleBool = trioTitleBool
+    trioTitleBool = trioTitleBool,
+    titleBool = titleBool
+
 )
