@@ -84,43 +84,35 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
         tridData.update({key: trids})
 
-# ==============================================================================#
-#   Get Data within range of z-axis LOS common between ALL time-steps
-# ==============================================================================#
-#
-# trid_list = []
-# for subDict in dataDict.values():
-#     trid_list.append(subDict['trid'])
-#
-# intersect = reduce(np.intersect1d,trid_list)
-#
-# intersectList =[]
-# for outerkey, subDict in dataDict.items():
-#     trids = subDict['trid']
-#     tmp = {}
-#     for key, value in subDict.items():
-#
-#         entry, a_ind, b_ind = np.intersect1d(trids,intersect,return_indices=True)
-#         prids = subDict['prid'][a_ind]
-#
-#         _, id_indices, _ = np.intersect1d(subDict['id'],prids,return_indices=True)
-#
-#         tmp.update({key : value[id_indices]})
-#         intersectList.append(a_ind)
-#     dataDict.update({outerkey : tmp})
-#
-# oldIntersect = intersectList[0]
-# for entry in intersectList:
-#     assert np.shape(entry) == np.shape(oldIntersect)
+# load in the subfind group files
+snap_subfind = load_subfind(TRACERSPARAMS['selectSnap'], dir=TRACERSPARAMS["simfile"])
 
-# ==============================================================================#
-#   Get Data within range of z-axis LOS common between ALL time-steps
-# ==============================================================================#
+# load in the gas particles mass and position only for HaloID 0.
+#   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+#       gas and stars (type 0 and 4) MUST be loaded first!!
+snapGas = gadget_readsnap(
+    TRACERSPARAMS['selectSnap'],
+    TRACERSPARAMS["simfile"],
+    hdf5=True,
+    loadonlytype=[4],
+    lazy_load=True,
+    subfind=snap_subfind,
+)
+
+print(
+    f"[@{int(TRACERSPARAMS['selectSnap'])}]: SnapShot loaded at RedShift z={snapGas.redshift:0.05e}"
+)
+
+
+snapGas.calc_sf_indizes(snap_subfind, halolist=[int(TRACERSPARAMS['haloID'])])
+rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
+
 
 tracer_plot(
     dataDict,
     tridData,
     TRACERSPARAMS,
+    rotation_matrix,
     DataSavepath,
     FullDataPathSuffix=f".h5",
     Axes=TRACERSPARAMS["Axes"],

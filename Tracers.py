@@ -164,7 +164,7 @@ def err_catcher(arg):
 
 
 if __name__ == "__main__":
-    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _ = tracer_selection_snap_analysis(
+    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _, rotation_matrix= tracer_selection_snap_analysis(
         TRACERSPARAMS,
         HaloID,
         elements,
@@ -215,6 +215,7 @@ if __name__ == "__main__":
         DataSavepath,
         FullDataPathSuffix,
         MiniDataPathSuffix,
+        rotation_matrix,
         lazyLoadBool,
     ]
 

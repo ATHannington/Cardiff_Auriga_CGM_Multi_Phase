@@ -377,25 +377,25 @@ plt.close("all")
 # # ============================================================================#
 # # #                   Stacked PDF PLOT                                          #
 # # # =============================================================================#
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# stacked_pdf_plot(
-#     flatMergedDict,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     snapRange,
-#     Tlst,
-#     logParameters,
-#     ylabel,
-#     titleBool,
-#     DPI
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # #
-#
-# #=============================================================================#
+matplotlib.rc_file_defaults()
+plt.close("all")
+stacked_pdf_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    logParameters,
+    ylabel,
+    titleBool,
+    DPI
+)
+matplotlib.rc_file_defaults()
+plt.close("all")
+# #
+
+#=============================================================================#
 # #                Medians and Phases Combo                                     #
 # # =============================================================================#
 #

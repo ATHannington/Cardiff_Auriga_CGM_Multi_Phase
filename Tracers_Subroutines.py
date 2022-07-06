@@ -42,6 +42,7 @@ def snap_analysis(
     DataSavepath,
     FullDataPathSuffix,
     MiniDataPathSuffix,
+    rotation_matrix = None,
     lazyLoadBool=True,
 ):
     print("")
@@ -94,7 +95,12 @@ def snap_analysis(
     # )
 
     snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
-    snapGas.select_halo(snap_subfind, do_rotation=True)
+    if rotation_matrix is None:
+        rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
+    else:
+        snapGas.select_halo(snap_subfind, do_rotation=False)
+        snapGas.rotateto(rotation_matrix[0], dir2=rotation_matrix[1], dir3=rotation_matrix[2])
+
     # --------------------------#
     ##    Units Conversion    ##
     # --------------------------#
@@ -287,6 +293,7 @@ def snap_analysis(
         "CellsCFT": CellsCFTFinal,
         "CellIDsCFT": CellIDsCFTFinal,
         "ParentsCFT": ParentsCFTFinal,
+        "rotation_matrix" : rotation_matrix
     }
 
 
@@ -371,7 +378,8 @@ def tracer_selection_snap_analysis(
     # )
 
     snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
-    snapGas.select_halo(snap_subfind, do_rotation=True)
+    rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
+
     # --------------------------#
     ##    Units Conversion    ##
     # --------------------------#
@@ -505,7 +513,7 @@ def tracer_selection_snap_analysis(
         #     print(f"[@{int(snapNumber)} @T{targetT}]: *** TRACER SUBSET OF {SUBSET} TAKEN! ***")
         #     TracersTFC = TracersTFC[:SUBSET]
 
-    return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers
+    return TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, snapGas, snapTracers, rotation_matrix
 
 
 # ------------------------------------------------------------------------------#
@@ -2949,6 +2957,7 @@ def tracer_plot(
     Cells,
     tridDict,
     TRACERSPARAMS,
+    rotation_matrix,
     DataSavepath,
     FullDataPathSuffix,
     Axes=[0, 1],
@@ -3166,7 +3175,11 @@ def tracer_plot(
         # )
 
         snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
-        snapGas.select_halo(snap_subfind, do_rotation=True)
+        if rotation_matrix is None:
+            rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
+        else:
+            snapGas.select_halo(snap_subfind, do_rotation=False)
+            snapGas.rotateto(rotation_matrix[0], dir2=rotation_matrix[1], dir3=rotation_matrix[2])
 
         # --------------------------#
         ##    Units Conversion    ##
