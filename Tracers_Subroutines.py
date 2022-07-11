@@ -1342,9 +1342,9 @@ def calculate_tracked_parameters(
     )
     del tmp
 
-    snapGas.data["Grad_T"] = np.abs(np.gradient(snapGas.data['T'][whereGas],axis=0))
-    snapGas.data["Grad_n_H"] = np.abs(np.gradient(snapGas.data['n_H'][whereGas],axis=0))
-    snapGas.data["Grad_bfld"] = np.abs(np.gradient(snapGas.data['bfld'][whereGas],axis=0))
+    snapGas.data["Grad_T"] = np.linalg.norm(np.gradient(np.array([snapGas.data['T'][whereGas],snapGas.data['T'][whereGas],snapGas.data['T'][whereGas]]).T,axis=0),axis=1)
+    snapGas.data["Grad_n_H"] = np.linalg.norm(np.gradient(np.array([snapGas.data['n_H'][whereGas],snapGas.data['n_H'][whereGas],snapGas.data['n_H'][whereGas]]).T,axis=0),axis=1)
+    snapGas.data["Grad_bfld"] = np.linalg.norm(np.gradient(snapGas.data['bfld'][whereGas],axis=0),axis=1)
 
 
     # Cosmic Ray Pressure
@@ -1376,6 +1376,7 @@ def calculate_tracked_parameters(
 
         snapGas.data["gah"] = np.abs(v_multi_inner_product(snapGas.data["valf"][whereGas],snapGas.data['Grad_P_CR'][whereGas]*c.KB)*snapGas.data["vol"]*(c.parsec*1e3)**3)
 
+        snapGas.data['Grad_P_CR'] = np.linalg.norm(snapGas.data['Grad_P_CR'],axis=1)
     except:
         pass
 
@@ -2347,7 +2348,7 @@ def calculate_statistics(
             for percentile in TRACERSPARAMS["percentiles"]:
                 saveKey = f"{k}_{percentile:2.2f}%"
 
-                truthy = np.all(np.isnan(v), axis=0)
+                truthy = np.all(np.isnan(v))
 
                 if weightedStatsBool is False:
                     if truthy == False:
