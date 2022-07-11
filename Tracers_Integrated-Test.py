@@ -193,6 +193,7 @@ targetT = TRACERSPARAMS["targetTLst"][0]
     ParentsTFC,
     snapGas,
     snapTracers,
+    rotation_matrix
 ) = tracer_selection_snap_analysis(
     TRACERSPARAMS,
     HaloID,
@@ -237,6 +238,7 @@ output_dict = snap_analysis(
     DataSavepath,
     FullDataPathSuffix,
     MiniDataPathSuffix,
+    rotation_matrix,
     lazyLoadBool,
 )
 

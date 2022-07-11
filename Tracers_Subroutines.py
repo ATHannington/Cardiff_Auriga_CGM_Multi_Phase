@@ -1165,6 +1165,10 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 
 
 # ------------------------------------------------------------------------------#
+
+def _multi_inner_product(x,y):
+    return np.array([np.inner(xx,yy) for (xx, yy) in zip(x,y)])
+
 def calculate_tracked_parameters(
     snapGas,
     elements,
@@ -1338,21 +1342,44 @@ def calculate_tracked_parameters(
     )
     del tmp
 
+    snapGas.data["Grad_T"] = np.abs(np.gradient(snapGas.data['T'][whereGas],axis=0))
+    snapGas.data["Grad_n_H"] = np.abs(np.gradient(snapGas.data['n_H'][whereGas],axis=0))
+    snapGas.data["Grad_bfld"] = np.abs(np.gradient(snapGas.data['bfld'][whereGas],axis=0))
+
+
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
     # P_CR / kb= (gamm_c - 1)^-1 n T
     #
+    # # 3./2. N KB
+    # Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
+    #
+    #
+    # # Temperature = U / (3/2 * N KB) [K]
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
     try:
         snapGas.data['P_CR'] = (snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]) / ((((4./3. - 1.)**-1)* c.KB)/(meanweight * c.amu))
         snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
-    except:
-        # snapGas.data["P_CR"] = np.array([np.nan])
-        # snapGas.data["PCR_Pthermal"] = np.array([np.nan])
-        pass
-    # print(np.unique(snapGas.type))
-    # stop1340
-    return snapGas
 
+        # P [kg m^-1 s^-2]
+        # kb [kg m^2 s^-2]
+        # P / kb = m^-3
+        # Grad (P / kb) [m^-4]
+        snapGas.data['Grad_P_CR'] =np.gradient(np.array([snapGas.data['P_CR'][whereGas],snapGas.data['P_CR'][whereGas],snapGas.data['P_CR'][whereGas]]).T,axis=0)
+
+        #cm s^-1
+        snapGas.data["valf"] = snapGas.data["bfld"][whereGas] * (bfactor/1e6)/ np.sqrt(4.0*pi*snapGas.data["dens"][whereGas,np.newaxis])
+
+
+    #   Gas Alfven Heating [erg [cm^2 g s^-2] s^-1]
+        v_multi_inner_product = np.vectorize(_multi_inner_product,signature="(m,n),(m,n)->(m)")
+
+        snapGas.data["gah"] = np.abs(v_multi_inner_product(snapGas.data["valf"][whereGas],snapGas.data['Grad_P_CR'][whereGas]*c.KB)*snapGas.data["vol"]*(c.parsec*1e3)**3)
+
+    except:
+        pass
+
+    return snapGas
 
 # ------------------------------------------------------------------------------#
 def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
