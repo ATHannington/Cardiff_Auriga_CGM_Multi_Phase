@@ -29,7 +29,7 @@ titleBool = False
 
 subset = 100
 Ntails = 4
-numThreads = 2
+numThreads = 18
 ageUniverse = 13.77  # [Gyr]
 
 TracersParamsPath = "TracersParams.csv"

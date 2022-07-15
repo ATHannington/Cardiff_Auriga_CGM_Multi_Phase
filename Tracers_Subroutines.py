@@ -121,6 +121,7 @@ def snap_analysis(
         Zsolar,
         omegabaryon0,
         snapNumber,
+        paramsOfInterest = saveParams
     )
 
     # ==================#
@@ -400,6 +401,7 @@ def tracer_selection_snap_analysis(
         Zsolar,
         omegabaryon0,
         snapNumber,
+        paramsOfInterest = saveParams
     )
 
     whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
@@ -1177,6 +1179,7 @@ def calculate_tracked_parameters(
     Zsolar,
     omegabaryon0,
     snapNumber,
+    paramsOfInterest = []
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1213,137 +1216,165 @@ def calculate_tracked_parameters(
     gasX = snapGas.gmet[whereGas, 0]
 
     # Temperature = U / (3/2 * N KB) [K]
-    snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
-    snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / c.amu * gasX  # cm^-3
-    snapGas.data["rho_rhomean"] = snapGas.data["dens"][whereGas] / (
-        rhomean * omegabaryon0 / snapGas.omega0
-    )  # rho / <rho>
-    snapGas.data["Tdens"] = (
-        snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
-    )
+    if np.any(np.isin(np.array(["T","P_tot","P_thermal","Pthermal_Pmagnetic","PCR_Pthermal","Tdens"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
 
-    bfactor = (
-        1e6
-        * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
-        * (1e5 / (c.parsec * 1e6))
-    )  # [microGauss]
+    if np.any(np.isin(np.array(["n_H","Grad_n_H","tcool","theat","tcool_tff"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / c.amu * gasX  # cm^-3
 
-    # Magnitude of Magnetic Field [micro Guass]
-    snapGas.data["B"] = np.linalg.norm(
-        (snapGas.data["bfld"][whereGas] * bfactor), axis=1
-    )
+    if np.any(np.isin(np.array(["rho_rhomean","Tdens"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["rho_rhomean"] = snapGas.data["dens"][whereGas] / (
+            rhomean * omegabaryon0 / snapGas.omega0
+        )  # rho / <rho>
 
-    # Radius [kpc]
-    snapGas.data["R"] = np.linalg.norm(snapGas.data["pos"], axis=1)
+    if np.any(np.isin(np.array(["Tdens"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["Tdens"] = (
+            snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
+        )
+
+    if np.any(np.isin(np.array(["B","P_magnetic","Pthermal_Pmagnetic","P_tot"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        bfactor = (
+            1e6
+            * (np.sqrt(1e10 * c.msol) / np.sqrt(c.parsec * 1e6))
+            * (1e5 / (c.parsec * 1e6))
+        )  # [microGauss]
+
+        # Magnitude of Magnetic Field [micro Guass]
+        snapGas.data["B"] = np.linalg.norm(
+            (snapGas.data["bfld"][whereGas] * bfactor), axis=1
+        )
+
+    if np.any(np.isin(np.array(["R","vrad","tff","tcool_tff"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Radius [kpc]
+        snapGas.data["R"] = np.linalg.norm(snapGas.data["pos"], axis=1)
 
     KpcTokm = 1e3 * c.parsec * 1e-5
-    # Radial Velocity [km s^-1]
-    snapGas.data["vrad"] = (
-        snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
-    ).sum(axis=1)
-    snapGas.data["vrad"] /= snapGas.data["R"][whereGas] * KpcTokm
+
+    if np.any(np.isin(np.array(["vrad"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Radial Velocity [km s^-1]
+        snapGas.data["vrad"] = (
+            snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
+        ).sum(axis=1)
+        snapGas.data["vrad"] /= snapGas.data["R"][whereGas] * KpcTokm
 
     # Cooling time [Gyrs]
     GyrToSeconds = 365.25 * 24.0 * 60.0 * 60.0 * 1e9
 
-    snapGas.data["tcool"] = (
-        snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
-    ) / (
-        GyrToSeconds
-        * snapGas.data["gcol"][whereGas]
-        * snapGas.data["n_H"][whereGas] ** 2
-    )  # [Gyrs]
-    snapGas.data["theat"] = snapGas.data["tcool"].copy()
+    if np.any(np.isin(np.array(["tcool","tcool_tff","theat"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["tcool"] = (
+            snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
+        ) / (
+            GyrToSeconds
+            * snapGas.data["gcol"][whereGas]
+            * snapGas.data["n_H"][whereGas] ** 2
+        )  # [Gyrs]
+        snapGas.data["theat"] = snapGas.data["tcool"].copy()
 
-    coolingGas = np.where(snapGas.data["tcool"] < 0.0)
-    heatingGas = np.where(snapGas.data["tcool"] > 0.0)
-    zeroChangeGas = np.where(snapGas.data["tcool"] == 0.0)
+        coolingGas = np.where(snapGas.data["tcool"] < 0.0)
+        heatingGas = np.where(snapGas.data["tcool"] > 0.0)
+        zeroChangeGas = np.where(snapGas.data["tcool"] == 0.0)
 
-    snapGas.data["tcool"][coolingGas] = abs(snapGas.data["tcool"][coolingGas])
-    snapGas.data["tcool"][heatingGas] = np.nan
-    snapGas.data["tcool"][zeroChangeGas] = np.nan
+        snapGas.data["tcool"][coolingGas] = abs(snapGas.data["tcool"][coolingGas])
+        snapGas.data["tcool"][heatingGas] = np.nan
+        snapGas.data["tcool"][zeroChangeGas] = np.nan
 
-    snapGas.data["theat"][coolingGas] = np.nan
-    snapGas.data["theat"][heatingGas] = np.abs(snapGas.data["theat"][heatingGas])
-    snapGas.data["theat"][zeroChangeGas] = np.nan
+        snapGas.data["theat"][coolingGas] = np.nan
+        snapGas.data["theat"][heatingGas] = np.abs(snapGas.data["theat"][heatingGas])
+        snapGas.data["theat"][zeroChangeGas] = np.nan
 
     # Load in metallicity
-    snapGas.data["gz"] = snapGas.data["gz"][whereGas] / Zsolar
+    if np.any(np.isin(np.array(["gz"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["gz"] = snapGas.data["gz"][whereGas] / Zsolar
     # Load in Metals
     tmp = snapGas.data["gmet"]
     # Load in Star Formation Rate
     tmp = snapGas.data["sfr"]
 
-    # Specific Angular Momentum [kpc km s^-1]
-    snapGas.data["L"] = np.sqrt(
-        (
-            np.cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
-        ).sum(axis=1)
-    )
-
-    snapGas.data["ndens"] = snapGas.data["dens"][whereGas] / (meanweight * c.amu)
-    # Thermal Pressure : P/k_B = n T [ # K cm^-3]
-    snapGas.data["P_thermal"] = snapGas.data["ndens"] * snapGas.T
-
-    # Magnetic Pressure [P/k_B K cm^-3]
-    snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
-        8.0 * pi * c.KB
-    )
-
-    snapGas.data["P_tot"] = (
-        snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
-    )
-
-    snapGas.data["Pthermal_Pmagnetic"] = (
-        snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
-    )
-
-    # Kinetic "Pressure" [P/k_B K cm^-3]
-    snapGas.data["P_kinetic"] = (
-        (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
-        * 1e10
-        * c.msol
-        * (1.0 / c.KB)
-        * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
-    )
-
-    # Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
-    snapGas.data["csound"] = np.sqrt(
-        ((5.0 / 3.0) * c.KB * snapGas.data["T"][whereGas]) / (meanweight * c.amu * 1e5)
-    )
-
-    # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
-    snapGas.data["tcross"] = (
-        (KpcTokm * 1e3 / GyrToSeconds)
-        * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
-        / snapGas.data["csound"][whereGas]
-    )
-
-    rsort = np.argsort(snapGas.data["R"])
-    runsort = np.argsort(rsort)
-
-    rhosorted = (3.0 * np.cumsum(snapGas.data["mass"][rsort])) / (
-        4.0 * pi * (snapGas.data["R"][rsort]) ** 3
-    )
-    rho = rhosorted[runsort]
-
-    # Free Fall time [Gyrs]
-    snapGas.data["tff"] = np.sqrt(
-        (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
-    ) * (1.0 / GyrToSeconds)
-
-    whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
-    snapGas.data["tff"][whereNOTGas] = np.nan
-
-    # Cooling time over free fall time
-    snapGas.data["tcool_tff"] = (
-        snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
-    )
-    del tmp
-
-    snapGas = calculate_gradient_of_parameter(snapGas,
-        "T","n_H","bfld"
+    if np.any(np.isin(np.array(["L"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Specific Angular Momentum [kpc km s^-1]
+        snapGas.data["L"] = np.sqrt(
+            (
+                np.cross(snapGas.data["pos"][whereGas], snapGas.data["vel"][whereGas]) ** 2.0
+            ).sum(axis=1)
         )
+
+    if np.any(np.isin(np.array(["ndens","P_thermal","P_CR","PCR_Pthermal"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["ndens"] = snapGas.data["dens"][whereGas] / (meanweight * c.amu)
+
+    if np.any(np.isin(np.array(["P_thermal","Pthermal_Pmagnetic","P_tot"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Thermal Pressure : P/k_B = n T [ # K cm^-3]
+        snapGas.data["P_thermal"] = snapGas.data["ndens"] * snapGas.T
+
+    if np.any(np.isin(np.array(["P_magnetic","Pthermal_Pmagnetic","P_tot"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Magnetic Pressure [P/k_B K cm^-3]
+        snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
+            8.0 * pi * c.KB
+        )
+
+    if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["P_tot"] = (
+            snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
+        )
+
+    if np.any(np.isin(np.array(["Pthermal_Pmagnetic"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas.data["Pthermal_Pmagnetic"] = (
+            snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
+        )
+
+    if np.any(np.isin(np.array(["P_kinetic"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Kinetic "Pressure" [P/k_B K cm^-3]
+        snapGas.data["P_kinetic"] = (
+            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
+            * 1e10
+            * c.msol
+            * (1.0 / c.KB)
+            * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
+        )
+
+    if np.any(np.isin(np.array(["csound","tcross"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Sound Speed [(erg K^-1 K ??? g^-1)^1/2 = (g cm^2 s^-2 g^-1)^(1/2) = km s^-1]
+        snapGas.data["csound"] = np.sqrt(
+            ((5.0 / 3.0) * c.KB * snapGas.data["T"][whereGas]) / (meanweight * c.amu * 1e5)
+        )
+
+    if np.any(np.isin(np.array(["tcross"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
+        snapGas.data["tcross"] = (
+            (KpcTokm * 1e3 / GyrToSeconds)
+            * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
+            / snapGas.data["csound"][whereGas]
+        )
+
+    if np.any(np.isin(np.array(["tff","tcool_tff"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        rsort = np.argsort(snapGas.data["R"])
+        runsort = np.argsort(rsort)
+
+        rhosorted = (3.0 * np.cumsum(snapGas.data["mass"][rsort])) / (
+            4.0 * pi * (snapGas.data["R"][rsort]) ** 3
+        )
+        rho = rhosorted[runsort]
+
+        # Free Fall time [Gyrs]
+        snapGas.data["tff"] = np.sqrt(
+            (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
+        ) * (1.0 / GyrToSeconds)
+
+        whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
+        snapGas.data["tff"][whereNOTGas] = np.nan
+
+    if np.any(np.isin(np.array(["tcool_tff"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        # Cooling time over free fall time
+        snapGas.data["tcool_tff"] = (
+            snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
+        )
+        del tmp
+
+    if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas = calculate_gradient_of_parameter(snapGas,"T",normed=True)
+    if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas = calculate_gradient_of_parameter(snapGas,"n_H",normed=True)
+    if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        snapGas = calculate_gradient_of_parameter(snapGas,"bfld",normed=True)
 
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
@@ -1356,74 +1387,113 @@ def calculate_tracked_parameters(
     # # Temperature = U / (3/2 * N KB) [K]
     # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
     try:
-        snapGas.data['P_CR'] = (snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]) / ((((4./3. - 1.)**-1)* c.KB)/(meanweight * c.amu))
-        snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
-
-        # P [kg m^-1 s^-2]
-        # kb [kg m^2 s^-2]
-        # P / kb = m^-3
-        # Grad (P / kb) [m^-4]
-        snapGas = calculate_gradient_of_parameter(snapGas,
-            "P_CR"
-            )
-
-        #cm s^-1
-        snapGas.data["valf"] = snapGas.data["bfld"][whereGas] * (bfactor/1e6)/ np.sqrt(4.0*pi*snapGas.data["dens"][whereGas,np.newaxis])
+        if np.any(np.isin(np.array(["P_CR","PCR_Pthermal"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+            snapGas.data['P_CR'] = (snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]) / ((((4./3. - 1.)**-1)* c.KB)/(meanweight * c.amu))
+        if np.any(np.isin(np.array(["PCR_Pthermal"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+            snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
 
 
-    #   Gas Alfven Heating [erg [cm^2 g s^-2] s^-1]
-        v_multi_inner_product = np.vectorize(_multi_inner_product,signature="(m,n),(m,n)->(m)")
+        if np.any(np.isin(np.array(["Grad_P_CR","gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+            # P [kg m^-1 s^-2]
+            # kb [kg m^2 s^-2]
+            # P / kb = m^-3
+            # Grad (P / kb) [m^-4]
+            snapGas = calculate_gradient_of_parameter(snapGas,"P_CR",normed=False)
 
-        snapGas.data["gah"] = np.abs(v_multi_inner_product(snapGas.data["valf"][whereGas],snapGas.data['Grad_P_CR'][whereGas]*c.KB)*snapGas.data["vol"]*(c.parsec*1e3)**3)
+        if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+            #cm s^-1
+            snapGas.data["valf"] = snapGas.data["bfld"][whereGas] * (bfactor/1e6)/ np.sqrt(4.0*pi*snapGas.data["dens"][whereGas,np.newaxis])
 
-        snapGas.data['Grad_P_CR'] = np.linalg.norm(snapGas.data['Grad_P_CR'],axis=1)
+
+        #   Gas Alfven Heating [erg [cm^2 g s^-2] s^-1]
+            v_multi_inner_product = np.vectorize(_multi_inner_product,signature="(m,n),(m,n)->(m)")
+
+            snapGas.data["gah"] = np.abs(v_multi_inner_product(snapGas.data["valf"][whereGas],snapGas.data['Grad_P_CR'][whereGas]*c.KB)*snapGas.data["vol"]*(c.parsec*1e3)**3)
+
+            snapGas.data['Grad_P_CR'] = np.linalg.norm(snapGas.data['Grad_P_CR'],axis=1)
     except:
         pass
 
     return snapGas
 
-def calculate_gradient_of_parameter(snap,*argv, type = 0):
+def calculate_gradient_of_parameter(snap,*argv, normed=False, ptype = 0, center=False, box=False, res=1024, saveas=False, use_only_cells=None, numthreads=8):
+    """
+        Calculate the (norm of the) gradient of parameters argv for
+        particle snap.type==type
+        Adapted from mapOnCartGrid in gadget_snap.py in Arepo_snap-utils
+    """
+    import pylab
+    import calcGrid
 
-    whereGas = np.where(snap.data["type"] == type)[0]
+    if use_only_cells is None:
+        use_only_cells = np.where(snap.type == ptype)[0]
 
-    x_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,0])
-    y_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,1])
-    z_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,2])
+    if type( center ) == list:
+        center = pylab.array( center )
+    elif type( center ) != np.ndarray:
+        center = snap.center
 
+    if type( box ) == list:
+        box = pylab.array( box )
+    elif type( box ) != np.ndarray:
+        box = np.array( [snap.boxsize,snap.boxsize,snap.boxsize] )
+
+    if type( res ) == list:
+        res = pylab.array( res )
+    elif type( res ) != np.ndarray:
+        res = np.array( [res]*3 )
+
+    if use_only_cells is None:
+        use_only_cells = np.arange( snap.nparticlesall[0], dtype='int32' )
+
+    pos = snap.pos[use_only_cells,:].astype( 'float64' )
+    px = np.abs( pos[:,0] - center[0] )
+    py = np.abs( pos[:,1] - center[1] )
+    pz = np.abs( pos[:,2] - center[2] )
+
+    pp, = np.where( (px < 0.5*box[0]) & (py < 0.5*box[1]) & (pz < 0.5*box[2]) )
+    print("Selected %d of %d particles." % (pp.size,snap.npart))
+
+    posdata = pos[pp]
 
     for arg in argv:
-        if np.shape(np.shape(snap.data[arg])) [0] == 1:
-            dimension = 1
+        valdata = snap.data[arg][use_only_cells][pp].astype('float64')
 
-            xx = np.empty(snap.data[arg][whereGas].shape)
-            yy = xx.copy()
-            zz = xx.copy()
-            xx[x_ind_sorted] = np.gradient(snap.data[arg][whereGas][x_ind_sorted])
-            yy[y_ind_sorted] = np.gradient(snap.data[arg][whereGas][y_ind_sorted])
-            zz[z_ind_sorted] = np.gradient(snap.data[arg][whereGas][z_ind_sorted])
+        if valdata.ndim == 1:
+            data = calcGrid.calcASlice(posdata, valdata, nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
+                                       centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
+            grid = data["grid"]
 
             key = "Grad_" + arg
-            snap.data[key] = np.linalg.norm(np.array([xx,yy,zz]),axis=0)
+            snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
+            if normed:
+                snap.data[key] = np.linalg.norm(snap.data[key],axis=0)
 
-
-        elif (np.shape(np.shape(snap.data[arg][whereGas])) [0] == 2) & (
-                (np.shape(snap.data[arg][whereGas]) [1] == 3) | (np.shape(snap.data[arg][whereGas]) [0]  == 3)
-            ):
-            if (np.shape(snap.data[arg][whereGas]) [0] == 3):
+        elif valdata.ndim == 2:
+            if (valdata.shape[0] == 3):
                 snap.data[arg] = snap.data[arg].T
                 transposeBool = True
-            else:
+            elif (valdata.shape[1] == 3):
                 transposeBool = False
-
-            xx = np.empty(snap.data[arg][whereGas].shape[0])
-            yy = xx.copy()
-            zz = xx.copy()
-            xx[x_ind_sorted] = np.gradient(snap.data[arg][whereGas][x_ind_sorted,0])
-            yy[y_ind_sorted] = np.gradient(snap.data[arg][whereGas][y_ind_sorted,1])
-            zz[z_ind_sorted] = np.gradient(snap.data[arg][whereGas][z_ind_sorted,2])
+            else:
+                print(
+                    f"[@calculate_gradient_of_parameter]: WARNING! 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
+                    f"Grad_{arg} will not be calculated!"
+                    )
+                continue
+            # We are going to generate ndim 3D grids and stack them together
+            # in a grid of shape (valdata.shape[1],res,res,res)
+            grid = []
+            for dim in range(valdata.shape[1]):
+                data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
+                                           centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
+                grid.append(data["grid"])
+            grid = np.stack([subgrid for subgrid in grid])
 
             key = "Grad_" + arg
-            snap.data[key] = np.linalg.norm(np.array([xx,yy,zz]),axis=0)
+            snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
+            if normed:
+                snap.data[key] = np.linalg.norm(snap.data[key],axis=0)
 
             if transposeBool:
                 snap.data[key] = snap.data[key].T
@@ -1442,7 +1512,6 @@ def calculate_gradient_of_parameter(snap,*argv, type = 0):
         # print("shape key", np.shape(snap.data[key]))
         # print("***---***")
     return snap
-
 
 # ------------------------------------------------------------------------------#
 def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
@@ -3293,6 +3362,7 @@ def tracer_plot(
             Zsolar,
             omegabaryon0,
             snapNumber,
+            paramsOfInterest = ["T","rho_rhomean","Tdens"]
         )
 
         # ==================#
