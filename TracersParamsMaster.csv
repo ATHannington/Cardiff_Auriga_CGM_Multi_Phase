@@ -21,5 +21,6 @@ pixres 0.2                                                                      
 pixreslos 4                                                                      # Pixel Resolution in LOS of plot
 haloID 0                                                                         # Select SubHalo to select. Unbound in relevant FoF halo will also be selected
 dtwSubset 1750                                                                  #
-dtwParams "T,R,n_H,vrad"
+#
+dtwParams "T,R,n_H,vrad,subhalo"
 dtwlogParams "T,n_H"

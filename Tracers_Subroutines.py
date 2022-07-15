@@ -22,7 +22,6 @@ import math
 import random
 from itertools import combinations, chain
 
-
 # ==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 # ==============================================================================#
@@ -1342,10 +1341,9 @@ def calculate_tracked_parameters(
     )
     del tmp
 
-    snapGas.data["Grad_T"] = np.linalg.norm(np.gradient(np.array([snapGas.data['T'][whereGas],snapGas.data['T'][whereGas],snapGas.data['T'][whereGas]]).T,axis=0),axis=1)
-    snapGas.data["Grad_n_H"] = np.linalg.norm(np.gradient(np.array([snapGas.data['n_H'][whereGas],snapGas.data['n_H'][whereGas],snapGas.data['n_H'][whereGas]]).T,axis=0),axis=1)
-    snapGas.data["Grad_bfld"] = np.linalg.norm(np.gradient(snapGas.data['bfld'][whereGas],axis=0),axis=1)
-
+    snapGas = calculate_gradient_of_parameter(snapGas,
+        "T","n_H","bfld"
+        )
 
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
@@ -1365,7 +1363,9 @@ def calculate_tracked_parameters(
         # kb [kg m^2 s^-2]
         # P / kb = m^-3
         # Grad (P / kb) [m^-4]
-        snapGas.data['Grad_P_CR'] =np.gradient(np.array([snapGas.data['P_CR'][whereGas],snapGas.data['P_CR'][whereGas],snapGas.data['P_CR'][whereGas]]).T,axis=0)
+        snapGas = calculate_gradient_of_parameter(snapGas,
+            "P_CR"
+            )
 
         #cm s^-1
         snapGas.data["valf"] = snapGas.data["bfld"][whereGas] * (bfactor/1e6)/ np.sqrt(4.0*pi*snapGas.data["dens"][whereGas,np.newaxis])
@@ -1381,6 +1381,68 @@ def calculate_tracked_parameters(
         pass
 
     return snapGas
+
+def calculate_gradient_of_parameter(snap,*argv, type = 0):
+
+    whereGas = np.where(snap.data["type"] == type)[0]
+
+    x_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,0])
+    y_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,1])
+    z_ind_sorted = np.argsort(snap.data["pos"][whereGas][:,2])
+
+
+    for arg in argv:
+        if np.shape(np.shape(snap.data[arg])) [0] == 1:
+            dimension = 1
+
+            xx = np.empty(snap.data[arg][whereGas].shape)
+            yy = xx.copy()
+            zz = xx.copy()
+            xx[x_ind_sorted] = np.gradient(snap.data[arg][whereGas][x_ind_sorted])
+            yy[y_ind_sorted] = np.gradient(snap.data[arg][whereGas][y_ind_sorted])
+            zz[z_ind_sorted] = np.gradient(snap.data[arg][whereGas][z_ind_sorted])
+
+            key = "Grad_" + arg
+            snap.data[key] = np.linalg.norm(np.array([xx,yy,zz]),axis=0)
+
+
+        elif (np.shape(np.shape(snap.data[arg][whereGas])) [0] == 2) & (
+                (np.shape(snap.data[arg][whereGas]) [1] == 3) | (np.shape(snap.data[arg][whereGas]) [0]  == 3)
+            ):
+            if (np.shape(snap.data[arg][whereGas]) [0] == 3):
+                snap.data[arg] = snap.data[arg].T
+                transposeBool = True
+            else:
+                transposeBool = False
+
+            xx = np.empty(snap.data[arg][whereGas].shape[0])
+            yy = xx.copy()
+            zz = xx.copy()
+            xx[x_ind_sorted] = np.gradient(snap.data[arg][whereGas][x_ind_sorted,0])
+            yy[y_ind_sorted] = np.gradient(snap.data[arg][whereGas][y_ind_sorted,1])
+            zz[z_ind_sorted] = np.gradient(snap.data[arg][whereGas][z_ind_sorted,2])
+
+            key = "Grad_" + arg
+            snap.data[key] = np.linalg.norm(np.array([xx,yy,zz]),axis=0)
+
+            if transposeBool:
+                snap.data[key] = snap.data[key].T
+        else:
+            print(
+                f"[@calculate_gradient_of_parameter]: WARNING! Dimensionality of arg={arg} not 1D or 2D."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
+                f"Grad_{arg} will not be calculated!"
+                )
+            continue
+
+        # print("***---***")
+        # print("*** DEBUG! ***")
+        # print(arg)
+        # print(key)
+        # print("shape arg", np.shape(snap.data[arg]))
+        # print("shape key", np.shape(snap.data[key]))
+        # print("***---***")
+    return snap
+
 
 # ------------------------------------------------------------------------------#
 def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
@@ -2628,10 +2690,10 @@ def plot_projections(
     boxsize=400.0,
     boxlos=20.0,
     pixres=0.2,
-    pixreslos=4,
-    DPI=100,
+    pixreslos=0.2,
+    DPI=200,
     CMAP=None,
-    numThreads=3,
+    numThreads=10,
 ):
     print(
         f"[@{int(snapNumber)}]: Starting Projections Video Plots!"
@@ -2994,7 +3056,7 @@ def tracer_plot(
     boxlos=20.0,
     pixres=0.2,
     pixreslos=4,
-    DPI=100,
+    DPI=200,
     CMAP=None,
     numThreads=4,
     MaxSubset=100,
@@ -3142,7 +3204,7 @@ def tracer_plot(
         for targetT in TRACERSPARAMS["targetTLst"]:
             # DPI Controlled by user as lower res needed for videos #
             figi, axi = plt.subplots(
-                nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI*2, sharey=True
+                nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI, sharey=True
             )
             figureList.append(figi)
             axisList.append(axi)
