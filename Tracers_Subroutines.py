@@ -1165,7 +1165,10 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
     return snap
 
 
-# ------------------------------------------------------------------------------#
+# ------------------------------------------------------------------------------
+#
+def _map_cart_grid_to_cells(pos_array,cart_Grid):
+    return np.array([np.argmin(np.linalg.norm(cart_Grid-pos,axis=-1),axis=None) for pos in pos_array])
 
 def _multi_inner_product(x,y):
     return np.array([np.inner(xx,yy) for (xx, yy) in zip(x,y)])
@@ -1179,7 +1182,8 @@ def calculate_tracked_parameters(
     Zsolar,
     omegabaryon0,
     snapNumber,
-    paramsOfInterest = []
+    paramsOfInterest = [],
+    mapping = None,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1370,11 +1374,11 @@ def calculate_tracked_parameters(
         del tmp
 
     if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas = calculate_gradient_of_parameter(snapGas,"T",normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"T",mapping=mapping,normed=True)
     if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas = calculate_gradient_of_parameter(snapGas,"n_H",normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True)
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas = calculate_gradient_of_parameter(snapGas,"bfld",normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True)
 
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
@@ -1398,7 +1402,7 @@ def calculate_tracked_parameters(
             # kb [kg m^2 s^-2]
             # P / kb = m^-3
             # Grad (P / kb) [m^-4]
-            snapGas = calculate_gradient_of_parameter(snapGas,"P_CR",normed=False)
+            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False)
 
         if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             #cm s^-1
@@ -1416,7 +1420,11 @@ def calculate_tracked_parameters(
 
     return snapGas
 
-def calculate_gradient_of_parameter(snap,*argv, normed=False, ptype = 0, center=False, box=False, res=1024, saveas=False, use_only_cells=None, numthreads=8):
+def err_catcher(arg):
+    raise Exception(f"Child Process died and gave error: {arg}")
+    return
+
+def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype = 0, center=False, box=False, res=1024, use_only_cells=None, numthreads=8):
     """
         Calculate the (norm of the) gradient of parameters argv for
         particle snap.type==type
@@ -1424,6 +1432,13 @@ def calculate_gradient_of_parameter(snap,*argv, normed=False, ptype = 0, center=
     """
     import pylab
     import calcGrid
+    import copy
+    import multiprocessing as mp
+    from itertools import repeat
+    import time
+
+    intres = copy.copy(res)
+    boxsize = snap.boxsize*1e3
 
     if use_only_cells is None:
         use_only_cells = np.where(snap.type == ptype)[0]
@@ -1436,17 +1451,20 @@ def calculate_gradient_of_parameter(snap,*argv, normed=False, ptype = 0, center=
     if type( box ) == list:
         box = pylab.array( box )
     elif type( box ) != np.ndarray:
-        box = np.array( [snap.boxsize,snap.boxsize,snap.boxsize] )
+        box = np.array( [boxsize,boxsize,boxsize] )
 
     if type( res ) == list:
         res = pylab.array( res )
     elif type( res ) != np.ndarray:
         res = np.array( [res]*3 )
 
-    if use_only_cells is None:
-        use_only_cells = np.arange( snap.nparticlesall[0], dtype='int32' )
+    halfbox = copy.copy(snap.boxsize)/2.
+    coord_spacings = np.linspace(-1.*halfbox,halfbox,intres)
+    xx,yy,zz = np.meshgrid(coord_spacings,coord_spacings,coord_spacings)
+    cart_Grid = np.stack([xx,yy,zz]).T
+    cart_Grid = cart_Grid + center
 
-    pos = snap.pos[use_only_cells,:].astype( 'float64' )
+    pos = snap.pos[use_only_cells,:].astype( 'float64' ).copy()
     px = np.abs( pos[:,0] - center[0] )
     py = np.abs( pos[:,1] - center[1] )
     pz = np.abs( pos[:,2] - center[2] )
@@ -1455,63 +1473,117 @@ def calculate_gradient_of_parameter(snap,*argv, normed=False, ptype = 0, center=
     print("Selected %d of %d particles." % (pp.size,snap.npart))
 
     posdata = pos[pp]
+    valdata = snap.data[arg][use_only_cells][pp].astype('float64').copy()
+    if valdata.ndim == 1:
+        data = calcGrid.calcASlice(posdata, valdata, nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
+        grid = data["grid"]
 
-    for arg in argv:
-        valdata = snap.data[arg][use_only_cells][pp].astype('float64')
+        key = "Grad_" + arg
+        snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
+        if normed:
+            snap.data[key] = np.linalg.norm(snap.data[key],axis=-1)
 
-        if valdata.ndim == 1:
-            data = calcGrid.calcASlice(posdata, valdata, nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
-                                       centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
-            grid = data["grid"]
-
-            key = "Grad_" + arg
-            snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
-            if normed:
-                snap.data[key] = np.linalg.norm(snap.data[key],axis=0)
-
-        elif valdata.ndim == 2:
-            if (valdata.shape[0] == 3):
-                snap.data[arg] = snap.data[arg].T
-                transposeBool = True
-            elif (valdata.shape[1] == 3):
-                transposeBool = False
-            else:
-                print(
-                    f"[@calculate_gradient_of_parameter]: WARNING! 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
-                    f"Grad_{arg} will not be calculated!"
-                    )
-                continue
-            # We are going to generate ndim 3D grids and stack them together
-            # in a grid of shape (valdata.shape[1],res,res,res)
-            grid = []
-            for dim in range(valdata.shape[1]):
-                data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
-                                           centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
-                grid.append(data["grid"])
-            grid = np.stack([subgrid for subgrid in grid])
-
-            key = "Grad_" + arg
-            snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
-            if normed:
-                snap.data[key] = np.linalg.norm(snap.data[key],axis=0)
-
-            if transposeBool:
-                snap.data[key] = snap.data[key].T
+    elif valdata.ndim == 2:
+        if (valdata.shape[0] == 3):
+            snap.data[arg] = snap.data[arg].T
+            transposeBool = True
+        elif (valdata.shape[1] == 3):
+            transposeBool = False
         else:
             print(
-                f"[@calculate_gradient_of_parameter]: WARNING! Dimensionality of arg={arg} not 1D or 2D."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
+                f"[@calculate_gradient_of_parameter]: WARNING! 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
                 f"Grad_{arg} will not be calculated!"
                 )
-            continue
+        # We are going to generate ndim 3D grids and stack them together
+        # in a grid of shape (valdata.shape[1],res,res,res)
+        grid = []
+        for dim in range(valdata.shape[1]):
+            data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
+                                       centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
+            grid.append(data["grid"])
+        grid = np.stack([subgrid for subgrid in grid])
 
-        # print("***---***")
-        # print("*** DEBUG! ***")
-        # print(arg)
-        # print(key)
-        # print("shape arg", np.shape(snap.data[arg]))
-        # print("shape key", np.shape(snap.data[key]))
-        # print("***---***")
-    return snap
+        key = "Grad_" + arg
+        grad_stack = []
+        for dim in range(valdata.shape[1]):
+            if normed:
+                gradat = np.linalg.norm(np.gradient(grid.T,axis=dim).reshape(-1,3),axis=-1)
+            else:
+                gradat = np.gradient(grid.T,axis=dim).reshape(-1,3)
+
+            grad_stack.append(gradat)
+
+        if not normed:
+            snap.data[key] = np.stack(grad_stack).reshape(-1,3,3)
+        else:
+            snap.data[key] = np.stack(grad_stack).reshape(-1,3)
+
+        if transposeBool:
+            snap.data[key] = snap.data[key].T
+    else:
+        print(
+            f"[@calculate_gradient_of_parameter]: WARNING! Dimensionality of arg={arg} not 1D or 2D."+"\n"+f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!" +"\n"+
+            f"Grad_{arg} will not be calculated!"
+            )
+
+
+    # print("***---***")
+    # print("*** DEBUG! ***")
+    # print(arg)
+    # print(key)
+    # print("shape arg", np.shape(snap.data[arg]))
+    # print("shape key", np.shape(snap.data[key]))
+    # print("***---***")
+
+    if mapping is None:
+        print("Map between Cartesian Grid and Approximate Cells")
+        print("This may take a while ...")
+        pool = mp.Pool(numthreads)
+        print(f"Starting numthreads={numthreads} mp pool...")
+
+        v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n,n,n,3)->(m)")
+
+        posrange = range(0,posdata.shape[0],posdata.shape[0]//numthreads)
+        args_list = [[posSubset,cart_Grid] for posSubset in [posdata[ii:jj] for (ii,jj) in zip(list(posrange),list(posrange)[1:])] ]
+
+        print("Map...")
+        start = time.time()
+        args_list = args_list + [[posdata[(-1-posdata.shape[0]%numthreads):-1], cart_Grid]]
+
+        # printpercent = 5.0
+        # printcount = 0.0
+        # output_list = []
+        # for ii,args in enumerate(args_list):
+        #     percentage = (float(ii)/float(len(args_list))) * 100.0
+        #     if percentage >= printcount:
+        #         print(f"{percentage:0.02f}% Cells mapped to Cart. Grid!")
+        #         printcount += printpercent
+
+        output_list = [pool.apply_async(v_map_cart_grid_to_cells, args=args, error_callback=err_catcher) for args in args_list]
+
+        pool.close()
+        pool.join()
+
+        mapping = np.concatenate(tuple([out.get() for out in output_list]),axis=0)
+        stop = time.time()
+
+        print("...done!")
+        print(f"Mapping took {stop-start:.2f}s")
+
+    grid_cell_vol = (float(boxsize)/float(intres))**3
+
+    # Volume weighted mapping from Cart Grid back to approx. cells
+    snap.data[key] = (snap.data["vol"][use_only_cells][mapping]/grid_cell_vol)*snap.data[key][mapping].T
+    snap.data[key] = snap.data[key].T
+
+    # print("***---***")
+    # print("*** DEBUG! ***")
+    # print(arg)
+    # print(key)
+    # print("shape arg", np.shape(snap.data[arg]))
+    # print("shape key", np.shape(snap.data[key]))
+    # print("***---***")
+    return snap, mapping
 
 # ------------------------------------------------------------------------------#
 def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
