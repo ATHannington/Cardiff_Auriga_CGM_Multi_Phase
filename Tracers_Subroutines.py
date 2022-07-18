@@ -21,7 +21,7 @@ import logging
 import math
 import random
 from itertools import combinations, chain
-
+from ctypes import Structure, c_double
 # ==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 # ==============================================================================#
@@ -1167,12 +1167,24 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 
 # ------------------------------------------------------------------------------
 #
-def _map_cart_grid_to_cells(pos_array,cart_Grid):
-    return np.array([np.argmin(np.linalg.norm(cart_Grid-pos,axis=-1),axis=None) for pos in pos_array])
+def _map_cart_grid_to_cells(pos_array,cart_grid):
+    return np.array([np.argmin(np.linalg.norm(cart_grid-pos,axis=-1),axis=None) for pos in pos_array])
 
 def _multi_inner_product(x,y):
     return np.array([np.inner(xx,yy) for (xx, yy) in zip(x,y)])
 
+def _wrapper_map_cart_grid_to_cells(pos_array,boxsize,intres,center):
+
+    v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n,n,n,3)->(m)")
+
+    halfbox = copy.copy(boxsize)/2.
+    coord_spacings = np.linspace(-1.*halfbox,halfbox,intres)
+    xx,yy,zz = np.meshgrid(coord_spacings,coord_spacings,coord_spacings)
+    cart_grid = np.stack([xx,yy,zz]).T
+    cart_grid = cart_grid + center
+    out = v_map_cart_grid_to_cells(pos_array,cart_grid)
+
+    return out
 def calculate_tracked_parameters(
     snapGas,
     elements,
@@ -1424,7 +1436,7 @@ def err_catcher(arg):
     raise Exception(f"Child Process died and gave error: {arg}")
     return
 
-def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype = 0, center=False, box=False, res=1024, use_only_cells=None, numthreads=8):
+def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype = 0, center=False, box=False, res=1024, use_only_cells=None,numthreads=8):
     """
         Calculate the (norm of the) gradient of parameters argv for
         particle snap.type==type
@@ -1433,9 +1445,8 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     import pylab
     import calcGrid
     import copy
-    import multiprocessing as mp
-    from itertools import repeat
     import time
+    import multiprocessing as mp
 
     intres = copy.copy(res)
     boxsize = snap.boxsize*1e3
@@ -1458,11 +1469,8 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     elif type( res ) != np.ndarray:
         res = np.array( [res]*3 )
 
-    halfbox = copy.copy(snap.boxsize)/2.
-    coord_spacings = np.linspace(-1.*halfbox,halfbox,intres)
-    xx,yy,zz = np.meshgrid(coord_spacings,coord_spacings,coord_spacings)
-    cart_Grid = np.stack([xx,yy,zz]).T
-    cart_Grid = cart_Grid + center
+    halfbox = copy.copy(boxsize)/2.
+    spacing = halfbox/float(intres)
 
     pos = snap.pos[use_only_cells,:].astype( 'float64' ).copy()
     px = np.abs( pos[:,0] - center[0] )
@@ -1479,9 +1487,11 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         grid = data["grid"]
 
         key = "Grad_" + arg
-        snap.data[key] = np.array(np.gradient(grid)).reshape(-1,3)
+        snap.data[key] = np.array(np.gradient(grid,spacing)).T
         if normed:
-            snap.data[key] = np.linalg.norm(snap.data[key],axis=-1)
+            snap.data[key] = np.linalg.norm(snap.data[key],axis=-1).reshape(-1)
+        else:
+            snap.data[key] = snap.data[key].reshape(-1,3)
 
     elif valdata.ndim == 2:
         if (valdata.shape[0] == 3):
@@ -1497,20 +1507,20 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         # We are going to generate ndim 3D grids and stack them together
         # in a grid of shape (valdata.shape[1],res,res,res)
         grid = []
+        grad_stack = []
+
         for dim in range(valdata.shape[1]):
             data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
                                        centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
             grid.append(data["grid"])
         grid = np.stack([subgrid for subgrid in grid])
-
         key = "Grad_" + arg
-        grad_stack = []
+
         for dim in range(valdata.shape[1]):
             if normed:
-                gradat = np.linalg.norm(np.gradient(grid.T,axis=dim).reshape(-1,3),axis=-1)
+                gradat = np.linalg.norm(np.array(np.gradient(grid[dim],spacing)).T,axis=-1)
             else:
-                gradat = np.gradient(grid.T,axis=dim).reshape(-1,3)
-
+                gradat = np.array(np.gradient(grid[dim],spacing)).T
             grad_stack.append(gradat)
 
         if not normed:
@@ -1541,14 +1551,16 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         pool = mp.Pool(numthreads)
         print(f"Starting numthreads={numthreads} mp pool...")
 
-        v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n,n,n,3)->(m)")
+        maxram = 3.5e9
+        dataMaxRamRatio = (24. * np.prod(posdata.shape))//maxram
+        nchunks = int(max(dataMaxRamRatio,numthreads))
 
-        posrange = range(0,posdata.shape[0],posdata.shape[0]//numthreads)
-        args_list = [[posSubset,cart_Grid] for posSubset in [posdata[ii:jj] for (ii,jj) in zip(list(posrange),list(posrange)[1:])] ]
+        posrange = range(0,posdata.shape[0],int(posdata.shape[0]//nchunks))
+        args_list = [[posSubset,boxsize,intres,center] for posSubset in [posdata[ii:jj] for (ii,jj) in zip(list(posrange),list(posrange)[1:])] ]
 
         print("Map...")
         start = time.time()
-        args_list = args_list + [[posdata[(-1-posdata.shape[0]%numthreads):-1], cart_Grid]]
+        args_list = args_list + [[posdata[(-1-int(posdata.shape[0]%nchunks)):-1],boxsize,intres,center]]
 
         # printpercent = 5.0
         # printcount = 0.0
@@ -1559,7 +1571,7 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         #         print(f"{percentage:0.02f}% Cells mapped to Cart. Grid!")
         #         printcount += printpercent
 
-        output_list = [pool.apply_async(v_map_cart_grid_to_cells, args=args, error_callback=err_catcher) for args in args_list]
+        output_list = [pool.apply_async(_wrapper_map_cart_grid_to_cells, args=args, error_callback=err_catcher) for args in args_list]
 
         pool.close()
         pool.join()
@@ -1570,11 +1582,8 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         print("...done!")
         print(f"Mapping took {stop-start:.2f}s")
 
-    grid_cell_vol = (float(boxsize)/float(intres))**3
-
-    # Volume weighted mapping from Cart Grid back to approx. cells
-    snap.data[key] = (snap.data["vol"][use_only_cells][mapping]/grid_cell_vol)*snap.data[key][mapping].T
-    snap.data[key] = snap.data[key].T
+    # Perform mapping from Cart Grid back to approx. cells
+    snap.data[key] = snap.data[key][mapping]
 
     # print("***---***")
     # print("*** DEBUG! ***")
@@ -1841,6 +1850,11 @@ def load_tracers_parameters(TracersParamsPath):
         TRACERSPARAMS["QuadPlotBool"] = True
     else:
         TRACERSPARAMS["QuadPlotBool"] = False
+
+    if TRACERSPARAMS["QuadPlotBool"]:
+        for param in ["Tdens","rho_rhomean","n_H","B","gz"]:
+            if param not in TRACERSPARAMS["saveParams"]:
+                TRACERSPARAMS["saveParams"].append(param)
 
     # Get Temperatures as strings in a list so as to form "4-5-6" for savepath.
     Tlst = [str(item) for item in TRACERSPARAMS["targetTLst"]]
