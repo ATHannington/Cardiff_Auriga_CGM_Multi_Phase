@@ -1174,7 +1174,7 @@ def _multi_inner_product(x,y):
     return np.array([np.inner(xx,yy) for (xx, yy) in zip(x,y)])
 
 def _wrapper_map_cart_grid_to_cells(pos_array,boxsize,intres,center):
-
+    import copy
     v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n,n,n,3)->(m)")
 
     halfbox = copy.copy(boxsize)/2.
@@ -1196,6 +1196,8 @@ def calculate_tracked_parameters(
     snapNumber,
     paramsOfInterest = [],
     mapping = None,
+    gridRes=512,
+    numthreads=2,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1386,11 +1388,11 @@ def calculate_tracked_parameters(
         del tmp
 
     if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"T",mapping=mapping,normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"T",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
     if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
 
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
@@ -1414,7 +1416,7 @@ def calculate_tracked_parameters(
             # kb [kg m^2 s^-2]
             # P / kb = m^-3
             # Grad (P / kb) [m^-4]
-            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False)
+            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False , res=gridRes, numthreads=numthreads)
 
         if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             #cm s^-1
@@ -1447,6 +1449,11 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     import copy
     import time
     import multiprocessing as mp
+    import psutil
+    import math
+
+    print(f"Calculating gradient of {arg}!")
+    print(f"Norm of gradient? {normed}")
 
     intres = copy.copy(res)
     boxsize = snap.boxsize*1e3
@@ -1483,10 +1490,13 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     posdata = pos[pp]
     valdata = snap.data[arg][use_only_cells][pp].astype('float64').copy()
     if valdata.ndim == 1:
+        print("Calc A Slice!")
         data = calcGrid.calcASlice(posdata, valdata, nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
         grid = data["grid"]
 
+
         key = "Grad_" + arg
+        print(f"Compute {key}!")
         snap.data[key] = np.array(np.gradient(grid,spacing)).T
         if normed:
             snap.data[key] = np.linalg.norm(snap.data[key],axis=-1).reshape(-1)
@@ -1508,14 +1518,14 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         # in a grid of shape (valdata.shape[1],res,res,res)
         grid = []
         grad_stack = []
-
+        print(f"Calc A Slice x {valdata.shape[1]} - one for each axis!")
         for dim in range(valdata.shape[1]):
             data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
                                        centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
             grid.append(data["grid"])
         grid = np.stack([subgrid for subgrid in grid])
         key = "Grad_" + arg
-
+        print(f"Compute {key}!")
         for dim in range(valdata.shape[1]):
             if normed:
                 gradat = np.linalg.norm(np.array(np.gradient(grid[dim],spacing)).T,axis=-1)
@@ -1548,12 +1558,36 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     if mapping is None:
         print("Map between Cartesian Grid and Approximate Cells")
         print("This may take a while ...")
-        pool = mp.Pool(numthreads)
-        print(f"Starting numthreads={numthreads} mp pool...")
 
-        maxram = 3.5e9
-        dataMaxRamRatio = (24. * np.prod(posdata.shape))//maxram
-        nchunks = int(max(dataMaxRamRatio,numthreads))
+
+        ### Limit RAM use
+        memLimit = 0.75 #%
+        maxRamPickle = 4.0e9
+        maxRamSysAvailable = psutil.virtual_memory().available
+        maxRamSysTot = psutil.virtual_memory().total
+
+        nchunks  = (64. * np.prod(posdata.shape))/(maxRamPickle*memLimit)
+
+        reqMem = 64.*(np.prod(posdata.shape)+(3.*(float(intres)**3)*numthreads))
+
+        if (reqMem >= maxRamSysAvailable):
+            while (reqMem >= maxRamSysAvailable) & (numthreads >= 1):
+                numthreads -= 1
+                reqMem = 64.*(np.prod(posdata.shape)+(3.*(float(intres)**3)*numthreads))
+
+        numthreads = int(max(numthreads,1))
+
+        if (reqMem >= maxRamSysTot):
+            print(f"[@calculate_gradient_of_parameter]: WARNING! RAM requirements will be exceeded by resolution of ({intres})**3 !")
+            print(f"RAM requirements are {reqMem} ({(reqMem/maxRamSysTot):.2%} of total RAM)!")
+            suggested = math.floor((((maxRamSysTot/64.) - np.prod(posdata.shape))/(3.))**(1./3.))
+            print(f"We suggest a GridRes < {suggested} for this system. Remember to leave RAM for other objects too!")
+
+        nchunks = int(max(nchunks,numthreads))
+
+        pool = mp.Pool(numthreads)
+        print(f"Starting numthreads = {numthreads} mp pool with data split into {nchunks} chunks...")
+
 
         posrange = range(0,posdata.shape[0],int(posdata.shape[0]//nchunks))
         args_list = [[posSubset,boxsize,intres,center] for posSubset in [posdata[ii:jj] for (ii,jj) in zip(list(posrange),list(posrange)[1:])] ]
