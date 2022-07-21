@@ -111,6 +111,9 @@ def snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
+    rmax = max(TRACERSPARAMS['Router'])
+    boxmax = 1.5*rmax
+    box = [boxmax,boxmax,boxmax]
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
@@ -121,7 +124,8 @@ def snap_analysis(
         Zsolar,
         omegabaryon0,
         snapNumber,
-        paramsOfInterest = saveParams
+        paramsOfInterest = saveParams,
+        box = box
     )
 
     # ==================#
@@ -391,6 +395,9 @@ def tracer_selection_snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
+    rmax = max(TRACERSPARAMS['Router'])
+    boxmax = 1.5*rmax
+    box = [boxmax,boxmax,boxmax]
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
@@ -401,7 +408,8 @@ def tracer_selection_snap_analysis(
         Zsolar,
         omegabaryon0,
         snapNumber,
-        paramsOfInterest = saveParams
+        paramsOfInterest = saveParams,
+        box = box
     )
 
     whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
@@ -1198,6 +1206,7 @@ def calculate_tracked_parameters(
     mapping = None,
     gridRes=512,
     numthreads=2,
+    box = None,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1388,11 +1397,11 @@ def calculate_tracked_parameters(
         del tmp
 
     if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"T",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"T",mapping=mapping,normed=True, box=box ,res=gridRes, numthreads=numthreads)
     if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True, box=box ,res=gridRes, numthreads=numthreads)
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
-        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True, res=gridRes, numthreads=numthreads)
+        snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True, box=box ,res=gridRes, numthreads=numthreads)
 
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
@@ -1416,7 +1425,7 @@ def calculate_tracked_parameters(
             # kb [kg m^2 s^-2]
             # P / kb = m^-3
             # Grad (P / kb) [m^-4]
-            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False , res=gridRes, numthreads=numthreads)
+            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False , box=box ,res=gridRes, numthreads=numthreads)
 
         if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             #cm s^-1
@@ -1456,7 +1465,12 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     print(f"Norm of gradient? {normed}")
 
     intres = copy.copy(res)
-    boxsize = snap.boxsize*1e3
+    if (box is False) || (box is None):
+        boxsize = snap.boxsize*1e3
+    elif np.array_equal(np.array(box),np.array(box),equal_nan=False):
+        boxsize = copy.copy(max(box))
+    else:
+        raise Exception(f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE!" + "\n" + "Box not False, None, or all elements equal." + "\n" + "function @calculate_gradient_of_parameter not adapted for non-cube boxes." + "\n" + "All box sides must be equal, or snap.boxsize [kpc] will be used.")
 
     if use_only_cells is None:
         use_only_cells = np.where(snap.type == ptype)[0]
@@ -3262,6 +3276,7 @@ def tracer_plot(
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["y", "z", "x"]
 
+    #Base sizes for Trio plot. Smaller for bigger relative fonts and annotations
     xsize = 4.0
     ysize = 4.0
 
@@ -3293,6 +3308,10 @@ def tracer_plot(
 
     fullTicks = [xx for xx in np.linspace(-1.0 * halfbox, halfbox, 5)]
     fudgeTicks = fullTicks[1:]
+
+    #Base sizes for tails plots for video. Bigger sizes for smaller relative fonts and annotations
+    xsize = 7.0
+    ysize = 7.0
 
     colour = "black"
     sizeMultiply = 20
@@ -3472,6 +3491,9 @@ def tracer_plot(
         snapGas.mass *= 1e10  # [Msol]
         snapGas.hrgm *= 1e10  # [Msol]
 
+        rmax = max(TRACERSPARAMS['Router'])
+        boxmax = 1.5*rmax
+        box = [boxmax,boxmax,boxmax]
         # Calculate New Parameters and Load into memory others we want to track
         snapGas = calculate_tracked_parameters(
             snapGas,
@@ -3482,7 +3504,8 @@ def tracer_plot(
             Zsolar,
             omegabaryon0,
             snapNumber,
-            paramsOfInterest = ["T","rho_rhomean","Tdens"]
+            paramsOfInterest = saveParams,
+            box = box
         )
 
         # ==================#
@@ -3985,9 +4008,9 @@ def tracer_plot(
                     axOuter.tick_params(axis="both",which="both",labelsize=fontsize)
                 fig.tight_layout()
                 if titleBool is True:
-                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.90, top=0.80)
+                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.85, top=0.80)
                 else:
-                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.90)
+                    fig.subplots_adjust(hspace=0.1, wspace=0.1, right=0.85)
 
                 # fig.tight_layout()
 
