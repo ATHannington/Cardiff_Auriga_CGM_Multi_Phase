@@ -190,46 +190,67 @@ for T in Tlst:
         for entry in dtw_TridDict.values():
             trid_list.append(entry[:, 0])
 
-        intersect = reduce(np.intersect1d, trid_list)
-        intersectDict = {}
-        MDict_nn = {}
-        not_in_Dict = {}
-        for analysisParam in dtwParams:
-            if analysisParam in logParams:
-                key = f"log10{analysisParam}"
-            else:
-                key = f"{analysisParam}"
-            trids = dtw_TridDict[key][:, 0]
-            entry, a_ind, b_ind = np.intersect1d(trids, intersect, return_indices=True)
-            MDict_nn.update({key: np.shape(dtw_MDict[key])[0]})
-            not_in_Dict.update({key: trids[np.where(np.isin(trids,entry)==False)[0]]})
-            dtw_MDict.update({key: dtw_MDict[key][a_ind]})
-            intersectDict.update({key: a_ind})
+        intersect = []
+        intersectIndexList = []
+        trid_list_old = trid_list[0]
+        for ii in range(0,len(trid_list)):
+            intersect, old_ind, new_ind = np.intersect1d(trid_list_old,trid_list[ii],return_indices=True)
+            trid_list_old = intersect
+            print(ii,len(intersect))
+            intersectIndexList.append(new_ind)
+        # intersectDict = {}
+        # MDict_nn = {}
+        # not_in_Dict = {}
+        # for analysisParam in dtwParams:
+        #     if analysisParam in logParams:
+        #         key = f"log10{analysisParam}"
+        #     else:
+        #         key = f"{analysisParam}"
+        #     trids = dtw_TridDict[key][:, 0]
+        #     entry, a_ind, b_ind = np.intersect1d(trids, intersect, return_indices=True)
+        #     MDict_nn.update({key: np.shape(dtw_MDict[key])[0]})
+        #     not_in_Dict.update({key: trids[np.where(np.isin(trids,entry)==False)[0]]})
+        #     dtw_MDict.update({key: dtw_MDict[key][a_ind]})
+        #     intersectDict.update({key: a_ind})
 
-        intersectDictList = list(intersectDict.values())
-        oldIntersect = intersectDictList[0]
-        for key, value in intersectDict.items():
-            assert np.shape(value) == np.shape(oldIntersect)
+        # intersectDictList = list(intersectDict.values())
+        # oldIntersect = intersectDictList[0]
+        # for key, value in intersectDict.items():
+        #     assert np.shape(value) == np.shape(oldIntersect)
 
         # Normalise and then sum the distance vectors for each dtwParams
         print("Djoint! This may take a while...")
 
         kk = 0
-        for key, value in dtw_DDict.items():
+        for zz, (key, value) in enumerate(dtw_DDict.items()):
             print(f"{key}")
             whereTracers = intersectDict[key]
             print(f"Shape whereTracers {np.shape(whereTracers)}")
             nn = MDict_nn[key]
-            not_in = not_in_Dict[key]
-            A1 = np.prod((np.arange(nn-2, nn)+1))//2
-            not_in_values_indices = []
-            for ii in not_in:
-                for jj in range(0,nn):
-                    index = A1 - np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2 + (int(jj) - int(ii) - 1)
-                    not_in_values_indices.append(index)
+            d_size = np.prod((np.arange(nn-2, nn)+1))//2
+            drange = list(range(0,d_size,1))
+            drop_indices = []
+            for inter in intersectIndexList[zz]:
+                left = np.full((d_size),fill_value=inter).astype("int32").tolist()
+                tmp = np.multi_ravel_index([left,drange],(nn,nn)).tolist()
+                drop_indices += append(tmp)
+            # keep_indices = [offset + (int(jj) - int(ii) - 1) for (offset, ii) in [(np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2, ii) for ii in intersectIndexList[zz]] for jj in range(0,nn)]
+
+            # for ii in intersectIndexList[zz]:
+            #     offset = np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2
+            #     for jj in range(0,nn):
+            #         index = offset + (int(jj) - int(ii) - 1)
+            #         keep_indices.append(index)
+            #
+            #
+            # for ii in intersectIndexList[zz]:
+            #     offset = np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2
+            #     for jj in range(0,nn):
+            #         index = offset + (int(jj) - int(ii) - 1)
+            #         keep_indices.append(index)
 
             # entry = squareform(value)[whereTracers[:, np.newaxis], whereTracers]
-            entry = np.delete(value,np.array(not_in_values_indices).astype(np.int32))
+            entry = value[np.where(np.isin(np.array(drange),np.array(drop_indices).astype(np.int32))==False)[0]]
 
             maxD = np.nanmax(entry)
             entry = entry / maxD
