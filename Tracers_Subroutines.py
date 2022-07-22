@@ -111,7 +111,7 @@ def snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
-    rmax = max(TRACERSPARAMS['Router'])
+    rmax = np.max(TRACERSPARAMS['Router'])
     boxmax = 1.5*rmax
     box = [boxmax,boxmax,boxmax]
     # Calculate New Parameters and Load into memory others we want to track
@@ -395,7 +395,7 @@ def tracer_selection_snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
-    rmax = max(TRACERSPARAMS['Router'])
+    rmax = np.max(TRACERSPARAMS['Router'])
     boxmax = 1.5*rmax
     box = [boxmax,boxmax,boxmax]
     # Calculate New Parameters and Load into memory others we want to track
@@ -1175,22 +1175,23 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 
 # ------------------------------------------------------------------------------
 #
-def _map_cart_grid_to_cells(pos_array,cart_grid):
-    return np.array([np.argmin(np.linalg.norm(cart_grid-pos,axis=-1),axis=None) for pos in pos_array])
+def _map_cart_grid_to_cells(pos_array,xx,yy,zz):
+    nn = xx.shape[0]
+    return np.array([np.ravel_multi_index([np.argmin(np.abs(xx-pos[0])),np.argmin(np.abs(yy-pos[1])),np.argmin(np.abs(zz-pos[2]))],(nn,nn,nn)) for pos in pos_array]).flatten()
 
 def _multi_inner_product(x,y):
     return np.array([np.inner(xx,yy) for (xx, yy) in zip(x,y)])
 
 def _wrapper_map_cart_grid_to_cells(pos_array,boxsize,intres,center):
     import copy
-    v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n,n,n,3)->(m)")
+    v_map_cart_grid_to_cells = np.vectorize(_map_cart_grid_to_cells,signature="(m,3),(n),(n),(n)->(m)")
 
     halfbox = copy.copy(boxsize)/2.
     coord_spacings = np.linspace(-1.*halfbox,halfbox,intres)
-    xx,yy,zz = np.meshgrid(coord_spacings,coord_spacings,coord_spacings)
-    cart_grid = np.stack([xx,yy,zz]).T
-    cart_grid = cart_grid + center
-    out = v_map_cart_grid_to_cells(pos_array,cart_grid)
+    xx = coord_spacings + center[0]
+    yy = coord_spacings + center[1]
+    zz = coord_spacings + center[2]
+    out = v_map_cart_grid_to_cells(pos_array,xx,yy,zz)
 
     return out
 def calculate_tracked_parameters(
@@ -1447,7 +1448,7 @@ def err_catcher(arg):
     raise Exception(f"Child Process died and gave error: {arg}")
     return
 
-def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype = 0, center=False, box=False, res=1024, use_only_cells=None,numthreads=8):
+def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype = 0, center=False, box=False, res=512, use_only_cells=None,numthreads=8, nneighbours=10):
     """
         Calculate the (norm of the) gradient of parameters argv for
         particle snap.type==type
@@ -1455,6 +1456,7 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     """
     import pylab
     import calcGrid
+    import pysph
     import copy
     import time
     import multiprocessing as mp
@@ -1465,10 +1467,10 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     print(f"Norm of gradient? {normed}")
 
     intres = copy.copy(res)
-    if (box is False) || (box is None):
+    if (box is False) | (box is None):
         boxsize = snap.boxsize*1e3
-    elif np.array_equal(np.array(box),np.array(box),equal_nan=False):
-        boxsize = copy.copy(max(box))
+    elif np.all(box==box[0]):
+        boxsize = copy.copy(np.max(box))
     else:
         raise Exception(f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE!" + "\n" + "Box not False, None, or all elements equal." + "\n" + "function @calculate_gradient_of_parameter not adapted for non-cube boxes." + "\n" + "All box sides must be equal, or snap.boxsize [kpc] will be used.")
 
@@ -1502,20 +1504,29 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     print("Selected %d of %d particles." % (pp.size,snap.npart))
 
     posdata = pos[pp]
-    valdata = snap.data[arg][use_only_cells][pp].astype('float64').copy()
+    valdata = snap.data[arg][use_only_cells][pp].astype('float64')
+    massdata = snap.mass[use_only_cells][pp].astype('float64')
+
+    # vol *= 1e9  # [kpc^3]
+    # mass *= 1e10  # [Msol]
+    rhodata =  snap.rho[use_only_cells][pp].astype("float64")*(1e10/1e9)
+
+    tree = pysph.makeTree(posdata)
+
+    hsmlScalar, _, _ = tree.calcHsml(center,posdata, massdata, nneighbours)
+
+    hsml = np.full(massdata.shape,fill_value=hsmlScalar).astype('float64')
+
     if valdata.ndim == 1:
-        print("Calc A Slice!")
-        data = calcGrid.calcASlice(posdata, valdata, nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
-        grid = data["grid"]
+        print("Calc Grid!")
+        grid = calcGrid.calcGrid(posdata,hsml, massdata, rhodata, valdata.astype('float64'), nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],centerx=center[0], centery=center[1], centerz=center[2], numthreads=numthreads, verbose=True)
 
-
+        grid = np.transpose(grid)
         key = "Grad_" + arg
         print(f"Compute {key}!")
-        snap.data[key] = np.array(np.gradient(grid,spacing)).T
+        snap.data[key] = np.array(np.gradient(grid,spacing)).reshape(-1,3)
         if normed:
-            snap.data[key] = np.linalg.norm(snap.data[key],axis=-1).reshape(-1)
-        else:
-            snap.data[key] = snap.data[key].reshape(-1,3)
+            snap.data[key] = np.linalg.norm(snap.data[key],axis=-1).flatten()
 
     elif valdata.ndim == 2:
         if (valdata.shape[0] == 3):
@@ -1530,21 +1541,20 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
                 )
         # We are going to generate ndim 3D grids and stack them together
         # in a grid of shape (valdata.shape[1],res,res,res)
-        grid = []
         grad_stack = []
-        print(f"Calc A Slice x {valdata.shape[1]} - one for each axis!")
+        grid_list = []
+        print(f"Calc Grid x {valdata.shape[1]} - one for each axis!")
         for dim in range(valdata.shape[1]):
-            data = calcGrid.calcASlice(posdata, valdata[:,dim], nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],
-                                       centerx=center[0], centery=center[1], centerz=center[2], grid3D=True, numthreads=numthreads)
-            grid.append(data["grid"])
-        grid = np.stack([subgrid for subgrid in grid])
+            data= calcGrid.calcGrid(posdata,hsml, massdata, rhodata, valdata[:,dim].astype('float64'), nx=res[0], ny=res[1], nz=res[2], boxx=box[0], boxy=box[1], boxz=box[2],centerx=center[0], centery=center[1], centerz=center[2], numthreads=numthreads, verbose=True)
+            grid_list.append(np.transpose(data))
+        grid = np.stack([subgrid for subgrid in grid_list])
         key = "Grad_" + arg
         print(f"Compute {key}!")
         for dim in range(valdata.shape[1]):
             if normed:
-                gradat = np.linalg.norm(np.array(np.gradient(grid[dim],spacing)).T,axis=-1)
+                gradat = np.linalg.norm(np.array(np.gradient(grid[dim],spacing)),axis=0)
             else:
-                gradat = np.array(np.gradient(grid[dim],spacing)).T
+                gradat = np.array(np.gradient(grid[dim],spacing))
             grad_stack.append(gradat)
 
         if not normed:
@@ -1582,12 +1592,12 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
 
         nchunks  = (64. * np.prod(posdata.shape))/(maxRamPickle*memLimit)
 
-        reqMem = 64.*(np.prod(posdata.shape)+(3.*(float(intres)**3)*numthreads))
+        reqMem = 64.*(np.prod(posdata.shape)+(3.*float(intres)*numthreads))
 
-        if (reqMem >= maxRamSysAvailable):
+        if (reqMem >= memLimit*maxRamSysAvailable):
             while (reqMem >= maxRamSysAvailable) & (numthreads >= 1):
                 numthreads -= 1
-                reqMem = 64.*(np.prod(posdata.shape)+(3.*(float(intres)**3)*numthreads))
+                reqMem = 64.*(np.prod(posdata.shape)+(3.*float(intres)*numthreads))
 
         numthreads = int(max(numthreads,1))
 
@@ -3491,7 +3501,7 @@ def tracer_plot(
         snapGas.mass *= 1e10  # [Msol]
         snapGas.hrgm *= 1e10  # [Msol]
 
-        rmax = max(TRACERSPARAMS['Router'])
+        rmax = np.max(TRACERSPARAMS['Router'])
         boxmax = 1.5*rmax
         box = [boxmax,boxmax,boxmax]
         # Calculate New Parameters and Load into memory others we want to track
