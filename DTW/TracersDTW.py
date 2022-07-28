@@ -19,6 +19,7 @@ import h5py
 from Tracers_Subroutines import *
 import random
 import math
+from functools import reduce
 
 # Input parameters path:
 TracersParamsPath = "TracersParams.csv"
@@ -113,6 +114,9 @@ for T in Tlst:
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         for analysisParam in dtwParams:
             key = (f"T{T}", f"{rin}R{rout}")
+            if analysisParam == "subhalo":
+                dat = dataDict[key][analysisParam]
+                dataDict[key][analysisParam][np.where(np.isnan(dat)==True)[0]] = -2
             if analysisParam in logParams:
                 newkey = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
                 analysisDict.update(
@@ -134,10 +138,35 @@ for key, value in tridDict.items():
         whereEntry = np.where(whereDict[key])[0]
         tridDict.update({key: tridDict[key][:,whereEntry]})
 
-for key, value in pridDict.items():
-    if value is not None:
-        whereEntry = np.where(whereDict[key])[0]
-        pridDict.update({key: pridDict[key][:,whereEntry]})
+print("Gathering Selection Specific Intersect of Trids")
+for T in Tlst:
+    print(f"\n T{T} ")
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        print(f"\n {rin}R{rout} ")
+        trid_list = []
+        for analysisParam in dtwParams:
+            print(f"T{T} {rin}R{rout} {analysisParam}")
+            if analysisParam in logParams:
+                key = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
+            else:
+                key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
+            trid_list.append(tridDict[key])
+
+        intersect = reduce(np.intersect1d,trid_list)
+        for analysisParam in dtwParams:
+            # print(f"Starting T{T} {rin}R{rout} {analysisParam} Analysis!")
+            if analysisParam in logParams:
+                key = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
+            else:
+                key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
+
+            whereEntry = np.where(np.isin(tridDict[key],intersect)==True)[0]
+
+            data = analysisDict[key][:,whereEntry]
+            print(f"Final shape == {np.shape(data)}")
+            analysisDict.update({key: data})
+            tridDict.update({key: tridDict[key][:,whereEntry]})
+            pridDict.update({key: pridDict[key][:,whereEntry]})
 
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")

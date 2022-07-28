@@ -184,31 +184,30 @@ for T in Tlst:
 
         xData = tlookback
 
-        print(f"Get intersection of trids!")
-        dtw_TridDictkeys = list(dtw_TridDict.keys())
-        trid_list = []
-        for entry in dtw_TridDict.values():
-            trid_list.append(entry[:, 0])
+        # print(f"Get intersection of trids!")
+        # dtw_TridDictkeys = list(dtw_TridDict.keys())
+        # trid_list = []
+        # for entry in dtw_TridDict.values():
+        #     trid_list.append(entry[:, 0])
 
-        intersect = []
-        intersectIndexList = []
-        trid_list_old = trid_list[0]
-        for ii in range(0,len(trid_list)):
-            intersect, old_ind, new_ind = np.intersect1d(trid_list_old,trid_list[ii],return_indices=True)
-            trid_list_old = intersect
-            print(ii,len(intersect))
-            intersectIndexList.append(new_ind)
+        # intersect = reduce(np.intersect1d,trid_list)
+
         # intersectDict = {}
+        # notInDict = {}
+        # for ii in range(0,len(trid_list)):
+        #     _, _, new_ind = np.intersect1d(intersect,trid_list[ii],return_indices=True)
+        #     notIn = np.where(np.isin(trid_list[ii],intersect)==False)[0]
+        #     intersectDict.update({dtw_TridDictkeys[ii]: new_ind})
+        #     notInDict.update({dtw_TridDictkeys[ii]: notIn})
+
         # MDict_nn = {}
-        # not_in_Dict = {}
         # for analysisParam in dtwParams:
         #     if analysisParam in logParams:
         #         key = f"log10{analysisParam}"
         #     else:
         #         key = f"{analysisParam}"
-        #     trids = dtw_TridDict[key][:, 0]
-        #     entry, a_ind, b_ind = np.intersect1d(trids, intersect, return_indices=True)
         #     MDict_nn.update({key: np.shape(dtw_MDict[key])[0]})
+
         #     not_in_Dict.update({key: trids[np.where(np.isin(trids,entry)==False)[0]]})
         #     dtw_MDict.update({key: dtw_MDict[key][a_ind]})
         #     intersectDict.update({key: a_ind})
@@ -220,37 +219,44 @@ for T in Tlst:
 
         # Normalise and then sum the distance vectors for each dtwParams
         print("Djoint! This may take a while...")
-
         kk = 0
-        for zz, (key, value) in enumerate(dtw_DDict.items()):
+        valueShapeOld = None
+        for key, value in dtw_DDict.items():
             print(f"{key}")
-            whereTracers = intersectDict[key]
-            print(f"Shape whereTracers {np.shape(whereTracers)}")
-            nn = MDict_nn[key]
-            d_size = np.prod((np.arange(nn-2, nn)+1))//2
-            drange = list(range(0,d_size,1))
-            drop_indices = []
-            for inter in intersectIndexList[zz]:
-                left = np.full((d_size),fill_value=inter).astype("int32").tolist()
-                tmp = np.multi_ravel_index([left,drange],(nn,nn)).tolist()
-                drop_indices += append(tmp)
-            # keep_indices = [offset + (int(jj) - int(ii) - 1) for (offset, ii) in [(np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2, ii) for ii in intersectIndexList[zz]] for jj in range(0,nn)]
-
-            # for ii in intersectIndexList[zz]:
-            #     offset = np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2
-            #     for jj in range(0,nn):
-            #         index = offset + (int(jj) - int(ii) - 1)
-            #         keep_indices.append(index)
+            entry = value.copy()
+            # whereTracers = intersectDict[key]
+            # notIn = notInDict[key]
+            # print(f"Shape whereTracers {np.shape(whereTracers)}")
+            # print(f"Shape notIn {np.shape(notIn)}")
+            # nn = MDict_nn[key]
+            # d_size = np.prod((np.arange(nn-2, nn)+1))//2
+            # # drange = range(0,d_size,1)
             #
+            # assert d_size == value.shape[0], f"[@Djoint]: d_size != value.shape[0] ! {d_size} != {value.shape[0]} ! Check logic..."
             #
-            # for ii in intersectIndexList[zz]:
-            #     offset = np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2
-            #     for jj in range(0,nn):
-            #         index = offset + (int(jj) - int(ii) - 1)
-            #         keep_indices.append(index)
-
-            # entry = squareform(value)[whereTracers[:, np.newaxis], whereTracers]
-            entry = value[np.where(np.isin(np.array(drange),np.array(drop_indices).astype(np.int32))==False)[0]]
+            # assert whereTracers.shape[0] <= value.shape[0], f"[@Djoint]: whereTracers.shape[0] > value.shape[0] ! {whereTracers.shape[0]} > {value.shape[0]} ! should be <= ! Check logic..."
+            #
+            # # chunkrange = range(0,d_size,nchunks)
+            # # drop_indices =  [np.ravel_multi_index([[inter],chunk],(nn,nn)).tolist() for inter in intersectDict[key] for chunk in [drange[ii:jj] for (ii,jj) in zip(list(chunkrange)[:-1],list(chunkrange)[1:]) ] + [drange[chunkrange[-1]:]] ]
+            # #
+            # # offset = [np.prod((np.arange(nn-int(ii)-2, nn-int(ii))+1))//2 for ii in whereTracers]
+            # #
+            # # drop_indices = [offset + (int(jj) - 1) for jj in range(0,nn)]
+            # entry = value.copy()
+            # offset = lambda ii,nn,d_size: d_size - np.prod(np.arange(nn-int(ii)-2, nn-int(ii))+1)//2
+            # drop_indices = lambda offset,entry,where,nn,d_size: np.delete(entry,[offset(ii,nn,d_size) + jj for ii in where for jj in range(0,nn)],axis=0)
+            #
+            # entry = drop_indices(offset,entry,notIn,nn,d_size)
+            # # cols = list(range(1,nn+1,1))
+            # # drop_indices_func = lambda ni: np.delete(value, [ni*col for col in cols], axis=0)
+            # # drop_indices_func(notIn)
+            #
+            # if valueShapeOld is not None:
+            #     valueShapeNew = entry.shape[0]
+            #     assert valueShapeNew == valueShapeOld, f"[@Djoint]: valueShapeNew != valueShapeOld ! {valueShapeNew} != {valueShapeOld} ! Check logic..."
+            #     valueShapeOld = valueShapeNew.copy()
+            # else:
+            #     valueShapeOld = entry.shape[0]
 
             maxD = np.nanmax(entry)
             entry = entry / maxD
@@ -364,9 +370,9 @@ for T in Tlst:
                 plt.savefig(opslaan2, dpi=DPI, transparent=False)
                 print(opslaan2)
 
-        whereTracers = intersectDict[dtw_TridDictkeys[0]]
-        tridData = dtw_TridDict[dtw_TridDictkeys[0]][whereTracers]
-        pridData = dtw_PridDict[dtw_TridDictkeys[0]][whereTracers]
+        # whereTracers = intersectDict[dtw_TridDictkeys[0]]
+        tridData = dtw_TridDict[dtw_TridDictkeys[0]]#[whereTracers]
+        pridData = dtw_PridDict[dtw_TridDictkeys[0]]#[whereTracers]
 
         saveDict = {}
         saveDict.update({"clusters": clusters})
@@ -405,6 +411,6 @@ for T in Tlst:
             plotYdata,
             plotXdata,
             paths,
-            whereTracers,
+            # whereTracers,
             d_crit,
         )
