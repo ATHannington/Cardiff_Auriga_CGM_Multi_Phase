@@ -21,7 +21,7 @@ import logging
 import math
 import random
 from itertools import combinations, chain
-from ctypes import Structure, c_double
+import copy
 # ==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
 # ==============================================================================#
@@ -191,6 +191,10 @@ def snap_analysis(
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
+
+    if TRACERSPARAMS["QuadPlotBool"]:
+        TRACERSPARAMS["saveParams"] = copy.copy(TRACERSPARAMS["saveParamsOriginal"] )
+
     ###
     ##  Selection   ##
     ###
@@ -232,6 +236,7 @@ def snap_analysis(
                 + f"[@{snapNumber} @{rin}R{rout} @T{targetT}]: Saving Tracers data as: "
                 + savePath
             )
+
 
             hdf5_save(savePath, out)
             #
@@ -466,6 +471,9 @@ def tracer_selection_snap_analysis(
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
+
+    if TRACERSPARAMS["QuadPlotBool"]:
+        TRACERSPARAMS["saveParams"] = copy.copy(TRACERSPARAMS["saveParamsOriginal"] )
 
     if TFCbool == True:
         # --------------------------------------------------------------------------#
@@ -1155,11 +1163,13 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
     print(f"[@{snapNumber}]: Centering!")
 
     # subfind has calculated its centre of mass for you
-    HaloCentre = snap_subfind.data["fpos"][HaloID, :]
+    HaloCentre = snap_subfind.data["fpos"][HaloID, :] #[Mpc]
     # use the subfind COM to centre the coordinates on the galaxy
-    snap.data["pos"] = snap.data["pos"] - np.array(HaloCentre)
+    snap.data["pos"] = snap.data["pos"] - np.array(HaloCentre) #[Mpc]
 
-    snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1)
+    snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1) #[Mpc]
+
+    snap.center = np.array([0.,0.,0.])
 
     try:
         whereGas = np.where(snap.type == 0)
@@ -1387,8 +1397,8 @@ def calculate_tracked_parameters(
             (3.0 * pi) / (32.0 * ((c.G * c.msol) / ((1e3 * c.parsec) ** 3) * rho))
         ) * (1.0 / GyrToSeconds)
 
-        whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
-        snapGas.data["tff"][whereNOTGas] = np.nan
+        # whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
+        # snapGas.data["tff"][whereNOTGas] = np.nan
 
     if np.any(np.isin(np.array(["tcool_tff"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
         # Cooling time over free fall time
@@ -1403,7 +1413,7 @@ def calculate_tracked_parameters(
         snapGas, mapping = calculate_gradient_of_parameter(snapGas,"n_H",mapping=mapping,normed=True, box=box ,res=gridRes, numthreads=numthreads)
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
         snapGas, mapping = calculate_gradient_of_parameter(snapGas,"bfld",mapping=mapping,normed=True, box=box ,res=gridRes, numthreads=numthreads)
-
+        snapGas.data["Grad_bfld"] = np.linalg.norm(snapGas.data["Grad_bfld"], axis=1)
     # Cosmic Ray Pressure
     # gamm_c = 4./3.
     # P_CR / kb= (gamm_c - 1)^-1 n T
@@ -1415,19 +1425,28 @@ def calculate_tracked_parameters(
     # # Temperature = U / (3/2 * N KB) [K]
     # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
     try:
-        if np.any(np.isin(np.array(["P_CR","PCR_Pthermal"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+        if np.any(np.isin(np.array(["P_CR","PCR_Pthermal","Grad_P_CR","gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             snapGas.data['P_CR'] = (snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]) / ((((4./3. - 1.)**-1)* c.KB)/(meanweight * c.amu))
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: P_CR {str(e)}")
+    try:
         if np.any(np.isin(np.array(["PCR_Pthermal"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             snapGas.data["PCR_Pthermal"] = snapGas.data['P_CR']/snapGas.data['P_thermal']
 
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: PCR_Pthermal {str(e)}")
 
+    try:
         if np.any(np.isin(np.array(["Grad_P_CR","gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             # P [kg m^-1 s^-2]
             # kb [kg m^2 s^-2]
             # P / kb = m^-3
             # Grad (P / kb) [m^-4]
-            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"Grad_P_CR",mapping=mapping,normed=False , box=box ,res=gridRes, numthreads=numthreads)
+            snapGas, mapping = calculate_gradient_of_parameter(snapGas,"P_CR",mapping=mapping,normed=False , box=box ,res=gridRes, numthreads=numthreads)
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Grad_P_CR {str(e)}")
 
+    try:
         if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
             #cm s^-1
             snapGas.data["valf"] = snapGas.data["bfld"][whereGas] * (bfactor/1e6)/ np.sqrt(4.0*pi*snapGas.data["dens"][whereGas,np.newaxis])
@@ -1437,10 +1456,14 @@ def calculate_tracked_parameters(
             v_multi_inner_product = np.vectorize(_multi_inner_product,signature="(m,n),(m,n)->(m)")
 
             snapGas.data["gah"] = np.abs(v_multi_inner_product(snapGas.data["valf"][whereGas],snapGas.data['Grad_P_CR'][whereGas]*c.KB)*snapGas.data["vol"]*(c.parsec*1e3)**3)
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: gah {str(e)}")
 
-            snapGas.data['Grad_P_CR'] = np.linalg.norm(snapGas.data['Grad_P_CR'],axis=1)
-    except:
-        pass
+    try:
+        if np.any(np.isin(np.array(["P_CR","PCR_Pthermal","Grad_P_CR","gah"]), np.array(paramsOfInterest))) | (len(paramsOfInterest) == 0):
+                snapGas.data['Grad_P_CR'] = np.linalg.norm(snapGas.data['Grad_P_CR'],axis=1)
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Norm Grad_P_CR {str(e)}")
 
     return snapGas
 
@@ -1492,6 +1515,8 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
     elif type( res ) != np.ndarray:
         res = np.array( [res]*3 )
 
+    boxsize *= 2.
+    box *= 2.
     halfbox = copy.copy(boxsize)/2.
     spacing = halfbox/float(intres)
 
@@ -1613,7 +1638,7 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         print(f"Starting numthreads = {numthreads} mp pool with data split into {nchunks} chunks...")
 
 
-        posrange = range(0,posdata.shape[0],int(posdata.shape[0]//nchunks))
+        posrange = range(0,posdata.shape[0]+1,int(posdata.shape[0]//nchunks))
         args_list = [[posSubset,boxsize,intres,center] for posSubset in [posdata[ii:jj] for (ii,jj) in zip(list(posrange),list(posrange)[1:])] ]
 
         print("Map...")
@@ -1634,7 +1659,7 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
         pool.close()
         pool.join()
 
-        mapping = np.concatenate(tuple([out.get() for out in output_list]),axis=0)
+        mapping = np.concatenate(tuple([out.get() for out in output_list]),axis=0).astype(np.int32)
         stop = time.time()
 
         print("...done!")
@@ -1642,6 +1667,8 @@ def calculate_gradient_of_parameter(snap, arg, mapping=None, normed=False, ptype
 
     # Perform mapping from Cart Grid back to approx. cells
     snap.data[key] = snap.data[key][mapping]
+
+    assert np.shape(snap.data[key])[0] == np.shape(snap.data[arg])[0], f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE! Output from Gradient Calc and subsequent mapping not equal in shape to input data! Check Logic!"
 
     # print("***---***")
     # print("*** DEBUG! ***")
@@ -1910,6 +1937,7 @@ def load_tracers_parameters(TracersParamsPath):
         TRACERSPARAMS["QuadPlotBool"] = False
 
     if TRACERSPARAMS["QuadPlotBool"]:
+        TRACERSPARAMS["saveParamsOriginal"] = copy.copy(TRACERSPARAMS["saveParams"])
         for param in ["Tdens","rho_rhomean","n_H","B","gz"]:
             if param not in TRACERSPARAMS["saveParams"]:
                 TRACERSPARAMS["saveParams"].append(param)
