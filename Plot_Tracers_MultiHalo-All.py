@@ -78,19 +78,21 @@ ylabel = {
     "B": r"|B| ($ \mu $G)",
     "vrad": r"Radial Velocity (km s$^{-1}$)",
     "gz": r"Average Metallicity Z/Z$_{\odot}$",
-    "L": r"Specific Angular Momentum" +"\n" + r"(kpc km s$^{-1}$)",
+    "L": r"Specific Angular Momentum" + "\n" + r"(kpc km s$^{-1}$)",
     "P_thermal": r"P$_{Thermal}$ / k$_B$ (K cm$^{-3}$)",
     "P_magnetic": r"P$_{Magnetic}$ / k$_B$ (K cm$^{-3}$)",
     "P_kinetic": r"P$_{Kinetic}$ / k$_B$ (K cm$^{-3}$)",
-    "P_tot": r"P$_{tot}$ = (P$_{thermal}$ + P$_{magnetic}$)/ k$_B$" +"\n" + r"(K cm$^{-3}$)",
+    "P_tot": r"P$_{tot}$ = (P$_{thermal}$ + P$_{magnetic}$)/ k$_B$"
+    + "\n"
+    + r"(K cm$^{-3}$)",
     "Pthermal_Pmagnetic": r"P$_{thermal}$/P$_{magnetic}$",
     "P_CR": r"P$_{CR}$ (K cm$^{-3}$)",
     "PCR_Pthermal": r"(X$_{CR}$ = P$_{CR}$/P$_{Thermal}$)",
-    "gah" : r"Alfven Gas Heating (erg s$^{-1}$)",
-    "Grad_T" : r"||Temperature Gradient|| (K cm$^{-1}$)",
-    "Grad_n_H" : r"||n$_H$ Gradient|| (cm$^{-4}$)",
-    "Grad_bfld" : r"||B-Field Gradient|| ($ \mu $G cm$^{-1}$)",
-    "Grad_P_CR" : r"||P$_{CR}$ Gradient|| (K cm$^{-4}$)",
+    "gah": r"Alfven Gas Heating (erg s$^{-1}$)",
+    "Grad_T": r"||Temperature Gradient|| (K cm$^{-1}$)",
+    "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-4}$)",
+    "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G cm$^{-1}$)",
+    "Grad_P_CR": r"||P$_{CR}$ Gradient|| (K cm$^{-4}$)",
     "tcool": r"Cooling Time (Gyr)",
     "theat": r"Heating Time (Gyr)",
     "tcross": r"Sound Crossing Cell Time (Gyr)",
@@ -186,7 +188,7 @@ selectTimeKey = (
     f"{TRACERSPARAMS['Rinner'][0]}R{TRACERSPARAMS['Router'][0]}",
 )
 
-for rin, rout in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
+for rin, rout in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
     savePath = f"./MultiHalo/{int(rin)}R{int(rout)}/"
     tmp = "./"
     for savePathChunk in savePath.split("/")[1:-1]:
@@ -207,11 +209,11 @@ for rin, rout in zip(TRACERSPARAMS['Rinner'],TRACERSPARAMS['Router']):
 # =============================================================================#
 #                     Stats!                                                  # ==============================================================================#
 
-statsData = multi_halo_statistics(flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst)
-
-save_statistics_csv(
-    statsData, TRACERSPARAMS, Tlst, snapRange
+statsData = multi_halo_statistics(
+    flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst
 )
+
+save_statistics_csv(statsData, TRACERSPARAMS, Tlst, snapRange)
 # ============================================================================#
 # #                   Medians PLOT                                              # #=============================================================================#
 matplotlib.rc_file_defaults()
@@ -226,17 +228,17 @@ medians_plot(
     Tlst,
     logParameters,
     ylabel,
-    titleBool = titleBool,
-    separateLegend = separateLegend,
-    radialSummaryBool = False,
-    DPI = DPI,
-    xsize = xsize,
-    ysize = ysize,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain
-    )
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    radialSummaryBool=False,
+    DPI=DPI,
+    xsize=xsize,
+    ysize=ysize,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
 matplotlib.rc_file_defaults()
 plt.close("all")
 
@@ -252,17 +254,17 @@ medians_plot(
     Tlst,
     logParameters,
     ylabel,
-    titleBool = titleBool,
-    separateLegend = separateLegend,
-    radialSummaryBool = True,
-    DPI = DPI,
-    xsize = xsize,
-    ysize = ysize,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain
-    )
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    radialSummaryBool=True,
+    DPI=DPI,
+    xsize=xsize,
+    ysize=ysize,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
 matplotlib.rc_file_defaults()
 plt.close("all")
 
@@ -272,16 +274,22 @@ plt.close("all")
 matplotlib.rc_file_defaults()
 plt.close("all")
 currently_or_persistently_at_temperature_plot(
-    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,
-    persistenceBool = True,
-    titleBool = titleBool,
-    DPI = DPI,
-    xsize = xsize,
-    ysize = ysize,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain)
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    persistenceBool=True,
+    titleBool=titleBool,
+    DPI=DPI,
+    xsize=xsize,
+    ysize=ysize,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
 matplotlib.rc_file_defaults()
 plt.close("all")
 
@@ -291,15 +299,22 @@ plt.close("all")
 matplotlib.rc_file_defaults()
 plt.close("all")
 currently_or_persistently_at_temperature_plot(
-    flatMergedDict, TRACERSPARAMS, saveParams, tlookback, snapRange, Tlst,     persistenceBool = False,
-    titleBool = titleBool,
-    DPI = DPI,
-    xsize = xsize,
-    ysize = ysize,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain)
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    snapRange,
+    Tlst,
+    persistenceBool=False,
+    titleBool=titleBool,
+    DPI=DPI,
+    xsize=xsize,
+    ysize=ysize,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
 matplotlib.rc_file_defaults()
 plt.close("all")
 
@@ -316,15 +331,15 @@ temperature_variation_plot(
     Tlst,
     logParameters,
     ylabel,
-    titleBool = titleBool,
-    DPI = DPI,
-    xsize = xsize,
-    ysize = ysize,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain
-    )
+    titleBool=titleBool,
+    DPI=DPI,
+    xsize=xsize,
+    ysize=ysize,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
 
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -343,13 +358,13 @@ bars_plot(
     snapRange,
     Tlst,
     DataSavepath,
-    titleBool = titleBool,
-    separateLegend = separateLegend,
-    DPI = DPI,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    DPI=DPI,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -365,13 +380,13 @@ bars_plot(
     DataSavepath,
     shortSnapRangeBool=True,
     shortSnapRangeNumber=1,
-    titleBool = titleBool,
-    separateLegend = separateLegend,
-    DPI = DPI,
-    opacityPercentiles = opacityPercentiles,
-    lineStyleMedian = lineStyleMedian,
-    lineStylePercentiles = lineStylePercentiles,
-    colourmapMain = colourmapMain
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    DPI=DPI,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -381,11 +396,6 @@ plt.close("all")
 # #
 # ============================================================================#
 # ============================================================================#
-
-
-
-
-
 
 
 # # ============================================================================#
@@ -403,13 +413,13 @@ stacked_pdf_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI
+    DPI,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
 # #
 
-#=============================================================================#
+# =============================================================================#
 # #                Medians and Phases Combo                                     #
 # # =============================================================================#
 #

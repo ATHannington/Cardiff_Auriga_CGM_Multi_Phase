@@ -24,6 +24,7 @@ import math
 fontsize = 13
 fontsizeTitle = 14
 
+
 def medians_plot(
     dataDict,
     statsData,
@@ -35,20 +36,21 @@ def medians_plot(
     logParameters,
     ylabel,
     titleBool=False,
-    separateLegend = False,
+    separateLegend=False,
     radialSummaryBool=False,
-    radialSummaryFirstLastBool = True,
+    radialSummaryFirstLastBool=True,
     DPI=100,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    xsize=7.0,
+    ysize=6.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",):
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
 
     xlimDict = {
         "mass": {"xmin": 5.0, "xmax": 9.0},
@@ -58,15 +60,15 @@ def medians_plot(
         "n_H": {"xmin": -5.0, "xmax": 0.0},
         "B": {"xmin": -2.0, "xmax": 1.0},
         "vrad": {"xmin": -150.0, "xmax": 150.0},
-        "gz": {"xmin": -1.5, "xmax": 0.5},
+        "gz": {"xmin": -1.05, "xmax": 0.5},
         "P_thermal": {"xmin": 1.0, "xmax": 4.0},
-        "P_magnetic": {"xmin": -1.5, "xmax": 5.0},
-        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
-        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "P_magnetic": {"xmin": -1.05, "xmax": 5.0},
+        "P_kinetic": {"xmin": -1.00, "xmax": 8.0},
+        "P_tot": {"xmin": -1.00, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -2.0, "xmax": 3.0},
         "tcool": {"xmin": -5.0, "xmax": 2.0},
         "theat": {"xmin": -4.0, "xmax": 4.0},
-        "tff": {"xmin": -1.5, "xmax": 0.5},
+        "tff": {"xmin": -1.05, "xmax": 0.5},
         "tcool_tff": {"xmin": -4.0, "xmax": 2.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
         "dens": {"xmin": -30.0, "xmax": -22.0},
@@ -74,7 +76,8 @@ def medians_plot(
     }
 
     from itertools import cycle
-    lines = ["--","-.",":"]
+
+    lines = ["--", "-.", ":"]
     linecycler = cycle(lines)
 
     for analysisParam in saveParams:
@@ -87,8 +90,10 @@ def medians_plot(
         radialPlotData = {}
         labelList = []
 
-        lineStyleList =[]
-        for (jj,(rin, rout)) in enumerate(zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"])):
+        lineStyleList = []
+        for (jj, (rin, rout)) in enumerate(
+            zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"])
+        ):
             print(f"{rin}R{rout}")
 
             fig, ax = plt.subplots(
@@ -106,12 +111,17 @@ def medians_plot(
             rLineStyle = next(linecycler)
             lineStyleList.append(rLineStyle)
 
-            if  (radialSummaryBool is True):
-                plot_line = matplotlib.lines.Line2D([0],[0],color="black", lineStyle = rLineStyle, label = f"{rin}<R<{rout}")
+            if radialSummaryBool is True:
+                plot_line = matplotlib.lines.Line2D(
+                    [0],
+                    [0],
+                    color="black",
+                    lineStyle=rLineStyle,
+                    label=f"{rin}<R<{rout}",
+                )
                 labelList.append(plot_line)
 
-
-            radialPlotData.update({f"{rin}R{rout}":{}})
+            radialPlotData.update({f"{rin}R{rout}": {}})
             for ii in range(len(Tlst)):
                 print(f"T{Tlst[ii]}")
                 T = float(Tlst[ii])
@@ -169,9 +179,7 @@ def medians_plot(
                 print("")
                 print("Sub-Plot!")
 
-
                 currentAx = ax
-
 
                 midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
                 percentilesPairs = zip(
@@ -194,10 +202,12 @@ def medians_plot(
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
-                if (jj>0)&(radialSummaryBool is True):
+                if (jj > 0) & (radialSummaryBool is True):
                     nRadialData = len(list(radialPlotData.keys()))
-                    for (kk,(key, rData)) in enumerate(radialPlotData.items()):
-                        if (radialSummaryFirstLastBool is True)&((kk == 0)|(kk==nRadialData)):
+                    for (kk, (key, rData)) in enumerate(radialPlotData.items()):
+                        if (radialSummaryFirstLastBool is True) & (
+                            (kk == 0) | (kk == nRadialData)
+                        ):
                             data = rData[f"T{Tlst[ii]}"]
                             currentAx.plot(
                                 tlookback,
@@ -219,21 +229,29 @@ def medians_plot(
 
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
                 currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-                currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+                currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
 
                 if "tcool" in analysisParam.split("_"):
-                    currentAx.text(0.9, 0.10, 'for subset'+'\n'+r' $t_{Cool} > 0$',horizontalalignment='center',verticalalignment='center',transform=currentAx.transAxes, fontsize=fontsize)
+                    currentAx.text(
+                        0.9,
+                        0.10,
+                        "for subset" + "\n" + r" $t_{Cool} > 0$",
+                        horizontalalignment="center",
+                        verticalalignment="center",
+                        transform=currentAx.transAxes,
+                        fontsize=fontsize,
+                    )
 
-
-
-                #Delete text string for first y_axis label for all but last panel
+                # Delete text string for first y_axis label for all but last panel
                 # plt.gcf().canvas.draw()
                 # if (int(ii)<len(Tlst)-1):
                 #     plt.setp(currentAx.get_xticklabels(),visible = False)
                 #     plt.gcf().canvas.draw()
                 #     # STOP160IF
 
-                plot_patch = matplotlib.patches.Patch(color=colour, label = r"$T = 10^{%3.0f} K$" % (float(temp)))
+                plot_patch = matplotlib.patches.Patch(
+                    color=colour, label=r"$T = 10^{%3.0f} K$" % (float(temp))
+                )
                 patchList.append(plot_patch)
 
                 if titleBool is True:
@@ -253,8 +271,8 @@ def medians_plot(
 
             axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
             midax.set_ylabel(ylabel[analysisParam], fontsize=fontsize)
-            finalymin = min(np.nanmin(yminlist),xlimDict[analysisParam]['xmin'])
-            finalymax = max(np.nanmax(ymaxlist),xlimDict[analysisParam]['xmax'])
+            finalymin = min(np.nanmin(yminlist), xlimDict[analysisParam]["xmin"])
+            finalymax = max(np.nanmax(ymaxlist), xlimDict[analysisParam]["xmax"])
             if (
                 (np.isinf(finalymin) == True)
                 or (np.isinf(finalymax) == True)
@@ -263,8 +281,8 @@ def medians_plot(
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
-            finalymin = numpy.round_(finalymin, decimals = 1)
-            finalymax = numpy.round_(finalymax, decimals = 1)
+            finalymin = numpy.round_(finalymin, decimals=1)
+            finalymax = numpy.round_(finalymax, decimals=1)
 
             custom_ylim = (finalymin, finalymax)
             plt.setp(
@@ -272,32 +290,44 @@ def medians_plot(
                 ylim=custom_ylim,
                 xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
             )
-            if (radialSummaryBool is True):
-                if jj > 0 :
-                    currentLabel = matplotlib.lines.Line2D([0],[0],color="black", lineStyle = lineStyleMedian, label = f"{rin}<R<{rout}")
+            if radialSummaryBool is True:
+                if jj > 0:
+                    currentLabel = matplotlib.lines.Line2D(
+                        [0],
+                        [0],
+                        color="black",
+                        lineStyle=lineStyleMedian,
+                        label=f"{rin}<R<{rout}",
+                    )
                     if radialSummaryFirstLastBool is True:
-                        handles = patchList+labelList[:1]+[currentLabel]
+                        handles = patchList + labelList[:1] + [currentLabel]
                     else:
-                        handles = patchList+labelList[:jj]+[currentLabel]
+                        handles = patchList + labelList[:jj] + [currentLabel]
                     lcol = len(Tlst) + 2
-                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=lcol)
+                    axis0.legend(
+                        handles=handles, loc="upper right", fontsize=fontsize, ncol=lcol
+                    )
                 else:
                     lcol = len(Tlst) + 1
                     handles = patchList
-                    axis0.legend(handles = handles, loc="upper right",fontsize=fontsize, ncol=lcol)
+                    axis0.legend(
+                        handles=handles, loc="upper right", fontsize=fontsize, ncol=lcol
+                    )
 
             else:
                 lcol = len(Tlst) + 1
                 handles = patchList
-                axis0.legend(handles = handles, loc="upper right",fontsize=fontsize,ncol=lcol)
+                axis0.legend(
+                    handles=handles, loc="upper right", fontsize=fontsize, ncol=lcol
+                )
 
             plt.tight_layout()
             if titleBool is True:
-                plt.subplots_adjust(top=0.875, hspace=0.1,left=0.15)
+                plt.subplots_adjust(top=0.875, hspace=0.1, left=0.15)
             else:
-                plt.subplots_adjust(hspace=0.1,left=0.15)
+                plt.subplots_adjust(hspace=0.1, left=0.15)
 
-            if (radialSummaryBool is True)&(jj>0):
+            if (radialSummaryBool is True) & (jj > 0):
                 opslaan = (
                     "./"
                     + "MultiHalo"
@@ -320,16 +350,22 @@ def medians_plot(
                     + f"_Medians.pdf"
                 )
 
-
-            if (separateLegend == True):
+            if separateLegend == True:
                 axis0.get_legend().remove()
 
-                figl, axl = plt.subplots(figsize = (lcol*2.5,1))
+                figl, axl = plt.subplots(figsize=(lcol * 2.5, 1))
                 axl.axis(False)
-                axl.legend(handles = handles, ncol=lcol, loc="center", bbox_to_anchor=(0.5, 0.5), fontsize=fontsize)
+                axl.legend(
+                    handles=handles,
+                    ncol=lcol,
+                    loc="center",
+                    bbox_to_anchor=(0.5, 0.5),
+                    fontsize=fontsize,
+                )
                 plt.tight_layout()
-                if (radialSummaryBool is True)&(jj>0):
-                    figl.savefig("./"
+                if (radialSummaryBool is True) & (jj > 0):
+                    figl.savefig(
+                        "./"
                         + "MultiHalo"
                         + "/"
                         + f"{int(rin)}R{int(rout)}"
@@ -337,7 +373,8 @@ def medians_plot(
                         + f"Medians_Radial_Summary_Legend.pdf"
                     )
                 else:
-                    figl.savefig("./"
+                    figl.savefig(
+                        "./"
                         + "MultiHalo"
                         + "/"
                         + f"{int(rin)}R{int(rout)}"
@@ -351,6 +388,7 @@ def medians_plot(
 
     return
 
+
 def currently_or_persistently_at_temperature_plot(
     dataDict,
     TRACERSPARAMS,
@@ -361,12 +399,12 @@ def currently_or_persistently_at_temperature_plot(
     persistenceBool,
     titleBool,
     DPI=100,
-    xsize = 5.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    xsize=5.0,
+    ysize=6.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -374,7 +412,7 @@ def currently_or_persistently_at_temperature_plot(
 ):
     Ydata = {}
     Xdata = {}
-    deltaT = float(TRACERSPARAMS["deltaT"])*2.
+    deltaT = float(TRACERSPARAMS["deltaT"]) * 2.0
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
         # Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
@@ -398,14 +436,17 @@ def currently_or_persistently_at_temperature_plot(
             rangeSet = [snapRangeLow, snapRangeHi]
 
             key = (f"T{T}", f"{rin}R{rout}")
-            timeIndexSelect = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
+            timeIndexSelect = np.where(
+                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+            )[0]
             whereGas = np.where(dataDict[key]["type"][timeIndexSelect][0] == 0)[0]
 
             data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
 
             selectedAtSelection = np.where(
                 (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))) [0]
+                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
+            )[0]
 
             for tmpsnapRange in rangeSet:
                 currentSelection = selectedAtSelection
@@ -418,8 +459,9 @@ def currently_or_persistently_at_temperature_plot(
                         data = dataDict[key]["T"][timeIndex][0][whereGas]
                         selected = np.where(
                             (data >= 1.0 * 10 ** (T - deltaT))
-                            & (data <= 1.0 * 10 ** (T + deltaT)))[0]
-                        currentSelection = np.intersect1d(selected,currentSelection)
+                            & (data <= 1.0 * 10 ** (T + deltaT))
+                        )[0]
+                        currentSelection = np.intersect1d(selected, currentSelection)
                         nTracers = int(np.shape(currentSelection)[0])
 
                     else:
@@ -427,7 +469,8 @@ def currently_or_persistently_at_temperature_plot(
 
                         selected = np.where(
                             (data >= 1.0 * 10 ** (T - deltaT))
-                            & (data <= 1.0 * 10 ** (T + deltaT)))[0]
+                            & (data <= 1.0 * 10 ** (T + deltaT))
+                        )[0]
                         nTracers = int(np.shape(selected)[0])
 
                     # print("nTracers",nTracers)
@@ -456,7 +499,7 @@ def currently_or_persistently_at_temperature_plot(
         # ==============================================================================#
 
         fig, ax = plt.subplots(
-            nrows=1, #len(Tlst),
+            nrows=1,  # len(Tlst),
             ncols=1,
             sharex=True,
             sharey=True,
@@ -495,7 +538,6 @@ def currently_or_persistently_at_temperature_plot(
 
             currentAx = ax
 
-
             tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
 
             currentAx.fill_between(
@@ -518,7 +560,7 @@ def currently_or_persistently_at_temperature_plot(
             currentAx.axvline(x=vline, c="red")
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+            currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
 
             currentAx.set_ylim(ymin=datamin, ymax=datamax)
             currentAx.set_xlim(
@@ -554,10 +596,10 @@ def currently_or_persistently_at_temperature_plot(
 
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(
-            f"Percentage Tracers Within"+f"\n"+f"Temperature Range",
+            f"Percentage Tracers Within" + f"\n" + f"Temperature Range",
             fontsize=fontsize,
         )
-        axis0.legend(loc="upper right",fontsize=fontsize)
+        axis0.legend(loc="upper right", fontsize=fontsize)
         plt.tight_layout(h_pad=0.0)
         plt.subplots_adjust(left=0.15)
         if persistenceBool is True:
@@ -596,14 +638,14 @@ def stacked_pdf_plot(
     logParameters,
     ylabel,
     titleBool,
-    Nbins = 150,
+    Nbins=150,
     DPI=100,
-    xsize = 5.0,
-    ysize = 10.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    xsize=5.0,
+    ysize=10.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -625,15 +667,15 @@ def stacked_pdf_plot(
         "n_H": {"xmin": -5.0, "xmax": 0.0},
         "B": {"xmin": -2.0, "xmax": 1.0},
         "vrad": {"xmin": -150.0, "xmax": 150.0},
-        "gz": {"xmin": -1.5, "xmax": 0.5},
+        "gz": {"xmin": -1.05, "xmax": 0.5},
         "P_thermal": {"xmin": 1.0, "xmax": 4.0},
-        "P_magnetic": {"xmin": -1.5, "xmax": 5.0},
-        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
-        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "P_magnetic": {"xmin": -1.05, "xmax": 5.0},
+        "P_kinetic": {"xmin": -1.00, "xmax": 8.0},
+        "P_tot": {"xmin": -1.00, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -2.0, "xmax": 3.0},
         "tcool": {"xmin": -5.0, "xmax": 2.0},
         "theat": {"xmin": -4.0, "xmax": 4.0},
-        "tff": {"xmin": -1.5, "xmax": 0.5},
+        "tff": {"xmin": -1.05, "xmax": 0.5},
         "tcool_tff": {"xmin": -4.0, "xmax": 2.0},
         "rho_rhomean": {"xmin": 0.0, "xmax": 8.0},
         "dens": {"xmin": -30.0, "xmax": -22.0},
@@ -724,15 +766,12 @@ def stacked_pdf_plot(
                         lineStyle = selectStyle
                         linewidth = selectWidth
                     else:
-                        sRange = (
-                            int(
-                                min(
-                                    TRACERSPARAMS["finalSnap"] + 1,
-                                    TRACERSPARAMS["snapMax"] + 1,
-                                )
+                        sRange = int(
+                            min(
+                                TRACERSPARAMS["finalSnap"] + 1,
+                                TRACERSPARAMS["snapMax"] + 1,
                             )
-                            - int(TRACERSPARAMS["snapMin"])
-                        )
+                        ) - int(TRACERSPARAMS["snapMin"])
                         colour = cmap(((float(jj)) / (sRange)))
                         lineStyle = "-"
                         linewidth = 2
@@ -743,7 +782,11 @@ def stacked_pdf_plot(
                     xmin = xlimDict[dataKey]["xmin"]
                     xmax = xlimDict[dataKey]["xmax"]
                     try:
-                        xBins = np.linspace(start=xlimDict[dataKey]['xmin'], stop=xlimDict[dataKey]['xmax'], num=Nbins)
+                        xBins = np.linspace(
+                            start=xlimDict[dataKey]["xmin"],
+                            stop=xlimDict[dataKey]["xmax"],
+                            num=Nbins,
+                        )
                     except:
                         xBins = np.linspace(start=xmin, stop=xmax, num=Nbins)
                     else:
@@ -752,10 +795,10 @@ def stacked_pdf_plot(
                     ##### aggregate endpoints #####
                     ###############################
 
-                    whereData = np.where(data<xmin)[0]
+                    whereData = np.where(data < xmin)[0]
                     data[whereData] = xmin
 
-                    whereData = np.where(data>xmax)[0]
+                    whereData = np.where(data > xmax)[0]
                     data[whereData] = xmax
 
                     # belowrangedf = df.loc[(df["x"] < xmin)]
@@ -775,14 +818,27 @@ def stacked_pdf_plot(
                     xminlist.append(xmin)
                     xmaxlist.append(xmax)
 
-                    hist, bin_edges = np.histogram(data, bins=xBins, weights = weights, density=True)
+                    hist, bin_edges = np.histogram(
+                        data, bins=xBins, weights=weights, density=True
+                    )
 
                     # if densityBool is False:
                     #   hist = np.log10(hist)
 
-                    xFromBins = np.array([(x1+x2)/2. for (x1,x2) in zip(bin_edges[:-1],bin_edges[1:])])
+                    xFromBins = np.array(
+                        [
+                            (x1 + x2) / 2.0
+                            for (x1, x2) in zip(bin_edges[:-1], bin_edges[1:])
+                        ]
+                    )
 
-                    currentAx.plot(xFromBins, hist, color=colour, linestyle= lineStyleMedian, linewidth=linewidth)
+                    currentAx.plot(
+                        xFromBins,
+                        hist,
+                        color=colour,
+                        linestyle=lineStyleMedian,
+                        linewidth=linewidth,
+                    )
 
                     currentAx.fill_between(
                         xFromBins,
@@ -819,7 +875,7 @@ def stacked_pdf_plot(
                     currentAx.set_yticks([])
                     currentAx.set_ylabel("")
                     # currentAx.set_ylim(mainplotylim)
-                    currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+                    currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
                     sns.despine(bottom=True, left=True)
 
                 currentAx.set_xlabel(xlabel[dataKey], fontsize=fontsize)
@@ -907,12 +963,12 @@ def phases_plot(
     titleBool,
     ylabel,
     DPI=100,
-    xsize = 20.0,
-    ysize = 5.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    xsize=20.0,
+    ysize=5.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -1049,7 +1105,7 @@ def phases_plot(
 
                     currentAx.set_ylim(ymin, ymax)
                     currentAx.set_xlim(xmin, xmax)
-                    currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+                    currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
 
                     cmap = matplotlib.cm.get_cmap(colourmapMain)
                     colour = cmap(float(ii) / float(len(Tlst)))
@@ -1057,7 +1113,10 @@ def phases_plot(
                     plot_patch = matplotlib.patches.Patch(color=colour)
                     plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
                     currentAx.legend(
-                        handles=[plot_patch], labels=[plot_label], loc="upper right", fontsize=fontsize
+                        handles=[plot_patch],
+                        labels=[plot_label],
+                        loc="upper right",
+                        fontsize=fontsize,
                     )
 
                     cax1 = inset_axes(currentAx, width="5%", height="95%", loc="right")
@@ -1132,7 +1191,7 @@ def flat_analyse_time_averages(
     shortSnapRangeNumber=None,
 ):
 
-    epsilon = float(TRACERSPARAMS['deltaT'])
+    epsilon = float(TRACERSPARAMS["deltaT"])
 
     gas = []
     halo0 = []
@@ -1141,7 +1200,7 @@ def flat_analyse_time_averages(
     noHalo = []
     stars = []
     wind = []
-    ism =[]
+    ism = []
     disk = []
     cgm = []
     igm = []
@@ -1163,7 +1222,6 @@ def flat_analyse_time_averages(
     tcool_tff_UP = []
     ptherm_pmag_LO = []
     ptherm_pmag_UP = []
-
 
     out = {}
     preselectInd = np.where(snapRange < int(TRACERSPARAMS["selectSnap"]))[0]
@@ -1222,12 +1280,12 @@ def flat_analyse_time_averages(
             print("Halo0")
             rowspre, colspre = np.where(
                 FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
-                == int(TRACERSPARAMS["haloID"])
+                == float(TRACERSPARAMS["haloID"])
             )
             halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
                 FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
-                == int(TRACERSPARAMS["haloID"])
+                == float(TRACERSPARAMS["haloID"])
             )
             halo0post = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1236,13 +1294,13 @@ def flat_analyse_time_averages(
 
             print("Unbound")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] == -1
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] == -1.0
             )
             unboundpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] == -1
+                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] == -1.0
             )
             unboundpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1253,13 +1311,14 @@ def flat_analyse_time_averages(
             rowspre, colspre = np.where(
                 (
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
-                    != int(TRACERSPARAMS["haloID"])
+                    != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
                 & (
                     np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :])
                     == False
                 )
+                & (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
             )
             otherHalopre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -1267,13 +1326,14 @@ def flat_analyse_time_averages(
             rowspost, colspost = np.where(
                 (
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
-                    != int(TRACERSPARAMS["haloID"])
+                    != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
                 & (
                     np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
                     == False
                 )
+                & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
             )
             otherHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1284,21 +1344,18 @@ def flat_analyse_time_averages(
             rowspre, colspre = np.where(
                 (
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
-                    != int(TRACERSPARAMS["haloID"])
+                    != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1)
-                & (
-                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :])
-                    == True
-                )
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
+                & (np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]) == True)
             )
             noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
                 (
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
-                    != int(TRACERSPARAMS["haloID"])
+                    != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1)
+                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
                 & (
                     np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
                     == True
@@ -1384,21 +1441,19 @@ def flat_analyse_time_averages(
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < rmin)
             )
-            diskpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
+            diskpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             disk.append([diskpre, diskpost])
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= rmin) &         (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= rmin)
+                & (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
             )
             cgmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= rmin) & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= rmin)
+                & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
             )
-            cgmpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
+            cgmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             cgm.append([cgmpre, cgmpost])
 
             rowspre, colspre = np.where(
@@ -1408,35 +1463,52 @@ def flat_analyse_time_averages(
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["R"][:, whereGas][post, :] > rmax)
             )
-            igmpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
+            igmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             igm.append([igmpre, igmpost])
 
             print("Heating & Cooling")
 
-            TPreDat =  np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1,:]) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+            TPreDat = np.log10(
+                FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
 
-            TPostDat = np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :]) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][0,:])
+            TPostDat = np.log10(
+                FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :]
+            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][0, :])
 
-            colspre = np.where(TPreDat < (-1. * epsilon))[0]
-            coolingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(TPostDat < (-1. * epsilon))[0]
-            coolingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where(TPreDat < (-1.0 * epsilon))[0]
+            coolingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(TPostDat < (-1.0 * epsilon))[0]
+            coolingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             cooling.append([coolingPre, coolingPost])
 
-            colspre = np.where((TPreDat >= (-1. * epsilon))&(TPreDat <= (epsilon))) [0]
-            stableTPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where((TPostDat >= (-1. * epsilon))&(TPostDat <= (epsilon)))[0]
-            stableTPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where((TPreDat >= (-1.0 * epsilon)) & (TPreDat <= (epsilon)))[
+                0
+            ]
+            stableTPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(
+                (TPostDat >= (-1.0 * epsilon)) & (TPostDat <= (epsilon))
+            )[0]
+            stableTPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             stableT.append([stableTPre, stableTPost])
 
             colspre = np.where(TPreDat > (epsilon))[0]
-            heatingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            heatingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
             colspost = np.where(TPostDat > (epsilon))[0]
-            heatingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            heatingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             heating.append([heatingPre, heatingPost])
-
 
             #
             # # Select where GAS FOREVER ONLY tracers meet condition FOR THE LAST 2 SNAPSHOTS PRIOR TO SELECTION
@@ -1463,7 +1535,7 @@ def flat_analyse_time_averages(
             # rowspre, colspre = np.where(
             #     np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1:])
             #     - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
-            #     < (-1.0 * epsilonT)
+            #     < (-1.00 * epsilonT)
             # )
             # bincreasingpre = (
             #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -1472,7 +1544,7 @@ def flat_analyse_time_averages(
             # rowspost, colspost = np.where(
             #     np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
             #     - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][:1])
-            #     < (-1.0 * epsilonT)
+            #     < (-1.00 * epsilonT)
             # )
             # bincreasingpost = (
             #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1514,53 +1586,76 @@ def flat_analyse_time_averages(
             # smallTchange.append([smallTpre, smallTpost])
 
             print("Density")
-              # (K)
+            # (K)
 
-            nHPreDat =  np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][-1,:]) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :])
+            nHPreDat = np.log10(
+                FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :])
 
-            nHPostDat = np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :]) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][0,:])
+            nHPostDat = np.log10(
+                FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :]
+            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][0, :])
 
-            colspre = np.where(nHPreDat < (-1. * epsilon))[0]
-            dispersingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(nHPostDat < (-1. * epsilon))[0]
-            dispersingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where(nHPreDat < (-1.0 * epsilon))[0]
+            dispersingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(nHPostDat < (-1.0 * epsilon))[0]
+            dispersingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             dispersing.append([dispersingPre, dispersingPost])
 
-            colspre = np.where((nHPreDat >= (-1. * epsilon))&(nHPreDat <= (epsilon))) [0]
-            stablenHPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where((nHPostDat >= (-1. * epsilon))&(nHPostDat <= (epsilon)))[0]
-            stablenHPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where(
+                (nHPreDat >= (-1.0 * epsilon)) & (nHPreDat <= (epsilon))
+            )[0]
+            stablenHPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(
+                (nHPostDat >= (-1.0 * epsilon)) & (nHPostDat <= (epsilon))
+            )[0]
+            stablenHPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             stabledensity.append([stablenHPre, stablenHPost])
 
             colspre = np.where(nHPreDat > (epsilon))[0]
-            condensingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            condensingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
             colspost = np.where(nHPostDat > (epsilon))[0]
-            condensingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            condensingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             condensing.append([condensingPre, condensingPost])
-
 
             print("Radial-Flow")
             data = FlatDataDict[Tkey]["vrad"][:, whereGas][pre, :]
-            vradPreDat = np.nanmedian(data,axis=0)
+            vradPreDat = np.nanmedian(data, axis=0)
             data = FlatDataDict[Tkey]["vrad"][:, whereGas][post, :]
-            vradPostDat = np.nanmedian(data,axis=0)
+            vradPostDat = np.nanmedian(data, axis=0)
 
             epsilonRadial = 50.0
 
             colspre = np.where(vradPreDat < 0.0 - epsilonRadial)[0]
             inflowpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             colspost = np.where(vradPostDat < 0.0 - epsilonRadial)[0]
-            inflowpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            inflowpost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             inflow.append([inflowpre, inflowpost])
 
             colspre = np.where(
-                (vradPreDat >= 0.0 - epsilonRadial) & (vradPreDat <= 0.0 + epsilonRadial)
+                (vradPreDat >= 0.0 - epsilonRadial)
+                & (vradPreDat <= 0.0 + epsilonRadial)
             )[0]
             statflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             colspost = np.where(
-                (vradPostDat >= 0.0 - epsilonRadial) & (vradPostDat <= 0.0 + epsilonRadial)
+                (vradPostDat >= 0.0 - epsilonRadial)
+                & (vradPostDat <= 0.0 + epsilonRadial)
             )[0]
             statflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1577,40 +1672,59 @@ def flat_analyse_time_averages(
             )
             outflow.append([outflowpre, outflowpost])
 
-
             print("|B|")
-              # (K)
+            # (K)
 
-            BPreDat =  np.log10(FlatDataDict[Tkey]["B"][:, whereGas][pre, :][-1,:]) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :])
+            BPreDat = np.log10(
+                FlatDataDict[Tkey]["B"][:, whereGas][pre, :][-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :])
 
-            BPostDat = np.log10(FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :]) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][post, :][0,:])
+            BPostDat = np.log10(
+                FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :]
+            ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][post, :][0, :])
 
-            colspre = np.where(BPreDat < (-1. * epsilon))[0]
-            bdecreasingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(BPostDat < (-1. * epsilon))[0]
-            bdecreasingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where(BPreDat < (-1.0 * epsilon))[0]
+            bdecreasingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(BPostDat < (-1.0 * epsilon))[0]
+            bdecreasingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             bdecreasing.append([bdecreasingPre, bdecreasingPost])
 
-            colspre = np.where((BPreDat >= (-1. * epsilon))&(BPreDat <= (epsilon))) [0]
-            bstablePre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where((BPostDat >= (-1. * epsilon))&(BPostDat <= (epsilon))) [0]
-            bstablePost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            colspre = np.where((BPreDat >= (-1.0 * epsilon)) & (BPreDat <= (epsilon)))[
+                0
+            ]
+            bstablePre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(
+                (BPostDat >= (-1.0 * epsilon)) & (BPostDat <= (epsilon))
+            )[0]
+            bstablePost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             bstable.append([bstablePre, bstablePost])
 
             colspre = np.where(BPreDat > (epsilon))[0]
-            bincreasingPre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            bincreasingPre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
             colspost = np.where(BPostDat > (epsilon))[0]
-            bincreasingPost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            bincreasingPost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
             bincreasing.append([bincreasingPre, bincreasingPost])
-             #
+            #
             print("Z")
             # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
             data = FlatDataDict[Tkey]["gz"][:, whereGas][pre, :]
-            zPreDat = np.nanmedian(data,axis=0)
+            zPreDat = np.nanmedian(data, axis=0)
 
             data = FlatDataDict[Tkey]["gz"][:, whereGas][post, :]
-            zPostDat = np.nanmedian(data,axis=0)
+            zPostDat = np.nanmedian(data, axis=0)
 
             colspre = np.where(zPreDat > 0.75)[0]
             aboveZpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -1632,49 +1746,54 @@ def flat_analyse_time_averages(
             # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
             data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][pre, :]
-            tcool_tffPreDat = np.nanmedian(data,axis=0)
+            tcool_tffPreDat = np.nanmedian(data, axis=0)
 
             data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][post, :]
-            tcool_tffPostDat = np.nanmedian(data,axis=0)
+            tcool_tffPostDat = np.nanmedian(data, axis=0)
 
-            colspre = np.where(tcool_tffPreDat < 10.)[0]
-            belowtcool_tffpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(tcool_tffPostDat < 10.)[0]
+            colspre = np.where(tcool_tffPreDat < 10.0)[0]
+            belowtcool_tffpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(tcool_tffPostDat < 10.0)[0]
             belowtcool_tffpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             tcool_tff_LO.append([belowtcool_tffpre, belowtcool_tffpost])
 
-
-            colspre = np.where(tcool_tffPreDat > 10.)[0]
-            abovetcool_tffpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(tcool_tffPostDat > 10.)[0]
+            colspre = np.where(tcool_tffPreDat > 10.0)[0]
+            abovetcool_tffpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(tcool_tffPostDat > 10.0)[0]
             abovetcool_tffpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             tcool_tff_UP.append([abovetcool_tffpre, abovetcool_tffpost])
 
-
             print("ptherm_pmag")
             # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
             data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][pre, :]
-            ptherm_pmagPreDat = np.nanmedian(data,axis=0)
+            ptherm_pmagPreDat = np.nanmedian(data, axis=0)
 
             data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][post, :]
-            ptherm_pmagPostDat = np.nanmedian(data,axis=0)
-            colspre = np.where(ptherm_pmagPreDat < 1.)[0]
-            belowptherm_pmagpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(ptherm_pmagPostDat < 1.)[0]
+            ptherm_pmagPostDat = np.nanmedian(data, axis=0)
+            colspre = np.where(ptherm_pmagPreDat < 1.0)[0]
+            belowptherm_pmagpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(ptherm_pmagPostDat < 1.0)[0]
             belowptherm_pmagpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             ptherm_pmag_LO.append([belowptherm_pmagpre, belowptherm_pmagpost])
 
-
-            colspre = np.where(ptherm_pmagPreDat > 1.)[0]
-            aboveptherm_pmagpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(ptherm_pmagPostDat > 1.)[0]
+            colspre = np.where(ptherm_pmagPreDat > 1.0)[0]
+            aboveptherm_pmagpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            colspost = np.where(ptherm_pmagPostDat > 1.0)[0]
             aboveptherm_pmagpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
@@ -1714,7 +1833,6 @@ def flat_analyse_time_averages(
             #     "Pre-Selection": np.array(wind)[:, 0],
             #     "Post-Selection": np.array(wind)[:, 1],
             # },
-
             # "Disk": {
             #     "Pre-Selection": np.array(disk)[:, 0],
             #     "Post-Selection": np.array(disk)[:, 1],
@@ -1820,6 +1938,8 @@ def flat_analyse_time_averages(
     df1 = pd.concat(dict_of_df, axis=1)
 
     df = df1.set_index("T")
+    # print("DEBUG")
+    # STOP1824
     return df
 
 
@@ -1833,18 +1953,18 @@ def bars_plot(
     Tlst,
     DataSavepath,
     DPI=100,
-    xsize = 7.0,
-    ysize = 6.0,
-    bottomParam = 0.35,
+    xsize=7.0,
+    ysize=6.0,
+    bottomParam=0.35,
     barwidth=0.80,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
-    titleBool = True,
-    separateLegend = False,
+    titleBool=True,
+    separateLegend=False,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -1919,18 +2039,22 @@ def bars_plot(
         postDF = postDF.drop(columns="Router")
         postDF.columns = postDF.columns.droplevel(1)
 
-        fig, ax = plt.subplots(
-            nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True
-        )
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True)
 
-        preDF.T.plot.bar(width=barwidth,rot=0, ax=ax, color=colour, align='center')
+        preDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align="center")
 
         cmap = matplotlib.cm.get_cmap(colourmapMain)
-        patchList = [matplotlib.patches.Patch(color = cmap(float(ii) / float(len(Tlst))), label = r"$T = 10^{%3.0f} K$" % (float(temp))) for ii, temp in enumerate(Tlst)]
-        ax.legend(handles = patchList, loc="upper left", fontsize=fontsize)
+        patchList = [
+            matplotlib.patches.Patch(
+                color=cmap(float(ii) / float(len(Tlst))),
+                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+            )
+            for ii, temp in enumerate(Tlst)
+        ]
+        ax.legend(handles=patchList, loc="upper left", fontsize=fontsize)
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
-        ax.tick_params(axis="both",which="both",labelsize=fontsize)
-        ax.set_ylim(0.,100.)
+        ax.tick_params(axis="both", which="both", labelsize=fontsize)
+        ax.set_ylim(0.0, 100.0)
 
         if titleBool is True:
             plt.title(
@@ -1943,7 +2067,7 @@ def bars_plot(
             )
 
         plt.annotate(
-            text="Ever Matched"+"\n"+"Feature",
+            text="Ever Matched" + "\n" + "Feature",
             xy=(0.15, 0.02),
             xytext=(0.15, 0.02),
             textcoords=fig.transFigure,
@@ -1968,7 +2092,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="On Average"+"\n"+"Feature",
+            text="On Average" + "\n" + "Feature",
             xy=(0.40, 0.02),
             xytext=(0.40, 0.02),
             textcoords=fig.transFigure,
@@ -1993,7 +2117,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="-1 Snapshot"+"\n"+"Feature",
+            text="-1 Snapshot" + "\n" + "Feature",
             xy=(0.70, 0.02),
             xytext=(0.70, 0.02),
             textcoords=fig.transFigure,
@@ -2012,17 +2136,16 @@ def bars_plot(
         fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(axis="both",which="both",labelsize=fontsize)
-
+        ax.tick_params(axis="both", which="both", labelsize=fontsize)
 
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers", fontsize=fontsize)
         plt.tight_layout()
 
         if titleBool is True:
-            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10,right=0.95)
+            plt.subplots_adjust(top=0.90, bottom=bottomParam, left=0.10, right=0.95)
         else:
-            plt.subplots_adjust(bottom=bottomParam, left=0.10,right=0.95)
+            plt.subplots_adjust(bottom=bottomParam, left=0.10, right=0.95)
         if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
             opslaan = (
                 "./"
@@ -2042,29 +2165,30 @@ def bars_plot(
                 + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Pre-Stats-Bars.pdf"
             )
 
-
-        if (separateLegend == True):
+        if separateLegend == True:
             ax.get_legend().remove()
 
         fig.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
 
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True)
 
-
-        fig, ax = plt.subplots(
-            nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True
-        )
-
-        postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align='center')
+        postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align="center")
 
         cmap = matplotlib.cm.get_cmap(colourmapMain)
-        patchList = [matplotlib.patches.Patch(color = cmap(float(ii) / float(len(Tlst))), label = r"$T = 10^{%3.0f} K$" % (float(temp))) for ii, temp in enumerate(Tlst)]
-        ax.legend(handles = patchList, loc="upper left", fontsize=fontsize)
+        patchList = [
+            matplotlib.patches.Patch(
+                color=cmap(float(ii) / float(len(Tlst))),
+                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+            )
+            for ii, temp in enumerate(Tlst)
+        ]
+        ax.legend(handles=patchList, loc="upper left", fontsize=fontsize)
 
         plt.xticks(rotation=90, ha="right", fontsize=fontsize)
-        ax.tick_params(axis="both",which="both",labelsize=fontsize)
-        ax.set_ylim(0.,100.)
+        ax.tick_params(axis="both", which="both", labelsize=fontsize)
+        ax.set_ylim(0.0, 100.0)
 
         if titleBool is True:
             plt.title(
@@ -2077,7 +2201,7 @@ def bars_plot(
             )
 
         plt.annotate(
-            text="Ever Matched"+"\n"+"Feature",
+            text="Ever Matched" + "\n" + "Feature",
             xy=(0.15, 0.02),
             xytext=(0.15, 0.02),
             textcoords=fig.transFigure,
@@ -2102,7 +2226,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="On Average"+"\n"+"Feature",
+            text="On Average" + "\n" + "Feature",
             xy=(0.40, 0.02),
             xytext=(0.40, 0.02),
             textcoords=fig.transFigure,
@@ -2127,7 +2251,7 @@ def bars_plot(
         )
 
         plt.annotate(
-            text="+1 Snapshot"+"\n"+"Feature",
+            text="+1 Snapshot" + "\n" + "Feature",
             xy=(0.70, 0.02),
             xytext=(0.70, 0.02),
             textcoords=fig.transFigure,
@@ -2229,7 +2353,7 @@ def bars_plot(
         # fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(axis="both",which="both",labelsize=fontsize)
+        ax.tick_params(axis="both", which="both", labelsize=fontsize)
         plt.grid(which="both", axis="y")
         plt.ylabel("% of Tracers", fontsize=fontsize)
         plt.tight_layout()
@@ -2257,18 +2381,25 @@ def bars_plot(
                 + f"Tracers_MultiHalo_shortSnapRange-{int(shortSnapRangeNumber)}snaps_selectSnap{int(TRACERSPARAMS['selectSnap'])}_{rin}R{rout}_Post-Stats-Bars.pdf"
             )
 
-        if (separateLegend == True):
+        if separateLegend == True:
             # get handles and labels for reuse
             label_params = ax.get_legend_handles_labels()
 
             ax.get_legend().remove()
 
             lcol = len(Tlst)
-            figl, axl = plt.subplots(figsize = (lcol*2.5,1))
+            figl, axl = plt.subplots(figsize=(lcol * 2.5, 1))
             axl.axis(False)
-            axl.legend(handles = patchList, ncol = lcol, loc="center", bbox_to_anchor=(0.5, 0.5), fontsize=fontsize)
+            axl.legend(
+                handles=patchList,
+                ncol=lcol,
+                loc="center",
+                bbox_to_anchor=(0.5, 0.5),
+                fontsize=fontsize,
+            )
             plt.tight_layout()
-            figl.savefig("./"
+            figl.savefig(
+                "./"
                 + "MultiHalo"
                 + "/"
                 + f"{int(rin)}R{int(rout)}"
@@ -2299,18 +2430,18 @@ def hist_plot(
     logParameters,
     ylabel,
     titleBool,
-    DPI = 75,
-    xsize = 10.0,
-    ysize = 24.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    DPI=75,
+    xsize=10.0,
+    ysize=24.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
-    Nbins=150
+    Nbins=150,
 ):
 
     weightKey = "mass"
@@ -2325,10 +2456,10 @@ def hist_plot(
         "vrad": {"xmin": -250.0, "xmax": 250.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
         "L": {"xmin": 0.0, "xmax": 5.0},
-        "P_thermal": {"xmin": -1.0, "xmax": 7.0},
+        "P_thermal": {"xmin": -1.00, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
-        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
-        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "P_kinetic": {"xmin": -1.00, "xmax": 8.0},
+        "P_tot": {"xmin": -1.00, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
         "tcool": {"xmin": -6.0, "xmax": 3.0},
         "theat": {"xmin": -4.0, "xmax": 4.0},
@@ -2487,7 +2618,8 @@ def hist_plot(
                 top=0.90, bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
             )
         else:
-            plt.subplots_adjust(bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
+            plt.subplots_adjust(
+                bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
             )
 
         opslaan = (
@@ -2522,19 +2654,19 @@ def medians_phases_plot(
     logParameters,
     ylabel,
     SELECTEDHALOES,
-    DPI = 75,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    DPI=75,
+    xsize=7.0,
+    ysize=6.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     Nbins=100,
-    titleBool = True,
+    titleBool=True,
     weightKey="mass",
     analysisParam="R",
 ):
@@ -2550,10 +2682,10 @@ def medians_phases_plot(
         "B": {"xmin": -6.0, "xmax": 2.0},
         "vrad": {"xmin": -400.0, "xmax": 400.0},
         "gz": {"xmin": -4.0, "xmax": 1.0},
-        "P_thermal": {"xmin": -1.0, "xmax": 7.0},
+        "P_thermal": {"xmin": -1.00, "xmax": 7.0},
         "P_magnetic": {"xmin": -7.0, "xmax": 7.0},
-        "P_kinetic": {"xmin": -1.0, "xmax": 8.0},
-        "P_tot": {"xmin": -1.0, "xmax": 7.0},
+        "P_kinetic": {"xmin": -1.00, "xmax": 8.0},
+        "P_tot": {"xmin": -1.00, "xmax": 7.0},
         "Pthermal_Pmagnetic": {"xmin": -3.0, "xmax": 10.0},
         "tcool": {"xmin": -6.0, "xmax": 3.0},
         "theat": {"xmin": -4.0, "xmax": 4.0},
@@ -2690,7 +2822,7 @@ def medians_phases_plot(
 
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+            currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
 
             #
 
@@ -2736,7 +2868,10 @@ def medians_phases_plot(
                 np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
             )
 
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0) / nHaloes
+            massCells = (
+                np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
+                / nHaloes
+            )
             weightDataCells = np.flip(
                 FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
             )
@@ -2800,7 +2935,9 @@ def medians_phases_plot(
 
             if weightKey in list(xlimDict.keys()):
                 yedges = np.linspace(
-                    xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"], Nbins
+                    xlimDict[analysisParam]["xmin"],
+                    xlimDict[analysisParam]["xmax"],
+                    Nbins,
                 )
             else:
                 yedges = np.linspace(
@@ -2930,6 +3067,7 @@ def medians_phases_plot(
 
     return
 
+
 def temperature_variation_plot(
     dataDict,
     TRACERSPARAMS,
@@ -2941,17 +3079,18 @@ def temperature_variation_plot(
     ylabel,
     titleBool,
     DPI=100,
-    xsize = 7.0,
-    ysize = 6.0,
-    opacityPercentiles = 0.25,
-    lineStyleMedian = "solid",
-    lineStylePercentiles = "-.",
-    colourmapMain = "plasma",
+    xsize=7.0,
+    ysize=6.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
-    StatsDataPathSuffix = ".csv"):
+    StatsDataPathSuffix=".csv",
+):
 
     statsData = {}
 
@@ -2962,7 +3101,7 @@ def temperature_variation_plot(
         print(f"{rin}R{rout}")
 
         fig, ax = plt.subplots(
-            nrows=1,#len(Tlst),
+            nrows=1,  # len(Tlst),
             ncols=1,
             sharex=True,
             sharey=True,
@@ -2983,8 +3122,10 @@ def temperature_variation_plot(
 
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
 
-
-            tempDiff = np.abs(np.log10(dataDict[selectKey][analysisParam][1:,:]) - np.log10(dataDict[selectKey][analysisParam][:-1,:]))
+            tempDiff = np.abs(
+                np.log10(dataDict[selectKey][analysisParam][1:, :])
+                - np.log10(dataDict[selectKey][analysisParam][:-1, :])
+            )
 
             xData = tlookback[1:]
             # Temperature specific load path
@@ -3010,14 +3151,18 @@ def temperature_variation_plot(
 
             loadPercentilesTypes = [
                 analysisParam + "_" + f"{percentile:4.2f}" + "%"
-                for percentile in TRACERSPARAMS['percentiles']
+                for percentile in TRACERSPARAMS["percentiles"]
             ]
             LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):4.2f}" + "%"
-            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}"  + "%"
+            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}" + "%"
             median = analysisParam + "_" + "50.00%"
 
-            for perc_key, percentile in zip(loadPercentilesTypes,TRACERSPARAMS["percentiles"]):
-                plotData.update({perc_key: np.nanpercentile(tempDiff,percentile,axis=1)})
+            for perc_key, percentile in zip(
+                loadPercentilesTypes, TRACERSPARAMS["percentiles"]
+            ):
+                plotData.update(
+                    {perc_key: np.nanpercentile(tempDiff, percentile, axis=1)}
+                )
 
             # if analysisParam in logParameters:
             #     for k, v in plotData.items():
@@ -3040,7 +3185,6 @@ def temperature_variation_plot(
             print("Sub-Plot!")
 
             currentAx = ax
-
 
             midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
             percentilesPairs = zip(
@@ -3068,7 +3212,7 @@ def temperature_variation_plot(
 
             currentAx.xaxis.set_minor_locator(AutoMinorLocator())
             currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(axis="both",which="both",labelsize=fontsize)
+            currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
             #
             # #Delete text string for first y_axis label for all but last panel
             # plt.gcf().canvas.draw()
@@ -3094,16 +3238,18 @@ def temperature_variation_plot(
                 )
 
             saveKey = (f"T{T}", f"{rin}R{rout}")
-            statsData.update({saveKey:plotData.copy()})
-
-
+            statsData.update({saveKey: plotData.copy()})
 
         # Only give 1 x-axis a label, as they sharex
         axis0 = ax
         midax = ax
 
-
-        ylabelhere = r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$" + "\n" + "Temperature "+ "Variation (K)"
+        ylabelhere = (
+            r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$"
+            + "\n"
+            + "Temperature "
+            + "Variation (K)"
+        )
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(ylabelhere, fontsize=fontsize)
         finalymin = np.nanmin(yminlist)
@@ -3124,13 +3270,13 @@ def temperature_variation_plot(
             ylim=custom_ylim,
             xlim=(round(max(xData), 1), round(min(xData), 1)),
         )
-        axis0.legend(loc="upper right",fontsize=fontsize)
+        axis0.legend(loc="upper right", fontsize=fontsize)
 
         plt.tight_layout()
         if titleBool is True:
-            plt.subplots_adjust(top=0.875, hspace=0.1,left=0.15)
+            plt.subplots_adjust(top=0.875, hspace=0.1, left=0.15)
         else:
-            plt.subplots_adjust(hspace=0.1,left=0.15)
+            plt.subplots_adjust(hspace=0.1, left=0.15)
 
         opslaan = (
             "./"
@@ -3145,11 +3291,14 @@ def temperature_variation_plot(
         print(opslaan)
         plt.close()
 
-
     #### Output statsDF as .csv ####
 
     save_statistics_csv(
-        statsData, TRACERSPARAMS, Tlst, snapRange[1:], savePathInsert = "Temperature_Variation_"
+        statsData,
+        TRACERSPARAMS,
+        Tlst,
+        snapRange[1:],
+        savePathInsert="Temperature_Variation_",
     )
 
     return

@@ -49,7 +49,8 @@ def medians_plot(
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",):
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+):
 
     tmpxsize = xsize + 2.0
 
@@ -243,6 +244,7 @@ def medians_plot(
 
     return
 
+
 def currently_or_persistently_at_temperature_plot(
     dataDict,
     TRACERSPARAMS,
@@ -259,7 +261,7 @@ def currently_or_persistently_at_temperature_plot(
 ):
     Ydata = {}
     Xdata = {}
-    deltaT = float(TRACERSPARAMS["deltaT"])*2.
+    deltaT = float(TRACERSPARAMS["deltaT"]) * 2.0
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
         # Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
@@ -283,14 +285,17 @@ def currently_or_persistently_at_temperature_plot(
             rangeSet = [snapRangeLow, snapRangeHi]
 
             key = (f"T{T}", f"{rin}R{rout}")
-            timeIndexSelect = np.where(np.array(snapRange) == int(TRACERSPARAMS["selectSnap"]))[0]
+            timeIndexSelect = np.where(
+                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+            )[0]
             whereGas = np.where(dataDict[key]["type"][timeIndexSelect][0] == 0)[0]
 
             data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
 
             selectedAtSelection = np.where(
                 (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"])))[0]
+                & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
+            )[0]
 
             for tmpsnapRange in rangeSet:
                 currentSelection = selectedAtSelection
@@ -303,8 +308,9 @@ def currently_or_persistently_at_temperature_plot(
                         data = dataDict[key]["T"][timeIndex][0][whereGas]
                         selected = np.where(
                             (data >= 1.0 * 10 ** (T - deltaT))
-                            & (data <= 1.0 * 10 ** (T + deltaT)))[0]
-                        currentSelection = np.intersect1d(selected,currentSelection)
+                            & (data <= 1.0 * 10 ** (T + deltaT))
+                        )[0]
+                        currentSelection = np.intersect1d(selected, currentSelection)
                         nTracers = int(np.shape(currentSelection)[0])
 
                     else:
@@ -312,7 +318,8 @@ def currently_or_persistently_at_temperature_plot(
 
                         selected = np.where(
                             (data >= 1.0 * 10 ** (T - deltaT))
-                            & (data <= 1.0 * 10 ** (T + deltaT)))[0]
+                            & (data <= 1.0 * 10 ** (T + deltaT))
+                        )[0]
                         nTracers = int(np.shape(selected)[0])
 
                     # print("nTracers",nTracers)
@@ -621,15 +628,12 @@ def stacked_pdf_plot(
                         lineStyle = selectStyle
                         linewidth = selectWidth
                     else:
-                        sRange = (
-                            int(
-                                min(
-                                    TRACERSPARAMS["finalSnap"] + 1,
-                                    TRACERSPARAMS["snapMax"] + 1,
-                                )
+                        sRange = int(
+                            min(
+                                TRACERSPARAMS["finalSnap"] + 1,
+                                TRACERSPARAMS["snapMax"] + 1,
                             )
-                            - int(TRACERSPARAMS["snapMin"])
-                        )
+                        ) - int(TRACERSPARAMS["snapMin"])
                         colour = cmap(((float(jj)) / (sRange)))
                         lineStyle = "-"
                         linewidth = 2
@@ -1534,7 +1538,7 @@ def bars_plot(
     DataSavepath,
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
-    titleBool = True,
+    titleBool=True,
     DataSavepathSuffix=f".h5",
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
@@ -2088,7 +2092,8 @@ def hist_plot(
                 top=0.90, bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
             )
         else:
-            plt.subplots_adjust(bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
+            plt.subplots_adjust(
+                bottom=0.05, left=0.10, right=0.75, hspace=0.1, wspace=0.1
             )
 
         opslaan = (
@@ -2128,7 +2133,7 @@ def medians_phases_plot(
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     Nbins=100,
-    titleBool = True,
+    titleBool=True,
     DPI=75,
     weightKey="mass",
     analysisParam="R",
@@ -2339,7 +2344,10 @@ def medians_phases_plot(
                 np.tile(np.array(tlookback), nDat).reshape(nDat, -1).T, axis=0
             )
 
-            massCells = np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0) / nHaloes
+            massCells = (
+                np.flip(FlatDataDict[FullDictKey]["mass"][:, whereReal], axis=0)
+                / nHaloes
+            )
             weightDataCells = np.flip(
                 FlatDataDict[FullDictKey][weightKey][:, whereReal] * massCells, axis=0
             )
@@ -2403,7 +2411,9 @@ def medians_phases_plot(
 
             if weightKey in list(xlimDict.keys()):
                 yedges = np.linspace(
-                    xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"], Nbins
+                    xlimDict[analysisParam]["xmin"],
+                    xlimDict[analysisParam]["xmax"],
+                    Nbins,
                 )
             else:
                 yedges = np.linspace(
@@ -2533,6 +2543,7 @@ def medians_phases_plot(
 
     return
 
+
 def temperature_variation_plot(
     dataDict,
     TRACERSPARAMS,
@@ -2547,7 +2558,8 @@ def temperature_variation_plot(
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
-    StatsDataPathSuffix = ".csv"):
+    StatsDataPathSuffix=".csv",
+):
 
     tmpxsize = xsize + 2.0
 
@@ -2581,8 +2593,9 @@ def temperature_variation_plot(
 
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
 
-
-            tempDiff = np.log10(dataDict[selectKey][analysisParam][1:,:]) - np.log10(dataDict[selectKey][analysisParam][:-1,:])
+            tempDiff = np.log10(dataDict[selectKey][analysisParam][1:, :]) - np.log10(
+                dataDict[selectKey][analysisParam][:-1, :]
+            )
 
             xData = tlookback[1:]
             # Temperature specific load path
@@ -2608,14 +2621,18 @@ def temperature_variation_plot(
 
             loadPercentilesTypes = [
                 analysisParam + "_" + f"{percentile:4.2f}" + "%"
-                for percentile in TRACERSPARAMS['percentiles']
+                for percentile in TRACERSPARAMS["percentiles"]
             ]
             LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):4.2f}" + "%"
-            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}"  + "%"
+            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}" + "%"
             median = analysisParam + "_" + "50.00%"
 
-            for perc_key, percentile in zip(loadPercentilesTypes,TRACERSPARAMS["percentiles"]):
-                plotData.update({perc_key: np.nanpercentile(tempDiff,percentile,axis=1)})
+            for perc_key, percentile in zip(
+                loadPercentilesTypes, TRACERSPARAMS["percentiles"]
+            ):
+                plotData.update(
+                    {perc_key: np.nanpercentile(tempDiff, percentile, axis=1)}
+                )
 
             # if analysisParam in logParameters:
             #     for k, v in plotData.items():
@@ -2694,9 +2711,7 @@ def temperature_variation_plot(
                 )
 
             saveKey = (f"T{T}", f"{rin}R{rout}")
-            statsData.update({saveKey:plotData.copy()})
-
-
+            statsData.update({saveKey: plotData.copy()})
 
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
@@ -2706,7 +2721,12 @@ def temperature_variation_plot(
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        ylabelhere = r"$\Delta$" + r"$\left(Log_{10}(\mathrm{T})\right)$" + " - Temperature "+ "Variation [K]"
+        ylabelhere = (
+            r"$\Delta$"
+            + r"$\left(Log_{10}(\mathrm{T})\right)$"
+            + " - Temperature "
+            + "Variation [K]"
+        )
         axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
         midax.set_ylabel(ylabelhere, fontsize=10)
         finalymin = np.nanmin(yminlist)
@@ -2753,11 +2773,14 @@ def temperature_variation_plot(
         print(opslaan)
         plt.close()
 
-
     #### Output statsDF as .csv ####
 
     save_statistics_csv(
-        statsData, TRACERSPARAMS, Tlst, snapRange[1:], savePathInsert = "Temperature_Variation_"
+        statsData,
+        TRACERSPARAMS,
+        Tlst,
+        snapRange[1:],
+        savePathInsert="Temperature_Variation_",
     )
 
     return

@@ -23,7 +23,7 @@ from random import sample
 import math
 from functools import reduce
 
-#Toggle Trio titles
+# Toggle Trio titles
 trioTitleBool = False
 titleBool = False
 
@@ -85,13 +85,13 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         tridData.update({key: trids})
 
 # load in the subfind group files
-snap_subfind = load_subfind(TRACERSPARAMS['selectSnap'], dir=TRACERSPARAMS["simfile"])
+snap_subfind = load_subfind(TRACERSPARAMS["selectSnap"], dir=TRACERSPARAMS["simfile"])
 
 # load in the gas particles mass and position only for HaloID 0.
 #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
 #       gas and stars (type 0 and 4) MUST be loaded first!!
 snapGas = gadget_readsnap(
-    TRACERSPARAMS['selectSnap'],
+    TRACERSPARAMS["selectSnap"],
     TRACERSPARAMS["simfile"],
     hdf5=True,
     loadonlytype=[4],
@@ -104,7 +104,7 @@ print(
 )
 
 
-snapGas.calc_sf_indizes(snap_subfind, halolist=[int(TRACERSPARAMS['haloID'])])
+snapGas.calc_sf_indizes(snap_subfind, halolist=[int(TRACERSPARAMS["haloID"])])
 rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
 
 
@@ -124,7 +124,6 @@ tracer_plot(
     numThreads=numThreads,
     MaxSubset=subset,
     tailsLength=Ntails,
-    trioTitleBool = trioTitleBool,
-    titleBool = titleBool
-
+    trioTitleBool=trioTitleBool,
+    titleBool=titleBool,
 )

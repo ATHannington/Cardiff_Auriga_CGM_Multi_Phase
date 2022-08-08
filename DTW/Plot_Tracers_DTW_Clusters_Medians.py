@@ -41,7 +41,7 @@ lineStylePercentiles = "-."
 
 colourmapMain = "plasma"
 
-#==============================================================================#
+# ==============================================================================#
 
 
 # Load Analysis Setup Data
@@ -177,21 +177,24 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         yminlist = []
         ymaxlist = []
         labelList = []
-        for ii,T in enumerate(Tlst):
-# =============================================================================#
-#                   Load Clusters Data                                       #
-# =============================================================================#
+        for ii, T in enumerate(Tlst):
+            # =============================================================================#
+            #                   Load Clusters Data                                       #
+            # =============================================================================#
             loadPath = (
-                DataSavepath + f"_T{T}_{rin}R{rout}_{paramstring}_Joint-DTW-clusters" + DataSavepathSuffix
+                DataSavepath
+                + f"_T{T}_{rin}R{rout}_{paramstring}_Joint-DTW-clusters"
+                + DataSavepathSuffix
             )
             tmp = hdf5_load(loadPath)
-            dtwDict = tmp[(f"T{T}",f"{rin}R{rout}")]
+            dtwDict = tmp[(f"T{T}", f"{rin}R{rout}")]
 
             if analysisParam in logParams:
-                analysisDict.update({f"log10{analysisParam}": dtwDict[f"log10{analysisParam}"].T})
+                analysisDict.update(
+                    {f"log10{analysisParam}": dtwDict[f"log10{analysisParam}"].T}
+                )
             else:
                 analysisDict.update({f"{analysisParam}": dtwDict[f"{analysisParam}"].T})
-
 
             clusters = dtwDict["clusters"]
             # saveDict.update({"prid": pridData})
@@ -199,8 +202,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             # saveDict.update({"d_crit": np.array([d_crit])})
             # saveDict.update({"maxmimally_distinct_bool": np.array([maxmimally_distinct_bool])})
             # saveDict.update({"sort_level": np.array([sort_level])})
-# ============================================================================#
-#                   Cluster by cluster analysis!                              # #=============================================================================#
+            # ============================================================================#
+            #                   Cluster by cluster analysis!                              # #=============================================================================#
 
             # Select a Temperature specific colour from colourmapMain
             uniqueClusters = np.unique(clusters)
@@ -211,10 +214,10 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 whereInCluster = np.where(clusters == clusterID)[0]
 
                 for key, value in analysisDict.items():
-                    clusterDict.update({key:value[:,whereInCluster]})
-# =============================================================================#
-#                     Stats!                                                  # ==============================================================================#
-                tmp = {(f"T{T}",f"{rin}R{rout}"):clusterDict}
+                    clusterDict.update({key: value[:, whereInCluster]})
+                # =============================================================================#
+                #                     Stats!                                                  # ==============================================================================#
+                tmp = {(f"T{T}", f"{rin}R{rout}"): clusterDict}
                 statsData = {}
                 for snap in snapRange:
                     selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
@@ -256,8 +259,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     else:
                         statsData.update({selectKey: dat})
 
-# ============================================================================#
-#                   PLOTTING!                                                 # #=============================================================================#
+                # ============================================================================#
+                #                   PLOTTING!                                                 # #=============================================================================#
                 selectionSnap = np.where(
                     np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
                 )
@@ -280,22 +283,42 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
                 if analysisParam in logParams:
                     loadPercentilesTypes = [
-                        "log10"+analysisParam + "_" + str(percentile) + "%"
+                        "log10" + analysisParam + "_" + str(percentile) + "%"
                         for percentile in TRACERSPARAMS["percentiles"]
                     ]
-                    LO = "log10"+analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
-                    UP = "log10"+analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
-                    median = "log10"+analysisParam + "_" + "50.00%"
+                    LO = (
+                        "log10"
+                        + analysisParam
+                        + "_"
+                        + str(min(TRACERSPARAMS["percentiles"]))
+                        + "%"
+                    )
+                    UP = (
+                        "log10"
+                        + analysisParam
+                        + "_"
+                        + str(max(TRACERSPARAMS["percentiles"]))
+                        + "%"
+                    )
+                    median = "log10" + analysisParam + "_" + "50.00%"
                 else:
                     loadPercentilesTypes = [
                         analysisParam + "_" + str(percentile) + "%"
                         for percentile in TRACERSPARAMS["percentiles"]
                     ]
-                    LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
-                    UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
+                    LO = (
+                        analysisParam
+                        + "_"
+                        + str(min(TRACERSPARAMS["percentiles"]))
+                        + "%"
+                    )
+                    UP = (
+                        analysisParam
+                        + "_"
+                        + str(max(TRACERSPARAMS["percentiles"]))
+                        + "%"
+                    )
                     median = analysisParam + "_" + "50.00%"
-
-
 
                 # if analysisParam in logParams:
                 #     for k, v in plotData.items():
@@ -324,7 +347,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
                 midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
 
-                #edited to only take 1 sigma percentiles to minimise plot noise
+                # edited to only take 1 sigma percentiles to minimise plot noise
                 percentilesPairs = zip(
                     loadPercentilesTypes[:midPercentile],
                     loadPercentilesTypes[midPercentile + 1 :],
@@ -357,7 +380,6 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
-
 
             currentAx.axvline(x=vline, c="red")
 
@@ -416,7 +438,6 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             xlim=(round(max(tlookback), 1), round(min(tlookback), 1)),
         )
 
-
         # legendList = np.unique(np.array(labelList))
         # legendList = legendList.tolist()
         # legendPatches = []
@@ -439,7 +460,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
         opslaan = (
             f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-            + f"_{rin}R{rout}_" + analysisParam
+            + f"_{rin}R{rout}_"
+            + analysisParam
             + f"_DTW_Clusters_Medians.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)

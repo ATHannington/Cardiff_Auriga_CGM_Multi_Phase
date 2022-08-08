@@ -39,7 +39,7 @@ def DTW_prep(M):
     """
 
     elements = range(np.shape(M)[0])
-    iterator = itertools.combinations(elements,r=2)
+    iterator = itertools.combinations(elements, r=2)
 
     return iterator
 
@@ -95,10 +95,10 @@ n_gpus = torch.cuda.device_count()
 print(f"Running on {n_gpus} GPUs")
 
 multi_batch_limit = int(n_gpus * batch_limit)
-n_pairs = int(batch_limit ** 3)
+n_pairs = int(batch_limit**3)
 while True:
     last_batch_size = n_pairs % multi_batch_limit
-    if (last_batch_size > 1) and (multi_batch_limit%32 == 0):
+    if (last_batch_size > 1) and (multi_batch_limit % 32 == 0):
         break
     else:
         multi_batch_limit -= 1
@@ -116,7 +116,7 @@ for T in Tlst:
             key = (f"T{T}", f"{rin}R{rout}")
             if analysisParam == "subhalo":
                 dat = dataDict[key][analysisParam]
-                dataDict[key][analysisParam][np.where(np.isnan(dat)==True)[0]] = -2
+                dataDict[key][analysisParam][np.where(np.isnan(dat) == True)[0]] = -2
             if analysisParam in logParams:
                 newkey = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
                 analysisDict.update(
@@ -136,7 +136,7 @@ del dataDict
 for key, value in tridDict.items():
     if value is not None:
         whereEntry = np.where(whereDict[key])[0]
-        tridDict.update({key: tridDict[key][:,whereEntry]})
+        tridDict.update({key: tridDict[key][:, whereEntry]})
 
 print("Gathering Selection Specific Intersect of Trids")
 for T in Tlst:
@@ -145,28 +145,28 @@ for T in Tlst:
         print(f"\n {rin}R{rout} ")
         trid_list = []
         for analysisParam in dtwParams:
-            print(f"T{T} {rin}R{rout} {analysisParam}")
+            # print(f"T{T} {rin}R{rout} {analysisParam}")
             if analysisParam in logParams:
                 key = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
             else:
                 key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
             trid_list.append(tridDict[key])
 
-        intersect = reduce(np.intersect1d,trid_list)
+        intersect = reduce(np.intersect1d, trid_list)
         for analysisParam in dtwParams:
-            # print(f"Starting T{T} {rin}R{rout} {analysisParam} Analysis!")
+            print(f"T{T} {rin}R{rout} {analysisParam} intersect!")
             if analysisParam in logParams:
                 key = (f"T{T}", f"{rin}R{rout}", f"log10{analysisParam}")
             else:
                 key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
 
-            whereEntry = np.where(np.isin(tridDict[key],intersect)==True)[0]
+            whereEntry = np.where(np.isin(tridDict[key], intersect) == True)[0]
 
-            data = analysisDict[key][:,whereEntry]
+            data = analysisDict[key][:, whereEntry]
             print(f"Final shape == {np.shape(data)}")
             analysisDict.update({key: data})
-            tridDict.update({key: tridDict[key][:,whereEntry]})
-            pridDict.update({key: pridDict[key][:,whereEntry]})
+            tridDict.update({key: tridDict[key][:, whereEntry]})
+            pridDict.update({key: pridDict[key][:, whereEntry]})
 
 for T in Tlst:
     print(f"\n ***Starting T{T} Analyis!***")
@@ -191,7 +191,6 @@ for T in Tlst:
             print(f"Shape of tridData : {np.shape(tridData)}")
             print(f"Shape of pridData : {np.shape(pridData)}")
 
-
             print("Prep iterator!")
             iterator = DTW_prep(M)
 
@@ -211,25 +210,29 @@ for T in Tlst:
             ylist = []
 
             nn = np.shape(M)[0]
-            n_xy = np.prod((np.arange(nn-2, nn)+1))//2
+            n_xy = np.prod((np.arange(nn - 2, nn) + 1)) // 2
             endofiter = False
             ii = 0
             while endofiter == False:
-                select = np.array(list(itertools.islice(iterator,multi_batch_limit)))
+                select = np.array(list(itertools.islice(iterator, multi_batch_limit)))
                 if select.size == 0:
                     endofiter == True
                     break
                 ii += select.shape[0]
-                xlist = select[:,0].tolist()
-                ylist = select[:,1].tolist()
+                xlist = select[:, 0].tolist()
+                ylist = select[:, 1].tolist()
                 percentage = float(ii) / float(n_xy) * 100.0
                 if percentage >= percent:
                     print(f"{percentage:2.0f}%")
                     percent += printpercent
                 if len(xlist) >= multi_batch_limit:
                     # print("x y!")
-                    x = torch.tensor(M[xlist], device=cuda).view(len(xlist), np.shape(M)[1], 1)
-                    y = torch.tensor(M[ylist], device=cuda).view(len(ylist), np.shape(M)[1], 1)
+                    x = torch.tensor(M[xlist], device=cuda).view(
+                        len(xlist), np.shape(M)[1], 1
+                    )
+                    y = torch.tensor(M[ylist], device=cuda).view(
+                        len(ylist), np.shape(M)[1], 1
+                    )
                     # print("Time Warping!")
                     out_tmp = dtw(x, y)
                     # print("Done!")
@@ -261,7 +264,7 @@ for T in Tlst:
             out_tmp = dtw(x, y)
             out_device = torch.cat((out_device, out_tmp), 0)
 
-            del xlist,ylist,x,y,out_tmp
+            del xlist, ylist, x, y, out_tmp
 
             out = out_device.cpu().detach().numpy()
 

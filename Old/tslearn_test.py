@@ -114,7 +114,7 @@ for n_n in np.arange(n_n_min, n_n_max + n_n_delta, n_n_delta):
 print("\n" + f"Done! " + "\n" + "Plot!")
 
 y_lin = [x for x in plot_x_dat]
-y_quad = [x ** 2 for x in plot_x_dat]
+y_quad = [x**2 for x in plot_x_dat]
 y_xlogx = [x * np.log(x) for x in plot_x_dat]
 
 coeffs = np.polyfit(plot_x_dat, plot_y_dat, deg=2)

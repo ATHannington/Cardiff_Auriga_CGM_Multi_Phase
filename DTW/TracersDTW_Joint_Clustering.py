@@ -40,7 +40,7 @@ rgbcolour = mcolors.to_rgb(colour)
 opacity = 0.5
 
 subset = 100
-#==============================================================================#
+# ==============================================================================#
 def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
     distance_levels = np.array(abs(Z[:-1, 2] - Z[1:, 2]))
 
@@ -58,7 +58,9 @@ def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
 
     print(f"d_crit = {d_crit:0.010f}")
     return d_crit
-#==============================================================================#
+
+
+# ==============================================================================#
 
 
 # Load Analysis Setup Data
@@ -167,17 +169,13 @@ for T in Tlst:
             if analysisParam in logParams:
                 dtw_MDict.update({f"log10{analysisParam}": M})
                 dtw_DDict.update({f"log10{analysisParam}": D})
-                dtw_PridDict.update(
-                    {f"log10{analysisParam}": dtwDict[loadKey]["prid"] }
-                )
-                dtw_TridDict.update(
-                    {f"log10{analysisParam}": dtwDict[loadKey]["trid"] }
-                )
+                dtw_PridDict.update({f"log10{analysisParam}": dtwDict[loadKey]["prid"]})
+                dtw_TridDict.update({f"log10{analysisParam}": dtwDict[loadKey]["trid"]})
             else:
                 dtw_MDict.update({f"{analysisParam}": M})
                 dtw_DDict.update({f"{analysisParam}": D})
-                dtw_PridDict.update({f"{analysisParam}": dtwDict[loadKey]["prid"] })
-                dtw_TridDict.update({f"{analysisParam}": dtwDict[loadKey]["trid"] })
+                dtw_PridDict.update({f"{analysisParam}": dtwDict[loadKey]["prid"]})
+                dtw_TridDict.update({f"{analysisParam}": dtwDict[loadKey]["trid"]})
 
         paramstring = "+".join(dtwParams)
         plt.close("all")
@@ -347,7 +345,9 @@ for T in Tlst:
 
                 plotXdata = np.array([xData for path in range(len(plotYdata))])
 
-                paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(-1, len(xData), 2)
+                paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(
+                    -1, len(xData), 2
+                )
 
                 lc = LineCollection(paths, color=colour, alpha=opacity)
                 line = ax.add_collection(lc)
@@ -371,15 +371,17 @@ for T in Tlst:
                 print(opslaan2)
 
         # whereTracers = intersectDict[dtw_TridDictkeys[0]]
-        tridData = dtw_TridDict[dtw_TridDictkeys[0]]#[whereTracers]
-        pridData = dtw_PridDict[dtw_TridDictkeys[0]]#[whereTracers]
+        tridData = dtw_TridDict[dtw_TridDictkeys[0]]  # [whereTracers]
+        pridData = dtw_PridDict[dtw_TridDictkeys[0]]  # [whereTracers]
 
         saveDict = {}
         saveDict.update({"clusters": clusters})
         saveDict.update({"prid": pridData})
         saveDict.update({"trid": tridData})
         saveDict.update({"d_crit": np.array([d_crit])})
-        saveDict.update({"maxmimally_distinct_bool": np.array([maxmimally_distinct_bool])})
+        saveDict.update(
+            {"maxmimally_distinct_bool": np.array([maxmimally_distinct_bool])}
+        )
         saveDict.update({"sort_level": np.array([sort_level])})
 
         for param in dtwParams:
@@ -389,11 +391,17 @@ for T in Tlst:
                 saveDict.update({f"{param}": dtw_MDict[f"{param}"]})
 
         savePath = (
-            DataSavepath + f"_T{T}_{rin}R{rout}_{paramstring}_Joint-DTW-clusters" + DataSavepathSuffix
+            DataSavepath
+            + f"_T{T}_{rin}R{rout}_{paramstring}_Joint-DTW-clusters"
+            + DataSavepathSuffix
         )
-        print("\n" + f"[@T{T} {rin}R{rout} {paramstring}]: Saving Joint Clusters data as: " + savePath)
+        print(
+            "\n"
+            + f"[@T{T} {rin}R{rout} {paramstring}]: Saving Joint Clusters data as: "
+            + savePath
+        )
 
-        finalDict = {(f"T{T}",f"{rin}R{rout}"): saveDict}
+        finalDict = {(f"T{T}", f"{rin}R{rout}"): saveDict}
 
         hdf5_save(savePath, finalDict)
 

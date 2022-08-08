@@ -107,7 +107,7 @@ for n_n in np.arange(
     y_data_t.append(elapsed)
 
 y_lin = [x for x in x_data_n_n]
-y_quad = [x ** 2 for x in x_data_n_n]
+y_quad = [x**2 for x in x_data_n_n]
 y_xlogx = [x * np.log(x) for x in x_data_n_n]
 
 coeffs = np.polyfit(x_data_n_n, y_data_t, deg=2)

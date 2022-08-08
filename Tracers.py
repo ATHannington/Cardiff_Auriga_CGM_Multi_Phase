@@ -164,7 +164,15 @@ def err_catcher(arg):
 
 
 if __name__ == "__main__":
-    TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC, _, _, rotation_matrix= tracer_selection_snap_analysis(
+    (
+        TracersTFC,
+        CellsTFC,
+        CellIDsTFC,
+        ParentsTFC,
+        _,
+        _,
+        rotation_matrix,
+    ) = tracer_selection_snap_analysis(
         TRACERSPARAMS,
         HaloID,
         elements,

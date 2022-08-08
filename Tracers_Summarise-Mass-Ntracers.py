@@ -16,7 +16,7 @@ TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 timeAverageBool = True
 
-#==============================================================================#
+# ==============================================================================#
 #       Chemical Properties
 # ==============================================================================#
 # element number   0     1      2      3      4      5      6      7      8      9      10     11     12      13
@@ -100,7 +100,7 @@ if timeAverageBool is True:
     ]
 else:
     snapRange = [int(TRACERSPARAMS["selectSnap"])]
-#int(TRACERSPARAMS["selectSnap"])
+# int(TRACERSPARAMS["selectSnap"])
 
 
 rinList = []
@@ -258,17 +258,17 @@ for snapNumber in snapRange:
             NtracersTotalR,
         )
 
-        dictRowSelectSnaponly = np.where(
-            (summaryDict["Snap"] == snapNumber)
-        )[0]
+        dictRowSelectSnaponly = np.where((summaryDict["Snap"] == snapNumber))[0]
 
-        summaryDict["Total N_tracers (all haloes) within selection radii"][dictRowSelectSnaponly] += NtracersTotalR
+        summaryDict["Total N_tracers (all haloes) within selection radii"][
+            dictRowSelectSnaponly
+        ] += NtracersTotalR
 
         massTotalR = np.sum(snap.data["mass"][Cond])
         print(f"For {halo} at snap {snapNumber} total mass [msol] = ", massTotalR)
-        summaryDict[
-            "Total gas mass (all haloes) within selection radii [msol]"
-        ][dictRowSelectSnaponly] += massTotalR
+        summaryDict["Total gas mass (all haloes) within selection radii [msol]"][
+            dictRowSelectSnaponly
+        ] += massTotalR
         ###-------------------------------------------
         #   Load in analysed data
         ###-------------------------------------------
@@ -300,16 +300,18 @@ for snapNumber in snapRange:
 
             massR = np.sum(snap.data["mass"][Cond])
             dictRowSelectRonly = np.where(
-                (summaryDict["R_inner"] == rin) & (summaryDict["R_outer"] == rout) & (summaryDict["Snap"] == snapNumber)
+                (summaryDict["R_inner"] == rin)
+                & (summaryDict["R_outer"] == rout)
+                & (summaryDict["Snap"] == snapNumber)
             )[0]
 
             print(f"Total mass (all haloes) in spherical shell [msol] = ", massR)
 
-            summaryDict["Total gas mass (all haloes) available in spherical shell [msol]"][
-                dictRowSelectRonly
-            ] += massR
+            summaryDict[
+                "Total gas mass (all haloes) available in spherical shell [msol]"
+            ][dictRowSelectRonly] += massR
 
-            #==================================================================#
+            # ==================================================================#
             # Select Cell IDs for cells which meet condition
             CellIDs = snap.id[Cond]
 
@@ -338,14 +340,18 @@ for snapNumber in snapRange:
                 print(FullDictKey)
                 Ntracersselected = dataDict[FullDictKey]["Ntracers"][0]
                 print(
-                    f"Total N_tracers (all haloes) in spherical shell = ", Ntracersselected
+                    f"Total N_tracers (all haloes) in spherical shell = ",
+                    Ntracersselected,
                 )
                 massselected = np.sum(
                     dataDict[FullDictKey]["mass"][
                         np.where(dataDict[FullDictKey]["type"] == 0)[0]
                     ]
                 )
-                print(f"Total mass (all haloes) in spherical shell [msol] = ", massselected)
+                print(
+                    f"Total mass (all haloes) in spherical shell [msol] = ",
+                    massselected,
+                )
 
                 dictRowSelect = np.where(
                     (summaryDict["R_inner"] == rin)
@@ -361,14 +367,24 @@ for snapNumber in snapRange:
                     (snap.data["R"][whereGas] >= rin)
                     & (snap.data["R"][whereGas] <= rout)
                     & (snap.data["R"][whereGas] <= rout)
-                    & (snap.data["T"][whereGas] >= 1.0 * 10 ** (float(T) - TRACERSPARAMS["deltaT"]))
-                    & (snap.data["T"][whereGas] <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"]))
+                    & (
+                        snap.data["T"][whereGas]
+                        >= 1.0 * 10 ** (float(T) - TRACERSPARAMS["deltaT"])
+                    )
+                    & (
+                        snap.data["T"][whereGas]
+                        <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"])
+                    )
                     & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
                 )[0]
 
                 massRT = np.sum(snap.data["mass"][Cond])
                 summaryDict["Gas mass per temperature [msol]"][dictRowSelect] += massRT
-                print(f"Total mass (all haloes) in spherical shell per temperature [msol] = ",FullDictKey, massRT)
+                print(
+                    f"Total mass (all haloes) in spherical shell per temperature [msol] = ",
+                    FullDictKey,
+                    massRT,
+                )
 
                 CellIDs = snap.id[Cond]
 
@@ -386,23 +402,28 @@ for snapNumber in snapRange:
 
                 nTracersRT = np.shape(Tracers)[0]
                 summaryDict["N_tracers per temperature"][dictRowSelect] += nTracersRT
-                print(f"Total N_tracers (all haloes) per temperature = ",FullDictKey, nTracersRT)
-
+                print(
+                    f"Total N_tracers (all haloes) per temperature = ",
+                    FullDictKey,
+                    nTracersRT,
+                )
 
                 n_H_RT = np.median(snap.data["n_H"][Cond])
-                summaryDict["Gas n_H density per temperature [cm-3]"][dictRowSelect] += n_H_RT
+                summaryDict["Gas n_H density per temperature [cm-3]"][
+                    dictRowSelect
+                ] += n_H_RT
     # print("summaryDict = ", summaryDict)
 #
 
 nSnaps = float(len(snapRange))
-for key,value in summaryDict.items():
-    if key not in ["R_inner","R_outer","Log10(T)"]:
-        summaryDict[key] = value/nSnaps
+for key, value in summaryDict.items():
+    if key not in ["R_inner", "R_outer", "Log10(T)"]:
+        summaryDict[key] = value / nSnaps
 
 
 df = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
 
-df = df.groupby(['R_inner','R_outer','Log10(T)']).sum()
+df = df.groupby(["R_inner", "R_outer", "Log10(T)"]).sum()
 
 df["%Available tracers in spherical shell selected"] = (
     df["N_tracers selected"].astype("float64")
@@ -465,6 +486,8 @@ df["Average gas mass (per halo) within selection radii [msol]"] = (
 
 print(df.head(n=20))
 if timeAverageBool is True:
-    df.to_csv("Data_Tracers_MultiHalo_Mass-Ntracers-Summary_Time-Average.csv", index=False)
+    df.to_csv(
+        "Data_Tracers_MultiHalo_Mass-Ntracers-Summary_Time-Average.csv", index=False
+    )
 else:
     df.to_csv("Data_Tracers_MultiHalo_Mass-Ntracers-Summary.csv", index=False)

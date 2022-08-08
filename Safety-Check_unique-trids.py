@@ -25,7 +25,7 @@ import math
 TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
-#==============================================================================#
+# ==============================================================================#
 
 # Load Analysis Setup Data
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
@@ -51,7 +51,7 @@ snapRange = [
 ]
 
 
-#==============================================================================#
+# ==============================================================================#
 # print("Load Non Time Flattened Data!")
 # mergedDict, saveParams = multi_halo_merge(
 #     SELECTEDHALOES,
@@ -82,7 +82,9 @@ flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
 print("Done!")
 
 print("Check trids are unique!")
-for key,values in flatMergedDict.items():
-  u,c = np.unique(values['trid'][0,:],return_counts=True)
-  assert np.shape(np.where(c>1)[0])[0]<=0, f"[Time flattened] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
+for key, values in flatMergedDict.items():
+    u, c = np.unique(values["trid"][0, :], return_counts=True)
+    assert (
+        np.shape(np.where(c > 1)[0])[0] <= 0
+    ), f"[Time flattened] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
 print("Done!")
