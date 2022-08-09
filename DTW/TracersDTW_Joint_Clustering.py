@@ -27,7 +27,7 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-sort_level = 1
+sort_level = 2
 maxmimally_distinct_bool = True
 
 method = "average"
@@ -72,6 +72,8 @@ SELECTEDHALOES, HALOPATHS = load_haloes_selected(
 )
 
 DataSavepathSuffix = f".h5"
+
+DataSavepath = DataSavepath +"DTW/"
 
 snapRange = [
     snap
@@ -216,7 +218,7 @@ for T in Tlst:
         #     assert np.shape(value) == np.shape(oldIntersect)
 
         # Normalise and then sum the distance vectors for each dtwParams
-        print("Djoint! This may take a while...")
+        print("Djoint!")
         kk = 0
         valueShapeOld = None
         for key, value in dtw_DDict.items():
@@ -265,7 +267,7 @@ for T in Tlst:
 
         # Djoint = squareform(Djoint)
 
-        print("Joint Linkage!")
+        print("Joint Linkage! This may take a while...")
         Zjoint = linkage(Djoint, method=method)
 
         dendo_plot = plt.figure(figsize=(xsize, ysize))
@@ -317,67 +319,64 @@ for T in Tlst:
         clusters = fcluster(Zjoint, t=d_crit, criterion="distance")
 
         uniqueClusters = np.unique(clusters)
+        #
+        # print("Joint clusters!")
+        # for clusterID in uniqueClusters:
+        #     for key, value in dtw_MDict.items():
+        #         cluster = value[np.where(clusters == clusterID)]
+        #         ymin = np.nanmin(value)
+        #         ymax = np.nanmax(value)
+        #
+        #         clusterIndices = [xx for xx in range(len(cluster))]
+        #         subsetClusterIndices = sample(clusterIndices, min(subset, len(cluster)))
+        #         plotYdata = cluster[subsetClusterIndices]
+        #
+        #         cluster_plot, ax = plt.subplots()
+        #         if analysisParam in logParams:
+        #             plt.title(
+        #                 f'Cluster {clusterID} for {T} {rin}R{rout} log10{paramstring} Hierarchical Clustering using "{method}" method'
+        #             )
+        #             plt.xlabel("Lookback [Gyr]")
+        #             plt.ylabel(f"Log10{key}")
+        #         else:
+        #             plt.title(
+        #                 f'Cluster {clusterID} for {T} {rin}R{rout} {paramstring} Hierarchical Clustering using "{method}" method'
+        #             )
+        #             plt.xlabel("Lookback [Gyr]")
+        #             plt.ylabel(f"{key}")
+        #
+        #         plotXdata = np.array([xData for path in range(len(plotYdata))])
+        #
+        #         paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(
+        #             -1, len(xData), 2
+        #         )
+        #
+        #         lc = LineCollection(paths, color=colour, alpha=opacity)
+        #         line = ax.add_collection(lc)
+        #         ax.autoscale()
+        #         ax.set_xlim(np.nanmin(xData), np.nanmax(xData))
+        #         ax.set_ylim(ymin, ymax)
+        #         if analysisParam in logParams:
+        #             opslaan2 = (
+        #                 f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+        #                 + f"_Cluster{clusterID}_T{T}_{rin}R{rout}_log10{key}_Joint-{paramstring}"
+        #                 + f"_Joint-Clustered-Individuals.pdf"
+        #             )
+        #         else:
+        #             opslaan2 = (
+        #                 f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+        #                 + f"_Cluster{clusterID}_T{T}_{rin}R{rout}_{key}_Joint-{paramstring}"
+        #                 + f"_Joint-Clustered-Individuals.pdf"
+        #             )
+        #
+        #         plt.savefig(opslaan2, dpi=DPI, transparent=False)
+        #         print(opslaan2)
 
-        print("Joint clusters!")
-        for clusterID in uniqueClusters:
-            for key, value in dtw_MDict.items():
-                cluster = value[np.where(clusters == clusterID)]
-                ymin = np.nanmin(value)
-                ymax = np.nanmax(value)
-
-                clusterIndices = [xx for xx in range(len(cluster))]
-                subsetClusterIndices = sample(clusterIndices, min(subset, len(cluster)))
-                plotYdata = cluster[subsetClusterIndices]
-
-                cluster_plot, ax = plt.subplots()
-                if analysisParam in logParams:
-                    plt.title(
-                        f'Cluster {clusterID} for {T} {rin}R{rout} log10{paramstring} Hierarchical Clustering using "{method}" method'
-                    )
-                    plt.xlabel("Lookback [Gyr]")
-                    plt.ylabel(f"Log10{key}")
-                else:
-                    plt.title(
-                        f'Cluster {clusterID} for {T} {rin}R{rout} {paramstring} Hierarchical Clustering using "{method}" method'
-                    )
-                    plt.xlabel("Lookback [Gyr]")
-                    plt.ylabel(f"{key}")
-
-                plotXdata = np.array([xData for path in range(len(plotYdata))])
-
-                paths = np.array([plotXdata.T, plotYdata.T]).T.reshape(
-                    -1, len(xData), 2
-                )
-
-                lc = LineCollection(paths, color=colour, alpha=opacity)
-                line = ax.add_collection(lc)
-                ax.autoscale()
-                ax.set_xlim(np.nanmin(xData), np.nanmax(xData))
-                ax.set_ylim(ymin, ymax)
-                if analysisParam in logParams:
-                    opslaan2 = (
-                        f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                        + f"_Cluster{clusterID}_T{T}_{rin}R{rout}_log10{key}_Joint-{paramstring}"
-                        + f"_Joint-Clustered-Individuals.pdf"
-                    )
-                else:
-                    opslaan2 = (
-                        f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                        + f"_Cluster{clusterID}_T{T}_{rin}R{rout}_{key}_Joint-{paramstring}"
-                        + f"_Joint-Clustered-Individuals.pdf"
-                    )
-
-                plt.savefig(opslaan2, dpi=DPI, transparent=False)
-                print(opslaan2)
-
-        # whereTracers = intersectDict[dtw_TridDictkeys[0]]
-        tridData = dtw_TridDict[dtw_TridDictkeys[0]]  # [whereTracers]
-        pridData = dtw_PridDict[dtw_TridDictkeys[0]]  # [whereTracers]
 
         saveDict = {}
         saveDict.update({"clusters": clusters})
-        saveDict.update({"prid": pridData})
-        saveDict.update({"trid": tridData})
+        saveDict.update({"prid": dtw_PridDict[dtwParams[-1]]})
+        saveDict.update({"trid": dtw_TridDict[dtwParams[-1]]})
         saveDict.update({"d_crit": np.array([d_crit])})
         saveDict.update(
             {"maxmimally_distinct_bool": np.array([maxmimally_distinct_bool])}
@@ -412,13 +411,13 @@ for T in Tlst:
             saveDict,
             Djoint,
             Zjoint,
-            cluster,
+            # cluster,
             clusters,
-            clusterIndices,
-            subsetClusterIndices,
-            plotYdata,
-            plotXdata,
-            paths,
+            # clusterIndices,
+            # subsetClusterIndices,
+            # plotYdata,
+            # plotXdata,
+            # paths,
             # whereTracers,
             d_crit,
         )

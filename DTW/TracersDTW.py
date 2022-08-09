@@ -66,6 +66,7 @@ snapRange = [
     )
 ]
 
+DataSavepath = DataSavepath + "DTW/"
 
 dtwParams = TRACERSPARAMS["dtwParams"]
 logParams = TRACERSPARAMS["dtwlogParams"]
@@ -160,9 +161,9 @@ for T in Tlst:
             else:
                 key = (f"T{T}", f"{rin}R{rout}", f"{analysisParam}")
 
-            whereEntry = np.where(np.isin(tridDict[key], intersect) == True)[0]
+            whereEntry = np.where(np.isin(tridDict[key][0,:], intersect) == True)[0]
 
-            data = analysisDict[key][:, whereEntry]
+            data = analysisDict[key][whereEntry,:]
             print(f"Final shape == {np.shape(data)}")
             analysisDict.update({key: data})
             tridDict.update({key: tridDict[key][:, whereEntry]})

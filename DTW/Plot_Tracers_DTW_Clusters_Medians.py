@@ -28,13 +28,15 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-xsize = 5.0
-ysize = 6.0
+fontsize = 13
+fontsizeTitle = 14
+xsize=7.0
+ysize=8.0
 tmpxsize = xsize + 2.0
-DPI = 100
+DPI = 200
 
 # Set style options
-opacityPercentiles = 0.10
+opacityPercentiles = 0.15
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
 
@@ -53,6 +55,8 @@ SELECTEDHALOES, HALOPATHS = load_haloes_selected(
 )
 
 DataSavepathSuffix = f".h5"
+
+DataSavepath = DataSavepath + "DTW/"
 
 snapRange = [
     snap
@@ -93,6 +97,7 @@ ylabel = {
     "dens": r"Density [g cm$^{-3}$]",
     "ndens": r"Number density [cm$^{-3}$]",
     "mass": r"Log10 Mass per pixel [M/M$_{\odot}$]",
+    "subhalo" : "Subhalo Number"
 }
 
 for entry in logParams:
@@ -233,15 +238,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     # print(f"Calculating {snap} Statistics!")
                     dat = calculate_statistics(
                         timeDat,
-                        T,
-                        rin,
-                        rout,
-                        snapNumber=snap,
                         TRACERSPARAMS=TRACERSPARAMS,
-                        saveParams=list(clusterDict.keys()),
-                        DataSavepath=None,
-                        MiniDataPathSuffix=".csv",
-                        saveBool=False,
+                        saveParams=list(clusterDict.keys())
                     )
                     # Fix values to arrays to remove concat error of 0D arrays
                     for k, val in dat.items():
@@ -352,6 +350,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     loadPercentilesTypes[:midPercentile],
                     loadPercentilesTypes[midPercentile + 1 :],
                 )
+
                 for (LO, UP) in percentilesPairs:
                     currentAx.fill_between(
                         tlookback,
@@ -376,7 +375,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 currentAx.plot(
                     tlookback,
                     plotData[median],
-                    label=f"Cluster {int(jj)}",
+                    label=f"{int(jj)} (n={(whereInCluster.shape[0]/value.shape[1]):.3%})",
                     color=colour,
                     lineStyle=lineStyleMedian,
                 )
@@ -390,24 +389,25 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                 loc="center right",
                 facecolor="white",
                 framealpha=1,
+                bbox_to_anchor = (1.275,0.5)
             )
 
             currentAx.set_title(
                 r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
                 % (float(T), TRACERSPARAMS["deltaT"]),
-                fontsize=12,
+                fontsize=fontsize,
             )
-            fig.suptitle(
-                f"Cells Containing Tracers selected by: "
-                + "\n"
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-                + "\n"
-                + f" and selected at {vline[0]:3.2f} Gyr"
-                + "\n"
-                + f"Clustered by Dynamic Time Warping",
-                fontsize=12,
-            )
+            # fig.suptitle(
+            #     f"Cells Containing Tracers selected by: "
+            #     + "\n"
+            #     + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+            #     + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+            #     + "\n"
+            #     + f" and selected at {vline[0]:3.2f} Gyr"
+            #     + "\n"
+            #     + f"Clustered by Dynamic Time Warping",
+            #     fontsize=fontsizeTitle,
+            # )
 
         # Only give 1 x-axis a label, as they sharex
         if len(Tlst) == 1:
@@ -417,8 +417,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             axis0 = ax[len(Tlst) - 1]
             midax = ax[(len(Tlst) - 1) // 2]
 
-        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=10)
-        midax.set_ylabel(ylabel[analysisParam], fontsize=10)
+        axis0.set_xlabel("Lookback Time [Gyrs]", fontsize=fontsize)
+        midax.set_ylabel(ylabel[analysisParam], fontsize=fontsize)
         finalymin = np.nanmin(yminlist)
         finalymax = np.nanmax(ymaxlist)
         if (
@@ -455,8 +455,9 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         #     facecolor="white",
         #     framealpha=1,
         # )
+        # plt.subplots_adjust(top=0.80, hspace=0.50,right = 0.60)
+        plt.subplots_adjust(hspace=0.50,right=0.95)
         plt.tight_layout()
-        plt.subplots_adjust(top=0.80, hspace=0.25)
 
         opslaan = (
             f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
