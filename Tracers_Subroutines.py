@@ -1248,9 +1248,9 @@ def calculate_tracked_parameters(
     snapNumber,
     paramsOfInterest=[],
     mappingBool=True,
-    gridRes=512,
     numthreads=2,
     box=None,
+    gridres = 512,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
@@ -1518,8 +1518,8 @@ def calculate_tracked_parameters(
             mapping=mapping,
             normed=True,
             box=box,
-            res=gridRes,
             numthreads=numthreads,
+            gridres = gridres,
         )
     if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1530,8 +1530,8 @@ def calculate_tracked_parameters(
             mapping=mapping,
             normed=True,
             box=box,
-            res=gridRes,
             numthreads=numthreads,
+            gridres = gridres,
         )
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1542,8 +1542,8 @@ def calculate_tracked_parameters(
             mapping=mapping,
             normed=True,
             box=box,
-            res=gridRes,
             numthreads=numthreads,
+            gridres = gridres,
         )
         snapGas.data["Grad_bfld"] = np.linalg.norm(snapGas.data["Grad_bfld"], axis=1)
     # Cosmic Ray Pressure
@@ -1593,8 +1593,8 @@ def calculate_tracked_parameters(
                 mapping=mapping,
                 normed=False,
                 box=box,
-                res=gridRes,
                 numthreads=numthreads,
+                gridres = gridres,
             )
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: Grad_P_CR {str(e)}")
@@ -1656,10 +1656,9 @@ def calculate_gradient_of_parameter(
     ptype=0,
     center=False,
     box=None,
-    res=,
     use_only_cells=None,
     numthreads=8,
-    nneighbours=64,
+    gridres = 512,
 ):
     """
     Calculate the (norm of the) gradient of parameters argv for
@@ -1704,31 +1703,21 @@ def calculate_gradient_of_parameter(
             + "All box sides must be equal, or snap.boxsize [Mpc] will be used."
         )
     elif (type(box) == list) | (type(box) == np.ndarray):
-        box = pylab.array([(bb) / (1e3) for bb in box])
+        box = pylab.array([(bb*2.) / (1e3) for bb in box])
     elif box is None:
-        bb = (np.nanmax(snap.data["pos"])) / 1e3
+        bb = (np.nanmax(snap.data["pos"])*2.) / 1e3
         box = np.array([bb] * 3)
 
-    # Convert size of box to grid resolution based on spatial resolution of sim
-    #  We do NOT want the spacings given by gridres to be less than that of res
-    gridres = int(math.floor(np.max(box)/res))
-
-    # if type(res) == list:
-    #     res = pylab.array(res)
-    # elif type(res) != np.ndarray:
-    #     res = np.array([res] * 3)
-
     boxsize = box[0]
-    spacing = boxsize / float(gridres)
 
-    assert spacing > res,f"[]@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE! Grid Res derived spacing cannot be greater than that of largest spatial resolution of simulation. Otherwise gradients will be zero... Check Logic!"
+    spacing = (boxsize) / float(gridres)
 
     pos = snap.pos[use_only_cells, :].astype("float64").copy() / 1e3
     px = np.abs(pos[:, 0] - center[0])
     py = np.abs(pos[:, 1] - center[1])
     pz = np.abs(pos[:, 2] - center[2])
 
-    (pp,) = np.where((px <= box[0]) & (py <= box[1]) & (pz <= box[2]))
+    (pp,) = np.where((px <= 0.5*box[0]) & (py <= 0.5*box[1]) & (pz <= 0.5*box[2]))
     print("Selected %d of %d particles." % (pp.size, snap.npart))
 
     posdata = pos[pp]
@@ -1738,32 +1727,13 @@ def calculate_gradient_of_parameter(
     # vol *= 1e9  # [kpc^3]
     # mass *= 1e10  # [Msol]
     rhodata = snap.rho[use_only_cells][pp].astype("float64")
-    tree = pysph.makeTree(posdata)
 
-    hsmlScalar, _, _ = tree.calcHsml(center, posdata, massdata, nneighbours)
-
-    hsml = np.full(massdata.shape, fill_value=hsmlScalar).astype("float64")
+    # Empirical finding of 5*spacing seems to work well
+    hsml = np.full(massdata.shape, fill_value=5.*spacing).astype("float64")
 
     if valdata.ndim == 1:
         print("Calc Grid!")
-        grid = calcGrid.calcGrid(
-            posdata,
-            hsml,
-            massdata,
-            rhodata,
-            valdata.astype("float64"),
-            nx=res[0],
-            ny=res[1],
-            nz=res[2],
-            boxx=box[0],
-            boxy=box[1],
-            boxz=box[2],
-            centerx=center[0],
-            centery=center[1],
-            centerz=center[2],
-            numthreads=numthreads,
-            verbose=True,
-        )
+        grid = calcGrid.calcGrid(posdata,hsml,massdata,rhodata,valdata.astype("float64"),nx=gridres,ny=gridres,nz=gridres,boxx=0.5*box[0],boxy=0.5*box[1],boxz=0.5*box[2],centerx=center[0],centery=center[1],centerz=center[2],numthreads=numthreads,verbose=True)
 
         grid = np.transpose(grid)
         key = "Grad_" + arg
@@ -1798,12 +1768,12 @@ def calculate_gradient_of_parameter(
                 massdata,
                 rhodata,
                 valdata[:, dim].astype("float64"),
-                nx=res[0],
-                ny=res[1],
-                nz=res[2],
-                boxx=box[0],
-                boxy=box[1],
-                boxz=box[2],
+                nx=gridres,
+                ny=gridres,
+                nz=gridres,
+                boxx=0.5*box[0],
+                boxy=0.5*box[1],
+                boxz=0.5*box[2],
                 centerx=center[0],
                 centery=center[1],
                 centerz=center[2],
@@ -1838,6 +1808,21 @@ def calculate_gradient_of_parameter(
             + "\n"
             + f"Grad_{arg} will not be calculated!"
         )
+
+    nExpectedZeros = ((gridres**2)*6.0)
+    if valdata.ndim == 2: nExpectedZeros*=3.0
+
+    try:
+        if transposeBool is False:
+            nActualZeros = (np.where(snap.data[key]==0.0)[0]).shape[0]
+        else:
+            nActualZeros = (np.where(snap.data[key]==0.0)[0]).shape[1]
+    except:
+        nActualZeros = (np.where(snap.data[key]==0.0)[0]).shape[0]
+
+    if int(nActualZeros) >= int(2 * nExpectedZeros):
+        print(f"[@calculate_gradient_of_parameter]: nActualZeros found in data > 2*nExpectedZeros! Gradients may not have been calculated correctly"+"\n"+f"nActualZeros = {nActualZeros} | nExpectedZeros = {nExpectedZeros}"+"\n"+f"Data:"+"\n"+f"{snap.data[key]}"+ f"Grid:"+"\n"+f"{grid}")
+        STOP1844ZEROS
 
     # print("***---***")
     # print("*** DEBUG! ***")
