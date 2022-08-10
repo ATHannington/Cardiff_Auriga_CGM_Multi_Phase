@@ -66,7 +66,14 @@ snapRange = [
     )
 ]
 
-DataSavepath = DataSavepath + "DTW/"
+tmp = DataSavepath.split("/")
+tmp2 = tmp[:-1] + ["DTW"] + tmp[-1:]
+DataSavepath = "/".join(tmp2)
+
+print("")
+print(f"In this programme we will be saving as:")
+print(DataSavepath)
+print("")
 
 dtwParams = TRACERSPARAMS["dtwParams"]
 logParams = TRACERSPARAMS["dtwlogParams"]
