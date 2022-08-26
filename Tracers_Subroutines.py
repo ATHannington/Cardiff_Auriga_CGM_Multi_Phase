@@ -44,6 +44,7 @@ def snap_analysis(
     MiniDataPathSuffix,
     rotation_matrix=None,
     lazyLoadBool=True,
+    nParentProcesses = 1,
 ):
     print("")
     print(f"[@{int(snapNumber)}]: Starting Snap {snapNumber}")
@@ -114,9 +115,13 @@ def snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
-    rmax = np.max(TRACERSPARAMS["Router"])
-    boxmax = rmax
-    box = [boxmax, boxmax, boxmax]
+    # Select only gas in High Res Zoom Region
+    snapGas = high_res_only_gas_select(snapGas, snapNumber)
+
+    boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(snapGas.data["type"]==0)[0]]),axis=None)/1e3 #[Mpc]
+
+    snapGas.boxsize = boxMaxGas
+
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
@@ -128,7 +133,8 @@ def snap_analysis(
         omegabaryon0,
         snapNumber,
         paramsOfInterest=saveParams,
-        box=box,
+        DataSavepath=DataSavepath,
+        nParentProcesses = nParentProcesses,
     )
 
     # ==================#
@@ -180,7 +186,7 @@ def snap_analysis(
     snapGas = pad_non_entries(snapGas, snapNumber)
 
     # Select only gas in High Res Zoom Region
-    snapGas = high_res_only_gas_select(snapGas, snapNumber)
+    snapGas = high_res_only_gas_select_tracers(snapGas, snapNumber)
 
     # Find Halo=HaloID data for only selection snapshot. This ensures the
     # selected tracers are originally in the Halo, but allows for tracers
@@ -404,9 +410,14 @@ def tracer_selection_snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
-    rmax = np.max(TRACERSPARAMS["Router"])
-    boxmax = rmax
-    box = [boxmax, boxmax, boxmax]
+    # Select only gas in High Res Zoom Region
+    snapGas = high_res_only_gas_select(snapGas, snapNumber)
+
+    boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(snapGas.data["type"]==0)[0]]),axis=None)/1e3 #[Mpc]
+
+    snapGas.boxsize = boxMaxGas
+
+
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
@@ -418,7 +429,7 @@ def tracer_selection_snap_analysis(
         omegabaryon0,
         snapNumber,
         paramsOfInterest=saveParams,
-        box=box,
+        DataSavepath=DataSavepath,
     )
 
     whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
@@ -464,7 +475,7 @@ def tracer_selection_snap_analysis(
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
 
-    snapGas = high_res_only_gas_select(snapGas, snapNumber)
+    snapGas = high_res_only_gas_select_tracers(snapGas, snapNumber)
 
     # Assign subhalo and halos
     # snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
@@ -955,8 +966,9 @@ def save_tracer_data(
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
     Cells = {}
-    for key in saveParams:
-        Cells.update({key: snapGas.data[key][CellsIndices]})
+    for key in snapGas.data.keys():
+        if key in saveParams:
+            Cells.update({key: snapGas.data[key][CellsIndices]})
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
@@ -1027,8 +1039,9 @@ def save_cells_data(
     # assert np.shape(CellsIndices)[0] == Ntracers,"[@save_cells_data]: Fewer CellsIndices than Tracers!!"
 
     Cells = {}
-    for key in saveParams:
-        Cells.update({key: snapGas.data[key][CellsIndices]})
+    for key in snapGas.data.keys():
+        if key in saveParams:
+            Cells.update({key: snapGas.data[key][CellsIndices]})
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
@@ -1083,8 +1096,9 @@ def t3000_save_cells_data(snapGas, snapNumber, saveParams, saveTracersOnly):
     #   Does this by creating new dict from old data.
     #       Only selects values at index where Cell meets cond and contains tracers
     Cells = {}
-    for key in saveParams:
-        Cells.update({key: snapGas.data[key]})
+    for key in snapGas.data.keys():
+        if key in saveParams:
+            Cells.update({key: snapGas.data[key]})
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
@@ -1236,7 +1250,6 @@ def _wrapper_map_cart_grid_to_cells(pos_array, boxsize, gridres, center):
 
     return out
 
-
 def calculate_tracked_parameters(
     snapGas,
     elements,
@@ -1248,15 +1261,21 @@ def calculate_tracked_parameters(
     snapNumber,
     paramsOfInterest=[],
     mappingBool=True,
-    numthreads=2,
+    numthreads=8,
     box=None,
-    gridres = 512,
+    DataSavepath = "./",
+    nParentProcesses = 1,
+    verbose = False,
 ):
     """
     Calculate the physical properties of all cells, or gas only where necessary
     """
     print(f"[@{snapNumber}]: Calculate Tracked Parameters!")
+
+    DataSavepath += f"Snap{int(snapNumber)}_"
+
     mapping = None
+
     whereGas = np.where(snapGas.type == 0)[0]
     # Density is rho/ <rho> where <rho> is average baryonic density
     rhocrit = (
@@ -1519,7 +1538,9 @@ def calculate_tracked_parameters(
             normed=True,
             box=box,
             numthreads=numthreads,
-            gridres = gridres,
+            DataSavepath = DataSavepath,
+            nParentProcesses = nParentProcesses,
+            verbose = verbose,
         )
     if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1531,7 +1552,10 @@ def calculate_tracked_parameters(
             normed=True,
             box=box,
             numthreads=numthreads,
-            gridres = gridres,
+            DataSavepath = DataSavepath,
+            nParentProcesses = nParentProcesses,
+            verbose = verbose,
+
         )
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1543,7 +1567,10 @@ def calculate_tracked_parameters(
             normed=True,
             box=box,
             numthreads=numthreads,
-            gridres = gridres,
+            DataSavepath = DataSavepath,
+            nParentProcesses = nParentProcesses,
+            verbose = verbose,
+
         )
         snapGas.data["Grad_bfld"] = np.linalg.norm(snapGas.data["Grad_bfld"], axis=1)
     # Cosmic Ray Pressure
@@ -1594,7 +1621,10 @@ def calculate_tracked_parameters(
                 normed=False,
                 box=box,
                 numthreads=numthreads,
-                gridres = gridres,
+                DataSavepath = DataSavepath,
+                nParentProcesses = nParentProcesses,
+                verbose = verbose,
+
             )
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: Grad_P_CR {str(e)}")
@@ -1658,9 +1688,11 @@ def calculate_gradient_of_parameter(
     box=None,
     use_only_cells=None,
     numthreads=8,
-    gridres = 512,
     box_gt_one_mpc = False,
-    verbose = True,
+    verbose = False,
+    DataSavepath = "./",
+    nParentProcesses = 1,
+    memLimit = 0.75,
 ):
     """
     Calculate the (norm of the) gradient of parameters argv for
@@ -1676,12 +1708,15 @@ def calculate_gradient_of_parameter(
     import psutil
     import math
 
+    snap.calcGrid = calcGrid.calcGrid
+
     print("")
     print(f"Calculating gradient of {arg}!")
     print(f"Norm of gradient? {normed}")
 
-    if gridres is not None:
-        print("[DEBUG @calculate_gradient_of_parameter]: WARNING! Use of kwarg 'gridres' deprecated. ~Value given will be ignored~")
+    transposeBool = False
+    # if gridres is not None:
+    #     print("[DEBUG @calculate_gradient_of_parameter]: WARNING! Use of kwarg 'gridres' deprecated. ~Value given will be ignored~")
     # if (box is False) | (box is None):
     #     boxsize = snap.boxsize*2.
     # elif np.all(box==box[0]):
@@ -1698,9 +1733,12 @@ def calculate_gradient_of_parameter(
         center = snap.center
 
     if box is None:
-        bb = (np.nanmax(snap.data["pos"])*2.) / 1e3
-        box = np.array([bb] * 3)
-
+        if snap.boxsize>=1.0 :
+            print(f"[@calculate_gradient_of_parameter]: a maximum half box size (given by snap.boxsize) of {snap.boxsize:.5f} [Mpc] was detected."+"\n"+"User has not indicated box_gt_one_mpc so we are limiting to boxsize of 1 Mpc (half box of 500 kpc). Remaining data will be NaN...")
+            box = np.array([1.,1.,1.])
+        else:
+            bb = (snap.boxsize*2.)
+            box = pylab.array([bb for ii in range(0,3)])
     elif np.all(box == box[0]) is False:
         raise Exception(
             f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE!"
@@ -1716,7 +1754,7 @@ def calculate_gradient_of_parameter(
         if box_gt_one_mpc is False:
             maxval = np.nanmax(box)
             if maxval>=1.0 :
-                if verbose: print(f"[@calculate_gradient_of_parameter]: a maximum box size of {maxval} was detected."+"\n"+"User has not indicated box_gt_one_mpc so we are assuming the box size has been given in kpc."+"\n"+"We will adjust to Mpc and continue...")
+                print(f"[@calculate_gradient_of_parameter]: a maximum box size of {maxval} was detected."+"\n"+"User has not indicated box_gt_one_mpc so we are assuming the box size has been given in kpc."+"\n"+"We will adjust to Mpc and continue...")
                 box = pylab.array([(bb*2.) / (1e3) for bb in box])
             else:
                 box = pylab.array([(bb*2.) for bb in box])
@@ -1740,9 +1778,9 @@ def calculate_gradient_of_parameter(
     # mass *= 1e10  # [Msol]
     rhodata = snap.rho[use_only_cells][pp].astype("float64")
 
-    whereCGM = np.where((snap.data["R"]<=(boxsize/2.)*1e3)&(snap.data["type"]==0)&(snap.data["sfr"]<=0.0))[0]
+    whereCGM = np.where((snap.data["R"][use_only_cells][pp]<=(boxsize/2.)*1e3)&(snap.data["type"][use_only_cells][pp]==0)&(snap.data["sfr"][use_only_cells][pp]<=0.0))[0]
 
-    avgCellLength = (np.nanmean(snap.data["vol"][whereCGM])/1e9)**(1/3) #[Mpc]
+    avgCellLength = (np.nanmean(snap.data["vol"][use_only_cells][pp][whereCGM])/1e9)**(1/3) #[Mpc]
 
     hsmlScalar = 2.0*avgCellLength
     # Empirical finding of 2*avgCellLength seems to work well
@@ -1750,19 +1788,87 @@ def calculate_gradient_of_parameter(
 
     gridres = int(math.floor(boxsize/avgCellLength))
 
+    if verbose: print(f"boxsize used [Mpc] = {boxsize:.3f}")
     if verbose: print(f"hsml value used = {hsmlScalar:.3f}")
     if verbose: print(f"Grid Resolution used = {gridres}^3")
 
+    if gridres > 1500:
+        raise Exception(f"[@calculate_gradient_of_parameter]: WARNING! FAILURE! CRITICAL! Grid Resolution of {gridres}^3 attempted. This will almost certainly cause a segmentation fault. Check logic! Aborting!"+"\n"+"... if you actually wanted this resolution, comment out this statement in Tracers_Subroutines.py -> calculate_gradient_of_parameter(...)")
+
     spacing = boxsize / float(gridres)
 
+    ### Limit RAM use
+    maxRamPickle = 4.0e9
+    maxRamSysAvailable = psutil.virtual_memory().available
+    maxRamSysTot = psutil.virtual_memory().total
+
+    if (nParentProcesses>1):
+        numthreads = 1
+        if verbose:
+            print(f"{int(nParentProcesses)} Parent Processes Detected!"+"\n"+
+            "Child Processes cannot spawn further children."+"\n"+
+            "Limiting number of threads to 1."
+            )
+
+    # (nbytes_float * 2 (python copy, C copy)*
+    #  arrays in calcGrid of each data.shape
+    #    plus number dimensions (x,y,z) * pyArray and Array in C * x y z copies
+    #      * grid size)* number of threads * nParentProcesses
+    numthreadsCopy = copy.copy(numthreads)
+    reqMem = 8.0 * (2.0 * (np.prod(posdata.shape)+np.prod(hsml.shape)+np.prod(massdata.shape)+np.prod(rhodata.shape)+np.prod(valdata.shape)) + 3.0 * 2.0 * 3.0 * (float(gridres)**3))* numthreadsCopy * nParentProcesses
+
+    if verbose:
+        print("---")
+        print(f"Initial Config...")
+        print(f"Max RAM Total on System {maxRamSysTot/1e9:.2f} Gb")
+        print(f"Max RAM Currently available on System {maxRamSysAvailable/1e9:.2f} Gb")
+        print(f"RAM usage restricted to {memLimit:.2%}")
+        print(f"Estimated memory requirements {reqMem/1e9:.2f} Gb")
+        print(f"    based on using {numthreadsCopy} threads")
+        print(f"        and being called by {nParentProcesses} Parent Processes.")
+        print("---")
+
+
+    if reqMem >= memLimit * maxRamSysAvailable:
+        while (reqMem >= memLimit * maxRamSysAvailable) & (numthreadsCopy >= 1):
+            numthreadsCopy -= 1
+            reqMem = 8.0 * (2.0 * (np.prod(posdata.shape)+np.prod(hsml.shape)+np.prod(massdata.shape)+np.prod(rhodata.shape)+np.prod(valdata.shape)) + 3.0 * 2.0 * 3.0 * (float(gridres)**3))* numthreadsCopy * nParentProcesses
+
+    numthreadsCopy = int(max(numthreadsCopy, 1))
+
+    reqMem = 8.0 * (2.0 * (np.prod(posdata.shape)+np.prod(hsml.shape)+np.prod(massdata.shape)+np.prod(rhodata.shape)+np.prod(valdata.shape)) + 3.0 * 2.0 * 3.0 * (float(gridres)**3))* numthreadsCopy * nParentProcesses
+    if reqMem >= maxRamSysTot:
+        raise Exception(
+            f"[@calculate_gradient_of_parameter]: WARNING! RAM requirements will be exceeded by resolution of ({gridres})**3 !"+ "\n" +
+            f"RAM requirements are {reqMem} ({(reqMem/maxRamSysTot):.2%} of total RAM)!")
+        # )
+        # suggested = math.floor(
+        #     (((maxRamSysTot / 64.0) - ((np.prod(posdata.shape)+np.prod(hsml.shape)+np.prod(massdata.shape)+np.prod(rhodata.shape)+np.prod(valdata.shape)+(float(gridres)**3))* numthreads)))
+        #     ** (1.0 / 3.0)
+        # )
+        # print(
+        #     f"We suggest a GridRes < {suggested} for this system. Remember to leave RAM for other objects too!"
+        # )
+    if verbose:
+        print("---")
+        print(f"Adjusted for RAM, Final Config...")
+        print(f"Max RAM Total on System {maxRamSysTot/1e9:.2f} Gb")
+        print(f"Max RAM Currently available on System {maxRamSysAvailable/1e9:.2f} Gb")
+        print(f"RAM usage restricted to {memLimit:.2%}")
+        print(f"Estimated memory requirements {reqMem/1e9:.2f} Gb")
+        print(f"    based on using {numthreadsCopy} threads")
+        print(f"        and being called by {nParentProcesses} Parent Processes.")
+        print("---")
+
+
+    key = "Grad_" + arg
     if valdata.ndim == 1:
         if verbose: print("Calc Grid!")
-        grid = calcGrid.calcGrid(posdata,hsml,massdata,rhodata,valdata.astype("float64"),nx=gridres,ny=gridres,nz=gridres,boxx=0.5*box[0],boxy=0.5*box[1],boxz=0.5*box[2],centerx=center[0],centery=center[1],centerz=center[2],numthreads=numthreads,verbose=verbose)
+        grid = snap.calcGrid(posdata,hsml,massdata,rhodata,valdata.astype("float64"),nx=gridres,ny=gridres,nz=gridres,boxx=0.5*box[0],boxy=0.5*box[1],boxz=0.5*box[2],centerx=center[0],centery=center[1],centerz=center[2],numthreads=numthreadsCopy,verbose=verbose)
 
         grid = np.transpose(grid)
-        key = "Grad_" + arg
         if verbose: print(f"Compute {key}!")
-        snap.data[key] = np.array(np.gradient(grid, spacing)).reshape(-1, 3)
+        snap.data[key]= np.array(np.gradient(grid, spacing)).reshape(-1, 3)
         if normed:
             snap.data[key] = np.linalg.norm(snap.data[key], axis=-1).flatten()
 
@@ -1776,17 +1882,18 @@ def calculate_gradient_of_parameter(
             print(
                 f"[@calculate_gradient_of_parameter]: WARNING! 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."
                 + "\n"
-                + f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!"
+                + f"Shape {np.shape(snap.data[arg][use_only_cells][pp])} cannot be handled!"
                 + "\n"
                 + f"Grad_{arg} will not be calculated!"
             )
+            return
         # We are going to generate ndim 3D grids and stack them together
         # in a grid of shape (valdata.shape[1],res,res,res)
         grad_stack = []
         grid_list = []
         if verbose: print(f"Calc Grid x {valdata.shape[1]} - one for each axis!")
         for dim in range(valdata.shape[1]):
-            data = calcGrid.calcGrid(
+            data = snap.calcGrid(
                 posdata,
                 hsml,
                 massdata,
@@ -1801,12 +1908,11 @@ def calculate_gradient_of_parameter(
                 centerx=center[0],
                 centery=center[1],
                 centerz=center[2],
-                numthreads=numthreads,
+                numthreads=numthreadsCopy,
                 verbose=verbose,
             )
             grid_list.append(np.transpose(data))
         grid = np.stack([subgrid for subgrid in grid_list])
-        key = "Grad_" + arg
         if verbose: print(f"Compute {key}!")
         for dim in range(valdata.shape[1]):
             if normed:
@@ -1828,14 +1934,13 @@ def calculate_gradient_of_parameter(
         print(
             f"[@calculate_gradient_of_parameter]: WARNING! Dimensionality of arg={arg} not 1D or 2D."
             + "\n"
-            + f"Shape {np.shape(snap.data[arg][whereGas])} cannot be handled!"
+            + f"Shape {np.shape(snap.data[arg][use_only_cells][pp])} cannot be handled!"
             + "\n"
             + f"Grad_{arg} will not be calculated!"
         )
+        return
 
     if verbose: print("Sanity checks...")
-    nExpectedZeros = ((gridres**2)*6.0)
-    if valdata.ndim == 2: nExpectedZeros*=3.0
 
     try:
         if transposeBool is False:
@@ -1847,19 +1952,33 @@ def calculate_gradient_of_parameter(
 
     nActualZerosGrid = (np.where(grid.flatten()==0.0)[0]).shape[0]
 
-    nExpectedZerosGrid = ((gridres**2)*6.0)
-    nExpectedZerosGradient = gridres
+    nExpectedZeros = ((gridres**2)*6.0)
+    if valdata.ndim == 2: nExpectedZeros*=3.0
 
     if verbose:
-        print(f"N. zeros Grid: {nActualZerosGrid} vs. tol. {nExpectedZerosGrid}")
-        print(f"N. zeros Gradient: {nActualZerosGradient} vs. tol. {nExpectedZerosGradient}")
+        print(f"N. zeros Grid: {nActualZerosGrid} vs. tol. {nExpectedZeros}")
+        print(f"N. zeros Gradient: {nActualZerosGradient} vs. tol. {nExpectedZeros}")
 
+    opslaan = DataSavepath + f"{arg}-Gradient-Grid-details.txt"
 
-    if int(nActualZerosGradient) >= int(2 * nExpectedZerosGradient):
-        raise Exception(f"[@calculate_gradient_of_parameter]: nActualZerosGradient found in data > 2*nExpectedZerosGradient! Gradients may not have been calculated correctly"+"\n"+f"nActualZerosGradient = {nActualZerosGradient} | nExpectedZerosGradient = {nExpectedZerosGradient}"+"\n"+f"Data:"+"\n"+f"{snap.data[key]}"+ f"Grid:"+"\n"+f"{grid}")
+    with open(opslaan,"w") as f:
+        f.write(f"Gradient of {arg}"+"\n")
+        f.write(f"Norm of Gradient? {normed}"+"\n")
+        f.write(f"Boxsize (+/-) [Mpc] {boxsize/2}."+"\n")
+        f.write(f"Grid Res per side {int(gridres)}"+"\n")
+        f.write(f"Hsml value used [Mpc] {hsmlScalar:.5f}"+"\n")
+        f.write(f"n Zeros Tol. {int(nExpectedZeros)}"+"\n")
+        f.write(f"n Actual Zeros Gradient {int(nActualZerosGradient)}"+"\n")
+        f.write(f"n Actual Zeros Grid {int(nActualZerosGrid)}"+"\n")
 
-    if int(nActualZerosGrid) >= int(2 * nExpectedZerosGrid):
-        raise Exception(f"[@calculate_gradient_of_parameter]: nActualZerosGrid found in data > 2*nExpectedZerosGrid! Gradients may not have been calculated correctly"+"\n"+f"nActualZerosGrid = {nActualZerosGrid} | nExpectedZerosGrid = {nExpectedZerosGrid}"+"\n"+f"Data:"+"\n"+f"{snap.data[key]}"+ f"Grid:"+"\n"+f"{grid}")
+    print("Gradient Grid Details saved as: ",opslaan)
+
+    # Now we have saved the details, raise Exception if gradient is buggy...
+    if int(nActualZerosGradient) >= int(2 * nExpectedZeros):
+        raise Exception(f"[@calculate_gradient_of_parameter]: nActualZerosGradient found in data > 2*nExpectedZeros! Gradients may not have been calculated correctly"+"\n"+f"nActualZerosGradient = {nActualZerosGradient} | nExpectedZeros = {nExpectedZeros}"+"\n"+f"Data:"+"\n"+f"{snap.data[key]}"+ f"Grid:"+"\n"+f"{grid}")
+
+    if int(nActualZerosGrid) >= int(2 * nExpectedZeros):
+        raise Exception(f"[@calculate_gradient_of_parameter]: nActualZerosGrid found in data > 2*nExpectedZeros! Gradients may not have been calculated correctly"+"\n"+f"nActualZerosGrid = {nActualZerosGrid} | nExpectedZeros = {nExpectedZeros}"+"\n"+f"Data:"+"\n"+f"{snap.data[key]}"+ f"Grid:"+"\n"+f"{grid}")
 
     # print("***---***")
     # print("*** DEBUG! ***")
@@ -1874,26 +1993,41 @@ def calculate_gradient_of_parameter(
             if verbose: print("This may take a while ...")
 
             ### Limit RAM use
-            memLimit = 0.75  #%
             maxRamPickle = 4.0e9
             maxRamSysAvailable = psutil.virtual_memory().available
             maxRamSysTot = psutil.virtual_memory().total
 
             nchunks = (64.0 * np.prod(posdata.shape)) / (maxRamPickle * memLimit)
 
+            if (nParentProcesses>1) : nchunks = 1
+
             reqMem = 64.0 * (
-                np.prod(posdata.shape) + (3.0 * float(gridres) * numthreads)
+                np.prod(posdata.shape) + (3.0 * float(gridres) * numthreadsCopy)
             )
 
+            if verbose:
+                print("---")
+                print(f"Initial Cart Grid RAM requirements...")
+                print(f"Max RAM Total on System {maxRamSysTot/1e9:.2f} Gb")
+                print(f"Max RAM Currently available on System {maxRamSysAvailable/1e9:.2f} Gb")
+                print(f"RAM usage restricted to {memLimit:.2%}")
+                print(f"Estimated memory requirements {reqMem/1e9:.2f} Gb")
+                print(f"    based on using {numthreadsCopy} threads")
+                print(f"        and {nchunks} chunks.")
+                print("---")
+
             if reqMem >= memLimit * maxRamSysAvailable:
-                while (reqMem >= maxRamSysAvailable) & (numthreads >= 1):
-                    numthreads -= 1
+                while (reqMem >= memLimit * maxRamSysAvailable) & (numthreadsCopy >= 1):
+                    numthreadsCopy -= 1
                     reqMem = 64.0 * (
-                        np.prod(posdata.shape) + (3.0 * float(gridres) * numthreads)
+                        np.prod(posdata.shape) + (3.0 * float(gridres) * numthreadsCopy)
                     )
 
-            numthreads = int(max(numthreads, 1))
+            numthreadsCopy = int(max(numthreadsCopy, 1))
 
+            reqMem = 64.0 * (
+                np.prod(posdata.shape) + (3.0 * float(gridres) * numthreadsCopy)
+            )
             if reqMem >= maxRamSysTot:
                 print(
                     f"[@calculate_gradient_of_parameter]: WARNING! RAM requirements will be exceeded by resolution of ({gridres})**3 !"
@@ -1909,33 +2043,48 @@ def calculate_gradient_of_parameter(
                     f"We suggest a GridRes < {suggested} for this system. Remember to leave RAM for other objects too!"
                 )
 
-            nchunks = int(max(nchunks, numthreads))
+            nchunks = int(max(nchunks, numthreadsCopy))
 
-            pool = mp.Pool(numthreads)
+
             if verbose:
-                print(
-                f"Starting numthreads = {numthreads} mp pool with data split into {nchunks} chunks..."
-                )
+                print("---")
+                print(f"Final adjusted Cart Grid RAM requirements...")
+                print(f"Max RAM Total on System {maxRamSysTot/1e9:.2f} Gb")
+                print(f"Max RAM Currently available on System {maxRamSysAvailable/1e9:.2f} Gb")
+                print(f"RAM usage restricted to {memLimit:.2%}")
+                print(f"Estimated memory requirements {reqMem/1e9:.2f} Gb")
+                print(f"    based on using {numthreadsCopy} threads")
+                print(f"        and {nchunks} chunks.")
+                print("---")
 
-            posrange = range(0, posdata.shape[0] + 1, int(posdata.shape[0] // nchunks))
+            # pool = mp.Pool(numthreads)
+
+            splitPos = np.array_split(posdata,nchunks)
+
             args_list = [
                 [posSubset, boxsize, gridres, center]
-                for posSubset in [
-                    posdata[ii:jj]
-                    for (ii, jj) in zip(list(posrange), list(posrange)[1:])
-                ]
+                for posSubset in splitPos
             ]
+
+            # posrange = range(0, posdata.shape[0] + 1, int(posdata.shape[0] // nchunks))
+            # args_list = [
+            #     [posSubset, boxsize, gridres, center]
+            #     for posSubset in [
+            #         posdata[ii:jj]
+            #         for (ii, jj) in zip(list(posrange), list(posrange)[1:])
+            #     ]
+            # ]
 
             if verbose: print("Map...")
             start = time.time()
-            args_list = args_list + [
-                [
-                    posdata[(-1 - int(posdata.shape[0] % nchunks)) : -1],
-                    boxsize,
-                    gridres,
-                    center,
-                ]
-            ]
+            # args_list = args_list + [
+            #     [
+            #         posdata[(-1 - int(posdata.shape[0] % nchunks)) : -1],
+            #         boxsize,
+            #         gridres,
+            #         center,
+            #     ]
+            # ]
 
             # printpercent = 5.0
             # printcount = 0.0
@@ -1946,31 +2095,55 @@ def calculate_gradient_of_parameter(
             #         print(f"{percentage:0.02f}% Cells mapped to Cart. Grid!")
             #         printcount += printpercent
 
-            output_list = [
-                pool.apply_async(
-                    _wrapper_map_cart_grid_to_cells,
-                    args=args,
-                    error_callback=err_catcher,
-                )
-                for args in args_list
-            ]
+            # processes = [None]*numthreadsCopy
+            # manager = mp.Manager()
+            # outputDict = manager.dict()
 
-            pool.close()
-            pool.join()
+            if nParentProcesses > 1:
+                if verbose:
+                    print("Daemon processes cannot spawn children...")
+                    print("Starting single CPU analysis...")
+                output = _wrapper_map_cart_grid_to_cells(posdata, boxsize, gridres, center)
+                mapping = output.astype(np.int32)
+            else:
+                if verbose:
+                    print(
+                    f"Starting numthreads = {numthreadsCopy} mp pool with data split into {nchunks} chunks..."
+                    )
+                pool = mp.Pool(processes=numthreadsCopy)
+                outputtmp = [ pool.apply_async(_wrapper_map_cart_grid_to_cells,
+                    args=args, error_callback=err_catcher) for args in args_list
+                ]
+                pool.close()
+                pool.join()
+                output = [out.get() for out in outputtmp]
+                mapping = np.concatenate(
+                    tuple(output), axis=0
+                ).astype(np.int32)
 
-            mapping = np.concatenate(
-                tuple([out.get() for out in output_list]), axis=0
-            ).astype(np.int32)
             stop = time.time()
 
             if verbose: print("...done!")
             if verbose: print(f"Mapping took {stop-start:.2f}s")
 
         # Perform mapping from Cart Grid back to approx. cells
-        snap.data[key] = snap.data[key][mapping]
+        tmp = snap.data[key][mapping].copy()
+
+        if snap.data[key].ndim >1:
+            shapeOut = tuple([snap.data[arg].shape[0]] + list(snap.data[key].shape[1:]))
+
+            snap.data[key] = np.full(shapeOut,fill_value=np.nan)
+        else:
+            shapeOut = snap.data[arg].shape[0]
+
+            snap.data[key] = np.full(shapeOut,fill_value=np.nan)
+
+        snap.data[key][use_only_cells][pp] = tmp.copy()
+
+        del tmp
 
         assert (
-            np.shape(snap.data[key])[0] == np.shape(snap.data[arg])[0]
+            np.shape(snap.data[key][use_only_cells][pp])[0] == np.shape(snap.data[arg][use_only_cells][pp])[0]
         ), f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE! Output from Gradient Calc and subsequent mapping not equal in shape to input data! Check Logic!"
 
     print(f"... compute gradient of {arg} done!")
@@ -2006,9 +2179,7 @@ def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
 
 # ------------------------------------------------------------------------------#
 # ------------------------------------------------------------------------------#
-
-
-def high_res_only_gas_select(snapGas, snapNumber):
+def high_res_only_gas_select_tracers(snapGas, snapNumber):
     """
     Grab only snapGas entries for gas where high res gas mass (hrgm)
     is greater than 90% of the cell mass. This defines the cosmological
@@ -2028,6 +2199,28 @@ def high_res_only_gas_select(snapGas, snapNumber):
     for key, value in snapGas.data.items():
         if value is not None:
             snapGas.data[key] = value[selected]
+
+    return snapGas
+
+def high_res_only_gas_select(snapGas, snapNumber):
+    """
+    Grab only snapGas entries for gas where high res gas mass (hrgm)
+    is greater than 90% of the cell mass. This defines the cosmological
+    Zoom region.
+    """
+    print(f"[@{snapNumber}]: Select High Res Gas Only!")
+
+    whereGas = np.where(snapGas.data["type"]==0)[0]
+    whereLowRes = np.where(
+        snapGas.data["hrgm"][whereGas] < 0.90 * snapGas.data["mass"][whereGas]
+    )[0]
+
+    if whereLowRes.shape[0] > 0:
+        for key, value in snapGas.data.items():
+            if value is not None:
+                if value.shape[0] >= whereGas.shape[0]:
+                    newvalue = np.delete(value,whereLowRes,axis=0)
+                    snapGas.data[key]= newvalue
 
     return snapGas
 
