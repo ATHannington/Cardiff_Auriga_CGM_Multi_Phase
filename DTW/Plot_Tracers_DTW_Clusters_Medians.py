@@ -112,19 +112,9 @@ for entry in logParams:
 
 # ==============================================================================#
 
-# Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
-
-# Load Halo Selection Data
-SELECTEDHALOES, HALOPATHS = load_haloes_selected(
-    HaloPathBase=TRACERSPARAMS["savepath"], SelectedHaloesPath=SelectedHaloesPath
-)
-
 saveParams = TRACERSPARAMS[
     "saveParams"
 ]  # ['T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','tcross','tff','tcool_tff']
-
-DataSavepathSuffix = f".h5"
 
 snapRange = [
     snap
