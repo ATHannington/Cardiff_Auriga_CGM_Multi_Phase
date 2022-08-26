@@ -225,6 +225,7 @@ if __name__ == "__main__":
         MiniDataPathSuffix,
         rotation_matrix,
         lazyLoadBool,
+        n_processes,
     ]
 
     args_list = [[snap] + args_default for snap in snapRange]
@@ -253,5 +254,5 @@ if __name__ == "__main__":
     # for snap in snapRange:
     #     out = snap_analysis(snap,TRACERSPARAMS,HaloID,TracersTFC,\
     #     elements,elements_Z,elements_mass,elements_solar,Zsolar,omegabaryon0,\
-    #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,lazyLoadBool)
+    #     saveParams,saveTracersOnly,DataSavepath,FullDataPathSuffix,MiniDataPathSuffix,rotation_matrix,lazyLoadBool,n_processes)
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
