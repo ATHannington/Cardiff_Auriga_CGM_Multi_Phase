@@ -1259,6 +1259,7 @@ def calculate_tracked_parameters(
     Zsolar,
     omegabaryon0,
     snapNumber,
+    logParameters=[],
     paramsOfInterest=[],
     mappingBool=True,
     numthreads=8,
@@ -1273,6 +1274,11 @@ def calculate_tracked_parameters(
     print(f"[@{snapNumber}]: Calculate Tracked Parameters!")
 
     DataSavepath += f"Snap{int(snapNumber)}_"
+
+    if len(logParameters)==0:
+        genLogParameters = True
+    else:
+        genLogParameters = False
 
     mapping = None
 
@@ -1322,7 +1328,7 @@ def calculate_tracked_parameters(
         )
     ) | (len(paramsOfInterest) == 0):
         snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
-
+        if genLogParameters: logParameters.append("T")
     if np.any(
         np.isin(
             np.array(["n_H", "Grad_n_H", "tcool", "theat", "tcool_tff"]),
@@ -1330,6 +1336,7 @@ def calculate_tracked_parameters(
         )
     ) | (len(paramsOfInterest) == 0):
         snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / c.amu * gasX  # cm^-3
+        if genLogParameters: logParameters.append("n_H")
 
     if np.any(
         np.isin(np.array(["rho_rhomean", "Tdens"]), np.array(paramsOfInterest))
@@ -1337,6 +1344,7 @@ def calculate_tracked_parameters(
         snapGas.data["rho_rhomean"] = snapGas.data["dens"][whereGas] / (
             rhomean * omegabaryon0 / snapGas.omega0
         )  # rho / <rho>
+        if genLogParameters: logParameters.append("rho_rhomean")
 
     if np.any(np.isin(np.array(["Tdens"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1361,6 +1369,7 @@ def calculate_tracked_parameters(
         snapGas.data["B"] = np.linalg.norm(
             (snapGas.data["bfld"][whereGas] * bfactor), axis=1
         )
+        if genLogParameters: logParameters.append("B")
 
     if np.any(
         np.isin(np.array(["R", "vrad", "tff", "tcool_tff"]), np.array(paramsOfInterest))
@@ -1405,12 +1414,16 @@ def calculate_tracked_parameters(
         snapGas.data["theat"][coolingGas] = np.nan
         snapGas.data["theat"][heatingGas] = np.abs(snapGas.data["theat"][heatingGas])
         snapGas.data["theat"][zeroChangeGas] = np.nan
+        if genLogParameters: logParameters.append("theat")
+        if genLogParameters: logParameters.append("tcool")
 
     # Load in metallicity
     if np.any(np.isin(np.array(["gz"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
         snapGas.data["gz"] = snapGas.data["gz"][whereGas] / Zsolar
+        if genLogParameters: logParameters.append("gz")
+
     # Load in Metals
     tmp = snapGas.data["gmet"]
     # Load in Star Formation Rate
@@ -1426,6 +1439,7 @@ def calculate_tracked_parameters(
                 ** 2.0
             ).sum(axis=1)
         )
+        if genLogParameters: logParameters.append("L")
 
     if np.any(
         np.isin(
@@ -1434,6 +1448,7 @@ def calculate_tracked_parameters(
         )
     ) | (len(paramsOfInterest) == 0):
         snapGas.data["ndens"] = snapGas.data["dens"][whereGas] / (meanweight * c.amu)
+        if genLogParameters: logParameters.append("ndens")
 
     if np.any(
         np.isin(
@@ -1443,7 +1458,7 @@ def calculate_tracked_parameters(
     ) | (len(paramsOfInterest) == 0):
         # Thermal Pressure : P/k_B = n T [ # K cm^-3]
         snapGas.data["P_thermal"] = snapGas.data["ndens"] * snapGas.T
-
+        if genLogParameters: logParameters.append("P_thermal")
     if np.any(
         np.isin(
             np.array(["P_magnetic", "Pthermal_Pmagnetic", "P_tot"]),
@@ -1454,6 +1469,7 @@ def calculate_tracked_parameters(
         snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
             8.0 * pi * c.KB
         )
+        if genLogParameters: logParameters.append("P_magnetic")
 
     if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1461,6 +1477,7 @@ def calculate_tracked_parameters(
         snapGas.data["P_tot"] = (
             snapGas.data["P_thermal"][whereGas] + snapGas.data["P_magnetic"][whereGas]
         )
+        if genLogParameters: logParameters.append("P_tot")
 
     if np.any(np.isin(np.array(["Pthermal_Pmagnetic"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1468,6 +1485,7 @@ def calculate_tracked_parameters(
         snapGas.data["Pthermal_Pmagnetic"] = (
             snapGas.data["P_thermal"][whereGas] / snapGas.data["P_magnetic"][whereGas]
         )
+        if genLogParameters: logParameters.append("Pthermal_Pmagnetic")
 
     if np.any(np.isin(np.array(["P_kinetic"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1480,6 +1498,7 @@ def calculate_tracked_parameters(
             * (1.0 / c.KB)
             * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
         )
+        if genLogParameters: logParameters.append("P_kinetic")
 
     if np.any(np.isin(np.array(["csound", "tcross"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1489,6 +1508,7 @@ def calculate_tracked_parameters(
             ((5.0 / 3.0) * c.KB * snapGas.data["T"][whereGas])
             / (meanweight * c.amu * 1e5)
         )
+        if genLogParameters: logParameters.append("csound")
 
     if np.any(np.isin(np.array(["tcross"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1499,6 +1519,7 @@ def calculate_tracked_parameters(
             * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
             / snapGas.data["csound"][whereGas]
         )
+        if genLogParameters: logParameters.append("tcross")
 
     if np.any(np.isin(np.array(["tff", "tcool_tff"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1518,6 +1539,7 @@ def calculate_tracked_parameters(
 
         # whereNOTGas = np.where(snapGas.data["type"] != 0)[0]
         # snapGas.data["tff"][whereNOTGas] = np.nan
+        if genLogParameters: logParameters.append("tff")
 
     if np.any(np.isin(np.array(["tcool_tff"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1526,7 +1548,7 @@ def calculate_tracked_parameters(
         snapGas.data["tcool_tff"] = (
             snapGas.data["tcool"][whereGas] / snapGas.data["tff"][whereGas]
         )
-        del tmp
+        if genLogParameters: logParameters.append("tcool_tff")
 
     if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1534,6 +1556,7 @@ def calculate_tracked_parameters(
         snapGas, mapping = calculate_gradient_of_parameter(
             snapGas,
             "T",
+            logParameters = logParameters,
             mapping=mapping,
             normed=True,
             box=box,
@@ -1548,6 +1571,7 @@ def calculate_tracked_parameters(
         snapGas, mapping = calculate_gradient_of_parameter(
             snapGas,
             "n_H",
+            logParameters = logParameters,
             mapping=mapping,
             normed=True,
             box=box,
@@ -1560,9 +1584,12 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        if genLogParameters: logParameters.append("bfld")
+
         snapGas, mapping = calculate_gradient_of_parameter(
             snapGas,
             "bfld",
+            logParameters = logParameters,
             mapping=mapping,
             normed=True,
             box=box,
@@ -1593,6 +1620,8 @@ def calculate_tracked_parameters(
             snapGas.data["P_CR"] = (
                 snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]
             ) / ((((4.0 / 3.0 - 1.0) ** -1) * c.KB) / (meanweight * c.amu))
+            if genLogParameters: logParameters.append("P_CR")
+
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: P_CR {str(e)}")
     try:
@@ -1602,6 +1631,7 @@ def calculate_tracked_parameters(
             snapGas.data["PCR_Pthermal"] = (
                 snapGas.data["P_CR"] / snapGas.data["P_thermal"]
             )
+            if genLogParameters: logParameters.append("PCR_Pthermal")
 
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: PCR_Pthermal {str(e)}")
@@ -1617,6 +1647,7 @@ def calculate_tracked_parameters(
             snapGas, mapping = calculate_gradient_of_parameter(
                 snapGas,
                 "P_CR",
+                logParameters = logParameters,
                 mapping=mapping,
                 normed=False,
                 box=box,
@@ -1653,6 +1684,8 @@ def calculate_tracked_parameters(
                 * snapGas.data["vol"]
                 * (c.parsec * 1e3) ** 3
             )
+            if genLogParameters: logParameters.append("gah")
+
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: gah {str(e)}")
 
@@ -1680,6 +1713,7 @@ def err_catcher(arg):
 def calculate_gradient_of_parameter(
     snap,
     arg,
+    logParameters = [],
     mapping=None,
     mappingBool=True,
     normed=False,
@@ -1771,7 +1805,12 @@ def calculate_gradient_of_parameter(
     if verbose: print("Selected %d of %d particles." % (pp.size, snap.npart))
 
     posdata = pos[pp]
-    valdata = snap.data[arg][use_only_cells][pp].astype("float64")
+    
+    if arg in logParameters:
+        valdata = np.log10(snap.data[arg][use_only_cells][pp].astype("float64"))
+    else:
+        valdata = snap.data[arg][use_only_cells][pp].astype("float64")
+
     massdata = snap.mass[use_only_cells][pp].astype("float64") / (1e10)
 
     # vol *= 1e9  # [kpc^3]
@@ -1868,6 +1907,7 @@ def calculate_gradient_of_parameter(
 
         grid = np.transpose(grid)
         if verbose: print(f"Compute {key}!")
+
         snap.data[key]= np.array(np.gradient(grid, spacing)).reshape(-1, 3)
         if normed:
             snap.data[key] = np.linalg.norm(snap.data[key], axis=-1).flatten()
@@ -1912,7 +1952,9 @@ def calculate_gradient_of_parameter(
                 verbose=verbose,
             )
             grid_list.append(np.transpose(data))
+
         grid = np.stack([subgrid for subgrid in grid_list])
+
         if verbose: print(f"Compute {key}!")
         for dim in range(valdata.shape[1]):
             if normed:
@@ -2066,38 +2108,9 @@ def calculate_gradient_of_parameter(
                 for posSubset in splitPos
             ]
 
-            # posrange = range(0, posdata.shape[0] + 1, int(posdata.shape[0] // nchunks))
-            # args_list = [
-            #     [posSubset, boxsize, gridres, center]
-            #     for posSubset in [
-            #         posdata[ii:jj]
-            #         for (ii, jj) in zip(list(posrange), list(posrange)[1:])
-            #     ]
-            # ]
 
             if verbose: print("Map...")
             start = time.time()
-            # args_list = args_list + [
-            #     [
-            #         posdata[(-1 - int(posdata.shape[0] % nchunks)) : -1],
-            #         boxsize,
-            #         gridres,
-            #         center,
-            #     ]
-            # ]
-
-            # printpercent = 5.0
-            # printcount = 0.0
-            # output_list = []
-            # for ii,args in enumerate(args_list):
-            #     percentage = (float(ii)/float(len(args_list))) * 100.0
-            #     if percentage >= printcount:
-            #         print(f"{percentage:0.02f}% Cells mapped to Cart. Grid!")
-            #         printcount += printpercent
-
-            # processes = [None]*numthreadsCopy
-            # manager = mp.Manager()
-            # outputDict = manager.dict()
 
             if nParentProcesses > 1:
                 if verbose:
@@ -2139,6 +2152,9 @@ def calculate_gradient_of_parameter(
             snap.data[key] = np.full(shapeOut,fill_value=np.nan)
 
         snap.data[key][use_only_cells][pp] = tmp.copy()
+
+        #Convert per Mpc to per kpc
+        snap.data[key] = snap.data[key]/1e3
 
         del tmp
 
