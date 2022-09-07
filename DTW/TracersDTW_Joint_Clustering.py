@@ -1,26 +1,26 @@
+import math
+from random import sample
+from Tracers_Subroutines import *
+import h5py
+from gadget_subfind import *
+from gadget import *
+import const as c
+import sys
+from functools import reduce
+import time
+from itertools import combinations
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+import matplotlib.colors as mcolors
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+from matplotlib.collections import LineCollection
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib
 
 matplotlib.use("Agg")  # For suppressing plotting on clusters
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
-import matplotlib.colors as mcolors
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from scipy.spatial.distance import squareform
-from itertools import combinations
-import time
-from functools import reduce
-import sys
 
-import const as c
-from gadget import *
-from gadget_subfind import *
-import h5py
-from Tracers_Subroutines import *
-from random import sample
-import math
 
 # # Input parameters path:
 TracersParamsPath = "TracersParams.csv"
@@ -41,6 +41,8 @@ opacity = 0.5
 
 subset = 100
 # ==============================================================================#
+
+
 def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
     distance_levels = np.array(abs(Z[:-1, 2] - Z[1:, 2]))
 
@@ -51,7 +53,8 @@ def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
 
         biggest_diff_loc = sorted_distance_levels_index[level]
 
-        d_crit = Z[biggest_diff_loc, 2] + (0.01 * distance_levels[biggest_diff_loc])
+        d_crit = Z[biggest_diff_loc, 2] + \
+            (0.01 * distance_levels[biggest_diff_loc])
     else:
         level = -1 - sort_level
         d_crit = Z[level, 2] - 1e-5 * Z[level - 1, 2]
@@ -64,7 +67,8 @@ def get_d_crit(Z, sort_level, maxmimally_distinct_bool):
 
 
 # Load Analysis Setup Data
-TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersMasterParamsPath)
+TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(
+    TracersMasterParamsPath)
 
 # Load Halo Selection Data
 SELECTEDHALOES, HALOPATHS = load_haloes_selected(
@@ -85,7 +89,8 @@ snapRange = [
     snap
     for snap in range(
         int(TRACERSPARAMS["snapMin"]),
-        min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+        min(int(TRACERSPARAMS["snapMax"] + 1),
+            int(TRACERSPARAMS["finalSnap"]) + 1),
         1,
     )
 ]
@@ -121,7 +126,8 @@ selectTime = abs(mergedDict[selectTimeKey]["Lookback"][0])
 tlookback = []
 for snap in range(
     int(TRACERSPARAMS["snapMin"]),
-    min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+    min(int(TRACERSPARAMS["snapMax"] + 1),
+        int(TRACERSPARAMS["finalSnap"]) + 1),
     1,
 ):
     minTemp = TRACERSPARAMS["targetTLst"][0]
@@ -177,13 +183,17 @@ for T in Tlst:
             if analysisParam in logParams:
                 dtw_MDict.update({f"log10{analysisParam}": M})
                 dtw_DDict.update({f"log10{analysisParam}": D})
-                dtw_PridDict.update({f"log10{analysisParam}": dtwDict[loadKey]["prid"]})
-                dtw_TridDict.update({f"log10{analysisParam}": dtwDict[loadKey]["trid"]})
+                dtw_PridDict.update(
+                    {f"log10{analysisParam}": dtwDict[loadKey]["prid"]})
+                dtw_TridDict.update(
+                    {f"log10{analysisParam}": dtwDict[loadKey]["trid"]})
             else:
                 dtw_MDict.update({f"{analysisParam}": M})
                 dtw_DDict.update({f"{analysisParam}": D})
-                dtw_PridDict.update({f"{analysisParam}": dtwDict[loadKey]["prid"]})
-                dtw_TridDict.update({f"{analysisParam}": dtwDict[loadKey]["trid"]})
+                dtw_PridDict.update(
+                    {f"{analysisParam}": dtwDict[loadKey]["prid"]})
+                dtw_TridDict.update(
+                    {f"{analysisParam}": dtwDict[loadKey]["trid"]})
 
         paramstring = "+".join(dtwParams)
         plt.close("all")
@@ -300,13 +310,13 @@ for T in Tlst:
             opslaan = (
                 f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
                 + f"_T{T}_{rin}R{rout}_log10{paramstring}"
-                + f"_Joint-Dendrogram.pdf"
+                + f"_Joint-Dendrogram.png"
             )
         else:
             opslaan = (
                 f"Tracers_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
                 + f"_T{T}_{rin}R{rout}_{paramstring}"
-                + f"_Joint-Dendrogram.pdf"
+                + f"_Joint-Dendrogram.png"
             )
 
         plt.savefig(opslaan, dpi=DPI, transparent=False)
@@ -377,7 +387,6 @@ for T in Tlst:
         #
         #         plt.savefig(opslaan2, dpi=DPI, transparent=False)
         #         print(opslaan2)
-
 
         saveDict = {}
         saveDict.update({"clusters": clusters})
