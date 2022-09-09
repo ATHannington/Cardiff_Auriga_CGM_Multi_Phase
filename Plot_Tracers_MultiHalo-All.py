@@ -63,6 +63,11 @@ logParameters = [
     "Grad_n_H",
     "Grad_bfld",
     "Grad_P_CR",
+    "gima",
+    "Grad_T",
+    "Grad_n_H",
+    "Grad_bfld",
+    "Grad_P_CR",
     "tcool",
     "theat",
     "tcross",
@@ -70,14 +75,13 @@ logParameters = [
     "tcool_tff",
     "mass",
 ]
-# "rho_rhomean,dens,T,R,n_H,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,tcool,theat,csound,tcross,tff,tcool_tff"
 ylabel = {
     "T": r"Temperature (K)",
     "R": r"Radius (kpc)",
     "n_H": r"n$_H$ (cm$^{-3}$)",
     "B": r"|B| ($ \mu $G)",
     "vrad": r"Radial Velocity (km s$^{-1}$)",
-    "gz": r"Average Metallicity Z/Z$_{\odot}$",
+    "gz": r"Metallicity Z$_{\odot}$",
     "L": r"Specific Angular Momentum" + "\n" + r"(kpc km s$^{-1}$)",
     "P_thermal": r"P$_{Thermal}$ / k$_B$ (K cm$^{-3}$)",
     "P_magnetic": r"P$_{Magnetic}$ / k$_B$ (K cm$^{-3}$)",
@@ -89,10 +93,13 @@ ylabel = {
     "P_CR": r"P$_{CR}$ (K cm$^{-3}$)",
     "PCR_Pthermal": r"(X$_{CR}$ = P$_{CR}$/P$_{Thermal}$)",
     "gah": r"Alfven Gas Heating (erg s$^{-1}$)",
-    "Grad_T": r"||Temperature Gradient|| (K cm$^{-1}$)",
-    "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-4}$)",
-    "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G cm$^{-1}$)",
-    "Grad_P_CR": r"||P$_{CR}$ Gradient|| (K cm$^{-4}$)",
+    "bfld": r"||B-Field|| ($ \mu $G)",
+    "Grad_T": r"||Temperature Gradient|| (K kpc$^{-1}$)",
+    "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-3}$ kpc$^{-1}$)",
+    "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G kpc$^{-1}$)",
+    "Grad_P_CR": r"||P$_{CR}$ Gradient|| (K kpc$^{-4}$)",
+    "gima" : r"Star Formation Rate (M$_{\odot}$ yr$^{-1}$)",
+    # "crac" : r"Alfven CR Cooling (erg s$^{-1}$)",
     "tcool": r"Cooling Time (Gyr)",
     "theat": r"Heating Time (Gyr)",
     "tcross": r"Sound Crossing Cell Time (Gyr)",
@@ -102,12 +109,25 @@ ylabel = {
     "rho_rhomean": r"$\rho / \langle \rho \rangle$",
     "dens": r"Density (g cm$^{-3}$)",
     "ndens": r"Number density (cm$^{-3}$)",
-    "mass": r"Log10 Mass per pixel (M/M$_{\odot}$)",
+    "mass": r"Mass (M$_{\odot}$)",
 }
 
 for entry in logParameters:
     ylabel[entry] = r"$Log_{10}$" + ylabel[entry]
 
+#   Perform forbidden log of Grad check
+deleteParams = []
+for entry in logParameters:
+    entrySplit = entry.split("_")
+    if (
+        ("Grad" in entrySplit) &
+        (np.any(np.isin(np.array(logParameters), np.array(
+            "_".join(entrySplit[1:])))))
+    ):
+        deleteParams.append(entry)
+
+for entry in deleteParams:
+    logParameters.remove(entry)
 # ==============================================================================#
 
 # Load Analysis Setup Data

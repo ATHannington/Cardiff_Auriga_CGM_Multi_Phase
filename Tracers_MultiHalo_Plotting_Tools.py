@@ -271,8 +271,12 @@ def medians_plot(
 
             axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
             midax.set_ylabel(ylabel[analysisParam], fontsize=fontsize)
-            finalymin = min(np.nanmin(yminlist), xlimDict[analysisParam]["xmin"])
-            finalymax = max(np.nanmax(ymaxlist), xlimDict[analysisParam]["xmax"])
+            if analysisParam in list(xlimDict.keys()):
+                finalymin = min(np.nanmin(yminlist), xlimDict[analysisParam]["xmin"])
+                finalymax = max(np.nanmax(ymaxlist), xlimDict[analysisParam]["xmax"])
+            else:
+                finalymin = np.nanmin(yminlist)
+                finalymax = np.nanmax(ymaxlist)
             if (
                 (np.isinf(finalymin) == True)
                 or (np.isinf(finalymax) == True)
@@ -779,8 +783,6 @@ def stacked_pdf_plot(
                     # tmpdict = {"x": data, "y": weights}
                     # df = pd.DataFrame(tmpdict)
 
-                    xmin = xlimDict[dataKey]["xmin"]
-                    xmax = xlimDict[dataKey]["xmax"]
                     try:
                         xBins = np.linspace(
                             start=xlimDict[dataKey]["xmin"],
@@ -788,6 +790,8 @@ def stacked_pdf_plot(
                             num=Nbins,
                         )
                     except:
+                        xmin = np.nanmin(data)
+                        xmax = np.nanmax(data)
                         xBins = np.linspace(start=xmin, stop=xmax, num=Nbins)
                     else:
                         pass
@@ -2607,11 +2611,14 @@ def hist_plot(
             label=ylabel[weightKey], size=fontsize
         )
 
-        plt.setp(
-            ax,
-            ylim=(xlimDict[yanalysisParam]["xmin"], xlimDict[yanalysisParam]["xmax"]),
-            xlim=(xlimDict[xanalysisParam]["xmin"], xlimDict[xanalysisParam]["xmax"]),
-        )
+        try:
+            plt.setp(
+                ax,
+                ylim=(xlimDict[yanalysisParam]["xmin"], xlimDict[yanalysisParam]["xmax"]),
+                xlim=(xlimDict[xanalysisParam]["xmin"], xlimDict[xanalysisParam]["xmax"]),
+            )
+        except:
+            pass
         plt.tight_layout()
         if titleBool is True:
             plt.subplots_adjust(
@@ -3039,7 +3046,10 @@ def medians_phases_plot(
             print("Data All Inf/NaN! Skipping entry!")
             continue
 
-        custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
+        if analysisParam in list(xlimDict.keys()):
+            custom_ylim = (xlimDict[analysisParam]["xmin"], xlimDict[analysisParam]["xmax"])
+        else:
+            custom_ylim = (finalymin,finalymax)
         plt.setp(
             ax,
             ylim=custom_ylim,
