@@ -694,6 +694,7 @@ def stacked_pdf_plot(
     outofrangeNbins = 10
 
     for dataKey in saveParams:
+        skipBool = False
         print(f"{dataKey}")
         # Create a plot for each Temperature
         for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
@@ -740,9 +741,14 @@ def stacked_pdf_plot(
                     timeIndex = np.where(np.array(snapRange) == snap)[0]
                     whereGas = np.where(dataDict[dictkey]["type"][timeIndex][0] == 0)
 
-                    data = dataDict[dictkey][dataKey][timeIndex][0][whereGas]
-                    weights = dataDict[dictkey]["mass"][timeIndex][0][whereGas]
-
+                    try:
+                        data = dataDict[dictkey][dataKey][timeIndex][0][whereGas]
+                        weights = dataDict[dictkey]["mass"][timeIndex][0][whereGas]
+                        skipBool = False
+                    except:
+                        print(f"Data for {dataKey} not found! Skipping...")
+                        skipBool = True
+                        continue
                     if dataKey in logParameters:
                         data = np.log10(data)
 
@@ -784,11 +790,9 @@ def stacked_pdf_plot(
                     # df = pd.DataFrame(tmpdict)
 
                     try:
-                        xBins = np.linspace(
-                            start=xlimDict[dataKey]["xmin"],
-                            stop=xlimDict[dataKey]["xmax"],
-                            num=Nbins,
-                        )
+                        xmax = xlimDict[dataKey]["xmax"]
+                        xmin = xlimDict[dataKey]["xmin"]
+                        xBins = np.linspace(start=xmin, stop=xmax, num=Nbins)
                     except:
                         xmin = np.nanmin(data)
                         xmax = np.nanmax(data)
@@ -882,6 +886,8 @@ def stacked_pdf_plot(
                     currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
                     sns.despine(bottom=True, left=True)
 
+                if skipBool is True: continue
+
                 currentAx.set_xlabel(xlabel[dataKey], fontsize=fontsize)
 
                 xmin = np.nanmin(xminlist)
@@ -954,6 +960,8 @@ def stacked_pdf_plot(
                 plt.savefig(opslaan, dpi=DPI, transparent=False)
                 print(opslaan)
                 plt.close()
+            if skipBool is True: continue
+        if skipBool is True: continue
 
     return
 
