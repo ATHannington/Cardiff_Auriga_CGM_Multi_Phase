@@ -79,7 +79,7 @@ def medians_plot(
 
     lines = ["--", "-.", ":"]
     linecycler = cycle(lines)
-
+    skipBool= True
     for analysisParam in saveParams:
         print("")
         print(f"Starting {analysisParam} Sub-plots!")
@@ -148,23 +148,29 @@ def medians_plot(
                 cmap = matplotlib.cm.get_cmap(colourmapMain)
                 colour = cmap(float(ii) / float(len(Tlst)))
 
-                loadPercentilesTypes = [
-                    analysisParam + "_" + str(percentile) + "%"
-                    for percentile in TRACERSPARAMS["percentiles"]
-                ]
-                LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
-                UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
-                median = analysisParam + "_" + "50.00%"
+                try:
+                    loadPercentilesTypes = [
+                        analysisParam + "_" + str(percentile) + "%"
+                        for percentile in TRACERSPARAMS["percentiles"]
+                    ]
+                    LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
+                    UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
+                    median = analysisParam + "_" + "50.00%"
 
-                if analysisParam in logParameters:
-                    for k, v in plotData.items():
-                        plotData.update({k: np.log10(v)})
+                    if analysisParam in logParameters:
+                        for k, v in plotData.items():
+                            plotData.update({k: np.log10(v)})
 
-                if (jj < len(TRACERSPARAMS["Rinner"])) & (radialSummaryBool is True):
-                    radialPlotData[f"{rin}R{rout}"].update({f"T{Tlst[ii]}": plotData})
+                    if (jj < len(TRACERSPARAMS["Rinner"])) & (radialSummaryBool is True):
+                        radialPlotData[f"{rin}R{rout}"].update({f"T{Tlst[ii]}": plotData})
 
-                ymin = np.nanmin(plotData[LO])
-                ymax = np.nanmax(plotData[UP])
+                    ymin = np.nanmin(plotData[LO])
+                    ymax = np.nanmax(plotData[UP])
+                    skipBool = False
+                except:
+                    print(f"{analysisParam} not found! Skipping...")
+                    skipBool = True
+                    continue
                 yminlist.append(ymin)
                 ymaxlist.append(ymax)
 
@@ -225,6 +231,9 @@ def medians_plot(
                             )
                         else:
                             pass
+                            
+                if skipBool is True:
+                    continue
                 currentAx.axvline(x=vline, c="red")
 
                 currentAx.xaxis.set_minor_locator(AutoMinorLocator())
@@ -265,6 +274,8 @@ def medians_plot(
                         fontsize=fontsizeTitle,
                     )
 
+            if skipBool is True:
+                continue
             # Only give 1 x-axis a label, as they sharex
             axis0 = ax
             midax = ax
@@ -389,7 +400,10 @@ def medians_plot(
             fig.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
             plt.close()
-
+            if skipBool is True:
+                continue
+        if skipBool is True:
+            continue
     return
 
 
