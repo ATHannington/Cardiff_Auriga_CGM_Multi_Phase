@@ -1963,7 +1963,7 @@ def calculate_gradient_of_parameter(
 
         grid = np.transpose(grid)
 
-        if key in logParameters:
+        if arg in logParameters:
             grid = np.log10(grid)
         if verbose:
             print(f"Compute {key}!")
@@ -2016,7 +2016,7 @@ def calculate_gradient_of_parameter(
 
         grid = np.stack([subgrid for subgrid in grid_list])
 
-        if key in logParameters:
+        if arg in logParameters:
             grid = np.log10(grid)
 
         if verbose:
