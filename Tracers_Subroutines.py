@@ -1852,11 +1852,7 @@ def calculate_gradient_of_parameter(
 
     posdata = pos[pp]
 
-    if arg in logParameters:
-        valdata = np.log10(
-            snap.data[arg][use_only_cells][pp].astype("float64"))
-    else:
-        valdata = snap.data[arg][use_only_cells][pp].astype("float64")
+    valdata = snap.data[arg][use_only_cells][pp].astype("float64")
 
     massdata = snap.mass[use_only_cells][pp].astype("float64") / (1e10)
 
@@ -1966,6 +1962,9 @@ def calculate_gradient_of_parameter(
                              box[0], boxy=0.5*box[1], boxz=0.5*box[2], centerx=center[0], centery=center[1], centerz=center[2], numthreads=numthreadsCopy, verbose=verbose)
 
         grid = np.transpose(grid)
+
+        if key in logParameters:
+            grid = np.log10(grid)
         if verbose:
             print(f"Compute {key}!")
 
@@ -2016,6 +2015,9 @@ def calculate_gradient_of_parameter(
             grid_list.append(np.transpose(data))
 
         grid = np.stack([subgrid for subgrid in grid_list])
+
+        if key in logParameters:
+            grid = np.log10(grid)
 
         if verbose:
             print(f"Compute {key}!")
