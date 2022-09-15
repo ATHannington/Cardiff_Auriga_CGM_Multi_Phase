@@ -1810,8 +1810,8 @@ def calculate_gradient_of_parameter(
     if box is None:
         if snap.boxsize >= 1.0:
             print(f"[@calculate_gradient_of_parameter]: a maximum half box size (given by snap.boxsize) of {snap.boxsize:.5f} [Mpc] was detected." +
-                  "\n"+"User has not indicated box_gt_one_mpc so we are limiting to boxsize of 1 Mpc (half box of 500 kpc). Remaining data will be NaN...")
-            box = np.array([1., 1., 1.])
+                  "\n"+"User has not indicated box_gt_one_mpc so we are limiting to boxsize of 500 kpc (half box of 250 kpc). Remaining data will be NaN...")
+            box = np.array([0.5, 0.5, 0.5])
         else:
             bb = (snap.boxsize*2.)
             box = pylab.array([bb for ii in range(0, 3)])
@@ -1958,8 +1958,7 @@ def calculate_gradient_of_parameter(
     if valdata.ndim == 1:
         if verbose:
             print("Calc Grid!")
-        grid = snap.calcGrid(posdata, hsml, massdata, rhodata, valdata.astype("float64"), nx=gridres, ny=gridres, nz=gridres, boxx=0.5 *
-                             box[0], boxy=0.5*box[1], boxz=0.5*box[2], centerx=center[0], centery=center[1], centerz=center[2], numthreads=numthreadsCopy, verbose=verbose)
+        grid = snap.calcGrid(posdata, hsml, massdata, rhodata, valdata.astype("float64"), nx=gridres, ny=gridres, nz=gridres, boxx=0.5 * box[0], boxy=0.5*box[1], boxz=0.5*box[2], centerx=center[0], centery=center[1], centerz=center[2], numthreads=numthreadsCopy, verbose=verbose)
 
         grid = np.transpose(grid)
 
