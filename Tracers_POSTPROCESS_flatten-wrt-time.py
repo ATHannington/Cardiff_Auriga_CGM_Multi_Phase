@@ -113,29 +113,29 @@ if __name__ == "__main__":
         #         DataSavepathSuffix,
         #         saveBool=False,
         #     )
-        # out = flatten_wrt_time(targetT, dataDict,rin,rout,TRACERSPARAMS,saveParams,snapRange, DataSavepath,DataSavepathSuffix,False)
+            out = flatten_wrt_time(targetT, dataDict,rin,rout,TRACERSPARAMS,saveParams,snapRange, DataSavepath,DataSavepathSuffix,True)
         # STOP101
-        # Open multiprocesssing pool
-        # # flatten_wrt_time(4.0,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix)
-        print("\n" + f"Opening {n_processes} core Pool!")
-        pool = mp.Pool(processes=n_processes)
-        print("Pool opened!")
-        print("Analysis!")
-
-        # Compute Snap analysis
-        res = [
-            pool.apply_async(flatten_wrt_time, args=args, error_callback=err_catcher)
-            for args in args_list
-        ]
-
-        print("Analysis done!")
-
-        pool.close()
-        pool.join()
-        # Close multiprocesssing pool
-        print(f"Closing core Pool!")
-        print(f"Final Error checks")
-        success = [result.successful() for result in res]
-        assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
+        # # Open multiprocesssing pool
+        # flatten_wrt_time(4.0,rin,rout,dataDict,TRACERSPARAMS,saveParams,DataSavepath,DataSavepathSuffix)
+        # print("\n" + f"Opening {n_processes} core Pool!")
+        # pool = mp.Pool(processes=n_processes)
+        # print("Pool opened!")
+        # print("Analysis!")
+        #
+        # # Compute Snap analysis
+        # res = [
+        #     pool.apply_async(flatten_wrt_time, args=args, error_callback=err_catcher)
+        #     for args in args_list
+        # ]
+        #
+        # print("Analysis done!")
+        #
+        # pool.close()
+        # pool.join()
+        # # Close multiprocesssing pool
+        # print(f"Closing core Pool!")
+        # print(f"Final Error checks")
+        # success = [result.successful() for result in res]
+        # assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
 
     print("Done! End of Post-Processing :)")

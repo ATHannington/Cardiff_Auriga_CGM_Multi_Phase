@@ -76,7 +76,7 @@ def medians_plot(
     }
 
     from itertools import cycle
-
+    dataExists  = False
     lines = ["--", "-.", ":"]
     linecycler = cycle(lines)
     skipBool= True
@@ -127,6 +127,13 @@ def medians_plot(
                 T = float(Tlst[ii])
 
                 selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
+                try:
+                    tmp = statsData[selectKey]
+                    del tmp
+                    dataExists = True
+                except:
+                    dataExists = False
+                    continue
                 plotData = statsData[selectKey].copy()
 
                 selectionSnap = np.where(
@@ -231,8 +238,8 @@ def medians_plot(
                             )
                         else:
                             pass
-                            
-                if skipBool is True:
+
+                if skipBool or not dataExists is True:
                     continue
                 currentAx.axvline(x=vline, c="red")
 
@@ -274,7 +281,7 @@ def medians_plot(
                         fontsize=fontsizeTitle,
                     )
 
-            if skipBool is True:
+            if skipBool or not dataExists is True:
                 continue
             # Only give 1 x-axis a label, as they sharex
             axis0 = ax
@@ -457,6 +464,13 @@ def currently_or_persistently_at_temperature_plot(
             timeIndexSelect = np.where(
                 np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
             )[0]
+
+            try:
+                tmp = dataDict[key]
+                del tmp
+            except:
+                continue
+
             whereGas = np.where(dataDict[key]["type"][timeIndexSelect][0] == 0)[0]
 
             data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
@@ -540,6 +554,13 @@ def currently_or_persistently_at_temperature_plot(
 
             # Get temperature
             temp = TRACERSPARAMS["targetTLst"][ii]
+
+            try:
+                tmp = Ydata[f"T{temp}"]
+                tmp = Xdata[f"T{temp}"]
+                del tmp
+            except:
+                continue
 
             plotYdata = Ydata[f"T{temp}"]
             plotXdata = Xdata[f"T{temp}"]
@@ -753,6 +774,14 @@ def stacked_pdf_plot(
                     currentAx = ax[jj]
                     dictkey = (f"T{T}", f"{rin}R{rout}")
                     timeIndex = np.where(np.array(snapRange) == snap)[0]
+
+                    try:
+                        tmp = dataDict[dictkey]
+                        del tmp
+                    except:
+                        skipBool = True
+                        continue
+
                     whereGas = np.where(dataDict[dictkey]["type"][timeIndex][0] == 0)
 
                     try:
@@ -1009,13 +1038,15 @@ def phases_plot(
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
     # Paramters to weight the 2D hist by
-    weightKeys = ["mass", "tcool", "gz", "tcool_tff"]
-    logparams = ["mass", "tcool", "gz", "tcool_tff"]
+    weightKeys = ["mass", "tcool", "gz", "tcool_tff", "tcool", "theat"]
+    logparams = ["mass", "tcool", "gz", "tcool_tff", "tcool", "theat"]
     zlimDict = {
         "mass": {"zmin": 4.0, "zmax": 9.0},
         "tcool": {"zmin": -5.0, "zmax": 4.0},
         "gz": {"zmin": -2.0, "zmax": 2.0},
         "tcool_tff": {"zmin": -6.0, "zmax": 4.0},
+        "tcool": {"zmin": -5.0, "zmax": 2.0},
+        "theat": {"zmin": -4.0, "zmax": 4.0},
     }
     ymin = 3.5  # [Log10 T]
     ymax = 7.5  # [Log10 T]
@@ -1073,6 +1104,14 @@ def phases_plot(
                     else:
                         currentAx = ax[ii]
 
+                    try:
+                        tmp = dataDict[FullDictKey]
+                        del tmp
+                    except:
+                        continue
+
+                    if dataDict[FullDictKey]["Ntracers"][0]  == 0:
+                        continue
                     whereGas = np.where(dataDict[FullDictKey]["type"] == 0)[0]
 
                     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -1276,6 +1315,11 @@ def flat_analyse_time_averages(
             else:
                 dfdat.update({"T": [T], "Rinner": [rin], "Router": [rout]})
 
+            try:
+                tmp = FlatDataDict[Tkey]
+                del tmp
+            except:
+                continue
             data = FlatDataDict[Tkey]
             ntracersAll = FlatDataDict[Tkey]["Ntracers"]
 
@@ -2541,6 +2585,11 @@ def hist_plot(
                 else:
                     currentAx = ax[jj, ii]
 
+                try:
+                    tmp =dataDict[FullDictKey]
+                    del tmp
+                except:
+                    pass
                 whereGas = np.where(dataDict[FullDictKey]["type"] == 0)[0]
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -2753,6 +2802,12 @@ def medians_phases_plot(
             else:
                 currentAx = ax[ii]
 
+            try:
+                tmp = FlatDataDict[FullDictKey]
+                del tmp
+            except:
+                continue
+
             whereGas = np.where(
                 np.where(FlatDataDict[FullDictKey]["type"] == 0, True, False).all(
                     axis=0
@@ -2760,6 +2815,13 @@ def medians_phases_plot(
             )[0]
 
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
+            try:
+                tmp = statsData[selectKey]
+                del tmp
+            except:
+                breakFlag = True
+
+                continue
             plotData = statsData[selectKey].copy()
             # Temperature specific load path
 
@@ -3154,6 +3216,12 @@ def temperature_variation_plot(
 
             selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
 
+            try:
+                tmp = dataDict[selectKey]
+                del tmp
+            except:
+                continue
+
             tempDiff = np.abs(
                 np.log10(dataDict[selectKey][analysisParam][1:, :])
                 - np.log10(dataDict[selectKey][analysisParam][:-1, :])
@@ -3284,8 +3352,12 @@ def temperature_variation_plot(
         )
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(ylabelhere, fontsize=fontsize)
-        finalymin = np.nanmin(yminlist)
-        finalymax = np.nanmax(ymaxlist)
+        try:
+            finalymin = np.nanmin(yminlist)
+            finalymax = np.nanmax(ymaxlist)
+        except:
+            print("No Data! Skipping entry!")
+            continue
         if (
             (np.isinf(finalymin) == True)
             or (np.isinf(finalymax) == True)

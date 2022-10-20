@@ -28,7 +28,7 @@ trioTitleBool = False
 titleBool = False
 
 subset = 100
-Ntails = 4
+Ntails = 6
 numThreads = 18
 ageUniverse = 13.77  # [Gyr]
 

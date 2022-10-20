@@ -364,80 +364,80 @@ temperature_variation_plot(
 matplotlib.rc_file_defaults()
 plt.close("all")
 
-# ============================================================================#
-# # #                   Bar Chart PLOT                                            #
-# # # =============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-bars_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    selectTime,
-    snapRange,
-    Tlst,
-    DataSavepath,
-    titleBool=titleBool,
-    separateLegend=separateLegend,
-    DPI=DPI,
-    opacityPercentiles=opacityPercentiles,
-    lineStyleMedian=lineStyleMedian,
-    lineStylePercentiles=lineStylePercentiles,
-    colourmapMain=colourmapMain,
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
-
-bars_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    selectTime,
-    snapRange,
-    Tlst,
-    DataSavepath,
-    shortSnapRangeBool=True,
-    shortSnapRangeNumber=1,
-    titleBool=titleBool,
-    separateLegend=separateLegend,
-    DPI=DPI,
-    opacityPercentiles=opacityPercentiles,
-    lineStyleMedian=lineStyleMedian,
-    lineStylePercentiles=lineStylePercentiles,
-    colourmapMain=colourmapMain,
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
-# ============================================================================#
-# ============================================================================#
-# #                         Non-Paper Plots
-# #
-# ============================================================================#
-# ============================================================================#
-
-
 # # ============================================================================#
-# # #                   Stacked PDF PLOT                                          #
-# # # =============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-stacked_pdf_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
-    logParameters,
-    ylabel,
-    titleBool,
-    DPI,
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
-# #
+# # # #                   Bar Chart PLOT                                            #
+# # # # =============================================================================#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# bars_plot(
+#     flatMergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     selectTime,
+#     snapRange,
+#     Tlst,
+#     DataSavepath,
+#     titleBool=titleBool,
+#     separateLegend=separateLegend,
+#     DPI=DPI,
+#     opacityPercentiles=opacityPercentiles,
+#     lineStyleMedian=lineStyleMedian,
+#     lineStylePercentiles=lineStylePercentiles,
+#     colourmapMain=colourmapMain,
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+#
+# bars_plot(
+#     flatMergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     selectTime,
+#     snapRange,
+#     Tlst,
+#     DataSavepath,
+#     shortSnapRangeBool=True,
+#     shortSnapRangeNumber=1,
+#     titleBool=titleBool,
+#     separateLegend=separateLegend,
+#     DPI=DPI,
+#     opacityPercentiles=opacityPercentiles,
+#     lineStyleMedian=lineStyleMedian,
+#     lineStylePercentiles=lineStylePercentiles,
+#     colourmapMain=colourmapMain,
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# # ============================================================================#
+# # ============================================================================#
+# # #                         Non-Paper Plots
+# # #
+# # ============================================================================#
+# # ============================================================================#
+#
+#
+# # # ============================================================================#
+# # # #                   Stacked PDF PLOT                                          #
+# # # # =============================================================================#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# stacked_pdf_plot(
+#     flatMergedDict,
+#     TRACERSPARAMS,
+#     saveParams,
+#     tlookback,
+#     snapRange,
+#     Tlst,
+#     logParameters,
+#     ylabel,
+#     titleBool,
+#     DPI,
+# )
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# # #
 
 # =============================================================================#
 # #                Medians and Phases Combo                                     #
@@ -470,3 +470,39 @@ plt.close("all")
 #     )
 #     matplotlib.rc_file_defaults()
 #     plt.close("all")
+
+print("Load Non Time Flattened Data!")
+mergedDict, _ = multi_halo_merge(
+    SELECTEDHALOES,
+    HALOPATHS,
+    DataSavepathSuffix,
+    snapRange,
+    Tlst,
+    TracersParamsPath,
+)
+print("Done!")
+
+matplotlib.rc_file_defaults()
+plt.close("all")
+phases_plot(
+    dataDict = mergedDict,
+    TRACERSPARAMS = TRACERSPARAMS,
+    saveParams=saveParams,
+    snapRange=snapRange,
+    Tlst = [4.0,5.0,6.0],
+    titleBool = True,
+    ylabel = ylabel,
+    DPI=100,
+    xsize=20.0,
+    ysize=5.0,
+    opacityPercentiles=0.25,
+    lineStyleMedian="solid",
+    lineStylePercentiles="-.",
+    colourmapMain="plasma",
+    DataSavepathSuffix=f".h5",
+    TracersParamsPath="TracersParams.csv",
+    TracersMasterParamsPath="TracersParamsMaster.csv",
+    SelectedHaloesPath="TracersSelectedHaloes.csv",
+    Nbins=250)
+matplotlib.rc_file_defaults()
+plt.close("all")

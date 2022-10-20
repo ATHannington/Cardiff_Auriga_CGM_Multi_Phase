@@ -3953,8 +3953,8 @@ def tracer_plot(
     AxesLabels = ["y", "z", "x"]
 
     # Base sizes for singles plots. Smaller for bigger relative fonts and annotations
-    xsize = 5.0
-    ysize = 5.0
+    xsize = 8.5
+    ysize = 8.5
 
     # ===============#
     # Set plot figure sizes of trio
