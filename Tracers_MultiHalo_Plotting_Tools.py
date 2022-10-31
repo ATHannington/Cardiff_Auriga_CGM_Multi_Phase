@@ -664,6 +664,238 @@ def currently_or_persistently_at_temperature_plot(
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
+
+    if persistenceBool is True:
+        what percentage do we need here?= Ydata
+        Xdata = {}
+        deltaT = float(TRACERSPARAMS["deltaT"]) * 2.0
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+            print(f"{rin}R{rout}")
+            # Loop over temperatures in targetTLst and grab Temperature specific subset of tracers and relevant data
+            for T in TRACERSPARAMS["targetTLst"]:
+                print("")
+                print(f"Starting T{T} analysis")
+
+                tmpXdata = []
+                tmpYdata = []
+                snapRangeLow = range(
+                    int(TRACERSPARAMS["selectSnap"]), int(TRACERSPARAMS["snapMin"] - 1), -1
+                )
+                snapRangeHi = range(
+                    int(TRACERSPARAMS["selectSnap"] + 1),
+                    min(
+                        int(TRACERSPARAMS["snapMax"] + 1),
+                        int(TRACERSPARAMS["finalSnap"] + 1),
+                    ),
+                )
+
+                rangeSet = [snapRangeLow, snapRangeHi]
+
+                key = (f"T{T}", f"{rin}R{rout}")
+                timeIndexSelect = np.where(
+                    np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+                )[0]
+
+                try:
+                    tmp = dataDict[key]
+                    del tmp
+                except:
+                    continue
+
+                whereGas = np.where(dataDict[key]["type"][timeIndexSelect][0] == 0)[0]
+
+                data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
+
+                selectedAtSelection = np.where(
+                    (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                    & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
+                )[0]
+
+                for tmpsnapRange in rangeSet:
+                    currentSelection = selectedAtSelection
+                    for snap in tmpsnapRange:
+                        key = (f"T{T}", f"{rin}R{rout}")
+                        timeIndex = np.where(np.array(snapRange) == int(snap))[0]
+                        whereGas = np.where(dataDict[key]["type"][timeIndex][0] == 0)[0]
+
+                        if persistenceBool is True:
+                            data = dataDict[key]["T"][timeIndex][0][whereGas]
+                            selected = np.where(
+                                (data >= 1.0 * 10 ** (T - deltaT))
+                                & (data <= 1.0 * 10 ** (T + deltaT))
+                            )[0]
+                            currentSelection = np.intersect1d(selected, currentSelection)
+                            nTracers = int(np.shape(currentSelection)[0])
+
+                        else:
+                            data = dataDict[key]["T"][timeIndex][0][whereGas]
+
+                            selected = np.where(
+                                (data >= 1.0 * 10 ** (T - deltaT))
+                                & (data <= 1.0 * 10 ** (T + deltaT))
+                            )[0]
+                            nTracers = int(np.shape(selected)[0])
+
+                        # print("nTracers",nTracers)
+                        # Append the data from this snapshot to a temporary list
+                        tmpXdata.append(tlookback[timeIndex][0])
+                        tmpYdata.append(nTracers)
+
+                ind_sorted = np.argsort(tmpXdata)
+                maxN = np.nanmax(tmpYdata)
+                tmpYarray = [(float(xx) / float(maxN)) * 100.0 for xx in tmpYdata]
+                tmpYarray = np.array(tmpYarray)
+                tmpXarray = np.array(tmpXdata)
+                tmpYarray = np.flip(
+                    np.take_along_axis(tmpYarray, ind_sorted, axis=0), axis=0
+                )
+                tmpXarray = np.flip(
+                    np.take_along_axis(tmpXarray, ind_sorted, axis=0), axis=0
+                )
+
+                # Add the full list of snaps data to temperature dependent dictionary.
+                Xdata.update({f"T{T}": tmpXarray})
+                Ydata.update({f"T{T}": tmpYarray})
+
+            # ==============================================================================#
+            #           PLOT!!
+            # ==============================================================================#
+
+            fig, ax = plt.subplots(
+                nrows=1,  # len(Tlst),
+                ncols=1,
+                sharex=True,
+                sharey=True,
+                figsize=(xsize, ysize),
+                dpi=DPI,
+            )
+
+            # Create a plot for each Temperature
+            for ii in range(len(Tlst)):
+                timeIndex = np.where(
+                    np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+                )[0]
+
+                vline = tlookback[timeIndex]
+
+                T = TRACERSPARAMS["targetTLst"][ii]
+
+                # Get number of temperatures
+                NTemps = float(len(Tlst))
+
+                # Get temperature
+                temp = TRACERSPARAMS["targetTLst"][ii]
+
+                try:
+                    tmp = Ydata[f"T{temp}"]
+                    tmp = Xdata[f"T{temp}"]
+                    del tmp
+                except:
+                    continue
+
+                plotYdata = Ydata[f"T{temp}"]
+                plotXdata = Xdata[f"T{temp}"]
+
+                cmap = matplotlib.cm.get_cmap(colourmapMain)
+                colour = cmap(float(ii) / float(len(Tlst)))
+                colourTracers = "tab:gray"
+
+                datamin = 0.0
+                datamax = np.nanmax(plotYdata)
+
+                print("")
+                print("Sub-Plot!")
+
+                currentAx = ax
+
+                tmpMinData = np.array([0.0 for xx in range(len(plotXdata))])
+
+                currentAx.fill_between(
+                    tlookback,
+                    tmpMinData,
+                    plotYdata,
+                    facecolor=colour,
+                    alpha=0.25,
+                    interpolate=False,
+                )
+
+                currentAx.plot(
+                    tlookback,
+                    plotYdata,
+                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                    color=colour,
+                    lineStyle="-",
+                )
+
+                currentAx.axvline(x=vline, c="red")
+                currentAx.xaxis.set_minor_locator(AutoMinorLocator())
+                currentAx.yaxis.set_minor_locator(AutoMinorLocator())
+                currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
+
+                currentAx.set_ylim(ymin=datamin, ymax=datamax)
+                currentAx.set_xlim(
+                    xmin=round(max(tlookback), 1), xmax=round(min(tlookback), 1)
+                )
+                if titleBool is True:
+                    if persistenceBool is True:
+                        fig.suptitle(
+                            f"Percentage Tracers Persistently Within Temperature Range "
+                            + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                            + "\n"
+                            + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                            + f" and selected at {vline[0]:3.2f} Gyr",
+                            fontsize=fontsizeTitle,
+                        )
+                    else:
+                        fig.suptitle(
+                            f"Percentage Tracers Currently Within Temperature Range "
+                            + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                            + "\n"
+                            + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                            + f" and selected at {vline[0]:3.2f} Gyr",
+                            fontsize=fontsizeTitle,
+                        )
+
+            # Only give 1 x-axis a label, as they sharex
+            # if len(Tlst) == 1:
+            axis0 = ax
+            midax = ax
+            # else:
+            #     axis0 = ax[len(Tlst) - 1]
+            #     midax = ax[(len(Tlst) - 1) // 2]
+
+            axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
+            midax.set_ylabel(
+                f"Percentage Tracers Within" + f"\n" + f"Temperature Range",
+                fontsize=fontsize,
+            )
+            axis0.legend(loc="upper right", fontsize=fontsize)
+            plt.tight_layout(h_pad=0.0)
+            plt.subplots_adjust(left=0.15)
+            if persistenceBool is True:
+                opslaan = (
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+                    + f"_Persistently_within_Temperature.pdf"
+                )
+            else:
+                opslaan = (
+                    "./"
+                    + "MultiHalo"
+                    + "/"
+                    + f"{int(rin)}R{int(rout)}"
+                    + "/"
+                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
+                    + f"_Currently_within_Temperature.pdf"
+                )
+            plt.savefig(opslaan, dpi=DPI, transparent=False)
+            print(opslaan)
+            plt.close()
+
     return
 
 
