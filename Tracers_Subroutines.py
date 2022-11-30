@@ -1468,7 +1468,7 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["ndens", "P_thermal", "P_CR", "PCR_Pthermal"]),
+            np.array(["ndens", "P_thermal","P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_CR", "PCR_Pthermal"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
