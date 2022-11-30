@@ -289,7 +289,7 @@ matplotlib.rc_file_defaults()
 plt.close("all")
 
 # ==============================================================================#
-# #                   Persistently Temperature PLOT                             #
+# #         Persistently Currently Random Draw Temperature PLOT               #
 # # ============================================================================#
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -300,7 +300,6 @@ currently_or_persistently_at_temperature_plot(
     tlookback,
     snapRange,
     Tlst,
-    persistenceBool=True,
     titleBool=titleBool,
     DPI=DPI,
     xsize=xsize,
@@ -313,30 +312,6 @@ currently_or_persistently_at_temperature_plot(
 matplotlib.rc_file_defaults()
 plt.close("all")
 
-# ============================================================================#
-#                   Currently Temperature PLOT                                #
-# ============================================================================#
-matplotlib.rc_file_defaults()
-plt.close("all")
-currently_or_persistently_at_temperature_plot(
-    flatMergedDict,
-    TRACERSPARAMS,
-    saveParams,
-    tlookback,
-    snapRange,
-    Tlst,
-    persistenceBool=False,
-    titleBool=titleBool,
-    DPI=DPI,
-    xsize=xsize,
-    ysize=ysize,
-    opacityPercentiles=opacityPercentiles,
-    lineStyleMedian=lineStyleMedian,
-    lineStylePercentiles=lineStylePercentiles,
-    colourmapMain=colourmapMain,
-)
-matplotlib.rc_file_defaults()
-plt.close("all")
 
 # ============================================================================#
 #       Temperature Variation PLOT                                              # #=============================================================================#
@@ -364,53 +339,53 @@ temperature_variation_plot(
 matplotlib.rc_file_defaults()
 plt.close("all")
 
-# # ============================================================================#
-# # # #                   Bar Chart PLOT                                            #
-# # # # =============================================================================#
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# bars_plot(
-#     flatMergedDict,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     selectTime,
-#     snapRange,
-#     Tlst,
-#     DataSavepath,
-#     titleBool=titleBool,
-#     separateLegend=separateLegend,
-#     DPI=DPI,
-#     opacityPercentiles=opacityPercentiles,
-#     lineStyleMedian=lineStyleMedian,
-#     lineStylePercentiles=lineStylePercentiles,
-#     colourmapMain=colourmapMain,
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-#
-# bars_plot(
-#     flatMergedDict,
-#     TRACERSPARAMS,
-#     saveParams,
-#     tlookback,
-#     selectTime,
-#     snapRange,
-#     Tlst,
-#     DataSavepath,
-#     shortSnapRangeBool=True,
-#     shortSnapRangeNumber=1,
-#     titleBool=titleBool,
-#     separateLegend=separateLegend,
-#     DPI=DPI,
-#     opacityPercentiles=opacityPercentiles,
-#     lineStyleMedian=lineStyleMedian,
-#     lineStylePercentiles=lineStylePercentiles,
-#     colourmapMain=colourmapMain,
-# )
-# matplotlib.rc_file_defaults()
-# plt.close("all")
-# # ============================================================================#
+# ============================================================================#
+# # #                   Bar Chart PLOT                                            #
+# # # =============================================================================#
+matplotlib.rc_file_defaults()
+plt.close("all")
+bars_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    DPI=DPI,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
+matplotlib.rc_file_defaults()
+plt.close("all")
+
+bars_plot(
+    flatMergedDict,
+    TRACERSPARAMS,
+    saveParams,
+    tlookback,
+    selectTime,
+    snapRange,
+    Tlst,
+    DataSavepath,
+    shortSnapRangeBool=True,
+    shortSnapRangeNumber=1,
+    titleBool=titleBool,
+    separateLegend=separateLegend,
+    DPI=DPI,
+    opacityPercentiles=opacityPercentiles,
+    lineStyleMedian=lineStyleMedian,
+    lineStylePercentiles=lineStylePercentiles,
+    colourmapMain=colourmapMain,
+)
+matplotlib.rc_file_defaults()
+plt.close("all")
+# ============================================================================#
 # # ============================================================================#
 # # #                         Non-Paper Plots
 # # #
@@ -471,38 +446,38 @@ plt.close("all")
 #     matplotlib.rc_file_defaults()
 #     plt.close("all")
 
-print("Load Non Time Flattened Data!")
-mergedDict, _ = multi_halo_merge(
-    SELECTEDHALOES,
-    HALOPATHS,
-    DataSavepathSuffix,
-    snapRange,
-    Tlst,
-    TracersParamsPath,
-)
-print("Done!")
-
-matplotlib.rc_file_defaults()
-plt.close("all")
-phases_plot(
-    dataDict = mergedDict,
-    TRACERSPARAMS = TRACERSPARAMS,
-    saveParams=saveParams,
-    snapRange=snapRange,
-    Tlst = [4.0,5.0,6.0],
-    titleBool = True,
-    ylabel = ylabel,
-    DPI=100,
-    xsize=20.0,
-    ysize=5.0,
-    opacityPercentiles=0.25,
-    lineStyleMedian="solid",
-    lineStylePercentiles="-.",
-    colourmapMain="plasma",
-    DataSavepathSuffix=f".h5",
-    TracersParamsPath="TracersParams.csv",
-    TracersMasterParamsPath="TracersParamsMaster.csv",
-    SelectedHaloesPath="TracersSelectedHaloes.csv",
-    Nbins=250)
-matplotlib.rc_file_defaults()
-plt.close("all")
+# print("Load Non Time Flattened Data!")
+# mergedDict, _ = multi_halo_merge(
+#     SELECTEDHALOES,
+#     HALOPATHS,
+#     DataSavepathSuffix,
+#     snapRange,
+#     Tlst,
+#     TracersParamsPath,
+# )
+# print("Done!")
+#
+# matplotlib.rc_file_defaults()
+# plt.close("all")
+# phases_plot(
+#     dataDict = mergedDict,
+#     TRACERSPARAMS = TRACERSPARAMS,
+#     saveParams=saveParams,
+#     snapRange=snapRange,
+#     Tlst = [4.0,5.0,6.0],
+#     titleBool = True,
+#     ylabel = ylabel,
+#     DPI=100,
+#     xsize=20.0,
+#     ysize=5.0,
+#     opacityPercentiles=0.25,
+#     lineStyleMedian="solid",
+#     lineStylePercentiles="-.",
+#     colourmapMain="plasma",
+#     DataSavepathSuffix=f".h5",
+#     TracersParamsPath="TracersParams.csv",
+#     TracersMasterParamsPath="TracersParamsMaster.csv",
+#     SelectedHaloesPath="TracersSelectedHaloes.csv",
+#     Nbins=250)
+# matplotlib.rc_file_defaults()
+# plt.close("all")
