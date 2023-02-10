@@ -3729,7 +3729,8 @@ def plot_projections(
     fig, axes = plt.subplots(
         nrows=2, ncols=2, figsize=(xsize, ysize), dpi=DPI, sharex=True, sharey=True
     )
-
+    for axis in axes:
+        axis.tick_params(top=True, right=True)
     if titleBool is True:
         # Add overall figure plot
         TITLE = (
@@ -4088,6 +4089,8 @@ def tracer_plot(
             figi, axi = plt.subplots(
                 nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI, sharey=True
             )
+            for axis in axi:
+                axis.tick_params(top=True, right=True)
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -4427,7 +4430,7 @@ def tracer_plot(
                 fig, axes = plt.subplots(
                     nrows=1, ncols=1, figsize=(xsize, ysize), dpi=DPI
                 )
-
+                axes.tick_params(top=True, right=True)
                 if titleBool is True:
                     # Add overall figure plot
                     TITLE = (

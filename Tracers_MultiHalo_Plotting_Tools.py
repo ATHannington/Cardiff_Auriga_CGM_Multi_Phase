@@ -5,6 +5,7 @@ Created: 29/07/2021
 Known Bugs:
 
 """
+from pickle import NONE
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -104,6 +105,10 @@ def medians_plot(
                 figsize=(xsize, ysize),
                 dpi=DPI,
             )
+            ax.xaxis.set_minor_locator(AutoMinorLocator())
+            ax.yaxis.set_minor_locator(AutoMinorLocator())
+            ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
+
             yminlist = []
             ymaxlist = []
             patchList = []
@@ -376,6 +381,10 @@ def medians_plot(
                 axis0.get_legend().remove()
 
                 figl, axl = plt.subplots(figsize=(lcol * 2.5, 1))
+                axl.xaxis.set_minor_locator(AutoMinorLocator())
+                axl.yaxis.set_minor_locator(AutoMinorLocator())
+                axl.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
+
                 axl.axis(False)
                 axl.legend(
                     handles=handles,
@@ -540,6 +549,9 @@ def currently_or_persistently_at_temperature_plot(
                 figsize=(xsize, ysize),
                 dpi=DPI,
             )
+            ax.xaxis.set_minor_locator(AutoMinorLocator())
+            ax.yaxis.set_minor_locator(AutoMinorLocator())
+            ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
 
             # Create a plot for each Temperature
             for ii in range(len(Tlst)):
@@ -749,7 +761,9 @@ def currently_or_persistently_at_temperature_plot(
             figsize=(xsize, ysize),
             dpi=DPI,
         )
-
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
         # Create a plot for each Temperature
         for ii in range(len(Tlst)):
             # Use previous snapRange version to get correct vline, as tlookback
@@ -971,6 +985,10 @@ def stacked_pdf_plot(
                     frameon=False,
                     sharex=True,
                 )
+                for axis in ax:
+                    axis.xaxis.set_minor_locator(AutoMinorLocator())
+                    axis.yaxis.set_minor_locator(AutoMinorLocator())
+                    axis.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
                 # Loop over snaps from snapMin to snapmax, taking the snapnumMAX (the final snap) as the endpoint if snapMax is greater
                 for (jj, snap) in enumerate(snapRange):
                     currentAx = ax[jj]
@@ -1297,7 +1315,10 @@ def phases_plot(
                     sharey=True,
                     sharex=True,
                 )
-
+                for axis in ax:
+                    axis.xaxis.set_minor_locator(AutoMinorLocator())
+                    axis.yaxis.set_minor_locator(AutoMinorLocator())
+                    axis.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
                 for (ii, T) in enumerate(Tlst):
                     FullDictKey = (f"T{float(T)}", f"{rin}R{rout}", f"{int(snap)}")
 
@@ -1456,9 +1477,12 @@ def flat_analyse_time_averages(
     TRACERSPARAMS,
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
+    epsilon = None,
+    epsilonRadial = 50.0,
 ):
 
-    epsilon = float(TRACERSPARAMS["deltaT"])
+    if epsilon is None: 
+        epsilon = float(TRACERSPARAMS["deltaT"])
 
     gas = []
     halo0 = []
@@ -1740,43 +1764,61 @@ def flat_analyse_time_averages(
 
             print("Heating & Cooling")
 
+            ## Ever
             TPreDat = np.log10(
-                FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
-
+                FlatDataDict[Tkey]["T"][:, whereGas][pre, :][:-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][1:, :])
+            
             TPostDat = np.log10(
-                FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :]
-            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][0, :])
+                FlatDataDict[Tkey]["T"][:, whereGas][post, :][:-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][1:, :])
 
-            colspre = np.where(TPreDat < (-1.0 * epsilon))[0]
+            ## On average
+            #data = np.log10(
+            #    FlatDataDict[Tkey]["T"][:, whereGas][pre, :][:-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][1:, :])
+            #TPreDat = np.nanmedian(data, axis=0)
+            #data = np.log10(
+            #    FlatDataDict[Tkey]["T"][:, whereGas][post, :][:-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][1:, :])
+            #TPostDat = np.nanmedian(data, axis=0)
+
+            ## +/- 1 snapshot
+            #TPreDat = np.log10(
+            #    FlatDataDict[Tkey]["T"][:, whereGas][pre, :][-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :])
+
+            #TPostDat = np.log10(
+            #    FlatDataDict[Tkey]["T"][:, whereGas][selectInd, :]
+            #) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][0, :])
+
+            rowspre, colspre = np.where(TPreDat < (-1.0 * epsilon))
             coolingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(TPostDat < (-1.0 * epsilon))[0]
+            rowspost, colspost  = np.where(TPostDat < (-1.0 * epsilon))
             coolingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             cooling.append([coolingPre, coolingPost])
 
-            colspre = np.where((TPreDat >= (-1.0 * epsilon)) & (TPreDat <= (epsilon)))[
-                0
-            ]
+            rowspre, colspre = np.where((TPreDat >= (-1.0 * epsilon)) & (TPreDat <= (epsilon)))
             stableTPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(
+            rowspost, colspost = np.where(
                 (TPostDat >= (-1.0 * epsilon)) & (TPostDat <= (epsilon))
-            )[0]
+            )
             stableTPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             stableT.append([stableTPre, stableTPost])
 
-            colspre = np.where(TPreDat > (epsilon))[0]
+            rowspre, colspre = np.where(TPreDat > (epsilon))
             heatingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(TPostDat > (epsilon))[0]
+            rowspost, colspost = np.where(TPostDat > (epsilon))
             heatingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
@@ -1858,45 +1900,63 @@ def flat_analyse_time_averages(
             # smallTchange.append([smallTpre, smallTpost])
 
             print("Density")
-            # (K)
-
+            ## Ever
             nHPreDat = np.log10(
-                FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :])
-
+                FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][:-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][1:, :])
+            
             nHPostDat = np.log10(
-                FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :]
-            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][0, :])
+                FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][:-1, :]
+            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][1:, :])
 
-            colspre = np.where(nHPreDat < (-1.0 * epsilon))[0]
+            ## On average
+            #data = np.log10(
+            #    FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][:-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][1:, :])
+            #nHPreDat = np.nanmedian(data, axis=0)
+            #data = np.log10(
+            #    FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][:-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][1:, :])
+            #nHPostDat = np.nanmedian(data, axis=0)
+
+            ## +/- 1 snapshot
+            #nHPreDat = np.log10(
+            #    FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][-1, :]
+            #) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :])
+
+            #nHPostDat = np.log10(
+            #    FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :]
+            #) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][0, :])
+
+            rowspre, colspre = np.where(nHPreDat < (-1.0 * epsilon))
             dispersingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(nHPostDat < (-1.0 * epsilon))[0]
+            rowspost, colspost = np.where(nHPostDat < (-1.0 * epsilon))
             dispersingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             dispersing.append([dispersingPre, dispersingPost])
 
-            colspre = np.where(
+            rowspre, colspre = np.where(
                 (nHPreDat >= (-1.0 * epsilon)) & (nHPreDat <= (epsilon))
-            )[0]
+            )
             stablenHPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(
+            rowspost, colspost = np.where(
                 (nHPostDat >= (-1.0 * epsilon)) & (nHPostDat <= (epsilon))
-            )[0]
+            )
             stablenHPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             stabledensity.append([stablenHPre, stablenHPost])
 
-            colspre = np.where(nHPreDat > (epsilon))[0]
+            rowspre, colspre = np.where(nHPreDat > (epsilon))
             condensingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(nHPostDat > (epsilon))[0]
+            rowspost, colspost = np.where(nHPostDat > (epsilon))
             condensingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
@@ -1907,8 +1967,6 @@ def flat_analyse_time_averages(
             vradPreDat = np.nanmedian(data, axis=0)
             data = FlatDataDict[Tkey]["vrad"][:, whereGas][post, :]
             vradPostDat = np.nanmedian(data, axis=0)
-
-            epsilonRadial = 50.0
 
             colspre = np.where(vradPreDat < 0.0 - epsilonRadial)[0]
             inflowpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -2117,6 +2175,30 @@ def flat_analyse_time_averages(
             #     "Pre-Selection": np.array(igm)[:, 0],
             #     "Post-Selection": np.array(igm)[:, 1],
             # },
+            "Cooling": {
+                "Pre-Selection": np.array(cooling)[:, 0],
+                "Post-Selection": np.array(cooling)[:, 1],
+            },
+            #"StableTemperature": {
+            #    "Pre-Selection": np.array(stableT)[:, 0],
+            #    "Post-Selection": np.array(stableT)[:, 1],
+            #},
+            "Heating": {
+                "Pre-Selection": np.array(heating)[:, 0],
+                "Post-Selection": np.array(heating)[:, 1],
+            },
+            "Condensing": {
+                "Pre-Selection": np.array(condensing)[:, 0],
+                "Post-Selection": np.array(condensing)[:, 1],
+            },
+            #"StableDensity": {
+            #    "Pre-Selection": np.array(stabledensity)[:, 0],
+            #    "Post-Selection": np.array(stabledensity)[:, 1],
+            #},
+            "Dispersing": {
+                "Pre-Selection": np.array(dispersing)[:, 0],
+                "Post-Selection": np.array(dispersing)[:, 1],
+            },
             "Inflow": {
                 "Pre-Selection": np.array(inflow)[:, 0],
                 "Post-Selection": np.array(inflow)[:, 1],
@@ -2154,30 +2236,6 @@ def flat_analyse_time_averages(
             #     "Pre-Selection": np.array(ptherm_pmag_UP)[:, 0],
             #     "Post-Selection": np.array(ptherm_pmag_UP)[:, 1],
             # },
-            "Cooling": {
-                "Pre-Selection": np.array(cooling)[:, 0],
-                "Post-Selection": np.array(cooling)[:, 1],
-            },
-            "StableTemperature": {
-                "Pre-Selection": np.array(stableT)[:, 0],
-                "Post-Selection": np.array(stableT)[:, 1],
-            },
-            "Heating": {
-                "Pre-Selection": np.array(heating)[:, 0],
-                "Post-Selection": np.array(heating)[:, 1],
-            },
-            "Condensing": {
-                "Pre-Selection": np.array(condensing)[:, 0],
-                "Post-Selection": np.array(condensing)[:, 1],
-            },
-            "StableDensity": {
-                "Pre-Selection": np.array(stabledensity)[:, 0],
-                "Post-Selection": np.array(stabledensity)[:, 1],
-            },
-            "Dispersing": {
-                "Pre-Selection": np.array(dispersing)[:, 0],
-                "Post-Selection": np.array(dispersing)[:, 1],
-            },
             # "|B|Decreasing": {
             #     "Pre-Selection": np.array(bdecreasing)[:, 0],
             #     "Post-Selection": np.array(bdecreasing)[:, 1],
@@ -2227,7 +2285,7 @@ def bars_plot(
     DPI=100,
     xsize=7.0,
     ysize=6.0,
-    bottomParam=0.35,
+    bottomParam=0.280,
     barwidth=0.80,
     opacityPercentiles=0.25,
     lineStyleMedian="solid",
@@ -2241,6 +2299,8 @@ def bars_plot(
     TracersParamsPath="TracersParams.csv",
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
+    epsilon = None,
+    epsilonRadial = 50.0,
 ):
     colourmapMain = "plasma"
     # Input parameters path:
@@ -2261,7 +2321,10 @@ def bars_plot(
         TRACERSPARAMS,
         shortSnapRangeBool=shortSnapRangeBool,
         shortSnapRangeNumber=shortSnapRangeNumber,
+        epsilon = epsilon,
+        epsilonRadial = epsilonRadial,
     )
+
 
     # Save
     if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
@@ -2312,6 +2375,9 @@ def bars_plot(
         postDF.columns = postDF.columns.droplevel(1)
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True)
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
 
         preDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align="center")
 
@@ -2339,9 +2405,9 @@ def bars_plot(
             )
 
         plt.annotate(
-            text="Ever Matched" + "\n" + "Feature",
-            xy=(0.15, 0.02),
-            xytext=(0.15, 0.02),
+            text="Ever Matched",
+            xy=(0.325, 0.02),
+            xytext=(0.325, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -2349,61 +2415,111 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.385, 0.01),
+            xytext=(0.730, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.39, bottomParam),
+        #    xytext=(0.39, 0.05),
+        #    arrowprops=dict(arrowstyle="-"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
         plt.annotate(
             text="",
-            xy=(0.39, bottomParam),
-            xytext=(0.39, 0.05),
+            xy=(0.735, bottomParam),
+            xytext=(0.735, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
         plt.annotate(
-            text="On Average" + "\n" + "Feature",
-            xy=(0.40, 0.02),
-            xytext=(0.40, 0.02),
+            text="On Average",
+            xy=(0.775, 0.02),
+            xytext=(0.775, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.395, 0.01),
-            xytext=(0.570, 0.01),
-            arrowprops=dict(arrowstyle="<->"),
-            xycoords=fig.transFigure,
-            annotation_clip=False,
-        )
-        plt.annotate(
-            text="",
-            xy=(0.575, bottomParam),
-            xytext=(0.575, 0.05),
-            arrowprops=dict(arrowstyle="-"),
-            xycoords=fig.transFigure,
-            annotation_clip=False,
-        )
-
-        plt.annotate(
-            text="-1 Snapshot" + "\n" + "Feature",
-            xy=(0.70, 0.02),
-            xytext=(0.70, 0.02),
-            textcoords=fig.transFigure,
-            annotation_clip=False,
-            fontsize=fontsize,
-        )
-        plt.annotate(
-            text="",
-            xy=(0.580, 0.01),
+            xy=(0.75, 0.01),
             xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
+
+        #plt.annotate(
+        #    text="Ever Matched" + "\n" + "Feature",
+        #    xy=(0.15, 0.02),
+        #    xytext=(0.15, 0.02),
+        #    textcoords=fig.transFigure,
+        #    annotation_clip=False,
+        #    fontsize=fontsize,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.10, 0.01),
+        #    xytext=(0.385, 0.01),
+        #    arrowprops=dict(arrowstyle="<->"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.39, bottomParam),
+        #    xytext=(0.39, 0.05),
+        #    arrowprops=dict(arrowstyle="-"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
+
+        #plt.annotate(
+        #    text="On Average" + "\n" + "Feature",
+        #    xy=(0.40, 0.02),
+        #    xytext=(0.40, 0.02),
+        #    textcoords=fig.transFigure,
+        #    annotation_clip=False,
+        #    fontsize=fontsize,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.395, 0.01),
+        #    xytext=(0.570, 0.01),
+        #    arrowprops=dict(arrowstyle="<->"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.575, bottomParam),
+        #    xytext=(0.575, 0.05),
+        #    arrowprops=dict(arrowstyle="-"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
+
+        #plt.annotate(
+        #    text="-1 Snapshot" + "\n" + "Feature",
+        #    xy=(0.70, 0.02),
+        #    xytext=(0.70, 0.02),
+        #    textcoords=fig.transFigure,
+        #    annotation_clip=False,
+        #    fontsize=fontsize,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.580, 0.01),
+        #    xytext=(0.95, 0.01),
+        #    arrowprops=dict(arrowstyle="<->"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
 
         fig.transFigure
 
@@ -2445,6 +2561,9 @@ def bars_plot(
         plt.close()
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True)
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
 
         postDF.T.plot.bar(width=barwidth, rot=0, ax=ax, color=colour, align="center")
 
@@ -2473,9 +2592,9 @@ def bars_plot(
             )
 
         plt.annotate(
-            text="Ever Matched" + "\n" + "Feature",
-            xy=(0.15, 0.02),
-            xytext=(0.15, 0.02),
+            text="Ever Matched",
+            xy=(0.325, 0.02),
+            xytext=(0.325, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
@@ -2483,61 +2602,69 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.385, 0.01),
+            xytext=(0.730, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.39, bottomParam),
+        #    xytext=(0.39, 0.05),
+        #    arrowprops=dict(arrowstyle="-"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
         plt.annotate(
             text="",
-            xy=(0.39, bottomParam),
-            xytext=(0.39, 0.05),
+            xy=(0.735, bottomParam),
+            xytext=(0.735, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
         plt.annotate(
-            text="On Average" + "\n" + "Feature",
-            xy=(0.40, 0.02),
-            xytext=(0.40, 0.02),
+            text="On Average",
+            xy=(0.775, 0.02),
+            xytext=(0.775, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.395, 0.01),
-            xytext=(0.570, 0.01),
-            arrowprops=dict(arrowstyle="<->"),
-            xycoords=fig.transFigure,
-            annotation_clip=False,
-        )
-        plt.annotate(
-            text="",
-            xy=(0.575, bottomParam),
-            xytext=(0.575, 0.05),
-            arrowprops=dict(arrowstyle="-"),
-            xycoords=fig.transFigure,
-            annotation_clip=False,
-        )
-
-        plt.annotate(
-            text="+1 Snapshot" + "\n" + "Feature",
-            xy=(0.70, 0.02),
-            xytext=(0.70, 0.02),
-            textcoords=fig.transFigure,
-            annotation_clip=False,
-            fontsize=fontsize,
-        )
-        plt.annotate(
-            text="",
-            xy=(0.580, 0.01),
+            xy=(0.75, 0.01),
             xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.575, bottomParam),
+        #    xytext=(0.575, 0.05),
+        #    arrowprops=dict(arrowstyle="-"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
+
+        #plt.annotate(
+        #    text="+1 Snapshot" + "\n" + "Feature",
+        #    xy=(0.70, 0.02),
+        #    xytext=(0.70, 0.02),
+        #    textcoords=fig.transFigure,
+        #    annotation_clip=False,
+        #    fontsize=fontsize,
+        #)
+        #plt.annotate(
+        #    text="",
+        #    xy=(0.580, 0.01),
+        #    xytext=(0.95, 0.01),
+        #    arrowprops=dict(arrowstyle="<->"),
+        #    xycoords=fig.transFigure,
+        #    annotation_clip=False,
+        #)
 
         fig.transFigure
         #     text="",
@@ -2661,6 +2788,9 @@ def bars_plot(
 
             lcol = len(Tlst)
             figl, axl = plt.subplots(figsize=(lcol * 2.5, 1))
+            axl.xaxis.set_minor_locator(AutoMinorLocator())
+            axl.yaxis.set_minor_locator(AutoMinorLocator())
+            axl.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
             axl.axis(False)
             axl.legend(
                 handles=patchList,
@@ -2772,6 +2902,11 @@ def hist_plot(
             figsize=(xsize, ysize),
             dpi=DPI,
         )
+        for axis in ax:
+            axis.xaxis.set_minor_locator(AutoMinorLocator())
+            axis.yaxis.set_minor_locator(AutoMinorLocator())
+            axis.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
+
         for (jj, snap) in enumerate(selectSnaps):
             print(f"Snap {snap}")
             yminlist = []
@@ -2990,6 +3125,10 @@ def medians_phases_plot(
             figsize=(xsize, ysize),
             dpi=DPI,
         )
+        for axis in ax:
+            axis.xaxis.set_minor_locator(AutoMinorLocator())
+            axis.yaxis.set_minor_locator(AutoMinorLocator())
+            axis.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
         yminlist = []
         ymaxlist = []
         patchList = []
@@ -3404,6 +3543,10 @@ def temperature_variation_plot(
             figsize=(xsize, ysize),
             dpi=DPI,
         )
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
+
         yminlist = []
         ymaxlist = []
         patchList = []

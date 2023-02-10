@@ -26,6 +26,8 @@ import math
 DPI = 150
 xsize = 7.0
 ysize = 4.0
+epsilon = 0.25
+epsilonRadial = 50.0
 opacityPercentiles = 0.25
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
@@ -360,6 +362,8 @@ bars_plot(
     lineStyleMedian=lineStyleMedian,
     lineStylePercentiles=lineStylePercentiles,
     colourmapMain=colourmapMain,
+    epsilon = epsilon,
+    epsilonRadial = epsilonRadial,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -382,6 +386,8 @@ bars_plot(
     lineStyleMedian=lineStyleMedian,
     lineStylePercentiles=lineStylePercentiles,
     colourmapMain=colourmapMain,
+    epsilon = epsilon,
+    epsilonRadial = epsilonRadial,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")

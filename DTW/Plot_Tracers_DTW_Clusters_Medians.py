@@ -176,6 +176,8 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             figsize=(tmpxsize, ysize),
             dpi=DPI,
         )
+        for axis in ax:
+            axis.tick_params(top=True, right=True)
         yminlist = []
         ymaxlist = []
         labelList = []

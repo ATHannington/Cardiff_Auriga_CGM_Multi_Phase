@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use("Agg")  # For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.ticker import AutoMinorLocator
 import const as c
 from gadget import *
 from gadget_subfind import *
@@ -3739,7 +3740,10 @@ def plot_projections(
     fig, axes = plt.subplots(
         nrows=2, ncols=2, figsize=(xsize, ysize), dpi=DPI, sharex=True, sharey=True
     )
-
+    for axis in axes:
+        axis.xaxis.set_minor_locator(AutoMinorLocator())
+        axis.yaxis.set_minor_locator(AutoMinorLocator())
+        axis.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
     if titleBool is True:
         # Add overall figure plot
         TITLE = (
@@ -3959,6 +3963,8 @@ def tracer_plot(
     else:
         cmap = CMAP
 
+    random.seed(1337)
+
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["y", "z", "x"]
 
@@ -3970,7 +3976,7 @@ def tracer_plot(
     # Set plot figure sizes of trio
     # ===============#
 
-    xParam = 3.0  # Base equal aspect ratio image size
+    xParam = 4.0  # Base equal aspect ratio image size
     deltaX = 1.4  # Single Margin in x direc
     fracX = 0.90  # How much margin (deltaX) to leave on left
     # How much space (%) to leave for title and colourbar (split)
@@ -4098,6 +4104,10 @@ def tracer_plot(
             figi, axi = plt.subplots(
                 nrows=1, ncols=3, figsize=(xsizeTrio, ysizeTrio), dpi=DPI, sharey=True
             )
+            for axis in axi:
+                axis.xaxis.set_minor_locator(AutoMinorLocator())
+                axis.yaxis.set_minor_locator(AutoMinorLocator())
+                axis.tick_params(bottom=True, top=True, left=True, right=True, axis="both",which="both", direction="in",labelsize=fontsize)
             figureList.append(figi)
             axisList.append(axi)
         figureArray.append(figureList)
@@ -4437,7 +4447,9 @@ def tracer_plot(
                 fig, axes = plt.subplots(
                     nrows=1, ncols=1, figsize=(xsize, ysize), dpi=DPI
                 )
-
+                axes.xaxis.set_minor_locator(AutoMinorLocator())
+                axes.yaxis.set_minor_locator(AutoMinorLocator())
+                axes.tick_params(bottom=True, top=True, left=True, right=True, axis="both",which="both", direction="in",labelsize=fontsize)
                 if titleBool is True:
                     # Add overall figure plot
                     TITLE = (
@@ -4723,10 +4735,13 @@ def tracer_plot(
                     else:
                         plt.sca(axOuter)
                         plt.xticks(fullTicks)
-                    ax1.tick_params(axis="both", which="both",
-                                    labelsize=fontsize)
-                    axOuter.tick_params(
-                        axis="both", which="both", labelsize=fontsize)
+                    ax1.xaxis.set_minor_locator(AutoMinorLocator())
+                    ax1.yaxis.set_minor_locator(AutoMinorLocator())
+                    ax1.tick_params(bottom=True, top=True, left=True, right=True, axis="both",which="both", direction="in",labelsize=fontsize)
+
+                    axOuter.xaxis.set_minor_locator(AutoMinorLocator())
+                    axOuter.yaxis.set_minor_locator(AutoMinorLocator())
+                    axOuter.tick_params(bottom=True, top=True, left=True, right=True, axis="both",which="both", direction="in",labelsize=fontsize)
                 fig.tight_layout()
                 if titleBool is True:
                     fig.subplots_adjust(

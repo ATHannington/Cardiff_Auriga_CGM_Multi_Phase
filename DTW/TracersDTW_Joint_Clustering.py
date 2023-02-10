@@ -348,6 +348,7 @@ for T in Tlst:
         #         plotYdata = cluster[subsetClusterIndices]
         #
         #         cluster_plot, ax = plt.subplots()
+        #         ax.tick_params(top=True, right=True)
         #         if analysisParam in logParams:
         #             plt.title(
         #                 f'Cluster {clusterID} for {T} {rin}R{rout} log10{paramstring} Hierarchical Clustering using "{method}" method'

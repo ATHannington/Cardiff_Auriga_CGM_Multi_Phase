@@ -27,7 +27,7 @@ from functools import reduce
 trioTitleBool = False
 titleBool = False
 
-subset = 100
+subset = 200
 Ntails = 6
 numThreads = 8
 ageUniverse = 13.77  # [Gyr]
