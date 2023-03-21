@@ -430,6 +430,7 @@ def currently_or_persistently_at_temperature_plot(
     tlookback,
     snapRange,
     Tlst,
+    DataSavepath,
     titleBool,
     DPI=100,
     xsize=5.0,
@@ -675,11 +676,21 @@ def currently_or_persistently_at_temperature_plot(
             plt.savefig(opslaan, dpi=DPI, transparent=False)
             print(opslaan)
             plt.close()
+
+        Ydataout = {tuple(list([k[0]])+list(k[1].split("R"))): v for k,v in Ydata.items()} 
+        dict_of_df = {k: pd.DataFrame(v) for k, v in Ydataout.items()}
+
+        df = pd.concat(dict_of_df, axis=1)
+        print(f"Saving temperature persistence/currently data...")
+
         if persistenceBool is True:
             yDataPersistence = copy.deepcopy(Ydata)
+            savePath = DataSavepath + "_Temperature-Persistently-Within-Table.csv"
         elif persistenceBool is False:
             yDataCurrently = copy.deepcopy(Ydata)
-
+            savePath = DataSavepath + "_Temperature-Currently-Within-Table.csv"
+        df.to_csv(savePath,index=False)
+        print(f"... saved as {savePath} !")
 
 
 
@@ -880,7 +891,17 @@ def currently_or_persistently_at_temperature_plot(
         print(opslaan)
         plt.close()
 
+    yProductDataout = {tuple(list([k[0]])+list(k[1].split("R"))): v for k,v in yProductData.items()} 
+    dict_of_df = {k: pd.DataFrame(v) for k, v in yProductDataout.items()}
+    df = pd.concat(dict_of_df, axis=1)
+    print(f"Saving temperature persistence/currently random draw comparison data...")
+    savePath = DataSavepath + "_Temperature-Random-Draw-Table.csv"
+
+    df.to_csv(savePath,index=False)
+    print(f"... saved as {savePath} !")
+
     return
+
 
 
 def stacked_pdf_plot(
@@ -1765,13 +1786,11 @@ def flat_analyse_time_averages(
             print("Heating & Cooling")
 
             ## Ever
-            TPreDat = np.log10(
-                FlatDataDict[Tkey]["T"][:, whereGas][pre, :][:-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][pre, :][1:, :])
+            TPreDat = np.diff(np.log10(
+                FlatDataDict[Tkey]["T"][:, whereGas][pre, :]),axis=0)
             
-            TPostDat = np.log10(
-                FlatDataDict[Tkey]["T"][:, whereGas][post, :][:-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["T"][:, whereGas][post, :][1:, :])
+            TPostDat = np.diff(np.log10(
+                FlatDataDict[Tkey]["T"][:, whereGas][post, :]),axis=0)
 
             ## On average
             #data = np.log10(
@@ -1901,13 +1920,11 @@ def flat_analyse_time_averages(
 
             print("Density")
             ## Ever
-            nHPreDat = np.log10(
-                FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][:-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :][1:, :])
+            nHPreDat = np.diff(np.abs(np.log10(
+                FlatDataDict[Tkey]["n_H"][:, whereGas][pre, :])),axis=0)
             
-            nHPostDat = np.log10(
-                FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][:-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][1:, :])
+            nHPostDat = np.diff(np.abs(np.log10(
+                FlatDataDict[Tkey]["n_H"][:, whereGas][post, :])),axis=0)
 
             ## On average
             #data = np.log10(
@@ -2265,9 +2282,8 @@ def flat_analyse_time_averages(
                 out.update({key: tmp})
 
     dict_of_df = {k: pd.DataFrame(v) for k, v in out.items()}
-    df1 = pd.concat(dict_of_df, axis=1)
+    df = pd.concat(dict_of_df, axis=1)
 
-    df = df1.set_index("T")
     # print("DEBUG")
     # STOP1824
     return df
@@ -2336,8 +2352,11 @@ def bars_plot(
         )
     print("\n" + f"Saving Stats table .csv as {savePath}")
 
-    timeAvDF.to_csv(savePath, index=False)
-
+    tmp = copy.deepcopy(timeAvDF)
+    tmp.to_csv(savePath, index=False)
+    del tmp
+    
+    timeAvDF = timeAvDF.set_index("T")
     # -------------------------------------------------------------------------------#
     #       Plot!!
     # -------------------------------------------------------------------------------#
@@ -3528,226 +3547,242 @@ def temperature_variation_plot(
 ):
 
     statsData = {}
+    variants = ["absolute","heat","cool"]
 
-    print("")
-    print("Loading Data!")
-    # Create a plot for each Temperature
-    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-        print(f"{rin}R{rout}")
-
-        fig, ax = plt.subplots(
-            nrows=1,  # len(Tlst),
-            ncols=1,
-            sharex=True,
-            sharey=True,
-            figsize=(xsize, ysize),
-            dpi=DPI,
-        )
-        ax.xaxis.set_minor_locator(AutoMinorLocator())
-        ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
-
-        yminlist = []
-        ymaxlist = []
-        patchList = []
-        labelList = []
-
-        analysisParam = "T"
-        plotData = {}
-
-        for ii in range(len(Tlst)):
-            print(f"T{Tlst[ii]}")
-            T = float(Tlst[ii])
-
-            selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
-
-            try:
-                tmp = dataDict[selectKey]
-                del tmp
-            except:
-                continue
-
-            tempDiff = np.abs(
-                np.log10(dataDict[selectKey][analysisParam][1:, :])
-                - np.log10(dataDict[selectKey][analysisParam][:-1, :])
+    for vary in variants:
+        innerDict = {}
+        print(f"Starting {vary} temperature variation variant")
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+            print(f"{rin}R{rout}")           
+            fig, ax = plt.subplots(
+                nrows=1,  # len(Tlst),
+                ncols=1,
+                sharex=True,
+                sharey=True,
+                figsize=(xsize, ysize),
+                dpi=DPI,
             )
+            ax.xaxis.set_minor_locator(AutoMinorLocator())
+            ax.yaxis.set_minor_locator(AutoMinorLocator())
+            ax.tick_params(bottom=True, top=True, left=True, right=True, which="both", direction="in")
 
-            xData = tlookback[1:]
-            # Temperature specific load path
+            yminlist = []
+            ymaxlist = []
+            patchList = []
+            labelList = []
 
-            selectionSnap = np.where(
-                np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
-            )
+            analysisParam = "T"
+            plotData = {}
 
-            vline = tlookback[selectionSnap]
+            for ii in range(len(Tlst)):
+                print(f"T{Tlst[ii]}")
+                T = float(Tlst[ii])
 
-            # Get number of temperatures
-            NTemps = float(len(Tlst))
+                selectKey = (f"T{Tlst[ii]}", f"{rin}R{rout}")
 
-            # Get temperature
-            temp = TRACERSPARAMS["targetTLst"][ii]
+                try:
+                    tmp = dataDict[selectKey]
+                    del tmp
+                except:
+                    continue
 
-            # Select a Temperature specific colour from colourmapMain
-
-            # Get a colour for median and percentiles for a given temperature
-            #   Have fiddled to move colours away from extremes of the colormap
-            cmap = matplotlib.cm.get_cmap(colourmapMain)
-            colour = cmap(float(ii) / float(len(Tlst)))
-
-            loadPercentilesTypes = [
-                analysisParam + "_" + f"{percentile:4.2f}" + "%"
-                for percentile in TRACERSPARAMS["percentiles"]
-            ]
-            LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):4.2f}" + "%"
-            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}" + "%"
-            median = analysisParam + "_" + "50.00%"
-
-            for perc_key, percentile in zip(
-                loadPercentilesTypes, TRACERSPARAMS["percentiles"]
-            ):
-                plotData.update(
-                    {perc_key: np.nanpercentile(tempDiff, percentile, axis=1)}
+                fullTempDiff = np.diff(
+                    np.log10(dataDict[selectKey][analysisParam]),axis=0
                 )
 
-            # if analysisParam in logParameters:
-            #     for k, v in plotData.items():
-            #         plotData.update({k: np.log10(v)})
+                if vary == "absolute":
+                    tempDiff = np.abs(fullTempDiff)
+                elif vary == "heat":
+                    tempDiff = np.where(fullTempDiff>=0.0,fullTempDiff,np.nan)  
+                elif vary == "cool":
+                    tempDiff = np.where(fullTempDiff<=0.0,fullTempDiff,np.nan)  
 
-            ymin = np.nanmin(plotData[LO])
-            ymax = np.nanmax(plotData[UP])
-            yminlist.append(ymin)
-            ymaxlist.append(ymax)
+                xData = tlookback[1:]
+                # Temperature specific load path
 
+                selectionSnap = np.where(
+                    np.array(snapRange) == int(TRACERSPARAMS["selectSnap"])
+                )
+
+                vline = tlookback[selectionSnap]
+
+                # Get number of temperatures
+                NTemps = float(len(Tlst))
+
+                # Get temperature
+                temp = TRACERSPARAMS["targetTLst"][ii]
+
+                # Select a Temperature specific colour from colourmapMain
+
+                # Get a colour for median and percentiles for a given temperature
+                #   Have fiddled to move colours away from extremes of the colormap
+                cmap = matplotlib.cm.get_cmap(colourmapMain)
+                colour = cmap(float(ii) / float(len(Tlst)))
+
+                loadPercentilesTypes = [
+                    analysisParam + "_" + f"{percentile:4.2f}" + "%"
+                    for percentile in TRACERSPARAMS["percentiles"]
+                ]
+                LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):4.2f}" + "%"
+                UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):4.2f}" + "%"
+                median = analysisParam + "_" + "50.00%"
+
+                for perc_key, percentile in zip(
+                    loadPercentilesTypes, TRACERSPARAMS["percentiles"]
+                ):
+                    plotData.update(
+                        {perc_key: np.nanpercentile(tempDiff, percentile, axis=1)}
+                    )
+
+                # if analysisParam in logParameters:
+                #     for k, v in plotData.items():
+                #         plotData.update({k: np.log10(v)})
+
+                ymin = np.nanmin(plotData[LO])
+                ymax = np.nanmax(plotData[UP])
+                yminlist.append(ymin)
+                ymaxlist.append(ymax)
+
+                if (
+                    (np.isinf(ymin) == True)
+                    or (np.isinf(ymax) == True)
+                    or (np.isnan(ymin) == True)
+                    or (np.isnan(ymax) == True)
+                ):
+                    print("Data All Inf/NaN! Skipping entry!")
+                    continue
+                print("")
+                print("Sub-Plot!")
+
+                currentAx = ax
+
+                midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
+                percentilesPairs = zip(
+                    loadPercentilesTypes[:midPercentile],
+                    loadPercentilesTypes[midPercentile + 1 :],
+                )
+                for (LO, UP) in percentilesPairs:
+                    currentAx.fill_between(
+                        xData,
+                        plotData[UP],
+                        plotData[LO],
+                        facecolor=colour,
+                        alpha=opacityPercentiles,
+                        interpolate=False,
+                    )
+                currentAx.plot(
+                    xData,
+                    plotData[median],
+                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                    color=colour,
+                    lineStyle=lineStyleMedian,
+                )
+
+                currentAx.axvline(x=vline, c="red")
+
+                currentAx.xaxis.set_minor_locator(AutoMinorLocator())
+                currentAx.yaxis.set_minor_locator(AutoMinorLocator())
+                currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
+                #
+                # #Delete text string for first y_axis label for all but last panel
+                # plt.gcf().canvas.draw()
+                # if (int(ii)<len(Tlst)-1):
+                #     plt.setp(currentAx.get_xticklabels(),visible = False)
+                #     plt.gcf().canvas.draw()
+                #     # STOP160IF
+
+                # plot_patch = matplotlib.patches.Patch(color=colour)
+                # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
+                # patchList.append(plot_patch)
+                # labelList.append(plot_label)
+
+                if titleBool is True:
+                    fig.suptitle(
+                        f"Cells Containing Tracers selected by: "
+                        + "\n"
+                        + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                        + "\n"
+                        + f" and selected at {vline[0]:3.2f} Gyr",
+                        fontsize=fontsizeTitle,
+                    )
+
+                saveKey = (f"T{T}", f"{rin}R{rout}")
+                innerDict.update({saveKey: plotData.copy()})
+
+            # Only give 1 x-axis a label, as they sharex
+            axis0 = ax
+            midax = ax
+
+
+            ystring = r"$\Delta \left(Log_{10}(\mathrm{T})\right)$"
+            if vary == "absolute":
+                ystring = r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$"
+
+            ylabelhere = (
+                ystring
+                + "\n"
+                + "Temperature "
+                + "Variation (K)"
+            )
+            axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
+            midax.set_ylabel(ylabelhere, fontsize=fontsize)
+            try:
+                finalymin = np.nanmin(yminlist)
+                finalymax = np.nanmax(ymaxlist)
+            except:
+                print("No Data! Skipping entry!")
+                continue
             if (
-                (np.isinf(ymin) == True)
-                or (np.isinf(ymax) == True)
-                or (np.isnan(ymin) == True)
-                or (np.isnan(ymax) == True)
+                (np.isinf(finalymin) == True)
+                or (np.isinf(finalymax) == True)
+                or (np.isnan(finalymin) == True)
+                or (np.isnan(finalymax) == True)
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
-            print("")
-            print("Sub-Plot!")
-
-            currentAx = ax
-
-            midPercentile = math.floor(len(loadPercentilesTypes) / 2.0)
-            percentilesPairs = zip(
-                loadPercentilesTypes[:midPercentile],
-                loadPercentilesTypes[midPercentile + 1 :],
+            finalymin = math.floor(finalymin)
+            finalymax = math.ceil(finalymax)
+            custom_ylim = (finalymin, finalymax)
+            if vary == "cool":
+                custom_ylim = (finalymax, finalymin)
+            plt.setp(
+                ax,
+                ylim=custom_ylim,
+                xlim=(round(max(xData), 1), round(min(xData), 1)),
             )
-            for (LO, UP) in percentilesPairs:
-                currentAx.fill_between(
-                    xData,
-                    plotData[UP],
-                    plotData[LO],
-                    facecolor=colour,
-                    alpha=opacityPercentiles,
-                    interpolate=False,
-                )
-            currentAx.plot(
-                xData,
-                plotData[median],
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
-                color=colour,
-                lineStyle=lineStyleMedian,
-            )
+            axis0.legend(loc="upper right", fontsize=fontsize)
 
-            currentAx.axvline(x=vline, c="red")
-
-            currentAx.xaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.yaxis.set_minor_locator(AutoMinorLocator())
-            currentAx.tick_params(axis="both", which="both", labelsize=fontsize)
-            #
-            # #Delete text string for first y_axis label for all but last panel
-            # plt.gcf().canvas.draw()
-            # if (int(ii)<len(Tlst)-1):
-            #     plt.setp(currentAx.get_xticklabels(),visible = False)
-            #     plt.gcf().canvas.draw()
-            #     # STOP160IF
-
-            # plot_patch = matplotlib.patches.Patch(color=colour)
-            # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
-            # patchList.append(plot_patch)
-            # labelList.append(plot_label)
-
+            plt.tight_layout()
             if titleBool is True:
-                fig.suptitle(
-                    f"Cells Containing Tracers selected by: "
-                    + "\n"
-                    + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                    + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
-                    + "\n"
-                    + f" and selected at {vline[0]:3.2f} Gyr",
-                    fontsize=fontsizeTitle,
-                )
+                plt.subplots_adjust(top=0.875, hspace=0.1, left=0.15)
+            else:
+                plt.subplots_adjust(hspace=0.1, left=0.15)
 
-            saveKey = (f"T{T}", f"{rin}R{rout}")
-            statsData.update({saveKey: plotData.copy()})
-
-        # Only give 1 x-axis a label, as they sharex
-        axis0 = ax
-        midax = ax
-
-        ylabelhere = (
-            r"$|\Delta \left(Log_{10}(\mathrm{T})\right)|$"
-            + "\n"
-            + "Temperature "
-            + "Variation (K)"
-        )
-        axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
-        midax.set_ylabel(ylabelhere, fontsize=fontsize)
-        try:
-            finalymin = np.nanmin(yminlist)
-            finalymax = np.nanmax(ymaxlist)
-        except:
-            print("No Data! Skipping entry!")
-            continue
-        if (
-            (np.isinf(finalymin) == True)
-            or (np.isinf(finalymax) == True)
-            or (np.isnan(finalymin) == True)
-            or (np.isnan(finalymax) == True)
-        ):
-            print("Data All Inf/NaN! Skipping entry!")
-            continue
-        finalymin = math.floor(finalymin)
-        finalymax = math.ceil(finalymax)
-        custom_ylim = (finalymin, finalymax)
-        plt.setp(
-            ax,
-            ylim=custom_ylim,
-            xlim=(round(max(xData), 1), round(min(xData), 1)),
-        )
-        axis0.legend(loc="upper right", fontsize=fontsize)
-
-        plt.tight_layout()
-        if titleBool is True:
-            plt.subplots_adjust(top=0.875, hspace=0.1, left=0.15)
-        else:
-            plt.subplots_adjust(hspace=0.1, left=0.15)
-
-        opslaan = (
-            "./"
-            + "MultiHalo"
-            + "/"
-            + f"{int(rin)}R{int(rout)}"
-            + "/"
-            + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-            + f"Temperature_Variation.pdf"
-        )
-        plt.savefig(opslaan, dpi=DPI, transparent=False)
-        print(opslaan)
-        plt.close()
-
+            opslaan = (
+                "./"
+                + "MultiHalo"
+                + "/"
+                + f"{int(rin)}R{int(rout)}"
+                + "/"
+                + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                + f"Temperature_Variation_{vary}.pdf"
+            )
+            plt.savefig(opslaan, dpi=DPI, transparent=False)
+            print(opslaan)
+            plt.close()
+        
+        outerKey = (f"{vary}")
+        statsData.update({outerKey: innerDict.copy()})
+        
     #### Output statsDF as .csv ####
-
-    save_statistics_csv(
-        statsData,
-        TRACERSPARAMS,
-        Tlst,
-        snapRange[1:],
-        savePathInsert="Temperature_Variation_",
-    )
+    for vary in variants:
+        save_statistics_csv(
+            statsData[(f"{vary}")],
+            TRACERSPARAMS,
+            Tlst,
+            snapRange[1:],
+            savePathInsert=f"Temperature_Variation_{vary}_",
+        )
 
     return

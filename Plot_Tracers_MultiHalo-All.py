@@ -229,15 +229,18 @@ for rin, rout in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 #     print(flatMergedDict[selectTimeKey]['pos'][timeIndex])
 
 # =============================================================================#
-#                     Stats!                                                  # ==============================================================================#
-
+#                     Stats!                                                   # 
+# =============================================================================#
+print("Calculate multi halo statistics")
 statsData = multi_halo_statistics(
     flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst
 )
 
+print("Save multi halo statistics")
 save_statistics_csv(statsData, TRACERSPARAMS, Tlst, snapRange)
 # ============================================================================#
-# #                   Medians PLOT                                              # #=============================================================================#
+# #                   Medians PLOT                                              #
+# #=============================================================================#
 matplotlib.rc_file_defaults()
 plt.close("all")
 medians_plot(
@@ -302,6 +305,7 @@ currently_or_persistently_at_temperature_plot(
     tlookback,
     snapRange,
     Tlst,
+    DataSavepath,
     titleBool=titleBool,
     DPI=DPI,
     xsize=xsize,
@@ -316,7 +320,8 @@ plt.close("all")
 
 
 # ============================================================================#
-#       Temperature Variation PLOT                                              # #=============================================================================#
+#       Temperature Variation PLOT                                              
+#=============================================================================#
 matplotlib.rc_file_defaults()
 plt.close("all")
 temperature_variation_plot(
@@ -378,7 +383,7 @@ bars_plot(
     Tlst,
     DataSavepath,
     shortSnapRangeBool=True,
-    shortSnapRangeNumber=1,
+    shortSnapRangeNumber=len(snapRange)//4,
     titleBool=titleBool,
     separateLegend=separateLegend,
     DPI=DPI,
