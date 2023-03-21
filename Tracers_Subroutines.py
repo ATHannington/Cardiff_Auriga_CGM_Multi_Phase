@@ -4949,8 +4949,8 @@ def multi_halo_merge(
                         {selectKey: {key: dataDict[selectKey][key]}})
 
         print("MERGED")
-        print("debug", "mergedDict[selectKey]['id']",
-              mergedDict[selectKey]["id"])
+        #print("debug", "mergedDict[selectKey]['id']",
+        #      mergedDict[selectKey]["id"])
 
     ### Check all sims contained same params ###
     paramFreqDict = collections.Counter(saveParams)
@@ -5219,8 +5219,8 @@ def multi_halo_merge_flat_wrt_time(
                             {selectKey: {key: dataDict[selectKey][key]}})
 
         print("MERGED")
-        print("debug", "mergedDict[selectKey]['trid']",
-              mergedDict[selectKey]["trid"])
+        #print("debug", "mergedDict[selectKey]['trid']",
+        #      mergedDict[selectKey]["trid"])
 
     ### Check all sims contained same params ###
     paramFreqDict = collections.Counter(saveParams)
