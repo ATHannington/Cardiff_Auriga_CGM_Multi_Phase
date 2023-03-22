@@ -118,10 +118,10 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
 blankList = np.array([0.0 for xx in range(len(rinList))])
 summaryDict = {
-    "R_inner": np.array(rinList),
-    "R_outer": np.array(routList),
-    "Log10(T)": np.array(fullTList),
-    "Snap": np.array(fullSnapRangeList),
+    "R_inner [kpc]": np.array(rinList),
+    "R_outer [kpc]": np.array(routList),
+    "Log10(T) [K]": np.array(fullTList),
+    "Snap Number": np.array(fullSnapRangeList),
     "N_tracers selected": blankList.copy(),
     "N_tracers per temperature": blankList.copy(),
     "Gas mass selected [msol]": blankList.copy(),
@@ -258,7 +258,7 @@ for snapNumber in snapRange:
             NtracersTotalR,
         )
 
-        dictRowSelectSnaponly = np.where((summaryDict["Snap"] == snapNumber))[0]
+        dictRowSelectSnaponly = np.where((summaryDict["Snap Number"] == snapNumber))[0]
 
         summaryDict["Total N_tracers (all haloes) within selection radii"][
             dictRowSelectSnaponly
@@ -300,9 +300,9 @@ for snapNumber in snapRange:
 
             massR = np.sum(snap.data["mass"][Cond])
             dictRowSelectRonly = np.where(
-                (summaryDict["R_inner"] == rin)
-                & (summaryDict["R_outer"] == rout)
-                & (summaryDict["Snap"] == snapNumber)
+                (summaryDict["R_inner [kpc]"] == rin)
+                & (summaryDict["R_outer [kpc]"] == rout)
+                & (summaryDict["Snap Number"] == snapNumber)
             )[0]
 
             print(f"Total mass (all haloes) in spherical shell [msol] = ", massR)
@@ -354,10 +354,10 @@ for snapNumber in snapRange:
                 )
 
                 dictRowSelect = np.where(
-                    (summaryDict["R_inner"] == rin)
-                    & (summaryDict["R_outer"] == rout)
-                    & (summaryDict["Log10(T)"] == float(T))
-                    & (summaryDict["Snap"] == snapNumber)
+                    (summaryDict["R_inner [kpc]"] == rin)
+                    & (summaryDict["R_outer [kpc]"] == rout)
+                    & (summaryDict["Log10(T) [K]"] == float(T))
+                    & (summaryDict["Snap Number"] == snapNumber)
                 )[0]
 
                 summaryDict["N_tracers selected"][dictRowSelect] += Ntracersselected
@@ -417,13 +417,13 @@ for snapNumber in snapRange:
 
 nSnaps = float(len(snapRange))
 for key, value in summaryDict.items():
-    if key not in ["R_inner", "R_outer", "Log10(T)"]:
+    if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]:
         summaryDict[key] = value / nSnaps
 
 
 df = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
 
-df = df.groupby(["R_inner", "R_outer", "Log10(T)"]).sum()
+df = df.groupby(["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]).sum()
 
 df["%Available tracers in spherical shell selected"] = (
     df["N_tracers selected"].astype("float64")
@@ -455,7 +455,7 @@ df["Average gas mass available (per halo) [msol]"] = (
 
 # summaryDict = {'R_inner':
 # 'R_outer':
-# 'Log10(T)'
+# "Log10(T) [K]"
 # 'N_tracers selected'
 # 'Gas mass selected [msol]'
 # 'Total gas mass (all haloes) available in spherical shell [msol]'

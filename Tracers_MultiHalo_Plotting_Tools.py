@@ -677,12 +677,16 @@ def currently_or_persistently_at_temperature_plot(
             print(opslaan)
             plt.close()
 
-        Ydataout = {tuple(list([k[0]])+list(k[1].split("R"))): v for k,v in Ydata.items()} 
+        Ydataout = {tuple(list([k[0].split("T")[-1]])+list(k[1].split("R"))): v for k,v in Ydata.items()}  
         dict_of_df = {k: pd.DataFrame(v) for k, v in Ydataout.items()}
 
-        df = pd.concat(dict_of_df, axis=1)
-        print(f"Saving temperature persistence/currently data...")
+        df = pd.concat(dict_of_df, axis=0)
+        df = df.reset_index()
+        df.columns = ["Log10(T) [K]", "R_inner [kpc]", "R_outer [kpc]", "Snap Number", "%"] 
+        df["Snap Number"] = df['Snap Number'].map(lambda xx: snapRange[xx])  
 
+        print(f"Saving temperature persistence/currently data...")
+        #STOP685
         if persistenceBool is True:
             yDataPersistence = copy.deepcopy(Ydata)
             savePath = DataSavepath + "_Temperature-Persistently-Within-Table.csv"
@@ -891,9 +895,13 @@ def currently_or_persistently_at_temperature_plot(
         print(opslaan)
         plt.close()
 
-    yProductDataout = {tuple(list([k[0]])+list(k[1].split("R"))): v for k,v in yProductData.items()} 
+    yProductDataout = {tuple(list([k[0].split("T")[-1]])+list(k[1].split("R"))): v for k,v in yProductData.items()} 
     dict_of_df = {k: pd.DataFrame(v) for k, v in yProductDataout.items()}
-    df = pd.concat(dict_of_df, axis=1)
+    df = pd.concat(dict_of_df, axis=0)
+    df = df.reset_index()
+    df.columns = ["Log10(T) [K]", "R_inner [kpc]", "R_outer [kpc]", "Snap Number", "%"] 
+    df["Snap Number"] = df['Snap Number'].map(lambda xx: snapRange[xx])  
+
     print(f"Saving temperature persistence/currently random draw comparison data...")
     savePath = DataSavepath + "_Temperature-Random-Draw-Table.csv"
 
@@ -1549,18 +1557,18 @@ def flat_analyse_time_averages(
             print(Tkey)
 
             if len(dfdat.keys()) > 0:
-                val = dfdat["T"]
+                val = dfdat["Log10(T) [K]"]
                 Tval = val + [T]
 
-                val = dfdat["Rinner"]
+                val = dfdat["R_inner [kpc]"]
                 rinval = val + [rin]
 
-                val = dfdat["Router"]
+                val = dfdat["R_outer [kpc]"]
                 routval = val + [rout]
 
-                dfdat.update({"T": Tval, "Rinner": rinval, "Router": routval})
+                dfdat.update({"Log10(T) [K]": Tval, "R_inner [kpc]": rinval, "R_outer [kpc]": routval})
             else:
-                dfdat.update({"T": [T], "Rinner": [rin], "Router": [rout]})
+                dfdat.update({"Log10(T) [K]": [T], "R_inner [kpc]": [rin], "R_outer [kpc]": [rout]})
 
             try:
                 tmp = FlatDataDict[Tkey]
@@ -2147,10 +2155,10 @@ def flat_analyse_time_averages(
             ptherm_pmag_UP.append([aboveptherm_pmagpre, aboveptherm_pmagpost])
 
         outinner = {
-            "Rinner": dfdat["Rinner"],
-            "Router": dfdat["Router"],
-            "T": dfdat[
-                "T"
+            "R_inner [kpc]": dfdat["R_inner [kpc]"],
+            "R_outer [kpc]": dfdat["R_outer [kpc]"],
+            "Log10(T) [K]": dfdat[
+                "Log10(T) [K]"
             ],  # "%Gas": {"Pre-Selection" : np.array(gas)[:,0],"Post-Selection" : np.array(gas)[:,1]} , \
             # "Halo0": {
             #     "Pre-Selection": np.array(halo0)[:, 0],
@@ -2268,7 +2276,7 @@ def flat_analyse_time_averages(
         }
 
         for key, value in outinner.items():
-            if (key == "T") or (key == "Rinner") or (key == "Router"):
+            if (key == "Log10(T) [K]") or (key == "R_inner [kpc]") or (key == "R_outer [kpc]"):
                 if key in list(out.keys()):
                     val = out[key]
                     val = val + value
@@ -2322,7 +2330,6 @@ def bars_plot(
     # Input parameters path:
     TracersParamsPath = "TracersParams.csv"
     DataSavepathSuffix = f".h5"
-    singleVals = ["Rinner", "Router", "T", "Snap", "Lookback"]
 
     snapRange = np.array(snapRange)
     for key in FlatDataDict.keys():
@@ -2356,14 +2363,14 @@ def bars_plot(
     tmp.to_csv(savePath, index=False)
     del tmp
     
-    timeAvDF = timeAvDF.set_index("T")
+    timeAvDF = timeAvDF.set_index("Log10(T) [K]")
     # -------------------------------------------------------------------------------#
     #       Plot!!
     # -------------------------------------------------------------------------------#
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 
         plotDF = timeAvDF.loc[
-            (timeAvDF["Rinner"] == rin)[0] & (timeAvDF["Router"] == rout)[0]
+            (timeAvDF["R_inner [kpc]"] == rin)[0] & (timeAvDF["R_outer [kpc]"] == rout)[0]
         ]
 
         cmap = matplotlib.cm.get_cmap(colourmapMain)
@@ -2382,7 +2389,7 @@ def bars_plot(
             newcols.update({name: name[0]})
 
         preDF = preDF.rename(columns=newcols)
-        preDF = preDF.drop(columns="Rinner")
+        preDF = preDF.drop(columns="R_inner [kpc]")
         preDF.columns = preDF.columns.droplevel(1)
 
         newcols = {}
@@ -2390,7 +2397,7 @@ def bars_plot(
             newcols.update({name: name[0]})
 
         postDF = postDF.rename(columns=newcols)
-        postDF = postDF.drop(columns="Router")
+        postDF = postDF.drop(columns="R_outer [kpc]")
         postDF.columns = postDF.columns.droplevel(1)
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(xsize, ysize), sharey=True)

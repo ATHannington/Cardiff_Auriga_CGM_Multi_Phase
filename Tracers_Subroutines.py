@@ -3340,13 +3340,13 @@ def save_statistics_csv(
                 continue
             dat = statsData[key].copy()
             datDF = pd.DataFrame(dat)
-            datDF["Log10(T)"] = float(T)
-            datDF["R_inner"] = float(rin)
-            datDF["R_outer"] = float(rout)
+            datDF["Log10(T) [K]"] = float(T)
+            datDF["R_inner [kpc]"] = float(rin)
+            datDF["R_outer [kpc]"] = float(rout)
             datDF["Snap Number"] = snapRange
 
             # Re-order the columns for easier reading...
-            frontCols = ["Log10(T)", "R_inner", "R_outer", "Snap Number"]
+            frontCols = ["Log10(T) [K]", "R_inner [kpc]", "R_outer [kpc]", "Snap Number"]
             cols = list(datDF.columns)
             for col in frontCols:
                 cols.remove(col)

@@ -95,7 +95,7 @@ ylabel = {
     "P_CR": r"P$_{CR}$ (K cm$^{-3}$)",
     "PCR_Pthermal": r"(X$_{CR}$ = P$_{CR}$/P$_{Thermal}$)",
     "gah": r"Alfven Gas Heating (erg s$^{-1}$)",
-    "bfld": r"||B-Field|| ($ \mu $G)",
+    "bfld": r"B-Field ($ \mu $G)",
     "Grad_T": r"||Temperature Gradient|| (K kpc$^{-1}$)",
     "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-3}$ kpc$^{-1}$)",
     "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G kpc$^{-1}$)",
@@ -130,6 +130,16 @@ for entry in logParameters:
 
 for entry in deleteParams:
     logParameters.remove(entry)
+
+# ==============================================================================#
+#   Save Property keys and associated Labels/definitions
+# ==============================================================================#
+
+labeldf = pd.DataFrame.from_dict(ylabel, orient='index')    
+labeldf = labeldf.reset_index() 
+labeldf.columns = ["Property Key", "Property Definition"]
+labeldf.to_csv("Tracers_Property_Legend_Dictionary.csv",index=False)
+print("\n"+f"Saved Property Symbol to Label Map as 'Tracers_Property_Legend_Dictionary.csv' !"+"\n")
 # ==============================================================================#
 
 # Load Analysis Setup Data
