@@ -1953,11 +1953,11 @@ def flat_analyse_time_averages(
             #    FlatDataDict[Tkey]["n_H"][:, whereGas][selectInd, :]
             #) - np.log10(FlatDataDict[Tkey]["n_H"][:, whereGas][post, :][0, :])
 
-            rowspre, colspre = np.where(nHPreDat < (-1.0 * epsilon))
+            rowspre, colspre = np.where(nHPreDat > epsilon)
             dispersingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            rowspost, colspost = np.where(nHPostDat < (-1.0 * epsilon))
+            rowspost, colspost = np.where(nHPostDat > epsilon)
             dispersingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
@@ -1977,11 +1977,11 @@ def flat_analyse_time_averages(
             )
             stabledensity.append([stablenHPre, stablenHPost])
 
-            rowspre, colspre = np.where(nHPreDat > (epsilon))
+            rowspre, colspre = np.where(nHPreDat < (-1.0 *epsilon))
             condensingPre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            rowspost, colspost = np.where(nHPostDat > (epsilon))
+            rowspost, colspost = np.where(nHPostDat < (-1.0 *epsilon))
             condensingPost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
