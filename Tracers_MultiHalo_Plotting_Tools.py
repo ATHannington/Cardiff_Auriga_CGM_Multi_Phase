@@ -355,16 +355,28 @@ def medians_plot(
                 plt.subplots_adjust(hspace=0.1, left=0.15)
 
             if (radialSummaryBool is True) & (jj > 0):
-                opslaan = (
-                    "./"
-                    + "MultiHalo"
-                    + "/"
-                    + f"{int(rin)}R{int(rout)}"
-                    + "/"
-                    + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
-                    + analysisParam
-                    + f"_Medians_Radial_Summary.pdf"
-                )
+                if (radialSummaryFirstLastBool is True):
+                    opslaan = (
+                        "./"
+                        + "MultiHalo"
+                        + "/"
+                        + f"{int(rin)}R{int(rout)}"
+                        + "/"
+                        + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                        + analysisParam
+                        + f"_Medians_Radial_Summary.pdf"
+                    )
+                else:
+                    opslaan = (
+                        "./"
+                        + "MultiHalo"
+                        + "/"
+                        + f"{int(rin)}R{int(rout)}"
+                        + "/"
+                        + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_"
+                        + analysisParam
+                        + f"_Medians_Radial_Summary_All_Radii.pdf"
+                    )
             else:
                 opslaan = (
                     "./"
@@ -395,14 +407,24 @@ def medians_plot(
                 )
                 plt.tight_layout()
                 if (radialSummaryBool is True) & (jj > 0):
-                    figl.savefig(
-                        "./"
-                        + "MultiHalo"
-                        + "/"
-                        + f"{int(rin)}R{int(rout)}"
-                        + "/"
-                        + f"Medians_Radial_Summary_Legend.pdf"
-                    )
+                    if (radialSummaryFirstLastBool is True):
+                        figl.savefig(
+                            "./"
+                            + "MultiHalo"
+                            + "/"
+                            + f"{int(rin)}R{int(rout)}"
+                            + "/"
+                            + f"Medians_Radial_Summary_Legend.pdf"
+                        )
+                    else:  
+                        figl.savefig(
+                            "./"
+                            + "MultiHalo"
+                            + "/"
+                            + f"{int(rin)}R{int(rout)}"
+                            + "/"
+                            + f"Medians_Radial_Summary_All_Radii_Legend.pdf"
+                        )
                 else:
                     figl.savefig(
                         "./"
