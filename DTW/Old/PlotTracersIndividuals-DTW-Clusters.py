@@ -454,21 +454,21 @@ for analysisParam in saveParams:
             plotXdata,
             plotData[median],
             color=colour,
-            lineStyle=lineStyleMedian,
+            linestyle=lineStyleMedian,
             linewidth=lineStyleMedian,
         )
         currentAx.plot(
             plotXdata,
             plotData[LO],
             color=colour,
-            lineStyle=lineStylePercentiles,
+            linestyle=lineStylePercentiles,
             linewidth=lineWidthPercentiles,
         )
         currentAx.plot(
             plotXdata,
             plotData[UP],
             color=colour,
-            lineStyle=lineStylePercentiles,
+            linestyle=lineStylePercentiles,
             linewidth=lineWidthPercentiles,
         )
 
@@ -524,7 +524,7 @@ for analysisParam in saveParams:
                 plotXdata,
                 medianData,
                 color=col,
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
                 linewidth=lineWidthMedian,
                 label=f"Cluster {int(clusterID)}",
             )
@@ -532,14 +532,14 @@ for analysisParam in saveParams:
                 plotXdata,
                 upData,
                 color=col,
-                lineStyle=lineStylePercentiles,
+                linestyle=lineStylePercentiles,
                 linewidth=lineWidthPercentiles,
             )
             tmpAx.plot(
                 plotXdata,
                 loData,
                 color=col,
-                lineStyle=lineStylePercentiles,
+                linestyle=lineStylePercentiles,
                 linewidth=lineWidthPercentiles,
             )
 
@@ -604,7 +604,7 @@ for analysisParam in saveParams:
 
         currentAx.transAxes
 
-        # parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        # parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, linestyle=lineStyleMedian)
         #
         # for pc in parts['bodies']:
         #     pc.set_facecolor(colour)

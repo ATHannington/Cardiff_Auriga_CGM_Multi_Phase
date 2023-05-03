@@ -3588,7 +3588,7 @@ def plot_projections(
     pixreslos=0.2,
     DPI=200,
     CMAP=None,
-    numThreads=10,
+    numthreads=10,
 ):
     print(f"[@{int(snapNumber)}]: Starting Projections Video Plots!")
 
@@ -3631,7 +3631,7 @@ def plot_projections(
         boxz=boxlos,
         axes=Axes,
         proj=True,
-        numthreads=numThreads,
+        numthreads=numthreads,
     )
 
     print("\n" + f"[@{int(snapNumber)}]: Projection 2 of {nprojections}")
@@ -3646,7 +3646,7 @@ def plot_projections(
         boxz=boxlos,
         axes=Axes,
         proj=True,
-        numthreads=numThreads,
+        numthreads=numthreads,
     )
 
     print("\n" + f"[@{int(snapNumber)}]: Projection 3 of {nprojections}")
@@ -3661,7 +3661,7 @@ def plot_projections(
         boxz=boxlos,
         axes=Axes,
         proj=True,
-        numthreads=numThreads,
+        numthreads=numthreads,
     )
 
     print("\n" + f"[@{int(snapNumber)}]: Projection 4 of {nprojections}")
@@ -3676,7 +3676,7 @@ def plot_projections(
         boxz=boxlos,
         axes=Axes,
         proj=True,
-        numthreads=numThreads,
+        numthreads=numthreads,
     )
 
     print("\n" + f"[@{int(snapNumber)}]: Projection 5 of {nprojections}")
@@ -3691,7 +3691,7 @@ def plot_projections(
         boxz=boxlos,
         axes=Axes,
         proj=True,
-        numthreads=numThreads,
+        numthreads=numthreads,
     )
 
     # ------------------------------------------------------------------------------#
@@ -3938,7 +3938,7 @@ def tracer_plot(
     pixreslos=4,
     DPI=200,
     CMAP=None,
-    numThreads=4,
+    numthreads=4,
     MaxSubset=100,
     lazyLoadBool=True,
     tailsLength=3,
@@ -4293,7 +4293,7 @@ def tracer_plot(
             boxz=boxlos,
             axes=Axes,
             proj=True,
-            numthreads=numThreads,
+            numthreads=numthreads,
         )
 
         print("\n" + f"[@{int(snapNumber)}]: Projection 2 of {nprojections}")
@@ -4308,7 +4308,7 @@ def tracer_plot(
             boxz=boxlos,
             axes=Axes,
             proj=True,
-            numthreads=numThreads,
+            numthreads=numthreads,
         )
 
         # ==============================================================================#

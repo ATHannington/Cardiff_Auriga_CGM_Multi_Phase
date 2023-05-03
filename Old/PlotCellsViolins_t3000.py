@@ -418,7 +418,7 @@ for analysisParam in saveParams:
 
         # currentAx.fill_between(tage,plotData[UP],plotData[LO],\
         # facecolor=colour,alpha=opacityPercentiles,interpolate=False)
-        # currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        # currentAx.plot(tage,plotData[median],label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, linestyle=lineStyleMedian)
 
         # for jj in range(1,len(plotXdata)):
         #     whereDataIsNOTnan = np.where((np.isnan(plotYdata[jj])==False)& (np.isnan(plotYdata[jj-1])==False))
@@ -505,7 +505,7 @@ for analysisParam in saveParams:
             showmeans=False,
             showmedians=False,
             showextrema=False,
-        )  # label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        )  # label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, linestyle=lineStyleMedian)
 
         for pc in parts["bodies"]:
             pc.set_facecolor(colour)

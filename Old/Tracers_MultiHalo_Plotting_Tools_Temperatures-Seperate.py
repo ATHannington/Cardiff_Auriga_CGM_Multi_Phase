@@ -155,7 +155,7 @@ def medians_plot(
                     plotData[median],
                     label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                     color=colour,
-                    lineStyle=lineStyleMedian,
+                    linestyle=lineStyleMedian,
                 )
 
                 currentAx.axvline(x=vline, c="red")
@@ -406,7 +406,7 @@ def currently_or_persistently_at_temperature_plot(
                 plotYdata,
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
-                lineStyle="-",
+                linestyle="-",
             )
 
             currentAx.axvline(x=vline, c="red")
@@ -2279,20 +2279,20 @@ def medians_phases_plot(
                     tlookback,
                     plotData[UPP],
                     color="black",
-                    lineStyle=lineStylePercentiles,
+                    linestyle=lineStylePercentiles,
                 )
                 currentAx.plot(
                     tlookback,
                     plotData[LOO],
                     color="black",
-                    lineStyle=lineStylePercentiles,
+                    linestyle=lineStylePercentiles,
                 )
             currentAx.plot(
                 tlookback,
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color="black",
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
             )
 
             currentAx.axvline(x=vline, c="red")
@@ -2678,7 +2678,7 @@ def temperature_variation_plot(
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
             )
 
             currentAx.axvline(x=vline, c="red")

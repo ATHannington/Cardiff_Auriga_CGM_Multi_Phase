@@ -29,7 +29,7 @@ titleBool = False
 
 subset = 200
 Ntails = 4
-numThreads = 20
+numthreads = 20
 ageUniverse = 13.77  # [Gyr]
 
 size = 12.5
@@ -127,7 +127,7 @@ tracer_plot_images_of_research(
     pixreslos=TRACERSPARAMS["pixreslos"],
     DPI=DPI,
     CMAP=CMAP,
-    numThreads=numThreads,
+    numthreads=numthreads,
     MaxSubset=subset,
     tailsLength=Ntails,
     trioTitleBool=trioTitleBool,

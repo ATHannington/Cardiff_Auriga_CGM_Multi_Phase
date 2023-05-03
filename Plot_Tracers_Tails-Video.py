@@ -29,7 +29,7 @@ titleBool = False
 
 subset = 200
 Ntails = 6
-numThreads = 8
+numthreads = 8
 ageUniverse = 13.77  # [Gyr]
 
 TracersParamsPath = "TracersParams.csv"
@@ -121,7 +121,7 @@ tracer_plot(
     boxlos=TRACERSPARAMS["boxlos"],
     pixres=TRACERSPARAMS["pixres"],
     pixreslos=TRACERSPARAMS["pixreslos"],
-    numThreads=numThreads,
+    numthreads=numthreads,
     MaxSubset=subset,
     tailsLength=Ntails,
     trioTitleBool=trioTitleBool,

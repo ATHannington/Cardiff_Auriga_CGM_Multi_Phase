@@ -226,7 +226,7 @@ for analysisParam in saveParams:
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color=colour,
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
             )
 
             currentAx.axvline(x=vline, c="red")

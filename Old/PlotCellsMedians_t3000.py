@@ -432,7 +432,7 @@ for analysisParam in saveParams:
             plotData[median],
             label=r"$T = 10^{%3.0f} K$" % (float(temp)),
             color=colour,
-            lineStyle=lineStyleMedian,
+            linestyle=lineStyleMedian,
         )
 
         # for jj in range(1,len(plotXdata)):
@@ -514,7 +514,7 @@ for analysisParam in saveParams:
 
         currentAx.transAxes
 
-        # parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, lineStyle=lineStyleMedian)
+        # parts = currentAx.violinplot(violinData,positions=plotXdata,showmeans=False,showmedians=False,showextrema=False)#label=r"$T = 10^{%3.0f} K$"%(float(temp)), color = colour, linestyle=lineStyleMedian)
         #
         # for pc in parts['bodies']:
         #     pc.set_facecolor(colour)

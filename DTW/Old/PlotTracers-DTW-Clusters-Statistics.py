@@ -149,7 +149,7 @@ for analysisParam in plotStatsEntries:
             xData,
             plotYdata,
             color=colour,
-            lineStyle=lineStyleMedian,
+            linestyle=lineStyleMedian,
             linewidth=lineWidthMedian,
         )
 
@@ -170,7 +170,7 @@ for analysisParam in plotStatsEntries:
                 xData,
                 plotYdata,
                 color=col,
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
                 linewidth=lineWidthMedian,
                 label=f"Cluster {int(clusterID)}",
             )

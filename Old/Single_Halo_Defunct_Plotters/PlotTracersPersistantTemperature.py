@@ -221,7 +221,7 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             plotYdata,
             label=r"$T = 10^{%3.0f} K$" % (float(temp)),
             color=colour,
-            lineStyle="-",
+            linestyle="-",
         )
 
         currentAx.axvline(x=vline, c="red")

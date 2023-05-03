@@ -363,20 +363,20 @@ for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
                     #     tlookback,
                     #     plotData[UP],
                     #     color=colour,
-                    #     lineStyle=lineStylePercentiles,
+                    #     linestyle=lineStylePercentiles,
                     # )
                     # currentAx.plot(
                     #     tlookback,
                     #     plotData[LO],
                     #     color=colour,
-                    #     lineStyle=lineStylePercentiles,
+                    #     linestyle=lineStylePercentiles,
                     # )
                 currentAx.plot(
                     tlookback,
                     plotData[median],
                     label=f"{int(jj)} (n={(whereInCluster.shape[0]/value.shape[1]):.3%})",
                     color=colour,
-                    lineStyle=lineStyleMedian,
+                    linestyle=lineStyleMedian,
                 )
 
             currentAx.axvline(x=vline, c="red")

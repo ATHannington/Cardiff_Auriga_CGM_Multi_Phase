@@ -5,7 +5,6 @@ Created: 29/07/2021
 Known Bugs:
 
 """
-from pickle import NONE
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -121,7 +120,7 @@ def medians_plot(
                     [0],
                     [0],
                     color="black",
-                    lineStyle=rLineStyle,
+                    linestyle=rLineStyle,
                     label=f"{rin}<R<{rout}",
                 )
                 labelList.append(plot_line)
@@ -218,7 +217,7 @@ def medians_plot(
                     plotData[median],
                     label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                     color=colour,
-                    lineStyle=lineStyleMedian,
+                    linestyle=lineStyleMedian,
                 )
                 if (jj > 0) & (radialSummaryBool is True):
                     nRadialData = len(list(radialPlotData.keys()))
@@ -231,7 +230,7 @@ def medians_plot(
                                 tlookback,
                                 data[median],
                                 color=colour,
-                                lineStyle=lineStyleList[kk],
+                                linestyle=lineStyleList[kk],
                             )
                         elif radialSummaryFirstLastBool is False:
                             data = rData[f"T{Tlst[ii]}"]
@@ -239,7 +238,7 @@ def medians_plot(
                                 tlookback,
                                 data[median],
                                 color=colour,
-                                lineStyle=lineStyleList[kk],
+                                linestyle=lineStyleList[kk],
                             )
                         else:
                             pass
@@ -323,7 +322,7 @@ def medians_plot(
                         [0],
                         [0],
                         color="black",
-                        lineStyle=lineStyleMedian,
+                        linestyle=lineStyleMedian,
                         label=f"{rin}<R<{rout}",
                     )
                     if radialSummaryFirstLastBool is True:
@@ -627,7 +626,7 @@ def currently_or_persistently_at_temperature_plot(
                     plotYdata,
                     label=r"$T = 10^{%3.0f} K$" % (float(T)),
                     color=colour,
-                    lineStyle="-",
+                    linestyle="-",
                 )
 
                 currentAx.axvline(x=vline, c="red")
@@ -858,14 +857,14 @@ def currently_or_persistently_at_temperature_plot(
                 plotYProductdata,
                 label=r"$T = 10^{%3.0f} K$" % (float(T)),
                 color=colour,
-                lineStyle="-",
+                linestyle="-",
             )
 
             currentAx.plot(
                 plotXdata,
                 plotYdata,
                 color=colour,
-                lineStyle="-.",
+                linestyle="-.",
             )
 
             currentAx.axvline(x=vline, c="red")
@@ -3282,20 +3281,20 @@ def medians_phases_plot(
                     tlookback,
                     plotData[UPP],
                     color="black",
-                    lineStyle=lineStylePercentiles,
+                    linestyle=lineStylePercentiles,
                 )
                 currentAx.plot(
                     tlookback,
                     plotData[LOO],
                     color="black",
-                    lineStyle=lineStylePercentiles,
+                    linestyle=lineStylePercentiles,
                 )
             currentAx.plot(
                 tlookback,
                 plotData[median],
                 label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                 color="black",
-                lineStyle=lineStyleMedian,
+                linestyle=lineStyleMedian,
             )
 
             currentAx.axvline(x=vline, c="red")
@@ -3704,7 +3703,7 @@ def temperature_variation_plot(
                     plotData[median],
                     label=r"$T = 10^{%3.0f} K$" % (float(temp)),
                     color=colour,
-                    lineStyle=lineStyleMedian,
+                    linestyle=lineStyleMedian,
                 )
 
                 currentAx.axvline(x=vline, c="red")
