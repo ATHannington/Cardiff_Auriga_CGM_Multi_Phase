@@ -51,12 +51,18 @@ n_processes = 2
 # Save as .csv
 TRACERSPARAMS, DataSavepath, Tlst = load_tracers_parameters(TracersParamsPath)
 
-print("")
-print("Loaded Analysis Parameters:")
-for key, value in TRACERSPARAMS.items():
-    print(f"{key}: {value}")
+splitsave = DataSavepath.split("/")
+DataSavepath = "/".join(splitsave[0:-2]) + "/_pytest_/" + splitsave[-1]
 
-print("")
+tmp = ""
+for savePathChunk in DataSavepath.split("/")[:-1]:
+    tmp += savePathChunk + "/"
+    try:
+        os.mkdir(tmp)
+    except:
+        pass
+    else:
+        pass
 
 # Save types, which when combined with saveparams define what data is saved.
 #   This is intended to be the string equivalent of the percentiles.
@@ -69,27 +75,24 @@ saveParams = TRACERSPARAMS[
     "saveParams"
 ]  # ['rho_rhomean','dens','T','R','n_H','B','vrad','gz','L','P_thermal','P_magnetic','P_kinetic','P_tot','tcool','theat','csound','tcross','tff','tcool_tff']
 
-print("")
-print("Saved Parameters in this Analysis:")
-print(saveParams)
+
+
+
 
 # Optional Tracer only (no stats in .csv) parameters to be saved
 #   Cannot guarantee that all Plotting and post-processing are independent of these
 #       Will attempt to ensure any necessary parameters are stored in ESSENTIALS
 saveTracersOnly = TRACERSPARAMS["saveTracersOnly"]  # ['sfr','age']
 
-print("")
-print("Tracers ONLY (no stats) Saved Parameters in this Analysis:")
-print(saveTracersOnly)
 
 # SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
 saveEssentials = TRACERSPARAMS[
     "saveEssentials"
 ]  # ['halo','subhalo','Lookback','Ntracers','Snap','id','prid','trid','type','mass','pos']
 
-print("")
-print("ESSENTIAL Saved Parameters in this Analysis:")
-print(saveEssentials)
+
+
+
 
 saveTracersOnly = saveTracersOnly + saveEssentials
 
@@ -477,7 +480,7 @@ def test_individual_tracer_fake_data():
         data,
         TracersReturned,
         ParentsReturned,
-    ) = get_individual_cell_from_tracer_all_param_v2(
+    ) = get_copy_of_cell_for_every_tracer(
         Tracers=trid,
         Parents=prid,
         CellIDs=id,
@@ -541,7 +544,7 @@ def test_individual_tracer_fake_data():
         data,
         TracersReturned,
         ParentsReturned,
-    ) = get_individual_cell_from_tracer_all_param_v2(
+    ) = get_copy_of_cell_for_every_tracer(
         Tracers=trid,
         Parents=prid,
         CellIDs=id,
@@ -570,15 +573,14 @@ def test_individual_tracer_fake_data():
         np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], trid)) == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Tracers Returned not subset of trid! Selection error!"
     assert (
-        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], prid)) == True
+        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], prid[whereParentsReturnedNotNaN])) == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Tracers Returned not subset of trid! Selection error!"
     assert (
-        np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
+        np.all(TracersReturned[whereTracersReturnedNotNaN] == SelectedTracers1)
         == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
     assert (
-        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], SelectedParents1))
-        == True
+        np.all(ParentsReturned[whereParentsReturnedNotNaN] == SelectedParents1[whereParentsReturnedNotNaN])
         == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"
 
@@ -602,7 +604,7 @@ def test_individual_tracer_fake_data():
     SelectedTracers1 = trid[randomSample]
     SelectedParents1 = prid[randomSample]
 
-    startTrid2 = startTrid - int(float(lenTrid) / 2.0)
+    startTrid2 = startTrid + int(float(lenTrid) / 2.0)
     lenTrid2 = 10
     trid2 = np.arange(start=startTrid2, stop=startTrid2 + lenTrid2, step=1)
 
@@ -617,7 +619,7 @@ def test_individual_tracer_fake_data():
         data,
         TracersReturned,
         ParentsReturned,
-    ) = get_individual_cell_from_tracer_all_param_v2(
+    ) = get_copy_of_cell_for_every_tracer(
         Tracers=trid2,
         Parents=prid,
         CellIDs=id,
@@ -640,15 +642,11 @@ def test_individual_tracer_fake_data():
     ), "[@individual_tracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned is not of size <= subset! There may be too many Returned Tracers!"
 
     assert (
-        np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], trid2)) == True
-    ), "[@individual_tracerFakeData Subset of Selected Tracers Present in Tracers:] Tracers Returned not subset of trid2! Selection error!"
-
-    assert (
-        np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
+        np.all(TracersReturned[whereTracersReturnedNotNaN] == SelectedTracers1)
         == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
     assert (
-        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], SelectedParents1))
+        np.all(ParentsReturned[whereParentsReturnedNotNaN] == SelectedParents1[whereParentsReturnedNotNaN])
         == True
     ), "[@individual_tracerFakeData Random Subset of Tracers:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"
 
@@ -687,7 +685,7 @@ def test_individual_tracer():
         data,
         TracersReturned,
         ParentsReturned,
-    ) = get_individual_cell_from_tracer_all_param_v2(
+    ) = get_copy_of_cell_for_every_tracer(
         Tracers=snapTracers.data["trid"],
         Parents=snapTracers.data["prid"],
         CellIDs=snapGas.data["id"],
@@ -735,16 +733,16 @@ def test_individual_tracer():
     assert (
         np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
         == True
-    ), "[@Individual Tracer:] Tracers Returned is not a individual_tracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    ), "[@Individual Tracer:] Tracers Returned is not a Subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert (
         np.shape(TracersReturned)[0] <= individual_tracerSubset
     ), "[@Individual Tracer:] Tracers Returned is not of size <= individual_tracerSubset! There may be too many Returned Tracers!"
     assert (
-        np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
+        np.all(TracersReturned[whereTracersReturnedNotNaN] == SelectedTracers1)
         == True
     ), "[@Individual Tracer:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
     assert (
-        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], SelectedParents1))
+        np.all(ParentsReturned[whereParentsReturnedNotNaN] == SelectedParents1)
         == True
     ), "[@Individual Tracer:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"
 
@@ -754,7 +752,7 @@ def test_individual_tracer():
         data,
         TracersReturned,
         ParentsReturned,
-    ) = get_individual_cell_from_tracer_all_param_v2(
+    ) = get_copy_of_cell_for_every_tracer(
         Tracers=snapTracers.data["trid"],
         Parents=snapTracers.data["prid"],
         CellIDs=snapGas.data["id"],
@@ -771,15 +769,15 @@ def test_individual_tracer():
     assert (
         np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
         == True
-    ), "[@Individual Tracer:] Tracers Returned is not a individual_tracerSubset of Selected Tracers! Some Tracers Returned have been mis-selected!"
+    ), "[@Individual Tracer:] Tracers Returned is not a Subset of Selected Tracers! Some Tracers Returned have been mis-selected!"
     assert (
         np.shape(TracersReturned)[0] <= individual_tracerSubset
     ), "[@Individual Tracer:] Tracers Returned is not of size <= individual_tracerSubset! There may be too many Returned Tracers!"
     assert (
-        np.all(np.isin(TracersReturned[whereTracersReturnedNotNaN], SelectedTracers1))
+        np.all(TracersReturned[whereTracersReturnedNotNaN] == SelectedTracers1)
         == True
     ), "[@Individual Tracer:] Trid test : ordered trids not equal to SelectedTracers! Ordering failure!"
     assert (
-        np.all(np.isin(ParentsReturned[whereParentsReturnedNotNaN], SelectedParents1))
+        np.all(ParentsReturned[whereParentsReturnedNotNaN] == SelectedParents1)
         == True
     ), "[@Individual Tracer:] Prid test : ordered prids not equal to SelectedParents! Ordering failure!"

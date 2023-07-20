@@ -1328,7 +1328,7 @@ def phases_plot(
         print(f"{rin}R{rout}")
         print("Flatten Tracers Data (snapData).")
 
-        TracersFinalDict = flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout)
+        TracersFinalDict = flatten_wrt_temperature(dataDict, snapRange, TRACERSPARAMS, rin, rout)
         # ------------------------------------------------------------------------------#
         #               PLOTTING
         #
@@ -1507,19 +1507,8 @@ def phases_plot(
 ################################################################################
 ##                           Bars Plot Tools                                ####
 ################################################################################
-def _get_id_prid_trid_where(dataDict, whereEntries):
 
-    id = dataDict["id"][whereEntries]
-
-    _, prid_ind, _ = np.intersect1d(dataDict["prid"], id, return_indices=True)
-
-    prid = dataDict["prid"][prid_ind]
-    trid = dataDict["trid"][prid_ind]
-
-    return {"id": id, "prid": prid, "trid": trid}
-
-
-def flat_analyse_time_averages(
+def bar_plot_statistics(
     FlatDataDict,
     Tlst,
     snapRange,
@@ -1529,6 +1518,7 @@ def flat_analyse_time_averages(
     shortSnapRangeNumber=None,
     epsilon = None,
     epsilonRadial = 50.0,
+    radialLimit = 200.0,
 ):
 
     if epsilon is None: 
@@ -1536,7 +1526,8 @@ def flat_analyse_time_averages(
 
     gas = []
     halo0 = []
-    unbound = []
+    everoutflow = []
+    everinflow = []
     otherHalo = []
     noHalo = []
     stars = []
@@ -1603,7 +1594,7 @@ def flat_analyse_time_averages(
             whereGas = np.where((FlatDataDict[Tkey]["type"] == 0).all(axis=0))[0]
             ntracers = int(np.shape(whereGas)[0])
 
-            print("Gas")
+            # print("Gas")
 
             if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
                 pre = preselectInd
@@ -1612,46 +1603,71 @@ def flat_analyse_time_averages(
                 pre = preselectInd[-1 * int(shortSnapRangeNumber) :]
                 post = postselectInd[: int(shortSnapRangeNumber)]
 
-            # Select where ANY tracer (gas or stars) meets condition PRIOR TO selection
-            rowspre, colspre = np.where(FlatDataDict[Tkey]["type"][pre, :] == 0)
-            # Calculate the number of these unique tracers compared to the total number
-            gaspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
-            rowspost, colspost = np.where(FlatDataDict[Tkey]["type"][post, :] == 0)
-            gaspost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
-            )
-            # Add data to internal database lists
-            gas.append([gaspre, gaspost])
+            # # Select where ANY tracer (gas or stars) meets condition PRIOR TO selection
+            # rowspre, colspre = np.where(FlatDataDict[Tkey]["type"][pre, :] == 0)
+            # # Calculate the number of these unique tracers compared to the total number
+            # gaspre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            # rowspost, colspost = np.where(FlatDataDict[Tkey]["type"][post, :] == 0)
+            # gaspost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            # )
+            # # Add data to internal database lists
+            # gas.append([gaspre, gaspost])
 
-            print("Halo0")
-            rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
-                == float(TRACERSPARAMS["haloID"])
-            )
-            halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
-                == float(TRACERSPARAMS["haloID"])
-            )
-            halo0post = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            halo0.append([halo0pre, halo0post])
+            # print("Halo0")
+            # rowspre, colspre = np.where(
+            #     FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
+            #     == float(TRACERSPARAMS["haloID"])
+            # )
+            # halo0pre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # rowspost, colspost = np.where(
+            #     FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
+            #     == float(TRACERSPARAMS["haloID"])
+            # )
+            # halo0post = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # halo0.append([halo0pre, halo0post])
 
-            print("Unbound")
+            print("Ever fast-flowing")
             rowspre, colspre = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] == -1.0
+                (FlatDataDict[Tkey]["vrad"][:, whereGas][pre, :] >= epsilonRadial)
+                &
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < radialLimit)
             )
-            unboundpre = (
+            everoutflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] == -1.0
+                (FlatDataDict[Tkey]["vrad"][:, whereGas][post, :] >= epsilonRadial)
+                &
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < radialLimit)
             )
-            unboundpost = (
+            everoutflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
-            unbound.append([unboundpre, unboundpost])
+            everoutflow.append([everoutflowpre, everoutflowpost])
+
+
+
+            rowspre, colspre = np.where(
+                (FlatDataDict[Tkey]["vrad"][:, whereGas][pre, :] <= -1.0*epsilonRadial)
+                &
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < radialLimit)
+            )
+            everinflowpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            rowspost, colspost = np.where(
+                (FlatDataDict[Tkey]["vrad"][:, whereGas][post, :] <= -1.0*epsilonRadial)
+                &
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < radialLimit)
+            )
+            everinflowpost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
+            everinflow.append([everinflowpre, everinflowpost])
+
 
             print("OtherHalo")
             rowspre, colspre = np.where(
@@ -1659,12 +1675,10 @@ def flat_analyse_time_averages(
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
                     != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
-                & (
-                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :])
-                    == False
-                )
-                & (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
+                & 
+                (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
+                & 
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < rmax)
             )
             otherHalopre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
@@ -1674,43 +1688,41 @@ def flat_analyse_time_averages(
                     FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
                     != float(TRACERSPARAMS["haloID"])
                 )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
-                & (
-                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
-                    == False
-                )
-                & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
+                & 
+                (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
+                & 
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < rmax)
             )
             otherHalopost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             otherHalo.append([otherHalopre, otherHalopost])
 
-            print("NoHalo")
-            rowspre, colspre = np.where(
-                (
-                    FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
-                    != float(TRACERSPARAMS["haloID"])
-                )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
-                & (np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]) == True)
-            )
-            noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            rowspost, colspost = np.where(
-                (
-                    FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
-                    != float(TRACERSPARAMS["haloID"])
-                )
-                & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
-                & (
-                    np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
-                    == True
-                )
-            )
-            noHalopost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            noHalo.append([noHalopre, noHalopost])
+            # print("NoHalo")
+            # rowspre, colspre = np.where(
+            #     (
+            #         FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]
+            #         != float(TRACERSPARAMS["haloID"])
+            #     )
+            #     & (FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :] != -1.0)
+            #     & (np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][pre, :]) == True)
+            # )
+            # noHalopre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # rowspost, colspost = np.where(
+            #     (
+            #         FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :]
+            #         != float(TRACERSPARAMS["haloID"])
+            #     )
+            #     & (FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :] != -1.0)
+            #     & (
+            #         np.isnan(FlatDataDict[Tkey]["subhalo"][:, whereGas][post, :])
+            #         == True
+            #     )
+            # )
+            # noHalopost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # noHalo.append([noHalopre, noHalopost])
 
             print("Stars")
             rowspre, colspre = np.where(
@@ -1729,23 +1741,6 @@ def flat_analyse_time_averages(
             )
             stars.append([starspre, starspost])
 
-            print("Wind")
-            rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["type"][pre, :] == 4)
-                & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
-            )
-            windpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
-            )
-            rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["type"][post, :] == 4)
-                & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
-            )
-            windpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
-            )
-            wind.append([windpre, windpost])
-
             print("ISM")
             rowspre, colspre = np.where(
                 (FlatDataDict[Tkey]["R"][pre, :] <= rmin)
@@ -1761,55 +1756,57 @@ def flat_analyse_time_averages(
             )
             ism.append([ismpre, ismpost])
 
-            print("Wind")
-            rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["type"][pre, :] == 4)
-                & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
-            )
-            windpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
-            )
-            rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["type"][post, :] == 4)
-                & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
-            )
-            windpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
-            )
-            wind.append([windpre, windpost])
+            # print("Wind")
+            # rowspre, colspre = np.where(
+            #     (FlatDataDict[Tkey]["type"][pre, :] == 4)
+            #     & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
+            # )
+            # windpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracersAll)
+            # )
+            # rowspost, colspost = np.where(
+            #     (FlatDataDict[Tkey]["type"][post, :] == 4)
+            #     & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
+            # )
+            # windpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracersAll)
+            # )
+            # wind.append([windpre, windpost])
 
-            print("Radius")
+            # rowspre, colspre = np.where(igm
+            #     (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < rmin)
+            # )
+            # diskpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # rowspost, colspost = np.where(
+            #     (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < rmin)
+            # )
+            # diskpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # disk.append([diskpre, diskpost])
+
+            # rowspre, colspre = np.where(
+            #     (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= rmin)
+            #     & (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
+            # )
+            # cgmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # rowspost, colspost = np.where(
+            #     (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= rmin)
+            #     & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
+            # )
+            # cgmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # cgm.append([cgmpre, cgmpost])
+
+            print("IGM")
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] < rmin)
-            )
-            diskpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] < rmin)
-            )
-            diskpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            disk.append([diskpre, diskpost])
-
-            rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= rmin)
-                & (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] <= rmax)
-            )
-            cgmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= rmin)
-                & (FlatDataDict[Tkey]["R"][:, whereGas][post, :] <= rmax)
-            )
-            cgmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            cgm.append([cgmpre, cgmpost])
-
-            rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] > rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][pre, :] >= radialLimit)
             )
             igmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] > rmax)
+                (FlatDataDict[Tkey]["R"][:, whereGas][post, :] >= radialLimit)
             )
             igmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            
             igm.append([igmpre, igmpost])
 
             print("Heating & Cooling")
@@ -1850,17 +1847,17 @@ def flat_analyse_time_averages(
             )
             cooling.append([coolingPre, coolingPost])
 
-            rowspre, colspre = np.where((TPreDat >= (-1.0 * epsilon)) & (TPreDat <= (epsilon)))
-            stableTPre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            rowspost, colspost = np.where(
-                (TPostDat >= (-1.0 * epsilon)) & (TPostDat <= (epsilon))
-            )
-            stableTPost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            stableT.append([stableTPre, stableTPost])
+            # rowspre, colspre = np.where((TPreDat >= (-1.0 * epsilon)) & (TPreDat <= (epsilon)))
+            # stableTPre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # rowspost, colspost = np.where(
+            #     (TPostDat >= (-1.0 * epsilon)) & (TPostDat <= (epsilon))
+            # )
+            # stableTPost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # stableT.append([stableTPre, stableTPost])
 
             rowspre, colspre = np.where(TPreDat > (epsilon))
             heatingPre = (
@@ -1984,19 +1981,19 @@ def flat_analyse_time_averages(
             )
             dispersing.append([dispersingPre, dispersingPost])
 
-            rowspre, colspre = np.where(
-                (nHPreDat >= (-1.0 * epsilon)) & (nHPreDat <= (epsilon))
-            )
-            stablenHPre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            rowspost, colspost = np.where(
-                (nHPostDat >= (-1.0 * epsilon)) & (nHPostDat <= (epsilon))
-            )
-            stablenHPost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            stabledensity.append([stablenHPre, stablenHPost])
+            # rowspre, colspre = np.where(
+            #     (nHPreDat >= (-1.0 * epsilon)) & (nHPreDat <= (epsilon))
+            # )
+            # stablenHPre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # rowspost, colspost = np.where(
+            #     (nHPostDat >= (-1.0 * epsilon)) & (nHPostDat <= (epsilon))
+            # )
+            # stablenHPost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # stabledensity.append([stablenHPre, stablenHPost])
 
             rowspre, colspre = np.where(nHPreDat < (-1.0 *epsilon))
             condensingPre = (
@@ -2048,132 +2045,132 @@ def flat_analyse_time_averages(
             )
             outflow.append([outflowpre, outflowpost])
 
-            print("|B|")
-            # (K)
+            # print("|B|")
+            # # (K)
 
-            BPreDat = np.log10(
-                FlatDataDict[Tkey]["B"][:, whereGas][pre, :][-1, :]
-            ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :])
+            # BPreDat = np.log10(
+            #     FlatDataDict[Tkey]["B"][:, whereGas][pre, :][-1, :]
+            # ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :])
 
-            BPostDat = np.log10(
-                FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :]
-            ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][post, :][0, :])
+            # BPostDat = np.log10(
+            #     FlatDataDict[Tkey]["B"][:, whereGas][selectInd, :]
+            # ) - np.log10(FlatDataDict[Tkey]["B"][:, whereGas][post, :][0, :])
 
-            colspre = np.where(BPreDat < (-1.0 * epsilon))[0]
-            bdecreasingPre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(BPostDat < (-1.0 * epsilon))[0]
-            bdecreasingPost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            bdecreasing.append([bdecreasingPre, bdecreasingPost])
+            # colspre = np.where(BPreDat < (-1.0 * epsilon))[0]
+            # bdecreasingPre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(BPostDat < (-1.0 * epsilon))[0]
+            # bdecreasingPost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # bdecreasing.append([bdecreasingPre, bdecreasingPost])
 
-            colspre = np.where((BPreDat >= (-1.0 * epsilon)) & (BPreDat <= (epsilon)))[
-                0
-            ]
-            bstablePre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(
-                (BPostDat >= (-1.0 * epsilon)) & (BPostDat <= (epsilon))
-            )[0]
-            bstablePost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            bstable.append([bstablePre, bstablePost])
+            # colspre = np.where((BPreDat >= (-1.0 * epsilon)) & (BPreDat <= (epsilon)))[
+            #     0
+            # ]
+            # bstablePre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(
+            #     (BPostDat >= (-1.0 * epsilon)) & (BPostDat <= (epsilon))
+            # )[0]
+            # bstablePost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # bstable.append([bstablePre, bstablePost])
 
-            colspre = np.where(BPreDat > (epsilon))[0]
-            bincreasingPre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(BPostDat > (epsilon))[0]
-            bincreasingPost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            bincreasing.append([bincreasingPre, bincreasingPost])
-            #
-            print("Z")
-            # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
+            # colspre = np.where(BPreDat > (epsilon))[0]
+            # bincreasingPre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(BPostDat > (epsilon))[0]
+            # bincreasingPost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # bincreasing.append([bincreasingPre, bincreasingPost])
+            # #
+            # print("Z")
+            # # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
-            data = FlatDataDict[Tkey]["gz"][:, whereGas][pre, :]
-            zPreDat = np.nanmedian(data, axis=0)
+            # data = FlatDataDict[Tkey]["gz"][:, whereGas][pre, :]
+            # zPreDat = np.nanmedian(data, axis=0)
 
-            data = FlatDataDict[Tkey]["gz"][:, whereGas][post, :]
-            zPostDat = np.nanmedian(data, axis=0)
+            # data = FlatDataDict[Tkey]["gz"][:, whereGas][post, :]
+            # zPostDat = np.nanmedian(data, axis=0)
 
-            colspre = np.where(zPreDat > 0.75)[0]
-            aboveZpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(zPostDat > 0.75)[0]
-            aboveZpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            aboveZ.append([aboveZpre, aboveZpost])
+            # colspre = np.where(zPreDat > 0.75)[0]
+            # aboveZpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # colspost = np.where(zPostDat > 0.75)[0]
+            # aboveZpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # aboveZ.append([aboveZpre, aboveZpost])
 
-            colspre = np.where(zPreDat < 0.75)[0]
-            belowZpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(zPostDat < 0.75)[0]
-            belowZpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            belowZ.append([belowZpre, belowZpost])
+            # colspre = np.where(zPreDat < 0.75)[0]
+            # belowZpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # colspost = np.where(zPostDat < 0.75)[0]
+            # belowZpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # belowZ.append([belowZpre, belowZpost])
 
-            print("tcool_tff")
-            # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
+            # print("tcool_tff")
+            # # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
-            data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][pre, :]
-            tcool_tffPreDat = np.nanmedian(data, axis=0)
+            # data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][pre, :]
+            # tcool_tffPreDat = np.nanmedian(data, axis=0)
 
-            data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][post, :]
-            tcool_tffPostDat = np.nanmedian(data, axis=0)
+            # data = FlatDataDict[Tkey]["tcool_tff"][:, whereGas][post, :]
+            # tcool_tffPostDat = np.nanmedian(data, axis=0)
 
-            colspre = np.where(tcool_tffPreDat < 10.0)[0]
-            belowtcool_tffpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(tcool_tffPostDat < 10.0)[0]
-            belowtcool_tffpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            tcool_tff_LO.append([belowtcool_tffpre, belowtcool_tffpost])
+            # colspre = np.where(tcool_tffPreDat < 10.0)[0]
+            # belowtcool_tffpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(tcool_tffPostDat < 10.0)[0]
+            # belowtcool_tffpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # tcool_tff_LO.append([belowtcool_tffpre, belowtcool_tffpost])
 
-            colspre = np.where(tcool_tffPreDat > 10.0)[0]
-            abovetcool_tffpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(tcool_tffPostDat > 10.0)[0]
-            abovetcool_tffpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            tcool_tff_UP.append([abovetcool_tffpre, abovetcool_tffpost])
+            # colspre = np.where(tcool_tffPreDat > 10.0)[0]
+            # abovetcool_tffpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(tcool_tffPostDat > 10.0)[0]
+            # abovetcool_tffpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # tcool_tff_UP.append([abovetcool_tffpre, abovetcool_tffpost])
 
-            print("ptherm_pmag")
-            # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
+            # print("ptherm_pmag")
+            # # Select FOREVER GAS ONLY tracers' specific parameter data and mass weights PRIOR TO SELECTION
 
-            data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][pre, :]
-            ptherm_pmagPreDat = np.nanmedian(data, axis=0)
+            # data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][pre, :]
+            # ptherm_pmagPreDat = np.nanmedian(data, axis=0)
 
-            data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][post, :]
-            ptherm_pmagPostDat = np.nanmedian(data, axis=0)
-            colspre = np.where(ptherm_pmagPreDat < 1.0)[0]
-            belowptherm_pmagpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(ptherm_pmagPostDat < 1.0)[0]
-            belowptherm_pmagpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            ptherm_pmag_LO.append([belowptherm_pmagpre, belowptherm_pmagpost])
+            # data = FlatDataDict[Tkey]["Pthermal_Pmagnetic"][:, whereGas][post, :]
+            # ptherm_pmagPostDat = np.nanmedian(data, axis=0)
+            # colspre = np.where(ptherm_pmagPreDat < 1.0)[0]
+            # belowptherm_pmagpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(ptherm_pmagPostDat < 1.0)[0]
+            # belowptherm_pmagpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # ptherm_pmag_LO.append([belowptherm_pmagpre, belowptherm_pmagpost])
 
-            colspre = np.where(ptherm_pmagPreDat > 1.0)[0]
-            aboveptherm_pmagpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            colspost = np.where(ptherm_pmagPostDat > 1.0)[0]
-            aboveptherm_pmagpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            ptherm_pmag_UP.append([aboveptherm_pmagpre, aboveptherm_pmagpost])
+            # colspre = np.where(ptherm_pmagPreDat > 1.0)[0]
+            # aboveptherm_pmagpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # colspost = np.where(ptherm_pmagPostDat > 1.0)[0]
+            # aboveptherm_pmagpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # ptherm_pmag_UP.append([aboveptherm_pmagpre, aboveptherm_pmagpost])
 
         outinner = {
             "R_inner [kpc]": dfdat["R_inner [kpc]"],
@@ -2185,17 +2182,21 @@ def flat_analyse_time_averages(
             #     "Pre-Selection": np.array(halo0)[:, 0],
             #     "Post-Selection": np.array(halo0)[:, 1],
             # },
-            "Unbound": {
-                "Pre-Selection": np.array(unbound)[:, 0],
-                "Post-Selection": np.array(unbound)[:, 1],
+            r"Inflow$_{\mathrm{E.}}$": {
+                "Pre-Selection": np.array(everinflow)[:, 0],
+                "Post-Selection": np.array(everinflow)[:, 1],
+            },
+            r"Outflow$_{\mathrm{E.}}$": {
+                "Pre-Selection": np.array(everoutflow)[:, 0],
+                "Post-Selection": np.array(everoutflow)[:, 1],
             },
             "OtherHalo": {
                 "Pre-Selection": np.array(otherHalo)[:, 0],
                 "Post-Selection": np.array(otherHalo)[:, 1],
             },
             "IGM": {
-                "Pre-Selection": np.array(noHalo)[:, 0],
-                "Post-Selection": np.array(noHalo)[:, 1],
+                "Pre-Selection": np.array(igm)[:, 0],
+                "Post-Selection": np.array(igm)[:, 1],
             },
             "ISM": {
                 "Pre-Selection": np.array(ism)[:, 0],
@@ -2245,7 +2246,7 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(dispersing)[:, 0],
                 "Post-Selection": np.array(dispersing)[:, 1],
             },
-            "Inflow": {
+            r"Inflow$_{\mathrm{Av.}}$": {
                 "Pre-Selection": np.array(inflow)[:, 0],
                 "Post-Selection": np.array(inflow)[:, 1],
             },
@@ -2253,7 +2254,7 @@ def flat_analyse_time_averages(
                 "Pre-Selection": np.array(statflow)[:, 0],
                 "Post-Selection": np.array(statflow)[:, 1],
             },
-            "Outflow": {
+            r"Outflow$_{\mathrm{Av.}}$": {
                 "Pre-Selection": np.array(outflow)[:, 0],
                 "Post-Selection": np.array(outflow)[:, 1],
             },
@@ -2313,7 +2314,7 @@ def flat_analyse_time_averages(
     dict_of_df = {k: pd.DataFrame(v) for k, v in out.items()}
     df = pd.concat(dict_of_df, axis=1)
 
-    # print("DEBUG")
+    # print("verbose")
     # STOP1824
     return df
 
@@ -2346,6 +2347,7 @@ def bars_plot(
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     epsilon = None,
     epsilonRadial = 50.0,
+    radialLimit = 200.0
 ):
     colourmapMain = "plasma"
     # Input parameters path:
@@ -2357,7 +2359,7 @@ def bars_plot(
         FlatDataDict[key].update({"Ntracers": np.shape(FlatDataDict[key]["type"])[1]})
     print("Analyse Data!")
 
-    timeAvDF = flat_analyse_time_averages(
+    timeAvDF = bar_plot_statistics(
         FlatDataDict,
         Tlst,
         snapRange,
@@ -2367,6 +2369,7 @@ def bars_plot(
         shortSnapRangeNumber=shortSnapRangeNumber,
         epsilon = epsilon,
         epsilonRadial = epsilonRadial,
+        radialLimit=radialLimit,
     )
 
 

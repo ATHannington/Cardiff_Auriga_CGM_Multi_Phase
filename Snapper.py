@@ -110,7 +110,7 @@ def ColourMap(ColourBins=256):
     """
     from matplotlib.colors import ListedColormap
 
-    print("Defining ATH Custom Colourmap!")
+    print\((.*?),flush=True\)
 
     color1 = plt.get_cmap("Purples", ColourBins)
     color2 = plt.get_cmap("hot", ColourBins)
@@ -138,7 +138,7 @@ else:
 
 
 def SetCentre(snap, snap_subfind, HaloID):
-    print("Centering!")
+    print\((.*?),flush=True\)
     HaloCentre = snap_subfind.data["fpos"][
         HaloID, :
     ]  # subfind has calculated its centre of mass for you
@@ -176,7 +176,7 @@ def PlotHistogram(
     if WeightsLabel == "mass":
         Weights = snap.mass
     else:
-        print("Unknown Weights Flag! Setting to Default 'mass'!")
+        print\((.*?),flush=True\)
         Weights = snap.mass
 
     hist, xedge, yedge = np.histogram2d(
@@ -228,7 +228,7 @@ def HistogramMovieLoop(SimDirectory, NSnaps=127, Start=10):
     """
     # import matplotlib.animation as manimation
 
-    print("Let's make a Movie!")
+    print\((.*?),flush=True\)
     for ii in range(Start, NSnaps + 1):
         # Create child Snapper for each histogram. Caution, don't add to self
         # or data will stack up and bug out.
@@ -295,13 +295,13 @@ def PlotProjections(
     DPI=500,
     CMAP=None,
 ):
-    if CMAP == None:
+    if CMAP is None:
         cmap = plt.get_cmap("inferno")
     else:
-        cmap = CMAP
+        cmap = plt.get_cmap(CMAP)
 
-    print("Quad Plot...")
-    print("Calculating Tracked Parameters!")
+    print\((.*?),flush=True\)
+    print\((.*?),flush=True\)
 
     # Axes Labels to allow for adaptive axis selection
     AxesLabels = ["x", "y", "z"]
@@ -361,7 +361,7 @@ def PlotProjections(
     # --------------------------#
     ## Slices and Projections ##
     # --------------------------#
-    print("Slices and Projections!")
+    print\((.*?),flush=True\)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
     # slice_nH    = snap.get_Aslice("n_H", box = [boxsize,boxsize],\
@@ -472,7 +472,7 @@ def PlotProjections(
     aspect = "equal"
     fontsize = 12
     fontsizeTitle = 20
-    print("Plot!")
+    print\((.*?),flush=True\)
 
     # DPI Controlled by user as lower res needed for videos #
     fig, axes = plt.subplots(
@@ -496,12 +496,12 @@ def PlotProjections(
     fig.suptitle(TITLE, fontsize=fontsizeTitle)
 
     # cmap = plt.get_cmap(CMAP)
-    cmap.set_bad(color="grey")
+    cmap = (copy.copy(cmap)).set_bad(color="grey")
 
     # -----------#
     # Plot Temperature #
     # -----------#
-    # print("pcm1")
+    # print\((.*?),flush=True\)
     ax1 = axes[0, 0]
 
     pcm1 = ax1.pcolormesh(
@@ -535,7 +535,7 @@ def PlotProjections(
     # -----------#
     # Plot n_H Projection #
     # -----------#
-    # print("pcm2")
+    # print\((.*?),flush=True\)
     ax2 = axes[0, 1]
 
     pcm2 = ax2.pcolormesh(
@@ -566,7 +566,7 @@ def PlotProjections(
     # -----------#
     # Plot Metallicity #
     # -----------#
-    # print("pcm3")
+    # print\((.*?),flush=True\)
     ax3 = axes[1, 0]
 
     pcm3 = ax3.pcolormesh(
@@ -599,7 +599,7 @@ def PlotProjections(
     # -----------#
     # Plot Magnetic Field Projection #
     # -----------#
-    # print("pcm4")
+    # print\((.*?),flush=True\)
     ax4 = axes[1, 1]
 
     pcm4 = ax4.pcolormesh(
@@ -632,18 +632,18 @@ def PlotProjections(
     plt.sca(ax4)
     plt.xticks([-150, -100, -50, 0, 50, 100, 150, 200])
 
-    # print("snapnum")
+    # print\((.*?),flush=True\)
     # Pad snapnum with zeroes to enable easier video making
     fig.subplots_adjust(wspace=0.0, hspace=0.0)
     # fig.tight_layout()
 
     snapnum = str(snapnum).zfill(3)
     opslaan = f"Shaded_Cell_{snapnum}.png"
-    print(f"Save {opslaan}")
+    print\((.*?),flush=True\)
     plt.savefig(opslaan, dpi=DPI, transparent=False)
     plt.close()
 
-    print("...done!")
+    print\((.*?),flush=True\)
 
 
 # ------------------------------------------------------------------------------#
@@ -664,14 +664,14 @@ def _projection_movie(
     DPI,
     CMAP,
 ):
-    print(f"Starting {snapnum}")
+    print\((.*?),flush=True\)
     # load in the subfind group files
     snap_subfind = load_subfind(snapnum, dir=SimDirectory)
 
     # load in the gas particles mass and position. 0 is gas, 1 is DM, 4 is stars, 5 is BHs
     snapGas = gadget_readsnap(snapnum, SimDirectory, loadonlytype=[0], lazy_load=True)
 
-    print(f" snapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+    print\((.*?),flush=True\)
 
     snapGas = SetCentre(snap=snapGas, snap_subfind=snap_subfind, HaloID=0)
 
@@ -735,8 +735,8 @@ def ProjectionMovieLoop(
         CMAP,
     ]
     args_list = [[snap] + args_default for snap in range(Start, End + 1)]
-    print("\n" + f"Opening {n_processes} core Pool!")
-    print("Let's make a Movie!")
+    print\((.*?),flush=True\)
+    print\((.*?),flush=True\)
     pool = mp.Pool(processes=n_processes)
 
     # Compute movie projections!
@@ -789,7 +789,7 @@ def ProjectionMovieLoop(
 # # snapDM    = gadget_readsnap(snapnum, simfile,loadonlytype = [1],lazy_load=True)
 # # snapStars = gadget_readsnap(snapnum, simfile,loadonlytype = [4],lazy_load=True)
 #
-# print(f" snapShot loaded at RedShift z={snapGas.redshift:0.05e}")
+# print\((.*?),flush=True\)
 #
 # snapGas   = SetCentre(snap=snapGas,snap_subfind=snap_subfind,HaloID=0)
 # # snapDM    = SetCentre(snap=snapDM,snap_subfind=snap_subfind,HaloID=0)

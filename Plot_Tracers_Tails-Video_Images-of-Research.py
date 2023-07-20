@@ -27,14 +27,13 @@ from functools import reduce
 trioTitleBool = False
 titleBool = False
 
-subset = 200
-Ntails = 4
-numthreads = 20
+subset = 100
+Ntails = 6
+numThreads = 8
 ageUniverse = 13.77  # [Gyr]
 
-size = 12.5
 DPI = 500
-CMAP = "BuPu"
+CMAP = "bone"
 
 TracersParamsPath = "TracersParams.csv"
 singleValueParams = ["Lookback", "Ntracers", "Snap"]
@@ -108,7 +107,7 @@ print(
 )
 
 
-snapGas.calc_sf_indizes(snap_subfind, halolist=[int(TRACERSPARAMS["haloID"])])
+snapGas.calc_sf_indizes(snap_subfind)
 rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
 
 
@@ -117,7 +116,7 @@ tracer_plot_images_of_research(
     tridData,
     TRACERSPARAMS,
     rotation_matrix,
-    DataSavepath="./IoR",
+    DataSavepath,
     FullDataPathSuffix=f".h5",
     Axes=TRACERSPARAMS["Axes"],
     zAxis=TRACERSPARAMS["zAxis"],
@@ -127,7 +126,7 @@ tracer_plot_images_of_research(
     pixreslos=TRACERSPARAMS["pixreslos"],
     DPI=DPI,
     CMAP=CMAP,
-    numthreads=numthreads,
+    numThreads=numThreads,
     MaxSubset=subset,
     tailsLength=Ntails,
     trioTitleBool=trioTitleBool,

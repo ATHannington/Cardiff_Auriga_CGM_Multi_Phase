@@ -19,21 +19,21 @@ haloes = [
 snapMin = 200
 snapMax = 251
 
-print("----------------------------")
-print("|                          |")
-print("| !!!   Safety Check   !!! |")
-print("| Halo data not low res DM |")
-print("| contaminated within R_vir|")
-print(f"|    Snap Numbers:         |")
-print(f"|         {int(snapMin)} - {int(snapMax)}        |")
-print("|                          |")
-print("----------------------------")
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)} - {int(snapMax)}        |")
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
 r_vir = 200  # 250
-print("")
+print\((.*?),flush=True\)
 truthy = []
 for halo in haloes:
     loadPath = baseLoadPath + f"halo_{halo}" + "/output/"
-    print(f"Starting halo {halo}")
+    print\((.*?),flush=True\)
     truthyInner = []
     for snapNumber in range(snapMin, snapMax + 1, 1):
         snap_subfind = load_subfind(snapNumber, dir=loadPath)
@@ -60,20 +60,20 @@ for halo in haloes:
         )
 
     halotest = np.all(truthyInner)
-    print("---")
-    print(f"Halo {halo} Safe? = {halotest}")
-    print("---")
-    print("")
+    print\((.*?),flush=True\)
+    print\((.*?),flush=True\)
+    print\((.*?),flush=True\)
+    print\((.*?),flush=True\)
     truthy.append(halotest)
 
 alltest = np.all(truthy)
-print("***")
-print(f"All Haloes Safe? = {alltest}")
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
 if alltest == False:
     locbadHaloes = np.where(np.array(truthy) == False)[0]
     badHaloes = np.array(haloes)[locbadHaloes]
-    print(f"WARNING! Haloes {badHaloes} are contaminated!")
+    print\((.*?),flush=True\)
 else:
-    print("Phew! All haloes are safe.")
-print("***")
-print("Done! :)")
+    print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)")

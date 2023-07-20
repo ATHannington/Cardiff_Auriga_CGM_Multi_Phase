@@ -97,7 +97,7 @@ def snap_analysis(
     #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     # )
 
-    snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
+    snapGas.calc_sf_indizes(snap_subfind)
     if rotation_matrix is None:
         rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
     else:
@@ -117,13 +117,13 @@ def snap_analysis(
     snapGas.mass *= 1e10  # [Msol]
     snapGas.hrgm *= 1e10  # [Msol]
 
-    # Select only gas in High Res Zoom Region
-    snapGas = high_res_only_gas_select(snapGas, snapNumber)
+    # # # Select only gas in High Res Zoom Region
+    # # snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
-    boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(
-        snapGas.data["type"] == 0)[0]]), axis=None)/1e3  # [Mpc]
+    # # boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(
+    # #     snapGas.data["type"] == 0)[0]]), axis=None)/1e3  # [Mpc]
 
-    snapGas.boxsize = boxMaxGas
+    # # snapGas.boxsize = boxMaxGas
 
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
@@ -145,7 +145,7 @@ def snap_analysis(
     # DM (type==1) data
     # ==================#
 
-    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+    whereStarsGas = np.where(np.isin(snapGas.type, np.asarray([0, 4])) == True)[0]
     whereDM = np.where(snapGas.type == 1)[0]
     whereGas = np.where(snapGas.type == 0)[0]
     whereStars = np.where(snapGas.type == 4)[0]
@@ -188,9 +188,6 @@ def snap_analysis(
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
 
-    # Select only gas in High Res Zoom Region
-    snapGas = high_res_only_gas_select_tracers(snapGas, snapNumber)
-
     # Find Halo=HaloID data for only selection snapshot. This ensures the
     # selected tracers are originally in the Halo, but allows for tracers
     # to leave (outflow) or move inwards (inflow) from Halo.
@@ -200,7 +197,7 @@ def snap_analysis(
 
     if snapNumber == int(TRACERSPARAMS["selectSnap"]):
         snapGas = halo_only_gas_select(
-            snapGas, snap_subfind, HaloID, snapNumber)
+            snapGas, HaloID, snapNumber)
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
@@ -402,7 +399,7 @@ def tracer_selection_snap_analysis(
     #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     # )
 
-    snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
+    snapGas.calc_sf_indizes(snap_subfind)
     rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
 
     # --------------------------#
@@ -419,10 +416,10 @@ def tracer_selection_snap_analysis(
     # Select only gas in High Res Zoom Region
     snapGas = high_res_only_gas_select(snapGas, snapNumber)
 
-    boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(
-        snapGas.data["type"] == 0)[0]]), axis=None)/1e3  # [Mpc]
+    # # boxMaxGas = np.nanmax(np.abs(snapGas.data["pos"][np.where(
+    # #     snapGas.data["type"] == 0)[0]]), axis=None)/1e3  # [Mpc]
 
-    snapGas.boxsize = boxMaxGas
+    # # snapGas.boxsize = boxMaxGas
 
     # Calculate New Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
@@ -438,7 +435,7 @@ def tracer_selection_snap_analysis(
         DataSavepath=DataSavepath,
     )
 
-    whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+    whereStarsGas = np.where(np.isin(snapGas.type, np.asarray([0, 4])) == True)[0]
     whereDM = np.where(snapGas.type == 1)[0]
     whereGas = np.where(snapGas.type == 0)[0]
     whereStars = np.where(snapGas.type == 4)[0]
@@ -481,15 +478,13 @@ def tracer_selection_snap_analysis(
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
 
-    snapGas = high_res_only_gas_select_tracers(snapGas, snapNumber)
-
     # Assign subhalo and halos
     # snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=HaloID)
 
-    ### Exclude values outside halo 0 ###
+    ### Exclude values in halos other than halo 0, but include unbound and IGM gas ###
     if loadonlyhalo is True:
         snapGas = halo_only_gas_select(
-            snapGas, snap_subfind, HaloID, snapNumber)
+            snapGas, HaloID, snapNumber)
 
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
@@ -631,7 +626,7 @@ def tracer_selection_snap_analysis(
 #
 #     if (snapNumber == int(TRACERSPARAMS['selectSnap'])):
 #
-#         snapGas = halo_only_gas_select(snapGas,snap_subfind,HaloID,snapNumber)
+#         snapGas = halo_only_gas_select(snapGas,HaloID,snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
 #     snapGas = pad_non_entries(snapGas,snapNumber)
@@ -747,7 +742,7 @@ def tracer_selection_snap_analysis(
 #     ### Exclude values outside halo 0 ###
 #     if (loadonlyhalo is True):
 #
-#         snapGas = halo_only_gas_select(snapGas,snap_subfind,HaloID,snapNumber)
+#         snapGas = halo_only_gas_select(snapGas,HaloID,snapNumber)
 #
 #     #Pad stars and gas data with Nones so that all keys have values of same first dimension shape
 #     snapGas = pad_non_entries(snapGas,snapNumber)
@@ -903,9 +898,6 @@ def get_cells_from_tracers(
     # Select Cell IDs which are in Parents
     #   NOTE:   This selection causes trouble. Selecting only Halo=HaloID means some Parents now aren't associated with Halo
     #           This means some parents and tracers need to be dropped as they are no longer in desired halo.
-    # CellsIndices = np.where(np.isin(snapGas.id,Parents))
-    # CellIDs = snapGas.id[CellsIndices]
-
     # So, from above issue: Select Parents and Tracers which are associated with Desired Halo ONLY!
     ParentsIndices = np.where(np.isin(Parents, snapGas.id))
     Parents = Parents[ParentsIndices]
@@ -926,7 +918,7 @@ def get_cells_from_tracers(
     # CellIndex = np.array(list(map(int, CellIndex)))
     #
     # #Grab the Cell IDs for cells with Tracers,
-    # #   Using CelolIndex here will return duplicate entries s.t. every
+    # #   Using CellIndex here will return duplicate entries s.t. every
     # #   there is a cell for every tracer including duplicates
     # CellIDs = CellIDs[CellIndex]
     # #Grabe The Indices of the snapGas.id's  with parents in. Using
@@ -1094,50 +1086,50 @@ def save_cells_data(
     return Cells
 
 
-def t3000_save_cells_data(snapGas, snapNumber, saveParams, saveTracersOnly):
-    print(f"[@{snapNumber}]: Saving Cell Data!")
+# def t3000_save_cells_data(snapGas, snapNumber, saveParams, saveTracersOnly):
+#     print(f"[@{snapNumber}]: Saving Cell Data!")
 
-    Ncells = len(snapGas.data["id"])
+#     Ncells = len(snapGas.data["id"])
 
-    print(f"[@{snapNumber}]: Ncells = {int(Ncells)}")
+#     print(f"[@{snapNumber}]: Ncells = {int(Ncells)}")
 
-    # Select the data for Cells that meet Cond which contain tracers
-    #   Does this by creating new dict from old data.
-    #       Only selects values at index where Cell meets cond and contains tracers
-    Cells = {}
-    for key in snapGas.data.keys():
-        if key in saveParams:
-            Cells.update({key: snapGas.data[key]})
+#     # Select the data for Cells that meet Cond which contain tracers
+#     #   Does this by creating new dict from old data.
+#     #       Only selects values at index where Cell meets cond and contains tracers
+#     Cells = {}
+#     for key in snapGas.data.keys():
+#         if key in saveParams:
+#             Cells.update({key: snapGas.data[key]})
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-    #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#     #   Now perform save of parameters not tracked in stats (saveTracersOnly params)#
+#     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-    # Redshift
-    redshift = snapGas.redshift  # z
-    aConst = 1.0 / (1.0 + redshift)  # [/]
+#     # Redshift
+#     redshift = snapGas.redshift  # z
+#     aConst = 1.0 / (1.0 + redshift)  # [/]
 
-    # Get lookback time in Gyrs
-    # [0] to remove from numpy array for purposes of plot title
-    lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
-        0
-    ]  # [Gyrs]
+#     # Get lookback time in Gyrs
+#     # [0] to remove from numpy array for purposes of plot title
+#     lookback = snapGas.cosmology_get_lookback_time_from_a(np.array([aConst]))[
+#         0
+#     ]  # [Gyrs]
 
-    for TracerSaveParameter in saveTracersOnly:
-        if TracerSaveParameter == "Lookback":
-            Cells.update({"Lookback": np.array([lookback])})
-        elif TracerSaveParameter == "Ncells":
-            Cells.update({"Ncells": np.array([Ncells])})
-        elif TracerSaveParameter == "Snap":
-            Cells.update({"Snap": np.array([snapNumber])})
-        elif TracerSaveParameter == "id":
-            # Save Cell IDs
-            Cells.update({"id": snapGas.data["id"]})
-        else:
-            Cells.update(
-                {f"{TracerSaveParameter}": snapGas.data[TracerSaveParameter]})
+#     for TracerSaveParameter in saveTracersOnly:
+#         if TracerSaveParameter == "Lookback":
+#             Cells.update({"Lookback": np.array([lookback])})
+#         elif TracerSaveParameter == "Ncells":
+#             Cells.update({"Ncells": np.array([Ncells])})
+#         elif TracerSaveParameter == "Snap":
+#             Cells.update({"Snap": np.array([snapNumber])})
+#         elif TracerSaveParameter == "id":
+#             # Save Cell IDs
+#             Cells.update({"id": snapGas.data["id"]})
+#         else:
+#             Cells.update(
+#                 {f"{TracerSaveParameter}": snapGas.data[TracerSaveParameter]})
 
-    return Cells
+#     return Cells
 
 
 # ------------------------------------------------------------------------------#
@@ -1309,21 +1301,43 @@ def calculate_tracked_parameters(
         / (8.0 * pi * c.G)
     )
 
-    # Mean weight [amu]
+    # Mean weight
     meanweight = np.sum(snapGas.gmet[whereGas, 0:9], axis=1) / (
         np.sum(snapGas.gmet[whereGas, 0:9] / elements_mass[0:9], axis=1)
         + snapGas.ne[whereGas] * snapGas.gmet[whereGas, 0]
     )
 
-    # 3./2. N KB
+    # 3./2. ndens KB
     Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
+    # # Tfacfvdv = (
+    # #     1.0
+    # #     / meanweight
+    # #     * (1.0 / (5.0 / 3.0 - 1.0))
+    # #     * c.KB
+    # #     / c.amu
+    # #     * 1e10
+    # #     * c.msol
+    # #     / 1.989e53
+    # # )
+    # # Tfacfvfv = Tfac/1e10
 
     snapGas.data["dens"] = (
         (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
     )  # [g cm^-3]
     gasX = snapGas.gmet[whereGas, 0]
 
-    # Temperature = U / (3/2 * N KB) [K]
+    # # Ideal Gas PV = ndens KB T
+    # Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
+    # Tfac = (1.0 / (5.0 / 3.0 - 1.0)) * c.KB / meanweight * c.amu
+    
+    # # 'InternalEnergy':'u', <-- per gadget_snap.py
+    # # 1e10 accounts for 10^10 Msol baked into the energy via definition of a Joule or erg
+    #
+    # # Temperature = U / (3/2 * ndens KB) [K]
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / ( (1.0 / (5.0 / 3.0 - 1.0)) * c.KB / meanweight * c.amu ) # K
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10 * meanweight * c.amu) * (5.0 / 3.0 - 1.0) / c.KB # K
+
     if np.any(
         np.isin(
             np.array(
@@ -1356,14 +1370,15 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["n_HI", "n_HI_col"]),
+            np.array(["n_HI", "n_HI_col", "nh"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
         snapGas.data["n_HI"] = snapGas.data["n_H"][whereGas]*snapGas.data["nh"][whereGas]
-
+        snapGas.data["nh"] = snapGas.data["nh"][whereGas]
         if genLogParameters:
             logParameters.append("n_HI")
+            logParameters.append("nh")
 
     if np.any(
         np.isin(np.array(["rho_rhomean", "Tdens"]), np.array(paramsOfInterest))
@@ -1481,7 +1496,7 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["ndens", "P_thermal","P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_CR", "PCR_Pthermal"]),
+            np.array(["ndens", "P_thermal","P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_CR", "PCR_Pthermal", "PCR_Pmagnetic"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
@@ -1496,29 +1511,46 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
-        # Thermal Pressure : P/k_B = n T [ # K cm^-3]
-        snapGas.data["P_thermal"] = snapGas.data["ndens"] * snapGas.T
+        # Thermal Pressure : P = KB n T [K cm^-3]
+        snapGas.data["P_thermal"] = snapGas.data["ndens"][whereGas] * snapGas.T * c.KB
+            # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10 * meanweight * c.amu) * (5.0 / 3.0 - 1.0) / c.KB # K
+
         if genLogParameters:
             logParameters.append("P_thermal")
     if np.any(
         np.isin(
-            np.array(["P_magnetic", "Pthermal_Pmagnetic", "P_tot"]),
+            np.array(["P_magnetic", "Pthermal_Pmagnetic", "PCR_Pmagnetic", "P_tot"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
-        # Magnetic Pressure [P/k_B K cm^-3]
+        # Magnetic Pressure [K cm^-3]
         snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
-            8.0 * pi * c.KB
+            8.0 * pi #* c.KB
         )
         if genLogParameters:
             logParameters.append("P_magnetic")
+
+    if np.any(np.isin(np.array(["P_kinetic","P_tot"]), np.array(paramsOfInterest))) | (
+        len(paramsOfInterest) == 0
+    ):
+        # Kinetic "Pressure" [K cm^-3]
+        snapGas.data["P_kinetic"] = (
+            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
+            * 1e10
+            * c.msol
+            * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
+        )
+        if genLogParameters:
+            logParameters.append("P_kinetic")
+
 
     if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
         snapGas.data["P_tot"] = (
             snapGas.data["P_thermal"][whereGas] +
-            snapGas.data["P_magnetic"][whereGas]
+            snapGas.data["P_magnetic"][whereGas] +
+            snapGas.data["P_kinetic"][whereGas]
         )
         if genLogParameters:
             logParameters.append("P_tot")
@@ -1532,20 +1564,6 @@ def calculate_tracked_parameters(
         )
         if genLogParameters:
             logParameters.append("Pthermal_Pmagnetic")
-
-    if np.any(np.isin(np.array(["P_kinetic"]), np.array(paramsOfInterest))) | (
-        len(paramsOfInterest) == 0
-    ):
-        # Kinetic "Pressure" [P/k_B K cm^-3]
-        snapGas.data["P_kinetic"] = (
-            (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
-            * 1e10
-            * c.msol
-            * (1.0 / c.KB)
-            * (np.linalg.norm(snapGas.data["vel"][whereGas] * 1e5, axis=1)) ** 2
-        )
-        if genLogParameters:
-            logParameters.append("P_kinetic")
 
     if np.any(np.isin(np.array(["csound", "tcross","cool_length"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1574,7 +1592,7 @@ def calculate_tracked_parameters(
         len(paramsOfInterest) == 0
     ):
         # [((km s^-1) / (KpcTokm) = kpc s^-1 )*(Gyr*GyrToSeconds = s ) = kpc]
-        snapGas.data["cool_length"] = (snapGas.data["csound"]/KpcTokm)*(snapGas.data["tcool"]*GyrToSeconds)
+        snapGas.data["cool_length"] = (snapGas.data["csound"][whereGas]/KpcTokm)*(snapGas.data["tcool"][whereGas]*GyrToSeconds)
 
         if genLogParameters:
             logParameters.append("cool_length")
@@ -1661,43 +1679,98 @@ def calculate_tracked_parameters(
         )
         snapGas.data["Grad_bfld"] = np.linalg.norm(
             snapGas.data["Grad_bfld"], axis=1)
-    # Cosmic Ray Pressure
-    # gamm_c = 4./3.
-    # P_CR / kb= (gamm_c - 1)^-1 n T
-    #
-    # # 3./2. N KB
+        
+    # # Ideal Gas PV = ndens KB T
     # Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
+    # Tfac = (1.0 / (5.0 / 3.0 - 1.0)) * c.KB / meanweight * c.amu
+    
+    # # 'InternalEnergy':'u', <-- per gadget_snap.py
+    # # 1e10 accounts for 10^10 Msol baked into the energy via definition of a Joule or erg
     #
-    #
-    # # Temperature = U / (3/2 * N KB) [K]
+    # # Temperature = U / (3/2 * ndens KB) [K]
     # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / ( (1.0 / (5.0 / 3.0 - 1.0)) * c.KB / meanweight * c.amu ) # K
+    # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10 * meanweight * c.amu) * (5.0 / 3.0 - 1.0) / c.KB # K
+    #
+    #
+    # # Cosmic Ray Pressure
+    # # 'CosmicRaySpecificEnergy':'cren', <-- per gadget_snap.py
+    # #  Thus energy per unit mass! <-- This is confirmed by dimensional analysis of P_thermal equations and
+    # # assumption that u and cren will be in the same units that are independent of cell mass
+    # gamm_c = 4./3.
+    #
+    
     try:
         if np.any(
             np.isin(
-                np.array(["P_CR", "PCR_Pthermal", "Grad_P_CR", "gah"]),
+                np.array(["P_CR", "PCR_Pthermal", "Grad_P_CR", "gah", "e_CR", "P_tot","PCR_Pmagnetic"]),
                 np.array(paramsOfInterest),
             )
         ) | (len(paramsOfInterest) == 0):
+            # erg cm^-3
             snapGas.data["P_CR"] = (
-                snapGas.cren[whereGas] * 1e10 * snapGas.data["ndens"]
-            ) / ((((4.0 / 3.0 - 1.0) ** -1) * c.KB) / (meanweight * c.amu))
+                (4.0/3.0 - 1.0) * snapGas.data["cren"][whereGas] * (1e10 * meanweight * c.amu) * snapGas.data["ndens"][whereGas]
+            )
             if genLogParameters:
                 logParameters.append("P_CR")
 
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+    
+
+    try:
+        if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (
+            len(paramsOfInterest) == 0
+        ):
+            snapGas.data["P_tot"] = (
+                snapGas.data["P_tot"][whereGas] + snapGas.data["P_CR"][whereGas]
+            )
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+
+    try:
+        if np.any(
+            np.isin(
+                np.array(["e_CR"]),
+                np.array(paramsOfInterest),
+            )
+        ) | (len(paramsOfInterest) == 0):
+            snapGas.data["e_CR"] = (
+                snapGas.data["P_CR"][whereGas]/c.ev2erg
+            )
+            if genLogParameters:
+                logParameters.append("e_CR")
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Warning! Param not found: e_CR {str(e)}")
+        
+
     try:
         if np.any(np.isin(np.array(["PCR_Pthermal"]), np.array(paramsOfInterest))) | (
             len(paramsOfInterest) == 0
         ):
             snapGas.data["PCR_Pthermal"] = (
-                snapGas.data["P_CR"] / snapGas.data["P_thermal"]
+                snapGas.data["P_CR"][whereGas] / snapGas.data["P_thermal"][whereGas]
             )
             if genLogParameters:
                 logParameters.append("PCR_Pthermal")
 
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: Warning! Param not found: PCR_Pthermal {str(e)}")
+
+    try:
+        if np.any(np.isin(np.array(["PCR_Pmagnetic"]), np.array(paramsOfInterest))) | (
+            len(paramsOfInterest) == 0
+        ):
+            snapGas.data["PCR_Pmagnetic"] = (
+                snapGas.data["P_CR"][whereGas] / snapGas.data["P_magnetic"][whereGas]
+            )
+            if genLogParameters:
+                logParameters.append("PCR_Pmagnetic")
+
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Warning! Param not found: PCR_Pmagnetic {str(e)}")
+
+
 
     try:
         if np.any(
@@ -1744,7 +1817,7 @@ def calculate_tracked_parameters(
                     snapGas.data["valf"][whereGas],
                     snapGas.data["Grad_P_CR"][whereGas] * c.KB,
                 )
-                * snapGas.data["vol"]
+                * snapGas.data["vol"][whereGas]
                 * (c.parsec * 1e3) ** 3
             )
             if genLogParameters:
@@ -2283,15 +2356,26 @@ def calculate_gradient_of_parameter(
 
 
 # ------------------------------------------------------------------------------#
-def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
+def halo_only_gas_select(snapGas, Halo=0, snapNumber=None):
     """
-    Select only the snapGas entries associated with Sub Halo number Halo
-    and unbound (-1).
+    Select only the snapGas entries associated with SubHalo number 'Halo'
+    FoF halo number 'Halo', and unbound gas -1 in this FoF halo but not 
+    IGM gas FoF halo and SubHalo == -1.
     """
-    print(f"[@{snapNumber}]: Select only Halo {Halo} and 'unbound' Gas!")
+    print(f"[@{snapNumber}]: Select only SubHalo {Halo} and 'unbound' Gas!")
 
-    HaloList = [float(Halo), -1.0]
-    whereHalo = np.where(np.isin(snapGas.data["subhalo"], HaloList))[0]
+    HaloList = np.asarray([int(Halo), -1])
+    whereHalo = np.where(np.isin(snapGas.data["subhalo"].astype('int64'), HaloList))[0]
+
+    # Take only data from above HaloID/
+    for key, value in snapGas.data.items():
+        if value is not None:
+            snapGas.data[key] = value[whereHalo]
+
+    print(f"[@{snapNumber}]: Select only FoF {Halo} Gas!")
+
+    HaloList = np.asarray([int(Halo)])
+    whereHalo = np.where(np.isin(snapGas.data["halo"].astype('int64'), HaloList))[0]
 
     # Take only data from above HaloID/
     for key, value in snapGas.data.items():
@@ -2302,42 +2386,18 @@ def halo_only_gas_select(snapGas, snap_subfind, Halo=0, snapNumber=None):
 
 
 # ------------------------------------------------------------------------------#
-# ------------------------------------------------------------------------------#
-def high_res_only_gas_select_tracers(snapGas, snapNumber):
-    """
-    Grab only snapGas entries for gas where high res gas mass (hrgm)
-    is greater than 90% of the cell mass. This defines the cosmological
-    Zoom region.
-    """
-    print(f"[@{snapNumber}]: Select High Res Gas Only!")
-
-    whereGas = np.where(snapGas.data["type"] == 0)[0]
-    whereOthers = np.where(snapGas.data["type"] != 0)[0]
-
-    whereHighRes = np.where(
-        snapGas.data["hrgm"][whereGas] >= 0.90 * snapGas.data["mass"][whereGas]
-    )[0]
-
-    selected = np.concatenate((whereHighRes, whereOthers), axis=0)
-
-    for key, value in snapGas.data.items():
-        if value is not None:
-            snapGas.data[key] = value[selected]
-
-    return snapGas
-
 
 def high_res_only_gas_select(snapGas, snapNumber):
     """
-    Grab only snapGas entries for gas where high res gas mass (hrgm)
-    is greater than 90% of the cell mass. This defines the cosmological
+    Grab only snapGas entries for gas where 90% of cell mass is less than
+    of the high res gas mass (hrgm). This defines the cosmological
     Zoom region.
     """
     print(f"[@{snapNumber}]: Select High Res Gas Only!")
 
     whereGas = np.where(snapGas.data["type"] == 0)[0]
     whereLowRes = np.where(
-        snapGas.data["hrgm"][whereGas] < 0.90 * snapGas.data["mass"][whereGas]
+        0.90 * snapGas.data["mass"][whereGas] > snapGas.data["hrgm"][whereGas]
     )[0]
 
     if whereLowRes.shape[0] > 0:
@@ -2350,158 +2410,158 @@ def high_res_only_gas_select(snapGas, snapNumber):
     return snapGas
 
 
-# ------------------------------------------------------------------------------#
-def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
-    """
-    Assign a unique ID value to each SubFind SubHalo --> subhalo
-    Assign a unique ID value to each FoF Halo --> halo
-    Assign -1 to subhalo for unbound matter
-    Assign NaN to unclassified (no halo) gas and stars
+# # ------------------------------------------------------------------------------#
+# def halo_id_finder(snapGas, snap_subfind, snapNumber, OnlyHalo=None):
+#     """
+#     Assign a unique ID value to each SubFind SubHalo --> subhalo
+#     Assign a unique ID value to each FoF Halo --> halo
+#     Assign -1 to subhalo for unbound matter
+#     Assign NaN to unclassified (no halo) gas and stars
 
-    Inputs: snapGas, snap_subfind
-    OutPuts: snapGas
-    """
+#     Inputs: snapGas, snap_subfind
+#     OutPuts: snapGas
+#     """
 
-    print(f"[@{snapNumber}]: HaloID Finder!")
+#     print(f"[@{snapNumber}]: HaloID Finder!")
 
-    types = np.unique(snapGas.data["type"])
+#     types = np.unique(snapGas.data["type"])
 
-    # Make a pre-computed list for these where type = 0 or 4
-    #   This adds a speed advantage to the rest of this function =)
-    whereTypeList = []
-    for tp in types:
-        whereType = np.where(snapGas.data["type"] == tp)
-        whereTypeList.append(whereType)
+#     # Make a pre-computed list for these where type = 0 or 4
+#     #   This adds a speed advantage to the rest of this function =)
+#     whereTypeList = []
+#     for tp in types:
+#         whereType = np.where(snapGas.data["type"] == tp)
+#         whereTypeList.append(whereType)
 
-    # Create some blank ID arrays, and set NaN to all values.
+#     # Create some blank ID arrays, and set NaN to all values.
 
-    snapGas.data["halo"] = np.full(
-        shape=np.shape(snapGas.data["type"]), fill_value=np.nan
-    )
-    snapGas.data["subhalo"] = np.full(
-        shape=np.shape(snapGas.data["type"]), fill_value=np.nan
-    )
+#     snapGas.data["halo"] = np.full(
+#         shape=np.shape(snapGas.data["type"]), fill_value=np.nan
+#     )
+#     snapGas.data["subhalo"] = np.full(
+#         shape=np.shape(snapGas.data["type"]), fill_value=np.nan
+#     )
 
-    fnsh = snap_subfind.data["fnsh"]
-    flty = snap_subfind.data["flty"]
-    slty = snap_subfind.data["slty"]
+#     fnsh = snap_subfind.data["fnsh"]
+#     flty = snap_subfind.data["flty"]
+#     slty = snap_subfind.data["slty"]
 
-    # Select only Halo == OnlyHalo
-    if OnlyHalo is not None:
-        fnsh = np.array(fnsh[OnlyHalo])
-        flty = np.array(flty[OnlyHalo, :])
+#     # Select only Halo == OnlyHalo
+#     if OnlyHalo is not None:
+#         fnsh = np.array(fnsh[OnlyHalo])
+#         flty = np.array(flty[OnlyHalo, :])
 
-    cumsumfnsh = np.cumsum(fnsh)
-    cumsumflty = np.cumsum(flty, axis=0)
-    cumsumslty = np.cumsum(slty, axis=0)
+#     cumsumfnsh = np.cumsum(fnsh)
+#     cumsumflty = np.cumsum(flty, axis=0)
+#     cumsumslty = np.cumsum(slty, axis=0)
 
-    # Loop over particle types
-    for (ii, tp) in enumerate(types):
-        # print(f"Haloes for particle type {tp}")
-        printpercent = 5.0
-        printcount = 0.0
-        subhalo = 0
-        fofhalo = 0
+#     # Loop over particle types
+#     for (ii, tp) in enumerate(types):
+#         # print(f"Haloes for particle type {tp}")
+#         printpercent = 5.0
+#         printcount = 0.0
+#         subhalo = 0
+#         fofhalo = 0
 
-        whereType = whereTypeList[ii]
+#         whereType = whereTypeList[ii]
 
-        # if cumsumflty is 2D (has more than one halo) make iterator full list
-        #   else make iterator single halo
-        if np.shape(np.shape(cumsumflty))[0] == 1:
-            cumsumfltyIterator = np.array([cumsumflty[tp]])
-        else:
-            cumsumfltyIterator = cumsumflty[:, tp]
+#         # if cumsumflty is 2D (has more than one halo) make iterator full list
+#         #   else make iterator single halo
+#         if np.shape(np.shape(cumsumflty))[0] == 1:
+#             cumsumfltyIterator = np.array([cumsumflty[tp]])
+#         else:
+#             cumsumfltyIterator = cumsumflty[:, tp]
 
-        # Loop over FoF Haloes as identified by an entry in flty
-        for (fofhalo, csflty) in enumerate(cumsumfltyIterator):
+#         # Loop over FoF Haloes as identified by an entry in flty
+#         for (fofhalo, csflty) in enumerate(cumsumfltyIterator):
 
-            percentage = float(fofhalo) / \
-                float(len(cumsumfltyIterator)) * 100.0
-            if percentage >= printcount:
-                # print(f"{percentage:0.02f}% Halo IDs assigned!")
-                printcount += printpercent
+#             percentage = float(fofhalo) / \
+#                 float(len(cumsumfltyIterator)) * 100.0
+#             if percentage >= printcount:
+#                 # print(f"{percentage:0.02f}% Halo IDs assigned!")
+#                 printcount += printpercent
 
-            if fofhalo == 0:
-                # Start from beginning of data for fofhalo == 0
-                nshLO = 0
-                nshUP = cumsumfnsh[fofhalo]
-                # No offset from flty at start
-                lowest = 0
-            else:
-                # Grab entries from end of last FoFhalo to end of new FoFhalo
-                nshLO = cumsumfnsh[fofhalo - 1]
-                nshUP = cumsumfnsh[fofhalo]
-                # Offset the indices of the data to be attributed to the new FoFhalo by the end of the last FoFhalo
-                lowest = cumsumflty[fofhalo - 1, tp]
+#             if fofhalo == 0:
+#                 # Start from beginning of data for fofhalo == 0
+#                 nshLO = 0
+#                 nshUP = cumsumfnsh[fofhalo]
+#                 # No offset from flty at start
+#                 lowest = 0
+#             else:
+#                 # Grab entries from end of last FoFhalo to end of new FoFhalo
+#                 nshLO = cumsumfnsh[fofhalo - 1]
+#                 nshUP = cumsumfnsh[fofhalo]
+#                 # Offset the indices of the data to be attributed to the new FoFhalo by the end of the last FoFhalo
+#                 lowest = cumsumflty[fofhalo - 1, tp]
 
-            # Find the cumulative sum (and thus index ranges) of the subhaloes for THIS FoFhalo ONLY!
-            if nshLO == nshUP:
-                cslty = snap_subfind.data["slty"][nshLO, tp]
-            else:
-                cslty = np.cumsum(
-                    snap_subfind.data["slty"][nshLO:nshUP, tp], axis=0)
+#             # Find the cumulative sum (and thus index ranges) of the subhaloes for THIS FoFhalo ONLY!
+#             if nshLO == nshUP:
+#                 cslty = snap_subfind.data["slty"][nshLO, tp]
+#             else:
+#                 cslty = np.cumsum(
+#                     snap_subfind.data["slty"][nshLO:nshUP, tp], axis=0)
 
-            # Skip where subfind data goes beyond what we have in memory
-            maxWhereType = np.nanmax(whereType[0])
-            if (
-                (lowest > maxWhereType)
-                | (np.nanmax(cslty) > maxWhereType)
-                | (csflty > maxWhereType)
-            ):
-                continue
+#             # Skip where subfind data goes beyond what we have in memory
+#             maxWhereType = np.nanmax(whereType[0])
+#             if (
+#                 (lowest > maxWhereType)
+#                 | (np.nanmax(cslty) > maxWhereType)
+#                 | (csflty > maxWhereType)
+#             ):
+#                 continue
 
-            # Start the data selection from end of previous FoFHalo and continue lower bound to last slty entry
-            lower = np.append(np.array(lowest), cslty + lowest)
-            # Start upper bound from first slty entry (+ offset) to end on cumulative flty for "ubound" material
-            upper = np.append(cslty + lowest, csflty)
-            # print(f"lower[0] {lower[0]} : lower[-1] {lower[-1]}")
-            # print(f"upper[0] {upper[0]} : upper[-1] {upper[-1]}")
+#             # Start the data selection from end of previous FoFHalo and continue lower bound to last slty entry
+#             lower = np.append(np.array(lowest), cslty + lowest)
+#             # Start upper bound from first slty entry (+ offset) to end on cumulative flty for "ubound" material
+#             upper = np.append(cslty + lowest, csflty)
+#             # print(f"lower[0] {lower[0]} : lower[-1] {lower[-1]}")
+#             # print(f"upper[0] {upper[0]} : upper[-1] {upper[-1]}")
 
-            # Some Sanity checks. There should be 1 index pair for each subhalo, +1 for upper and lower bounds...
-            assert len(lower) == (
-                nshUP + 1 - nshLO
-            ), "[@halo_id_finder]: Lower selection list has fewer entries than number of subhaloes!"
-            assert len(upper) == (
-                nshUP + 1 - nshLO
-            ), "[@halo_id_finder]: Upper selection list has fewer entries than number of subhaloes!"
+#             # Some Sanity checks. There should be 1 index pair for each subhalo, +1 for upper and lower bounds...
+#             assert len(lower) == (
+#                 nshUP + 1 - nshLO
+#             ), "[@halo_id_finder]: Lower selection list has fewer entries than number of subhaloes!"
+#             assert len(upper) == (
+#                 nshUP + 1 - nshLO
+#             ), "[@halo_id_finder]: Upper selection list has fewer entries than number of subhaloes!"
 
-            # Loop over the index pairs, and assign all bound material (that is, all material apart from the end of slty to flty final pair)
-            #  a subhalo number
-            #       In the case where only 1 index is returned we opt to assign this single gas cell its own subhalo number
-            for (lo, up) in zip(lower[:-1], upper[:-1]):
-                # Skip where subfind data goes beyond what we have in memory
+#             # Loop over the index pairs, and assign all bound material (that is, all material apart from the end of slty to flty final pair)
+#             #  a subhalo number
+#             #       In the case where only 1 index is returned we opt to assign this single gas cell its own subhalo number
+#             for (lo, up) in zip(lower[:-1], upper[:-1]):
+#                 # Skip where subfind data goes beyond what we have in memory
 
-                if (lo > maxWhereType) | (up > maxWhereType):
-                    continue
-                # print(f"lo {lo} : up {up} --> subhalo {subhalo}")
+#                 if (lo > maxWhereType) | (up > maxWhereType):
+#                     continue
+#                 # print(f"lo {lo} : up {up} --> subhalo {subhalo}")
 
-                if lo == up:
-                    whereSelectSH = whereType[0][lo]
-                else:
-                    # This notation allows us to select the entries for the subhalo, from the particle type tp list.
-                    #   Double slicing [whereType][lo:up] fails as it modifies the outer copy but doesn't alter original
-                    whereSelectSH = whereType[0][lo:up]
-                snapGas.data["subhalo"][whereSelectSH] = subhalo
-                subhalo += 1
+#                 if lo == up:
+#                     whereSelectSH = whereType[0][lo]
+#                 else:
+#                     # This notation allows us to select the entries for the subhalo, from the particle type tp list.
+#                     #   Double slicing [whereType][lo:up] fails as it modifies the outer copy but doesn't alter original
+#                     whereSelectSH = whereType[0][lo:up]
+#                 snapGas.data["subhalo"][whereSelectSH] = subhalo
+#                 subhalo += 1
 
-            # Assign the whole csflty range a FoFhalo number
-            if lower[0] == upper[-1]:
-                whereSelectSHFoF = whereType[0][lower[0]]
-            else:
-                whereSelectSHFoF = whereType[0][lower[0]: upper[-1]]
+#             # Assign the whole csflty range a FoFhalo number
+#             if lower[0] == upper[-1]:
+#                 whereSelectSHFoF = whereType[0][lower[0]]
+#             else:
+#                 whereSelectSHFoF = whereType[0][lower[0]: upper[-1]]
 
-            snapGas.data["halo"][whereSelectSHFoF] = fofhalo
+#             snapGas.data["halo"][whereSelectSHFoF] = fofhalo
 
-            # Provided there exists more than one entry, assign the difference between slty and flty indices a "-1"
-            #   This will effectively discriminate between unbound gas (-1) and unassigned gas (NaN).
-            if lower[-1] == upper[-1]:
-                continue
-            else:
-                whereSelectSHunassigned = whereType[0][lower[-1]: upper[-1]]
+#             # Provided there exists more than one entry, assign the difference between slty and flty indices a "-1"
+#             #   This will effectively discriminate between unbound gas (-1) and unassigned gas (NaN).
+#             if lower[-1] == upper[-1]:
+#                 continue
+#             else:
+#                 whereSelectSHunbound = whereType[0][lower[-1]: upper[-1]]
 
-            snapGas.data["subhalo"][whereSelectSHunassigned] = -1
+#             snapGas.data["subhalo"][whereSelectSHunbound] = -1
 
-    return snapGas
+#     return snapGas
 
 
 # ------------------------------------------------------------------------------#
@@ -2586,7 +2646,7 @@ def load_tracers_parameters(TracersParamsPath):
     # Generate halo directory
     savePath = TRACERSPARAMS["savepath"]
     tmp = "/"
-    for savePathChunk in savePath.split("/")[1:-1]:
+    for savePathChunk in savePath.split("/")[:-1]:
         tmp += savePathChunk + "/"
         try:
             os.mkdir(tmp)
@@ -2637,233 +2697,233 @@ def load_haloes_selected(HaloPathBase, SelectedHaloesPath):
 # ------------------------------------------------------------------------------
 
 
-def get_individual_cell_from_tracer_single_param(
-    Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
-):
-    """
-    Function to go from Tracers, Parents, CellIDs, Data
-    to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
-    [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
-    Selected Tracers is not in the CellIDs.
-    This should return a consistently ordered data set where we always Have
-    the data in the order of SelectedTracers and NaN's where that tracer
-    has been lost. This allows for a look over the individual tracer's
-    behaviour over time.
+# def get_individual_cell_from_tracer_single_param(
+#     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+# ):
+#     """
+#     Function to go from Tracers, Parents, CellIDs, Data
+#     to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
+#     [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
+#     Selected Tracers is not in the CellIDs.
+#     This should return a consistently ordered data set where we always Have
+#     the data in the order of SelectedTracers and NaN's where that tracer
+#     has been lost. This allows for a look over the individual tracer's
+#     behaviour over time.
 
-    We use a FORTRAN90 numpy.f2py compiled script called intersect_duplicates
-    in this function. This function accepts two 1D arrays, a & b. a ought
-    to be of the same shape as SelectedTracers, and contain the Parent IDs
-    (prids). b ought to be of shape Data and contain the CellIDs.
+#     We use a FORTRAN90 numpy.f2py compiled script called intersect_duplicates
+#     in this function. This function accepts two 1D arrays, a & b. a ought
+#     to be of the same shape as SelectedTracers, and contain the Parent IDs
+#     (prids). b ought to be of shape Data and contain the CellIDs.
 
-    The intention is that we return the intersect of a & b, WITH DUPLICATES.
-    That is, if a value is in a multiple times, it should return the
-    corresponding index and value of b for each of those instances of the
-    matching value. This is similar to numpy.intersect1d, but we include
-    duplicates. Hence the name, 'intersect_duplicates'.
-    """
-    # Import FORTRAN90 function
-    from intersect_duplicates import intersect_duplicates
+#     The intention is that we return the intersect of a & b, WITH DUPLICATES.
+#     That is, if a value is in a multiple times, it should return the
+#     corresponding index and value of b for each of those instances of the
+#     matching value. This is similar to numpy.intersect1d, but we include
+#     duplicates. Hence the name, 'intersect_duplicates'.
+#     """
+#     # Import FORTRAN90 function
+#     from intersect_duplicates import intersect_duplicates
 
-    # Set up a blank data array of shape and order SelectedTracers.
-    # Fill this with the relevant sized entry of NaN as if selecting from
-    # true data.
-    #
-    # E.G. Temperature is scaler => NullEntry == np.nan
-    # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
-    if np.shape(np.shape(Data))[0] == 1:
-        dimension = 1
-        NullEntry = np.nan
-        dataBlank = np.full(shape=np.shape(
-            SelectedTracers), fill_value=NullEntry)
-    elif (np.shape(np.shape(Data))[0] == 2) & (
-        (np.shape(Data)[0] == 3) | (np.shape(Data)[1] == 3)
-    ):
-        dimension = 3
-        NullEntry = [np.nan for dd in range(dimension)]
-        dataBlank = np.full(
-            shape=(np.shape(SelectedTracers)[
-                   0], dimension), fill_value=NullEntry
-        )
-    else:
-        raise Exception(
-            f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
-        )
+#     # Set up a blank data array of shape and order SelectedTracers.
+#     # Fill this with the relevant sized entry of NaN as if selecting from
+#     # true data.
+#     #
+#     # E.G. Temperature is scaler => NullEntry == np.nan
+#     # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
+#     if np.shape(np.shape(Data))[0] == 1:
+#         dimension = 1
+#         NullEntry = np.nan
+#         dataBlank = np.full(shape=np.shape(
+#             SelectedTracers), fill_value=NullEntry)
+#     elif (np.shape(np.shape(Data))[0] == 2) & (
+#         (np.shape(Data)[0] == 3) | (np.shape(Data)[1] == 3)
+#     ):
+#         dimension = 3
+#         NullEntry = [np.nan for dd in range(dimension)]
+#         dataBlank = np.full(
+#             shape=(np.shape(SelectedTracers)[
+#                    0], dimension), fill_value=NullEntry
+#         )
+#     else:
+#         raise Exception(
+#             f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+#         )
 
-    # Select which of the SelectedTracers are in Tracers from this snap
-    SelectedTrids = np.where(
-        np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
+#     # Select which of the SelectedTracers are in Tracers from this snap
+#     SelectedTrids = np.where(
+#         np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
 
-    # Find the indices of Tracers included in SelectedTracers in this snap
-    # in the order, and shape, of SelectedTracers
-    _, SelectedIndices, TridIndices = np.intersect1d(
-        SelectedTracers, Tracers, return_indices=True
-    )
+#     # Find the indices of Tracers included in SelectedTracers in this snap
+#     # in the order, and shape, of SelectedTracers
+#     _, SelectedIndices, TridIndices = np.intersect1d(
+#         SelectedTracers, Tracers, return_indices=True
+#     )
 
-    # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
-    # values (order SelectedTracers) to have the corresponding Parent ID from
-    # Parents (order Tracers)
-    pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
-    pridBlank[SelectedIndices] = Parents[TridIndices]
+#     # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
+#     # values (order SelectedTracers) to have the corresponding Parent ID from
+#     # Parents (order Tracers)
+#     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
+#     pridBlank[SelectedIndices] = Parents[TridIndices]
 
-    # Rename for clarity
-    SelectedPrids = pridBlank
+#     # Rename for clarity
+#     SelectedPrids = pridBlank
 
-    # Use our FORTRAN90 function as described above to return the
-    # selectedCellIDs (order SelectedTracers), with -1 where the Tracer's cell
-    # was not found in this snap. Return the Index of the CellID
-    # to selectedCellIDs match, -1 where Tracer's cell not in snap.
-    # This will allow for selection of Data with duplicates by
-    # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
-    selectedCellIDs, selectedDataIndices = intersect_duplicates(
-        SelectedPrids, CellIDs)
+#     # Use our FORTRAN90 function as described above to return the
+#     # selectedCellIDs (order SelectedTracers), with -1 where the Tracer's cell
+#     # was not found in this snap. Return the Index of the CellID
+#     # to selectedCellIDs match, -1 where Tracer's cell not in snap.
+#     # This will allow for selection of Data with duplicates by
+#     # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
+#     selectedCellIDs, selectedDataIndices = intersect_duplicates(
+#         SelectedPrids, CellIDs)
 
-    # Grab location of index of match of SelectedPrids with CellIDs.
-    whereIndexData = np.where(selectedDataIndices != -1.0)[0]
+#     # Grab location of index of match of SelectedPrids with CellIDs.
+#     whereIndexData = np.where(selectedDataIndices != -1.0)[0]
 
-    # Assign the non-blank data to the prepared NullEntry populated array
-    # of shape SelectedTracers. Again, this step is designed to
-    # copy duplicates of the data where a cell contains more than one tracer.
-    dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
+#     # Assign the non-blank data to the prepared NullEntry populated array
+#     # of shape SelectedTracers. Again, this step is designed to
+#     # copy duplicates of the data where a cell contains more than one tracer.
+#     dataBlank[whereIndexData] = Data[selectedDataIndices[whereIndexData]]
 
-    # Rename for clarity
-    SelectedData = dataBlank
+#     # Rename for clarity
+#     SelectedData = dataBlank
 
-    assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
-    assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
-    assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+#     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
 
-    return SelectedData, SelectedTrids, SelectedPrids
+#     return SelectedData, SelectedTrids, SelectedPrids
 
 
 # ------------------------------------------------------------------------------
 
 
-def get_individual_cell_from_tracer_all_param(
-    Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
-):
-    """
-    Function to go from Tracers, Parents, CellIDs, Data
-    to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
-    [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
-    Selected Tracers is not in the CellIDs.
-    This should return a consistently ordered data set where we always Have
-    the data in the order of SelectedTracers and NaN's where that tracer
-    has been lost. This allows for a look over the individual tracer's
-    behaviour over time.
+# def get_individual_cell_from_tracer_all_param(
+#     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
+# ):
+#     """
+#     Function to go from Tracers, Parents, CellIDs, Data
+#     to selectedData (Len(Tracers)) with NullEntry of [np.nan] or
+#     [np.nan,np.nan,np.nan] (depending on Data shape) where the Tracer from
+#     Selected Tracers is not in the CellIDs.
+#     This should return a consistently ordered data set where we always Have
+#     the data in the order of SelectedTracers and NaN's where that tracer
+#     has been lost. This allows for a look over the individual tracer's
+#     behaviour over time.
 
-    We use a FORTRAN90 numpy.f2py compiled script called intersect_duplicates
-    in this function. This function accepts two 1D arrays, a & b. a ought
-    to be of the same shape as SelectedTracers, and contain the Parent IDs
-    (prids). b ought to be of shape Data and contain the CellIDs.
+#     We use a FORTRAN90 numpy.f2py compiled script called intersect_duplicates
+#     in this function. This function accepts two 1D arrays, a & b. a ought
+#     to be of the same shape as SelectedTracers, and contain the Parent IDs
+#     (prids). b ought to be of shape Data and contain the CellIDs.
 
-    The intention is that we return the intersect of a & b, WITH DUPLICATES.
-    That is, if a value is in a multiple times, it should return the
-    corresponding index and value of b for each of those instances of the
-    matching value. This is similar to numpy.intersect1d, but we include
-    duplicates. Hence the name, 'intersect_duplicates'.
-    """
-    # Import FORTRAN90 function
-    from intersect_duplicates import intersect_duplicates
+#     The intention is that we return the intersect of a & b, WITH DUPLICATES.
+#     That is, if a value is in a multiple times, it should return the
+#     corresponding index and value of b for each of those instances of the
+#     matching value. This is similar to numpy.intersect1d, but we include
+#     duplicates. Hence the name, 'intersect_duplicates'.
+#     """
+#     # Import FORTRAN90 function
+#     from intersect_duplicates import intersect_duplicates
 
-    # Select which of the SelectedTracers are in Tracers from this snap
-    SelectedTrids = np.where(
-        np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
+#     # Select which of the SelectedTracers are in Tracers from this snap
+#     SelectedTrids = np.where(
+#         np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
 
-    # Find the indices of Tracers included in SelectedTracers in this snap
-    # in the order, and shape, of SelectedTracers
-    _, SelectedIndices, TridIndices = np.intersect1d(
-        SelectedTracers, Tracers, return_indices=True
-    )
+#     # Find the indices of Tracers included in SelectedTracers in this snap
+#     # in the order, and shape, of SelectedTracers
+#     _, SelectedIndices, TridIndices = np.intersect1d(
+#         SelectedTracers, Tracers, return_indices=True
+#     )
 
-    # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
-    # values (order SelectedTracers) to have the corresponding Parent ID from
-    # Parents (order Tracers)
-    pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
-    pridBlank[SelectedIndices] = Parents[TridIndices]
+#     # Set up a blank set of Parent IDs. Then set the corresponding pridBlank
+#     # values (order SelectedTracers) to have the corresponding Parent ID from
+#     # Parents (order Tracers)
+#     pridBlank = np.full(shape=np.shape(SelectedTracers), fill_value=-1)
+#     pridBlank[SelectedIndices] = Parents[TridIndices]
 
-    # Rename for clarity
-    SelectedPrids = pridBlank
+#     # Rename for clarity
+#     SelectedPrids = pridBlank
 
-    # Use our FORTRAN90 function as described above to return the
-    # selectedCellIDs (order SelectedTracers), with -1 where the Tracer's cell
-    # was not found in this snap. Return the Index of the CellID
-    # to selectedCellIDs match, -1 where Tracer's cell not in snap.
-    # This will allow for selection of Data with duplicates by
-    # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
-    #
-    # A. T. Hannington solution - more generalised but slower
+#     # Use our FORTRAN90 function as described above to return the
+#     # selectedCellIDs (order SelectedTracers), with -1 where the Tracer's cell
+#     # was not found in this snap. Return the Index of the CellID
+#     # to selectedCellIDs match, -1 where Tracer's cell not in snap.
+#     # This will allow for selection of Data with duplicates by
+#     # Data[selectedDataIndices[np.where(selectedDataIndices!=-1.)[0]]
+#     #
+#     # A. T. Hannington solution - more generalised but slower
 
-    selectedCellIDs, selectedDataIndices = intersect_duplicates(
-        SelectedPrids, CellIDs)
+#     selectedCellIDs, selectedDataIndices = intersect_duplicates(
+#         SelectedPrids, CellIDs)
 
-    # Grab location of index of match of SelectedPrids with CellIDs.
-    whereIndexData = np.where(selectedDataIndices != -1.0)[0]
+#     # Grab location of index of match of SelectedPrids with CellIDs.
+#     whereIndexData = np.where(selectedDataIndices != -1.0)[0]
 
-    # Assign the non-blank data to the prepared NullEntry populated array
-    # of shape SelectedTracers. Again, this step is designed to
-    # copy duplicates of the data where a cell contains more than one tracer.
-    finalDataIndices = selectedDataIndices[whereIndexData]
+#     # Assign the non-blank data to the prepared NullEntry populated array
+#     # of shape SelectedTracers. Again, this step is designed to
+#     # copy duplicates of the data where a cell contains more than one tracer.
+#     finalDataIndices = selectedDataIndices[whereIndexData]
 
-    tmp = {}
-    for key, values in Data.items():
-        if key == "Lookback":
-            tmp.update({"Lookback": values})
-        elif key == "Ntracers":
-            tmp.update({"Ntracers": values})
-        elif key == "Snap":
-            tmp.update({"Snap": values})
-        elif key == "id":
-            tmp.update({"id": selectedCellIDs})
-        elif key == "trid":
-            tmp.update({"trid": SelectedTrids})
-        elif key == "prid":
-            tmp.update({"prid": SelectedPrids})
-        else:
-            # Set up a blank data array of shape and order SelectedTracers.
-            # Fill this with the relevant sized entry of NaN as if selecting from
-            # true data.
-            #
-            # E.G. Temperature is scaler => NullEntry == np.nan
-            # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
-            if np.shape(np.shape(values))[0] == 1:
-                dimension = 1
-                NullEntry = np.nan
-                dataBlank = np.full(
-                    shape=np.shape(SelectedTracers), fill_value=NullEntry
-                )
-            elif (np.shape(np.shape(values))[0] == 2) & (
-                (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
-            ):
-                dimension = 3
-                NullEntry = [np.nan for dd in range(dimension)]
-                dataBlank = np.full(
-                    shape=(np.shape(SelectedTracers)[0], dimension),
-                    fill_value=NullEntry,
-                )
-            else:
-                raise Exception(
-                    f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
-                )
+#     tmp = {}
+#     for key, values in Data.items():
+#         if key == "Lookback":
+#             tmp.update({"Lookback": values})
+#         elif key == "Ntracers":
+#             tmp.update({"Ntracers": values})
+#         elif key == "Snap":
+#             tmp.update({"Snap": values})
+#         elif key == "id":
+#             tmp.update({"id": selectedCellIDs})
+#         elif key == "trid":
+#             tmp.update({"trid": SelectedTrids})
+#         elif key == "prid":
+#             tmp.update({"prid": SelectedPrids})
+#         else:
+#             # Set up a blank data array of shape and order SelectedTracers.
+#             # Fill this with the relevant sized entry of NaN as if selecting from
+#             # true data.
+#             #
+#             # E.G. Temperature is scaler => NullEntry == np.nan
+#             # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
+#             if np.shape(np.shape(values))[0] == 1:
+#                 dimension = 1
+#                 NullEntry = np.nan
+#                 dataBlank = np.full(
+#                     shape=np.shape(SelectedTracers), fill_value=NullEntry
+#                 )
+#             elif (np.shape(np.shape(values))[0] == 2) & (
+#                 (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
+#             ):
+#                 dimension = 3
+#                 NullEntry = [np.nan for dd in range(dimension)]
+#                 dataBlank = np.full(
+#                     shape=(np.shape(SelectedTracers)[0], dimension),
+#                     fill_value=NullEntry,
+#                 )
+#             else:
+#                 raise Exception(
+#                     f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+#                 )
 
-            dataBlank[whereIndexData] = values[finalDataIndices]
-            tracerData = dataBlank
-            # Rename for clarity
-            SelectedData = dataBlank
-            assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
+#             dataBlank[whereIndexData] = values[finalDataIndices]
+#             tracerData = dataBlank
+#             # Rename for clarity
+#             SelectedData = dataBlank
+#             assert np.shape(SelectedData)[0] == np.shape(SelectedTracers)[0]
 
-            tmp.update({key: tracerData})
+#             tmp.update({key: tracerData})
 
-    SelectedData = tmp
-    assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
-    assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
+#     SelectedData = tmp
+#     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
+#     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
 
-    return SelectedData, SelectedTrids, SelectedPrids
+#     return SelectedData, SelectedTrids, SelectedPrids
 
 
 # ------------------------------------------------------------------------------# ------------------------------------------------------------------------------
 
 
-def get_individual_cell_from_tracer_all_param_v2(
+def get_copy_of_cell_for_every_tracer(
     Tracers, Parents, CellIDs, SelectedTracers, Data, NullEntry=np.nan
 ):
     """
@@ -2886,6 +2946,9 @@ def get_individual_cell_from_tracer_all_param_v2(
     from scipy.interpolate import interp1d
 
     # Select which of the SelectedTracers are in Tracers from this snap
+    # Allows for tracers to return to the analysis
+    # and prevents the tracers no longer in the analysis turning into
+    # NaN and thus not being included in our statistics from this analysis
     SelectedTrids = np.where(
         np.isin(SelectedTracers, Tracers), SelectedTracers, np.nan)
 
@@ -2937,7 +3000,7 @@ def get_individual_cell_from_tracer_all_param_v2(
         elif key == "id":
             tmp.update({"id": selectedCellIDs})
         elif key == "trid":
-            tmp.update({"trid": SelectedTrids})
+            tmp.update({"trid": SelectedTracers}) # SelectedTrids
         elif key == "prid":
             tmp.update({"prid": SelectedPrids})
         else:
@@ -2947,13 +3010,13 @@ def get_individual_cell_from_tracer_all_param_v2(
             #
             # E.G. Temperature is scaler => NullEntry == np.nan
             # E.G. Position is vector => NullEntry == [np.nan, np.nan, np.nan]
-            if np.shape(np.shape(values))[0] == 1:
+            if values.ndim == 1:
                 dimension = 1
                 NullEntry = np.nan
                 dataBlank = np.full(
                     shape=np.shape(SelectedTracers), fill_value=NullEntry
                 )
-            elif (np.shape(np.shape(values))[0] == 2) & (
+            elif (values.ndim == 2) & (
                 (np.shape(values)[0] == 3) | (np.shape(values)[1] == 3)
             ):
                 dimension = 3
@@ -2964,7 +3027,7 @@ def get_individual_cell_from_tracer_all_param_v2(
                 )
             else:
                 raise Exception(
-                    f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
+                    f"[@get_individual_cell_from_tracer]: ERROR! FAILURE! dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
                 )
 
             dataBlank[whereIndexData] = values[finalDataIndices]
@@ -2979,13 +3042,18 @@ def get_individual_cell_from_tracer_all_param_v2(
     assert np.shape(SelectedTrids) == np.shape(SelectedTracers)
     assert np.shape(SelectedPrids) == np.shape(SelectedTracers)
 
-    return SelectedData, SelectedTrids, SelectedPrids
+    if np.any(np.isnan(SelectedTracers) == True):
+        raise Exception(
+                    f"[@get_individual_cell_from_tracer]: ERROR! FAILURE! SelectedTracers contains NaN! Check logic!"
+        )
+                        # SelectedTrids
+    return SelectedData, SelectedTracers, SelectedPrids
 
 
 # -----------------------------------------------------------------------------
 
 
-def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
+# def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
     if np.shape(np.shape(Data))[0] == 1:
         dimension = 1
         NullEntry = np.nan
@@ -3005,7 +3073,6 @@ def get_individual_cell(CellIDs, SelectedCells, Data, NullEntry=np.nan):
             f"[@get_individual_cell_from_tracer]: dimension not 1 or 3! dataBlank Failure! Data neither 3D vector or 1D scalar!"
         )
 
-        # Select which of the SelectedTracers are in Tracers from this snap
     SelectedCellsReturned = np.where(
         np.isin(SelectedCells, CellIDs), SelectedCells, -1)
     #
@@ -3108,7 +3175,26 @@ def hdf5_load(path):
 # ------------------------------------------------------------------------------#
 
 
-def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix):
+def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix, hush=False):
+
+    if hush == False: 
+        print("\n"
+            +"***!!!***"
+            +"\n"
+            +"[@full_dict_hdf5_load]: WARNING! NOTE: The data included in the full dictionary loaded here is NOT in a time flattened format!"
+            +"\n"
+            +"The tracer information (e.g. 'prid' and 'trid') does NOT map to the rest of the data!"
+            +"\n"
+            +"Do NOT USE Tracer data from the raw _snapNumber.h5 files or dictionary produced here!"
+            +"\n"
+            +"... to silence this message, pass 'hush=True' to the call to this function."
+            +"\n"
+            +"***!!!***"
+            +"\n"
+        )
+
+
+
     FullDict = {}
     for snap in range(
         int(TRACERSPARAMS["snapMin"]),
@@ -3312,27 +3398,33 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                     if truthy == False:
                         stat = np.nanpercentile(v, percentile, axis=0)
                     else:
-                        stat = np.array([0.0])
+                        stat = np.asarray(0.0)
                 else:
                     if truthy == False:
                         try:
                             weightKey = nonMassWeightDict[k]
-                            weightData = Cells[weightKey]
+                            if weightKey is not None:
+                                weightData = Cells[weightKey]
+                            else:
+                                pass
                         except:
                             weightKey = "mass"
                             weightData = Cells[weightKey]
 
-                        whereReal = np.where((np.isfinite(v) == True) & (
-                            np.isfinite(weightData)) == True)
-                        stat = weighted_percentile(
-                            v[whereReal], weights=weightData[whereReal], perc=percentile, key=k
-                        )
+                        if weightKey is not None:
+                            whereReal = np.where((np.isfinite(v) == True) & (
+                                np.isfinite(weightData)) == True)
+                            stat = weighted_percentile(
+                                v[whereReal], weights=weightData[whereReal], perc=percentile, key=k
+                            )
+                        else:
+                            stat = np.nanpercentile(v, percentile, axis=0)
                     else:
-                        stat = np.array([0.0])
+                        stat = np.asarray(0.0)
                 if saveKey not in statsData.keys():
-                    statsData.update({saveKey: stat})
+                    statsData.update({saveKey: np.asarray(stat)})
                 else:
-                    statsData[saveKey] = np.append(statsData[saveKey], stat)
+                    statsData[saveKey] = np.concatenate((statsData[saveKey], stat),axis=0)
     return statsData
 
 
@@ -3394,7 +3486,7 @@ def save_statistics_csv(
 
 
 # ------------------------------------------------------------------------------#
-def flatten_wrt_T(dataDict, snapRange, TRACERSPARAMS, rin, rout):
+def flatten_wrt_temperature(dataDict, snapRange, TRACERSPARAMS, rin, rout):
     flattened_dict = {}
     for snap in snapRange:
         tmp = {}
@@ -3451,7 +3543,7 @@ def flatten_wrt_time(
             orderedData,
             TracersReturned,
             ParentsReturned,
-        ) = get_individual_cell_from_tracer_all_param_v2(
+        ) = get_copy_of_cell_for_every_tracer(
             Tracers=dataDict[key]["trid"],
             Parents=dataDict[key]["prid"],
             CellIDs=dataDict[key]["id"],
@@ -4206,7 +4298,7 @@ def tracer_plot(
         #     snapNumber=snapNumber,
         # )
 
-        snapGas.calc_sf_indizes(snap_subfind, halolist=[HaloID])
+        snapGas.calc_sf_indizes(snap_subfind)
         if rotation_matrix is None:
             rotation_matrix = snapGas.select_halo(
                 snap_subfind, do_rotation=True)
@@ -4250,7 +4342,7 @@ def tracer_plot(
         # DM (type==1) data
         # ==================#
 
-        whereStarsGas = np.where(np.isin(snapGas.type, [0, 4]) == True)[0]
+        whereStarsGas = np.where(np.isin(snapGas.type, np.asarray([0, 4])) == True)[0]
         whereDM = np.where(snapGas.type == 1)[0]
         whereGas = np.where(snapGas.type == 0)[0]
         whereStars = np.where(snapGas.type == 4)[0]
@@ -4394,16 +4486,15 @@ def tracer_plot(
 
                 whereGas = np.where(Cells[key]["type"] == 0)[0]
 
-                posData, _, _ = get_individual_cell_from_tracer_single_param(
+                dataDict, _, _ = get_copy_of_cell_for_every_tracer(
                     Tracers=Cells[key]["trid"],
                     Parents=Cells[key]["prid"],
-                    CellIDs=Cells[key]["id"][whereGas],
+                    CellIDs=Cells[key]["id"],
                     SelectedTracers=SelectedTracers1,
-                    Data=Cells[key]["pos"][whereGas],
-                    NullEntry=nullEntry,
+                    Data=Cells[key],
                 )
 
-                posData = np.array(posData)
+                posData = dataDict["pos"]
 
                 # ------------------------------------------------------------------------------#
                 # PLOTTING TIME
@@ -4427,16 +4518,16 @@ def tracer_plot(
 
                     whereGas = np.where(Cells[key]["type"] == 0)[0]
 
-                    posData, _, _ = get_individual_cell_from_tracer_single_param(
+                    dat, _, _ = get_copy_of_cell_for_every_tracer(
                         Tracers=Cells[key]["trid"],
                         Parents=Cells[key]["prid"],
-                        CellIDs=Cells[key]["id"][whereGas],
+                        CellIDs=Cells[key]["id"],
                         SelectedTracers=SelectedTracers1,
-                        Data=Cells[key]["pos"][whereGas],
+                        Data=Cells[key],
                         NullEntry=nullEntry,
                     )
 
-                    data = {key: posData}
+                    data = {key: dat["pos"]}
                     OldPosDict.update(data)
 
                 # NullEntry= [np.nan,np.nan,np.nan]
@@ -4840,11 +4931,14 @@ def multi_halo_merge(
     snapRange,
     Tlst,
     TracersParamsPath="TracersParams.csv",
+    hush = False,
 ):
     """
     This function is designed to combine the data sets for multiple
     Auriga simulation datasets from Tracer.py analysis.
-    NOTE: This is NOT the flatten_wrt_time version!
+    NOTE: This is NOT the flatten_wrt_time version! Do NOT
+            USE Tracer data from the raw _snapNumber.h5 files
+            or dictionary produced here!
 
     inputs:
         simList: list [dtype = 'str']
@@ -4865,6 +4959,24 @@ def multi_halo_merge(
     """
     import collections
 
+    if hush == False: 
+        print("\n"
+            +"***!!!***"
+            +"\n"
+            +"[@Multi Halo Merge]: WARNING! NOTE: This is NOT the flatten_wrt_time version!"
+            +"\n"
+            +"The data included in the full dictionaries loaded here are NOT in a time flattened format!"
+            +"\n"
+            +"The tracer information (e.g. 'prid' and 'trid') does NOT map to the rest of the data!"
+            +"\n"
+            +"Do NOT USE Tracer data from the raw _snapNumber.h5 files or dictionary produced here!"
+            +"\n"
+            +"... to silence this message, pass 'hush=True' to the call to this function."
+            +"\n"
+            +"***!!!***"
+            +"\n"
+        )
+
     mergedDict = {}
     saveParams = []
     loadedParams = []
@@ -4875,13 +4987,12 @@ def multi_halo_merge(
             loadPath + TracersParamsPath
         )
         saveParams += TRACERSPARAMS["saveParams"]
-
-        # saveHalo = (sim.split("_"))[-1]
-        # if "L" in saveHalo:
-        #     saveHalo = saveHalo.split("L")[-1]
-        #     padFlag = True
-        # else:
-        #     padFlag = False
+        saveHalo = (sim.split("_"))[-1]
+        if "L" in saveHalo:
+            saveHalo = saveHalo.split("L")[-1]
+            padFlag = True
+        else:
+            padFlag = False
 
         print("")
         print(f"Loading {sim} Data!")
@@ -4889,7 +5000,7 @@ def multi_halo_merge(
         dataDict = {}
         print("LOAD")
         dataDict = full_dict_hdf5_load(
-            DataSavepath, TRACERSPARAMS, FullDataPathSuffix)
+            DataSavepath, TRACERSPARAMS, FullDataPathSuffix, hush=hush)
 
         print("LOADED")
 
@@ -4901,37 +5012,20 @@ def multi_halo_merge(
         for selectKey in dataDict.keys():
             for key in ["id", "prid", "trid"]:
                 if dataDict[selectKey][key].size == 0 : continue
-                if key == "trid":
-                    # print("Check trids are unique!")
-                    u, c = np.unique(
-                        dataDict[selectKey][key][0], return_counts=True)
-                    assert (
-                        np.shape(np.where(c > 1)[0])[0] <= 0
-                    ), f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-                    # print("Done!")
-                ## Add Halo Number plus one zero to start of every number ##
-                # if padFlag is False:
-                index = math.ceil(
-                    np.log10(np.nanmax(dataDict[selectKey][key])))
 
-                dataDict[selectKey][key] = dataDict[selectKey][key].astype(
-                    np.float64
-                ) + float(int(saveHalo) * 10 ** (1 + index))
-                # else:
-                #     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
-                #
-                #     dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
+                # Add Halo Number plus one zero to start of every number ##
+                if padFlag is False:
+                    index = int(math.ceil(
+                        np.log10(np.nanmax(dataDict[selectKey][key]))))
 
-                if key == "trid":
-                    # print("Check trids are unique!")
-                    u, c = np.unique(
-                        dataDict[selectKey][key][0], return_counts=True)
-                    assert (
-                        np.shape(np.where(c > 1)[0])[0] <= 0
-                    ), f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-                # np.array([
-                # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
-                # ])
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(
+                        np.int64
+                    ) + int(int(saveHalo) * 10 ** (1 + index))
+                else:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.int64) + int(int(saveHalo) * 10 ** (1 + index)) + int(9 * 10 ** (2 + index))
+
         print("PADDED")
         selectKey0 = list(dataDict.keys())[0]
         loadedParams += list(dataDict[selectKey0].keys())
@@ -4968,6 +5062,17 @@ def multi_halo_merge(
     paramFreqDict = collections.Counter(saveParams)
     counts = list(paramFreqDict.values())
     truthy = np.all(np.array([el == len(simList) for el in counts]))
+
+
+    print("VERIFY UNIQUENESS")
+    for selectKey in mergedDict.keys():
+        # print("Check trids are unique!")
+        u, c = np.unique(
+            mergedDict[selectKey]["trid"], return_counts=True)
+        if (
+            np.shape(np.where(c > 1)[0])[0] > 1
+        ): raise Exception(f"[@Multi Halo Merge]: ERROR! FATAL! Duplicate Trids Detected! \n {np.shape(u[c>1])} \n {u[c>1]} ")
+    print("VERIFIED")
 
     if truthy == False:
         print("")
@@ -5045,13 +5150,13 @@ def multi_halo_merge_flat_wrt_time(
             loadPath + TracersParamsPath
         )
         saveParams += TRACERSPARAMS["saveParams"]
-        #
-        #     saveHalo = (sim.split("_"))[-1]
-        #     if "L" in saveHalo:
-        #         saveHalo = saveHalo.split("L")[-1]
-        #         padFlag = True
-        #     else:
-        #         padFlag = False
+
+        saveHalo = (sim.split("_"))[-1]
+        if "L" in saveHalo:
+            saveHalo = saveHalo.split("L")[-1]
+            padFlag = True
+        else:
+            padFlag = False
 
         print("")
         print(f"Loading {sim} Data!")
@@ -5083,39 +5188,19 @@ def multi_halo_merge_flat_wrt_time(
         for selectKey in dataDict.keys():
             for key in ["id", "prid", "trid"]:
                 if dataDict[selectKey][key].size == 0 : continue
-                if key == "trid":
-                    # print("Check trids are unique!")
-                    u, c = np.unique(
-                        dataDict[selectKey][key][0], return_counts=True)
-                    assert (
-                        np.shape(np.where(c > 1)[0])[0] <= 0
-                    ), f"[Multi Halo Merge Time flattened Before Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-                    # print("Done!")
+                # Add Halo Number plus one zero to start of every number ##
+                if padFlag is False:
+                    index = int(math.ceil(
+                        np.log10(np.nanmax(dataDict[selectKey][key]))))
 
-                ## Add Halo Number plus one zero to start of every number ##
-                # if padFlag is False:
-                index = math.ceil(
-                    np.log10(np.nanmax(dataDict[selectKey][key])))
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(
+                        np.int64
+                    ) + int(int(saveHalo) * 10 ** (1 + index))
+                else:
+                    index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
+                
+                    dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.int64) + int(int(saveHalo) * 10 ** (1 + index)) + int(9 * 10 ** (2 + index))
 
-                dataDict[selectKey][key] = dataDict[selectKey][key].astype(
-                    np.float64
-                ) + float(int(saveHalo) * 10 ** (1 + index))
-                # else:
-                #     index = math.ceil(np.log10(np.nanmax(dataDict[selectKey][key])))
-                #
-                #     dataDict[selectKey][key] = dataDict[selectKey][key].astype(np.float64) + float(int(saveHalo) * 10 ** (1 + index)) + float(9 * 10 ** (index))
-
-                if key == "trid":
-                    # print("Check trids are unique!")
-                    u, c = np.unique(
-                        dataDict[selectKey][key][0], return_counts=True)
-                    assert (
-                        np.shape(np.where(c > 1)[0])[0] <= 0
-                    ), f"[Multi Halo Merge Time flattened After Pad] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-                    # print("Done!")
-                # np.array([
-                # int(str(saveHalo)+'0'+str(v)) for v in dataDict[selectKey][key]
-                # ])
         print("PADDED")
         selectKey0 = list(dataDict.keys())[0]
         loadedParams += list(dataDict[selectKey0].keys())
@@ -5234,6 +5319,17 @@ def multi_halo_merge_flat_wrt_time(
         #print("debug", "mergedDict[selectKey]['trid']",
         #      mergedDict[selectKey]["trid"])
 
+    print("VERIFY UNIQUENESS")
+    for selectKey in mergedDict.keys():
+        # print("Check trids are unique!")
+        u, c = np.unique(
+            mergedDict[selectKey]["trid"][0,:], return_counts=True)
+        if (
+            np.shape(np.where(c > 1)[0])[0] > 1
+        ): raise Exception(f"[@Multi Halo Merge Time flattened]: ERROR! FATAL! Duplicate Trids Detected! \n {np.shape(u[c>1])} \n {u[c>1]} ")
+    print("VERIFIED")
+
+
     ### Check all sims contained same params ###
     paramFreqDict = collections.Counter(saveParams)
     counts = list(paramFreqDict.values())
@@ -5265,6 +5361,7 @@ def multi_halo_merge_flat_wrt_time(
         )
 
     saveParams = np.unique(np.array(saveParams)).tolist()
+    
     return mergedDict, saveParams
 
 

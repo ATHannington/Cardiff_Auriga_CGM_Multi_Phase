@@ -34,21 +34,21 @@ haloes = [
 
 snapNumber = 251
 
-print("----------------------------")
-print("|                          |")
-print("| !!!   Safety Check   !!! |")
-print("| Number of Tracers Consistent |")
-print("|                            |")
-print(f"|    Snap Number:         |")
-print(f"|       {snapNumber}       |")
-print("|                          |")
-print("----------------------------")
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
 
-print("")
+print\((.*?),flush=True\)
 nTracersOuter = []
 for halo in haloes:
     loadPath = baseLoadPath + f"halo_{halo}" + "/output/"
-    print(f"Starting halo {halo}")
+    print\((.*?),flush=True\)
 
     snap_subfind = load_subfind(snapNumber, dir=loadPath)
 
@@ -62,20 +62,20 @@ for halo in haloes:
     )
 
     nTracers = np.shape(snap.data["type"])[0]
-    print(f"For halo {halo} at snap {snapNumber} number of tracers = ", nTracers)
+    print\((.*?),flush=True\)
 
     nTracersOuter.append(nTracers)
 
 alltest = np.all(
     np.where(np.array(nTracersOuter) == int(np.median(nTracersOuter)), True, False)
 )
-print("***")
-print(f"All Haloes Safe? = {alltest}")
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)
 if alltest == False:
-    print(f"WARNING! Haloes have inconsistent Tracer Numbers!")
+    print\((.*?),flush=True\)
     for (ind, halo) in enumerate(haloes):
-        print(f"Halo_{halo} NTracers = {nTracersOuter[ind]}")
+        print\((.*?),flush=True\)
 else:
-    print("Phew! All haloes are safe.")
-print("***")
-print("Done! :)")
+    print\((.*?),flush=True\)
+print\((.*?),flush=True\)
+print\((.*?),flush=True\)")

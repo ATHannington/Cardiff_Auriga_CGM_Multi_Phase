@@ -28,6 +28,7 @@ xsize = 7.0
 ysize = 4.0
 epsilon = 0.25
 epsilonRadial = 50.0
+radialLimit = 200.0
 opacityPercentiles = 0.25
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
@@ -43,44 +44,16 @@ TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
 
-logParameters = [
-    "dens",
-    "ndens",
-    "rho_rhomean",
-    "csound",
-    "T",
-    "n_H",
-    "B",
-    "gz",
-    "L",
-    "P_thermal",
-    "P_magnetic",
-    "P_kinetic",
-    "P_tot",
-    "Pthermal_Pmagnetic",
-    "P_CR",
-    "PCR_Pthermal",
-    "gah",
-    "Grad_T",
-    "Grad_n_H",
-    "Grad_bfld",
-    "Grad_P_CR",
-    "gima",
-    "Grad_T",
-    "Grad_n_H",
-    "Grad_bfld",
-    "Grad_P_CR",
-    "tcool",
-    "theat",
-    "tcross",
-    "tff",
-    "tcool_tff",
-    "mass",
-]
+logParameters = [ "nh", "dens", "ndens", "rho_rhomean", "rho", "vol", "csound", "T", "n_H", "n_H_col", "n_HI", "n_HI_col", "B", "gz", "L", "P_thermal", "P_magnetic", "P_kinetic", "P_tot", "Pthermal_Pmagnetic", "P_CR", "PCR_Pthermal", "gah", "Grad_T", "Grad_n_H", "Grad_bfld", "Grad_P_CR", "tcool", "theat", "tcross", "tff", "tcool_tff", "mass", "gima", "count"]
+
 ylabel = {
     "T": r"Temperature (K)",
     "R": r"Radius (kpc)",
     "n_H": r"n$_H$ (cm$^{-3}$)",
+    "n_H_col": r"n$_H$ (cm$^{-2}$)",
+    "n_HI": r"n$_{HI}$ (cm$^{-3}$)",
+    "n_HI_col": r"n$_{HI}$ (cm$^{-2}$)",
+    "nh": r"Neutral Hydrogen Fraction",
     "B": r"|B| ($ \mu $G)",
     "vrad": r"Radial Velocity (km s$^{-1}$)",
     "gz": r"Metallicity Z$_{\odot}$",
@@ -95,7 +68,7 @@ ylabel = {
     "P_CR": r"P$_{CR}$ (K cm$^{-3}$)",
     "PCR_Pthermal": r"(X$_{CR}$ = P$_{CR}$/P$_{Thermal}$)",
     "gah": r"Alfven Gas Heating (erg s$^{-1}$)",
-    "bfld": r"B-Field ($ \mu $G)",
+    "bfld": r"||B-Field|| ($ \mu $G)",
     "Grad_T": r"||Temperature Gradient|| (K kpc$^{-1}$)",
     "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-3}$ kpc$^{-1}$)",
     "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G kpc$^{-1}$)",
@@ -109,10 +82,32 @@ ylabel = {
     "tcool_tff": r"t$_{Cool}$/t$_{FreeFall}$",
     "csound": r"Sound Speed (km s$^{-1}$)",
     "rho_rhomean": r"$\rho / \langle \rho \rangle$",
+    "rho": r"Density (M$_{\odot}$ kpc$^{-3}$)",
     "dens": r"Density (g cm$^{-3}$)",
     "ndens": r"Number density (cm$^{-3}$)",
     "mass": r"Mass (M$_{\odot}$)",
+    "vol": r"Volume (kpc$^{3}$)",
+    "age": "Lookback Time (Gyr)",
+    "cool_length" : "Cooling Length (kpc)",
+    "halo" : "FoF Halo",
+    "subhalo" : "SubFind Halo",
+    "x": r"x (kpc)",
+    "y": r"y (kpc)",
+    "z": r"z (kpc)",
+    "count": r"Number of data points per pixel",
 }
+
+# ==============================================================================#
+#   Save Property keys and associated Labels/definitions
+# ==============================================================================#
+
+labeldf = pd.DataFrame.from_dict(ylabel, orient='index')    
+labeldf = labeldf.reset_index() 
+labeldf.columns = ["Property Key", "Property Definition"]
+labeldf.to_csv("Tracers_Property_Legend_Dictionary.csv",index=False)
+print("\n"+f"Saved Property Symbol to Label Map as 'Tracers_Property_Legend_Dictionary.csv' !"+"\n")
+# ==============================================================================#
+
 
 for entry in logParameters:
     ylabel[entry] = r"$Log_{10}$" + ylabel[entry]
@@ -131,15 +126,6 @@ for entry in logParameters:
 for entry in deleteParams:
     logParameters.remove(entry)
 
-# ==============================================================================#
-#   Save Property keys and associated Labels/definitions
-# ==============================================================================#
-
-labeldf = pd.DataFrame.from_dict(ylabel, orient='index')    
-labeldf = labeldf.reset_index() 
-labeldf.columns = ["Property Key", "Property Definition"]
-labeldf.to_csv("Tracers_Property_Legend_Dictionary.csv",index=False)
-print("\n"+f"Saved Property Symbol to Label Map as 'Tracers_Property_Legend_Dictionary.csv' !"+"\n")
 # ==============================================================================#
 
 # Load Analysis Setup Data
@@ -175,6 +161,7 @@ mergedDict, _ = multi_halo_merge(
     snapRange,
     Tlst,
     TracersParamsPath,
+    hush = True
 )
 print("Done!")
 
@@ -276,6 +263,34 @@ medians_plot(
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
+
+# # matplotlib.rc_file_defaults()
+# # plt.close("all")
+# # medians_plot(
+# #     flatMergedDict,
+# #     statsData,
+# #     TRACERSPARAMS,
+# #     saveParams,
+# #     tlookback,
+# #     snapRange,
+# #     [Tlst[0]],
+# #     logParameters,
+# #     ylabel,
+# #     titleBool=titleBool,
+# #     separateLegend=separateLegend,
+# #     radialSummaryBool=True,
+# #     radialSummaryFirstLastBool= True,
+# #     DPI=DPI,
+# #     xsize=xsize,
+# #     ysize=ysize,
+# #     opacityPercentiles=opacityPercentiles,
+# #     lineStyleMedian=lineStyleMedian,
+# #     lineStylePercentiles=lineStylePercentiles,
+# #     colourmapMain=colourmapMain,
+# # )
+# # matplotlib.rc_file_defaults()
+# # plt.close("all")
+
 
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -380,6 +395,7 @@ bars_plot(
     colourmapMain=colourmapMain,
     epsilon = epsilon,
     epsilonRadial = epsilonRadial,
+    radialLimit = radialLimit,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -404,6 +420,7 @@ bars_plot(
     colourmapMain=colourmapMain,
     epsilon = epsilon,
     epsilonRadial = epsilonRadial,
+    radialLimit = radialLimit,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
@@ -414,6 +431,97 @@ plt.close("all")
 # # ============================================================================#
 # # ============================================================================#
 #
+
+# # datList = [vals for vals in flatMergedDict.values()]
+
+# # allData = {}
+# # for dd in datList:
+# #     for key, value in dd.items():
+# #         if key in list(allData.keys()):
+# #             val = allData[key]
+# #             val = np.concatenate((val,value),axis=1)
+# #             allData.update({key: val})
+# #         else:
+# #             allData.update({key: value})
+
+# # del datList, flatMergedDict
+
+# # allData = {key: val[0] for key,val in allData.items()}
+
+# # for ax, ind in zip(["x","y","z"],[0,1,2]):
+# #     allData[ax]=allData["pos"][:,:,ind]
+
+# # import Plotting_tools as apt
+# # print("plot")
+# # apt.phase_plot(
+# #     allData,
+# #     ylabel,
+# #     xlimDict = {},
+# #     logParameters = logParameters,
+# #     snapNumber = "",
+# #     yParams = ["x","y","z"],
+# #     xParams = ["x","y","z"],
+# #     weightKeys = ["halo","subhalo"],
+# #     DPI=350,
+# #     Nbins = 350,
+# #     savePathBase = "./",
+# #     savePathBaseFigureData = "./",
+# #     saveFigureData = True,
+# #     inplace = True,
+# # )
+
+# # # Make normal dictionary form of snap
+# # out = {}
+# # for key, value in snapGas.data.items():
+# #     if value is not None:
+# #         out.update({key: copy.deepcopy(value)})
+
+# # whereNotDM = out["type"] != 1
+
+# # import CR_Subroutines as cr 
+
+# # out = cr.remove_selection(
+# #     out,
+# #     removalConditionMask = whereNotDM,
+# #     errorString = f"Remove Not DM",
+# #     verbose = False,
+# #     )
+
+# # whereBeyond500kpc= np.abs(out["pos"]) > 500.0
+
+# # out = cr.remove_selection(
+# #     out,
+# #     removalConditionMask = whereBeyond500kpc,
+# #     errorString = f"Remove Beyond 500kpc",
+# #     verbose = False,
+# #     )
+
+# # for ax, ind in zip(["x","y","z"],[0,1,2]):
+# #     out[ax]=out["pos"][:,ind]
+
+# # out["halo"][np.where(np.isin(out["halo"],np.asarray([-1,0]))==False)[0]] = 1
+# # out["subhalo"][np.where(np.isin(out["subhalo"],np.asarray([-1,0]))==False)[0]] = 1
+
+# # import Plotting_tools as apt
+# # print("plot")
+# # apt.phase_plot(
+# #     out,
+# #     ylabel,
+# #     xlimDict = {},
+# #     logParameters = logParameters,
+# #     snapNumber = "",
+# #     yParams = ["x","y","z"],
+# #     xParams = ["x","y","z"],
+# #     weightKeys = ["halo","subhalo"],
+# #     xsize = 12.0,
+# #     ysize = 12.0,
+# #     DPI=400,
+# #     Nbins = 500,
+# #     savePathBase = "./",
+# #     savePathBaseFigureData = "./",
+# #     saveFigureData = True,
+# #     inplace = True,
+# # )
 #
 # # # ============================================================================#
 # # # #                   Stacked PDF PLOT                                          #

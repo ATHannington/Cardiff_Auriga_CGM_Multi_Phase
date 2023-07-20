@@ -9,8 +9,13 @@ import const as c
 from gadget import *
 from gadget_subfind import *
 from Tracers_Subroutines import *
+import copy
 
 # Input parameters path:
+Rmin = 0.0#min(TRACERSPARAMSCOMBI["Rinner"])
+Rmax = 200.0#max(TRACERSPARAMSCOMBI["Router"])
+
+
 TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
@@ -122,22 +127,20 @@ summaryDict = {
     "R_outer [kpc]": np.array(routList),
     "Log10(T) [K]": np.array(fullTList),
     "Snap Number": np.array(fullSnapRangeList),
-    "N_tracers selected": blankList.copy(),
-    "N_tracers per temperature": blankList.copy(),
-    "Gas mass selected [msol]": blankList.copy(),
     "Gas mass per temperature [msol]": blankList.copy(),
     "Gas n_H density per temperature [cm-3]": blankList.copy(),
+    "Average Rvir [kpc]": blankList.copy(),
     "Total gas mass (all haloes) available in spherical shell [msol]": blankList.copy(),
     "Total N_tracers (all haloes) in spherical shell": blankList.copy(),
-    "Total N_tracers (all haloes) within selection radii": blankList.copy(),
-    "Total gas mass (all haloes) within selection radii [msol]": blankList.copy(),
+    f"Total N_tracers (all haloes) within {Rmax:2.2f} kpc": blankList.copy(),
+    f"Total gas mass (all haloes) within {Rmax:2.2f} kpc [msol]": blankList.copy(),
 }
 
 TRACERSPARAMSCOMBI = TRACERSPARAMS
 
-Rmin = min(TRACERSPARAMSCOMBI["Rinner"])
-Rmax = max(TRACERSPARAMSCOMBI["Router"])
-
+rotation_matrix = None
+#-------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
 for snapNumber in snapRange:
     for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
         haloPath = TRACERSPARAMSCOMBI["simfile"] + halo + "/output/"
@@ -145,130 +148,149 @@ for snapNumber in snapRange:
         print("")
         print("")
         print(f"Starting {halo}")
+        print("")
+        print(f"[@{int(snapNumber)}]: Starting Snap {snapNumber}")
 
+        # load in the subfind group files
         snap_subfind = load_subfind(snapNumber, dir=haloPath)
 
+        # load in the gas particles mass and position only for HaloID 0.
+        #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
+        #       gas and stars (type 0 and 4) MUST be loaded first!!
         snap = gadget_readsnap(
             snapNumber,
             haloPath,
             hdf5=True,
-            loadonlytype=[0],
+            loadonlytype=[0,4],
             lazy_load=True,
             subfind=snap_subfind,
         )
 
         snapTracers = gadget_readsnap(
-            snapNumber, haloPath, hdf5=True, loadonlytype=[6], lazy_load=True
+            snapNumber,
+            haloPath,
+            hdf5=True,
+            loadonlytype=[6],
+            lazy_load=True,
+            subfind=snap_subfind,
         )
 
+        # Load Cell IDs - avoids having to turn lazy_load off...
+        # But ensures 'id' is loaded into memory before halo_only_gas_select is called
+        #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
+        #   Be in memory so taking the subset would be skipped.
+
         tmp = snap.data["id"]
+        tmp = snap.data["age"]
         tmp = snap.data["hrgm"]
         tmp = snap.data["mass"]
         tmp = snap.data["pos"]
         tmp = snap.data["vol"]
+        del tmp
 
         print(
-            f"[@{int(snapNumber)}]: SnapShot {halo} loaded at RedShift z={snap.redshift:0.05e}"
+            f"[@{int(snapNumber)}]: SnapShot loaded at RedShift z={snap.redshift:0.05e}"
         )
 
         # Centre the simulation on HaloID 0
-        snap = set_centre(
-            snap=snap, snap_subfind=snap_subfind, HaloID=0, snapNumber=snapNumber
-        )
+        # snap = set_centre(
+        #     snap=snap, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
+        # )
+
+        snap.calc_sf_indizes(snap_subfind)
+        if rotation_matrix is None:
+            _ = snap.select_halo(snap_subfind, do_rotation=True)
+        else:
+            snap.select_halo(snap_subfind, do_rotation=False)
+            snap.rotateto(
+                rotation_matrix[0], dir2=rotation_matrix[1], dir3=rotation_matrix[2]
+            )
 
         # --------------------------#
         ##    Units Conversion    ##
         # --------------------------#
 
         # Convert Units
-        ## Make this a seperate function at some point??
+        # Make this a seperate function at some point??
         snap.pos *= 1e3  # [kpc]
         snap.vol *= 1e9  # [kpc^3]
         snap.mass *= 1e10  # [Msol]
         snap.hrgm *= 1e10  # [Msol]
-
         # [Kpc]
-        snap.data["R"] = np.linalg.norm(snap.data["pos"], axis=1)  # [Kpc]
+
+        snap = high_res_only_gas_select(snap, snapNumber)
+
+        # Calculate New Parameters and Load into memory others we want to track
+        snap = calculate_tracked_parameters(
+            snap,
+            elements,
+            elements_Z,
+            elements_mass,
+            elements_solar,
+            Zsolar,
+            omegabaryon0,
+            snapNumber,
+            paramsOfInterest=["T","R","n_H"],
+            mappingBool=True,
+            numthreads=8,
+            verbose = False,
+        )
 
         whereGas = np.where(snap.type == 0)[0]
-        # Density is rho/ <rho> where <rho> is average baryonic density
-        rhocrit = (
-            3.0
-            * (snap.omega0 * (1.0 + snap.redshift) ** 3 + snap.omegalambda)
-            * (snap.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-            / (8.0 * pi * c.G)
-        )
-        rhomean = (
-            3.0
-            * (snap.omega0 * (1.0 + snap.redshift) ** 3)
-            * (snap.hubbleparam * 100.0 * 1e5 / (c.parsec * 1e6)) ** 2
-            / (8.0 * pi * c.G)
-        )
-
-        # Mean weight [amu]
-        meanweight = sum(snap.gmet[whereGas, 0:9], axis=1) / (
-            sum(snap.gmet[whereGas, 0:9] / elements_mass[0:9], axis=1)
-            + snap.ne[whereGas] * snap.gmet[whereGas, 0]
-        )
-
-        # 3./2. N KB
-        Tfac = ((3.0 / 2.0) * c.KB) / (meanweight * c.amu)
-
-        snap.data["dens"] = (
-            (snap.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
-        )  # [g cm^-3]
-        gasX = snap.gmet[whereGas, 0]
-
-        snap.data["n_H"] = snap.data["dens"][whereGas] / c.amu * gasX  # cm^-3
-
-        # Temperature = U / (3/2 * N KB) [K]
-        snap.data["T"] = (snap.u[whereGas] * 1e10) / (Tfac)  # K
 
         ###-------------------------------------------
         #   Find total number of tracers and gas mass in halo within rVir
         ###-------------------------------------------
-
-        snap = halo_id_finder(snap, snap_subfind, snapNumber, OnlyHalo=0)
-
         Cond = np.where(
-            (snap.data["R"] <= Rmax)
-            & (snap.data["R"] >= Rmin)
-            & (snap.data["sfr"] <= 0.0)
-            & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
+            (snap.data["R"][whereGas] <= Rmax)
+            & (snap.data["R"][whereGas] >= Rmin)
+            & (snap.data["sfr"][whereGas] <= 0.0)
+            & (np.isin(snap.data["subhalo"][whereGas], np.array([-1.0, 0.0])))
         )[0]
 
-        CellIDs = snap.id[Cond]
+        # Select Cell IDs for cells which meet condition
+        CellIDs = snap.id[whereGas][Cond]
 
         # Select Parent IDs in Cond list
         #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
-        ParentsIndices = np.where(np.isin(snapTracers.prid, CellIDs))
+        ParentsIndices = np.where(np.isin(snapTracers.prid[whereGas], CellIDs))
 
         # Select Tracers and Parent IDs from cells that meet condition and contain tracers
-        Tracers = snapTracers.trid[ParentsIndices]
-        Parents = snapTracers.prid[ParentsIndices]
+        Tracers = snapTracers.trid[whereGas][ParentsIndices]
+        Parents = snapTracers.prid[whereGas][ParentsIndices]
 
         # Get Gas meeting Cond AND with tracers
-        CellsIndices = np.where(np.isin(snap.id, Parents))
-        CellIDs = snap.id[CellsIndices]
+        CellsIndices = np.where(np.isin(snap.id[whereGas], Parents))
+        CellIDs = snap.id[whereGas][CellsIndices]
+
+        Ntracers = int(len(Tracers))
+        print(f"[@{snapNumber}]: Number of tracers = {Ntracers}")
 
         NtracersTotalR = np.shape(Tracers)[0]
 
         print(
-            f"For {halo} at snap {snapNumber} Total N_tracers (all haloes) within selection radii = ",
+            f"For {halo} at snap {snapNumber} Total N_tracers (all haloes) within {Rmax:2.2f} kpc = ",
             NtracersTotalR,
         )
 
         dictRowSelectSnaponly = np.where((summaryDict["Snap Number"] == snapNumber))[0]
 
-        summaryDict["Total N_tracers (all haloes) within selection radii"][
+        summaryDict[f"Total N_tracers (all haloes) within {Rmax:2.2f} kpc"][
             dictRowSelectSnaponly
         ] += NtracersTotalR
 
-        massTotalR = np.sum(snap.data["mass"][Cond])
+        massTotalR = np.sum(snap.data["mass"][whereGas][Cond])
         print(f"For {halo} at snap {snapNumber} total mass [msol] = ", massTotalR)
-        summaryDict["Total gas mass (all haloes) within selection radii [msol]"][
+        summaryDict[f"Total gas mass (all haloes) within {Rmax:2.2f} kpc [msol]"][
             dictRowSelectSnaponly
         ] += massTotalR
+
+
+        rvir = (snap_subfind.data["frc2"] * 1e3)[int(0)]
+        print(f"For {halo} at snap {snapNumber} Rvir [kpc] = ", massTotalR)
+        summaryDict["Average Rvir [kpc]"][
+            dictRowSelectSnaponly
+        ] += rvir
         ###-------------------------------------------
         #   Load in analysed data
         ###-------------------------------------------
@@ -278,15 +300,6 @@ for snapNumber in snapRange:
         )
         saveParams += TRACERSPARAMS["saveParams"]
 
-        print("")
-        print(f"Loading {halo} Analysed Data!")
-
-        dataDict = {}
-        print("LOAD")
-        dataDict = full_dict_hdf5_load(DataSavepath, TRACERSPARAMS, DataSavepathSuffix)
-
-        print("LOADED")
-
         for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
             print(f"{rin}R{rout}")
             whereGas = np.where(snap.type == 0)[0]
@@ -295,10 +308,10 @@ for snapNumber in snapRange:
                 (snap.data["R"][whereGas] >= rin)
                 & (snap.data["R"][whereGas] <= rout)
                 & (snap.data["sfr"][whereGas] <= 0)
-                & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
+                & (np.isin(snap.data["subhalo"][whereGas], np.array([-1.0, 0.0])))
             )[0]
 
-            massR = np.sum(snap.data["mass"][Cond])
+            massR = np.sum(snap.data["mass"][whereGas][Cond])
             dictRowSelectRonly = np.where(
                 (summaryDict["R_inner [kpc]"] == rin)
                 & (summaryDict["R_outer [kpc]"] == rout)
@@ -310,48 +323,11 @@ for snapNumber in snapRange:
             summaryDict[
                 "Total gas mass (all haloes) available in spherical shell [msol]"
             ][dictRowSelectRonly] += massR
-
-            # ==================================================================#
-            # Select Cell IDs for cells which meet condition
-            CellIDs = snap.id[Cond]
-
-            # Select Parent IDs in Cond list
-            #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
-            ParentsIndices = np.where(np.isin(snapTracers.prid, CellIDs))
-
-            # Select Tracers and Parent IDs from cells that meet condition and contain tracers
-            Tracers = snapTracers.trid[ParentsIndices]
-            Parents = snapTracers.prid[ParentsIndices]
-
-            # Get Gas meeting Cond AND with tracers
-            CellsIndices = np.where(np.isin(snap.id, Parents))
-            CellIDs = snap.id[CellsIndices]
-
-            NtracersR = np.shape(Tracers)[0]
-
-            print(f"Total N_tracers (all haloes) in spherical shell= ", NtracersR)
-            summaryDict["Total N_tracers (all haloes) in spherical shell"][
-                dictRowSelectRonly
-            ] += NtracersR
-
             for (ii, T) in enumerate(Tlst):
 
                 FullDictKey = (f"T{float(T)}", f"{rin}R{rout}", f"{snapNumber}")
                 print(FullDictKey)
-                Ntracersselected = dataDict[FullDictKey]["Ntracers"][0]
-                print(
-                    f"Total N_tracers (all haloes) in spherical shell = ",
-                    Ntracersselected,
-                )
-                massselected = np.sum(
-                    dataDict[FullDictKey]["mass"][
-                        np.where(dataDict[FullDictKey]["type"] == 0)[0]
-                    ]
-                )
-                print(
-                    f"Total mass (all haloes) in spherical shell [msol] = ",
-                    massselected,
-                )
+
 
                 dictRowSelect = np.where(
                     (summaryDict["R_inner [kpc]"] == rin)
@@ -359,9 +335,6 @@ for snapNumber in snapRange:
                     & (summaryDict["Log10(T) [K]"] == float(T))
                     & (summaryDict["Snap Number"] == snapNumber)
                 )[0]
-
-                summaryDict["N_tracers selected"][dictRowSelect] += Ntracersselected
-                summaryDict["Gas mass selected [msol]"][dictRowSelect] += massselected
 
                 Cond = np.where(
                     (snap.data["R"][whereGas] >= rin)
@@ -375,10 +348,10 @@ for snapNumber in snapRange:
                         snap.data["T"][whereGas]
                         <= 1.0 * 10 ** (float(T) + TRACERSPARAMS["deltaT"])
                     )
-                    & (np.isin(snap.data["subhalo"], np.array([-1.0, 0.0])))
+                    & (np.isin(snap.data["subhalo"][whereGas], np.array([-1.0, 0.0])))
                 )[0]
 
-                massRT = np.sum(snap.data["mass"][Cond])
+                massRT = np.sum(snap.data["mass"][whereGas][Cond])
                 summaryDict["Gas mass per temperature [msol]"][dictRowSelect] += massRT
                 print(
                     f"Total mass (all haloes) in spherical shell per temperature [msol] = ",
@@ -386,82 +359,82 @@ for snapNumber in snapRange:
                     massRT,
                 )
 
-                CellIDs = snap.id[Cond]
-
-                # Select Parent IDs in Cond list
-                #   Select parent IDs of cells which contain tracers and have IDs from selection of meeting condition
-                ParentsIndices = np.where(np.isin(snapTracers.prid, CellIDs))
-
-                # Select Tracers and Parent IDs from cells that meet condition and contain tracers
-                Tracers = snapTracers.trid[ParentsIndices]
-                Parents = snapTracers.prid[ParentsIndices]
-
-                # Get Gas meeting Cond AND with tracers
-                CellsIndices = np.where(np.isin(snap.id, Parents))
-                CellIDs = snap.id[CellsIndices]
-
-                nTracersRT = np.shape(Tracers)[0]
-                summaryDict["N_tracers per temperature"][dictRowSelect] += nTracersRT
-                print(
-                    f"Total N_tracers (all haloes) per temperature = ",
-                    FullDictKey,
-                    nTracersRT,
-                )
-
-                n_H_RT = np.median(snap.data["n_H"][Cond])
+                n_H_RT = np.median(snap.data["n_H"][whereGas][Cond])
                 summaryDict["Gas n_H density per temperature [cm-3]"][
                     dictRowSelect
                 ] += n_H_RT
-    # print("summaryDict = ", summaryDict)
+#-------------------------------------------------------------------------------------#
+#    # print("summaryDict = ", summaryDict)
 #
+#-------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
+print("Load Time Flattened Data!")
+flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
+    SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
+)
+#-------------------------------------------------------------------------------------#
+
+radiusTracerTotal = {f"{rin}R{rout}": 0 for rin,rout in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"])}
+temperatureTracerTotal = {f"T{float(T)}": 0 for T in Tlst}
+fullTracerTotal = 0
+for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+    for (ii, T) in enumerate(Tlst):
+        fullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+        print(FullDictKey)
+        tmpNtracers = int(np.shape(flatMergedDict[fullDictKey]["trid"])[1])
+        radiusTracerTotal[f"{rin}R{rout}"] += tmpNtracers
+        temperatureTracerTotal[f"T{float(T)}"] += tmpNtracers  
+        fullTracerTotal += tmpNtracers
 
 nSnaps = float(len(snapRange))
 for key, value in summaryDict.items():
-    if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]:
+    if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"]:
         summaryDict[key] = value / nSnaps
 
+tracersDict ={
+    "R_inner [kpc]": np.array(rinList),
+    "R_outer [kpc]": np.array(routList),
+    "Log10(T) [K]": np.array(fullTList),
+    "N_tracers selected per temperature" : np.asarray(list(list(temperatureTracerTotal.values())*len(snapRange))*len(TRACERSPARAMS["Rinner"])),
+    "N_tracers selected per radius" : np.asarray(list(list(radiusTracerTotal.values())*len(Tlst))*len(snapRange)),
+    "N_tracers selected" : np.asarray([fullTracerTotal]*len(fullTList)),
+}
 
-df = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
+# combined = copy.deepcopy(summaryDict)
+# combined.update(tracersDict)
 
-df = df.groupby(["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]).sum()
 
-df["%Available tracers in spherical shell selected"] = (
-    df["N_tracers selected"].astype("float64")
-    / df["Total N_tracers (all haloes) in spherical shell"].astype("float64")
-) * 100.0
 
-df["%Available mass of spherical shell selected"] = (
-    df["Gas mass selected [msol]"].astype("float64")
-    / df["Total gas mass (all haloes) available in spherical shell [msol]"].astype(
-        "float64"
-    )
-) * 100.0
+df1 = pd.DataFrame(summaryDict, index=[ii for ii in range(len(blankList))])
+
+df1 = df1.groupby(["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]).sum()
+
+df2 = pd.DataFrame(tracersDict, index=[ii for ii in range(len(blankList))])
+
+df2 = df2.groupby(["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]"]).median()
+
+
+df = pd.concat([df1,df2],axis=1)
 
 nHaloes = float(len(SELECTEDHALOES))
 df["Number of Haloes"] = nHaloes
 
-df["Average N_tracers selected (per halo)"] = (
-    df["N_tracers selected"].astype("float64") / nHaloes
-)
-df["Average N_tracers per temperature (per halo)"] = (
-    df["N_tracers per temperature"].astype("float64") / nHaloes
-)
-df["Average gas mass selected (per halo) [msol]"] = (
-    df["Gas mass selected [msol]"].astype("float64") / nHaloes
-)
-df["Average gas mass available (per halo) [msol]"] = (
-    df["Gas mass per temperature [msol]"].astype("float64") / nHaloes
-)
 
-# summaryDict = {'R_inner':
-# 'R_outer':
-# "Log10(T) [K]"
-# 'N_tracers selected'
-# 'Gas mass selected [msol]'
-# 'Total gas mass (all haloes) available in spherical shell [msol]'
-# 'Total N_tracers (all haloes) in spherical shell'
-# 'Total N_tracers (all haloes) within selection radii'
-# 'Total gas mass (all haloes) within selection radii [msol]'}
+
+# summaryDict = {
+#     "R_inner [kpc]": np.array(rinList),
+#     "R_outer [kpc]": np.array(routList),
+#     "Log10(T) [K]": np.array(fullTList),
+#     "Snap Number": np.array(fullSnapRangeList),
+#     "N_tracers selected": blankList.copy(),
+#     "Gas mass per temperature [msol]": blankList.copy(),
+#     "Gas n_H density per temperature [cm-3]": blankList.copy(),
+#     "Average Rvir [kpc]": blankList.copy(),
+#     "Total gas mass (all haloes) available in spherical shell [msol]": blankList.copy(),
+#     "Total N_tracers (all haloes) in spherical shell": blankList.copy(),
+#     f"Total N_tracers (all haloes) within {Rmax:2.2f} kpc": blankList.copy(),
+#     f"Total gas mass (all haloes) within {Rmax:2.2f} kpc [msol]": blankList.copy(),
+# }
 
 df["Average gas mass (per halo) available in spherical shell [msol]"] = (
     df["Total gas mass (all haloes) available in spherical shell [msol]"].astype(
@@ -474,15 +447,51 @@ df["Average N_tracers (per halo) in spherical shell"] = (
     df["Total N_tracers (all haloes) in spherical shell"].astype("float64") / nHaloes
 )
 
-df["Average N_tracers (per halo) within selection radii"] = (
-    df["Total N_tracers (all haloes) within selection radii"].astype("float64")
+df[f"Average N_tracers (per halo) within {Rmax:2.2f} kpc"] = (
+    df[f"Total N_tracers (all haloes) within {Rmax:2.2f} kpc"].astype("float64")
     / nHaloes
 )
 
-df["Average gas mass (per halo) within selection radii [msol]"] = (
-    df["Total gas mass (all haloes) within selection radii [msol]"].astype("float64")
+df["Average N_tracers selected (per halo)"] = (
+    df["N_tracers selected"].astype("float64") / nHaloes
+)
+
+df["Average N_tracers selected per temperature (per halo)"] = (
+    df["N_tracers selected per temperature"].astype("float64") / nHaloes
+)
+
+df["Average N_tracers selected per radius (per halo)"] = (
+    df["N_tracers selected per radius"].astype("float64") / nHaloes
+)
+
+
+#----#
+#     "Gas mass per temperature [msol]": blankList.copy(),
+#     "Gas n_H density per temperature [cm-3]": blankList.copy(),
+#     "Average Rvir [kpc]": blankList.copy(),
+#     "Total gas mass (all haloes) available in spherical shell [msol]": blankList.copy(),
+
+df[f"Average gas mass (per halo) within {Rmax:2.2f} kpc [msol]"] = (
+    df[f"Total gas mass (all haloes) within {Rmax:2.2f} kpc [msol]"].astype("float64")
     / nHaloes
 )
+
+df[f"Average gas mass per temperature (per halo) within {Rmax:2.2f} kpc [msol]"] = (
+    df[f"Gas mass per temperature [msol]"].astype("float64")
+    / nHaloes
+)
+
+df[f"Average gas n_H density (per halo) within [cm-3]"] = (
+    df["Gas n_H density per temperature [cm-3]"].astype("float64")
+    / nHaloes
+)
+
+df[f"Average Rvir (per halo) [kpc]"] = (
+    df["Average Rvir [kpc]"].astype("float64")
+    / nHaloes
+)
+
+
 
 print(df.head(n=20))
 if timeAverageBool is True:

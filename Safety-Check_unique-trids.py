@@ -52,7 +52,7 @@ snapRange = [
 
 
 # ==============================================================================#
-# print("Load Non Time Flattened Data!")
+# print\((.*?),flush=True\)
 # mergedDict, saveParams = multi_halo_merge(
 #     SELECTEDHALOES,
 #     HALOPATHS,
@@ -61,13 +61,13 @@ snapRange = [
 #     Tlst,
 #     TracersParamsPath,
 # )
-# print("Done!")
+# print\((.*?),flush=True\)
 #
-# print("Check trids are unique!")
+# print\((.*?),flush=True\)
 # for key,values in mergedDict.items():
 #   u,c = np.unique(values['trid'],return_counts=True)
 #   assert np.shape(np.where(c>1)[0])[0]<=0, f"[Not time flattened] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-# print("Done!")
+# print\((.*?),flush=True\)
 
 # =============================================================================#
 #                   Load Flattened Data                                       #
@@ -75,16 +75,16 @@ snapRange = [
 
 # del mergedDict
 
-print("Load Time Flattened Data!")
+print\((.*?),flush=True\)
 flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
     SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
 )
-print("Done!")
+print\((.*?),flush=True\)
 
-print("Check trids are unique!")
+print\((.*?),flush=True\)
 for key, values in flatMergedDict.items():
     u, c = np.unique(values["trid"][0, :], return_counts=True)
     assert (
         np.shape(np.where(c > 1)[0])[0] <= 0
     ), f"[Time flattened] {key} Duplicate Trids Detected! Fatal! \n {np.shape(u[c>1])} \n {u[c>1]} "
-print("Done!")
+print\((.*?),flush=True\)

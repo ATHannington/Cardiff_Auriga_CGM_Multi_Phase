@@ -17,9 +17,9 @@ def _inner_analysis(dataDict, T, ClusterID, FullKey, NtracersFull):
 
     NtracersAll = dataDict[FullKey]["Ntracers"][0]
     tracers.append(100.0 * (NtracersAll / NtracersFull))
-    # print("")
-    # print(f"T{T} FullKey{FullKey} cluster{ClusterID}")
-    # print(f"All {NtracersAll} : FullData {NtracersFull}")
+    # print\((.*?),flush=True\)
+    # print\((.*?),flush=True\)
+    # print\((.*?),flush=True\)
     SubHalo = dataDict[FullKey]["SubHaloID"]
 
     whereGas = np.where(dataDict[FullKey]["type"] == 0)[0]
@@ -402,7 +402,7 @@ def clusteredData_analyse_cluster(
 clusteredDict = {}
 for T in Tlst:
     key = f"T{T}"
-    print(key)
+    print\((.*?),flush=True\)
     dictlist = []
     for ii, snap in enumerate(snapsRange):
         FullKey = (f"T{T}", f"{int(snap)}")
@@ -439,7 +439,7 @@ for T in Tlst:
 dtwparamStatsDict = {}
 for T in Tlst:
     key = f"T{T}"
-    print(key)
+    print\((.*?),flush=True\)
     dictlist = []
     for ii, snap in enumerate(snapsRange):
         FullKey = (f"T{T}", f"{int(snap)}")
@@ -485,7 +485,7 @@ for key, value in FlatDataDict.items():
     FlatDataDict[key].update({"Lookback": clusteredDict[key]["Lookback"]})
 
 savePath = DataSavepath + f"_DTW-Flat_Full-Data" + DataSavepathSuffix
-print("\n" + f" Saving Merged Data as: " + savePath)
+print\((.*?),flush=True\)
 hdf5_save(savePath, clusteredDict)
 
 StatsDF = fullData_analyse_cluster(
@@ -506,6 +506,6 @@ finalStatsDF = pd.concat(
 
 savePath = DataSavepath + "_DTW-Cluster-Statistics-Table.csv"
 
-print("\n" + f"Saving Stats table .csv as {savePath}")
+print\((.*?),flush=True\)
 
 finalStatsDF.to_csv(savePath, index=False)
