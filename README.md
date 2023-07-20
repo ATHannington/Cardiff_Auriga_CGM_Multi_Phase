@@ -1,1 +1,85 @@
-# _PhD_Code
+Author: Andrew Tomos Hannington
+Affiliation: Cardiff University
+Supervisor: Dr Freeke van de Voort
+		Email: vandevoortF@cardiff.ac.uk
+My Email: ask Freeke ;)
+
+
+My analysis is split into two core functions in the main analysis:
+1. Select our Tracers of interest in tracer_selection_snap_analysis()
+2. Iterate over time, selecting only the tracers that were of interest in 1,
+   and saving their data (usually in a hdf5 .h5 file). This is performed in
+   snap_analysis()
+
+These two work almost identically, save for 1. is going from "Cells that have
+the right temperature, radius etc, to the tracers within these cells" and
+therefore uses get_tracers_from_cells(). 2., however, is now going from those
+tracers we selected at our time and properties of interest to the cells they
+are now within - therefore using get_cells_from_tracers().
+
+They both follow roughly this setup:
+1. Load subfind
+2. Load the snapshot of Gas [type = 0], Stars [type = 4], and high res dark
+matter [type =1] . This last one is deleted later, but we need the DM to
+calculate one of our properties (free fall time, I believe).
+3. Load the tracers of the snapshot [type = 6]
+4. Prod the lazyloaded snapshots to make sure we load in everything we need
+(yes, I could turn lazyload off, but this is marginally faster albeit clunky
+and gross...)
+5. Use snap_utils functions to calculate halo and subhalo ID's
+6. Convert from code units to more useful ones
+7. Calculate physical properties in calculate_tracked_parameters() (go look in
+here for the properties you want to include!)
+8. Make the same number of entries (with either data or a np.nan) for both Stars
+and gas in pad_non_entries(). This is crucial to how I solved this problem! You
+need to be able to track the tracers moving between stars and gas for some of
+the properties I was looking at. This makes that possible by saying, for
+example, if tracer 1 is gas at time 1, and tracer 1 is a star at time 2,
+you look in the same index in the numpy array for both. Simples!
+(As an aside: I fixed this problem in a ~far~ less memory intensive way
+later in my research. Look for remove_selection() in CR_Subroutines.py ...)
+9. There is some stuff done here to select only high resolution gas
+10. Get our cells from tracers or tracers from cells, and return them to the
+function outside via the return statement.
+
+The final piece in the puzzle is my Postprocessing step.
+This is postprocessing for me only because I didn't know how crucial it would be
+In an ideal world I would have found a way to include this step in the main analysis...
+
+Anyway, it uses a function called flatten_wrt_time(). This nomenclature is to
+represent that you are going from time1_data = [...], time2_data=[...] (okay,
+I actually have dictionaries so it's more like {('T4.0','25.0R75.0','221') = {...}, ...})
+for radius 25<R<75, Temperature ~ 1e4 K, and for snapshot 221.).
+The function this calls is called get_copy_of_cell_for_every_tracer().
+This uses a scipy interpolate1d function to map between tracerID (trid), and cellID (id).
+This method was suggested by Dr Timothy Davis, Cardiff University. Thanks Tim!! =)
+There's also some parentID (prid) stuff knocking about (the ID of the cell that tracer is in, so
+you link between trid and id).
+
+The idea behind flatten_wrt_time() and get_copy_of_cell_for_every_tracer() 
+is that you go from having data like this:
+time1= cell data: [x0,x1,...,xn], tracer data: [x0,x1,...,xa]
+time2= cell data: [x0,x1,...,xm], tracer data: [x0,x1,...,xb]
+time3= cell data: [x0,x1,...,xl], tracer data: [x0,x1,...,xc]
+where n,m,l are different, and are the number of cells included at each timestep
+and a,b,c are different, and are the number of tracers included at each timestep.
+
+to
+[[x0,x1,...,xn],[x0,x1,...,xn],[x0,x1,...,xn],...]
+for all of the snapshots, where n is the number of tracers. Each tracer will
+have its own copy of the data of the cell it was in from every different
+snapshot, or a np.nan if that data doesn't exist (e.g., it wouldn't have age as a gas, or magnetic field strength (B) as a star. Or if it has exited our analysis, this will also be a np.nan).
+
+PLEASE NOTE: The "original" format (i.e. not time flattened) requires you to use get_cells_from_tracers()
+	     and get_tracers_from_cells() in order to obtain your cell data containing
+	     tracer particles (i.e. in general, cell data xn has no direct relation to tracer data xa)
+	     For technical design reasons, this DOES NOT return a copy of every cells' data
+	     for every tracer in the cell. I don't even remember why it "had" to be this
+	     way round but I believe it broke (possibly now deprecated) logic within the
+	     analysis. It might be possible to change this now by directly using
+	     get_copy_of_cell_for_every_tracer(), but I don't have enough time to refactor the
+	     entire project at this point. Sorry!
+
+Then to select any tracer and see it's behaviour, you will just need to [:,ii] 
+(the first indices will be your temporal axis, and any extra dimensions the physical
+property may have e.g. position, which is a 3D vector)

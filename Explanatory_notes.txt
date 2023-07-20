@@ -1,8 +1,9 @@
-I am sending you my master file for the CGM project using tracer particles.
-It is faaaaar too complicated for me to try and predict which bits you will need
-and far to complicated for you to try and use all of it, so I'm going to write
-this summary here. As always, please dm me on Slack if you run into trouble, or
-have questions.
+Author: Andrew Tomos Hannington
+Affiliation: Cardiff University
+Supervisor: Dr Freeke van de Voort
+		Email: vandevoortF@cardiff.ac.uk
+My Email: ask Freeke ;)
+
 
 My analysis is split into two core functions in the main analysis:
 1. Select our Tracers of interest in tracer_selection_snap_analysis()
@@ -45,22 +46,38 @@ In an ideal world I would have found a way to include this step in the main anal
 
 Anyway, it uses a function called flatten_wrt_time(). This nomenclature is to
 represent that you are going from time1_data = [...], time2_data=[...] (okay,
-I actually have dictionaries so it's more like {(25R75,T4,221) = {...}, ...})
+I actually have dictionaries so it's more like {('T4.0','25.0R75.0','221') = {...}, ...})
 for radius 25<R<75, Temperature ~ 1e4 K, and for snapshot 221.).
-This has two versions of it's core code. You want to use v2 called
-get_individual_cell_from_tracer_all_param_v2(). This uses a scipy interpolate1d
-function to map between tracerID (trid), and cellID (id). There's also some
-parentID (prid) stuff knocking about (the ID of the cell that tracer is in, so
+The function this calls is called get_copy_of_cell_for_every_tracer().
+This uses a scipy interpolate1d function to map between tracerID (trid), and cellID (id).
+This method was suggested by Dr Timothy Davis, Cardiff University. Thanks Tim!! =)
+There's also some parentID (prid) stuff knocking about (the ID of the cell that tracer is in, so
 you link between trid and id).
-The idea behind this function is that you go from having data like this:
-time1=[x0,x1,...,xn]
-time2=[x0,x1,...,xm]
-time3=[x0,x1,...,xl]
+
+The idea behind flatten_wrt_time() and get_copy_of_cell_for_every_tracer() 
+is that you go from having data like this:
+time1= cell data: [x0,x1,...,xn], tracer data: [x0,x1,...,xa]
+time2= cell data: [x0,x1,...,xm], tracer data: [x0,x1,...,xb]
+time3= cell data: [x0,x1,...,xl], tracer data: [x0,x1,...,xc]
 where n,m,l are different, and are the number of cells included at each timestep
+and a,b,c are different, and are the number of tracers included at each timestep.
+
 to
 [[x0,x1,...,xn],[x0,x1,...,xn],[x0,x1,...,xn],...]
 for all of the snapshots, where n is the number of tracers. Each tracer will
 have its own copy of the data of the cell it was in from every different
 snapshot, or a np.nan if that data doesn't exist (e.g., it wouldn't have age as a gas, or magnetic field strength (B) as a star. Or if it has exited our analysis, this will also be a np.nan).
 
-Then to select any tracer and see it's behaviour, you will just need to [:,ii] or [jj,:] depending on which way your data is stored.
+PLEASE NOTE: The "original" format (i.e. not time flattened) requires you to use get_cells_from_tracers()
+	     and get_tracers_from_cells() in order to obtain your cell data containing
+	     tracer particles (i.e. in general, cell data xn has no direct relation to tracer data xa)
+	     For technical design reasons, this DOES NOT return a copy of every cells' data
+	     for every tracer in the cell. I don't even remember why it "had" to be this
+	     way round but I believe it broke (possibly now deprecated) logic within the
+	     analysis. It might be possible to change this now by directly using
+	     get_copy_of_cell_for_every_tracer(), but I don't have enough time to refactor the
+	     entire project at this point. Sorry!
+
+Then to select any tracer and see it's behaviour, you will just need to [:,ii] 
+(the first indices will be your temporal axis, and any extra dimensions the physical
+property may have e.g. position, which is a 3D vector)
