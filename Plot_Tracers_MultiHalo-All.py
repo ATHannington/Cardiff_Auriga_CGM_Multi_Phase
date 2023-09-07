@@ -110,7 +110,7 @@ print("\n"+f"Saved Property Symbol to Label Map as 'Tracers_Property_Legend_Dict
 
 
 for entry in logParameters:
-    ylabel[entry] = r"$Log_{10}$" + ylabel[entry]
+    ylabel[entry] = r"$\mathrm{Log_{10}}$" + ylabel[entry]
 
 #   Perform forbidden log of Grad check
 deleteParams = []
