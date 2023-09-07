@@ -108,7 +108,7 @@ ylabel = {
 }
 
 for entry in logParams:
-    ylabel[entry] = r"$Log_{10}$" + ylabel[entry]
+    ylabel[entry] = r"$\mathrm{Log_{10}}$" + ylabel[entry]
 
 # ==============================================================================#
 
