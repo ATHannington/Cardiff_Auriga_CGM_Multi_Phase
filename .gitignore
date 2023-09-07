@@ -13,6 +13,9 @@
 *.jpg
 *.pdf
 
+###Analysis completion assessment files###
+*first_files_per_halo_ls*
+
 ###Zip###
 *.zip
 
