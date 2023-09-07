@@ -1344,6 +1344,7 @@ def calculate_tracked_parameters(
                 [
                     "T",
                     "P_tot",
+                    "P_tot+k",
                     "P_thermal",
                     "Pthermal_Pmagnetic",
                     "PCR_Pthermal",
@@ -1398,7 +1399,7 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["B", "P_magnetic", "Pthermal_Pmagnetic", "P_tot"]),
+            np.array(["B", "P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_tot+k"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
@@ -1416,7 +1417,7 @@ def calculate_tracked_parameters(
             logParameters.append("B")
 
     if np.any(
-        np.isin(np.array(["R", "vrad", "tff", "tcool_tff"]),
+        np.isin(np.array(["R", "vrad", "vrad_in", "vrad_out", "tff", "tcool_tff"]),
                 np.array(paramsOfInterest))
     ) | (len(paramsOfInterest) == 0):
         # Radius [kpc]
@@ -1424,7 +1425,7 @@ def calculate_tracked_parameters(
 
     KpcTokm = 1e3 * c.parsec * 1e-5
 
-    if np.any(np.isin(np.array(["vrad"]), np.array(paramsOfInterest))) | (
+    if np.any(np.isin(np.array(["vrad", "vrad_in", "vrad_out"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
         # Radial Velocity [km s^-1]
@@ -1432,6 +1433,19 @@ def calculate_tracked_parameters(
             snapGas.pos[whereGas] * KpcTokm * snapGas.vel[whereGas]
         ).sum(axis=1)
         snapGas.data["vrad"] /= snapGas.data["R"][whereGas] * KpcTokm
+
+    if np.any(np.isin(np.array(["vrad_in"]), np.array(paramsOfInterest))) | (
+        len(paramsOfInterest) == 0
+    ):
+        snapGas.data["vrad_in"] = copy.deepcopy(snapGas.data["vrad"])
+        snapGas.data["vrad_in"][np.where(snapGas.data["vrad_in"]> 0.0)[0]] = np.nan
+
+    if np.any(np.isin(np.array(["vrad_in"]), np.array(paramsOfInterest))) | (
+        len(paramsOfInterest) == 0
+    ):
+        snapGas.data["vrad_out"] = copy.deepcopy(snapGas.data["vrad"])
+        snapGas.data["vrad_out"][np.where(snapGas.data["vrad_out"]< 0.0)[0]] = np.nan
+
 
     # Cooling time [Gyrs]
     GyrToSeconds = 365.25 * 24.0 * 60.0 * 60.0 * 1e9
@@ -1496,7 +1510,7 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["ndens", "P_thermal","P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_CR", "PCR_Pthermal", "PCR_Pmagnetic"]),
+            np.array(["ndens", "P_thermal","P_magnetic", "Pthermal_Pmagnetic", "P_tot", "P_tot+k", "P_CR", "PCR_Pthermal", "PCR_Pmagnetic"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
@@ -1507,7 +1521,7 @@ def calculate_tracked_parameters(
 
     if np.any(
         np.isin(
-            np.array(["P_thermal", "Pthermal_Pmagnetic", "P_tot"]),
+            np.array(["P_thermal", "Pthermal_Pmagnetic", "P_tot", "P_tot+k"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
@@ -1519,7 +1533,7 @@ def calculate_tracked_parameters(
             logParameters.append("P_thermal")
     if np.any(
         np.isin(
-            np.array(["P_magnetic", "Pthermal_Pmagnetic", "PCR_Pmagnetic", "P_tot"]),
+            np.array(["P_magnetic", "Pthermal_Pmagnetic", "PCR_Pmagnetic", "P_tot", "P_tot+k"]),
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
@@ -1530,7 +1544,7 @@ def calculate_tracked_parameters(
         if genLogParameters:
             logParameters.append("P_magnetic")
 
-    if np.any(np.isin(np.array(["P_kinetic","P_tot"]), np.array(paramsOfInterest))) | (
+    if np.any(np.isin(np.array(["P_kinetic","P_tot+k"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
         # Kinetic "Pressure" [K cm^-3]
@@ -1549,11 +1563,21 @@ def calculate_tracked_parameters(
     ):
         snapGas.data["P_tot"] = (
             snapGas.data["P_thermal"][whereGas] +
+            snapGas.data["P_magnetic"][whereGas]
+        )
+        if genLogParameters:
+            logParameters.append("P_tot")
+
+    if np.any(np.isin(np.array(["P_tot+k"]), np.array(paramsOfInterest))) | (
+        len(paramsOfInterest) == 0
+    ):
+        snapGas.data["P_tot+k"] = (
+            snapGas.data["P_thermal"][whereGas] +
             snapGas.data["P_magnetic"][whereGas] +
             snapGas.data["P_kinetic"][whereGas]
         )
         if genLogParameters:
-            logParameters.append("P_tot")
+            logParameters.append("P_tot+k")
 
     if np.any(np.isin(np.array(["Pthermal_Pmagnetic"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1703,7 +1727,7 @@ def calculate_tracked_parameters(
     try:
         if np.any(
             np.isin(
-                np.array(["P_CR", "PCR_Pthermal", "Grad_P_CR", "gah", "e_CR", "P_tot","PCR_Pmagnetic"]),
+                np.array(["P_CR", "PCR_Pthermal", "Grad_P_CR", "gah", "e_CR", "P_tot", "P_tot+k" ,"PCR_Pmagnetic"]),
                 np.array(paramsOfInterest),
             )
         ) | (len(paramsOfInterest) == 0):
@@ -1727,6 +1751,17 @@ def calculate_tracked_parameters(
             )
     except Exception as e:
         print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+
+    try:
+        if np.any(np.isin(np.array(["P_tot+k"]), np.array(paramsOfInterest))) | (
+            len(paramsOfInterest) == 0
+        ):
+            snapGas.data["P_tot+k"] = (
+                snapGas.data["P_tot+k"][whereGas] + snapGas.data["P_CR"][whereGas]
+            )
+    except Exception as e:
+        print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+
 
     try:
         if np.any(
@@ -3359,7 +3394,7 @@ def pad_non_entries(snapGas, snapNumber):
 # ------------------------------------------------------------------------------#
 
 
-def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=False):
+def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=False, hush=False):
     # ------------------------------------------------------------------------------#
     #       Flatten dict and take subset
     # ------------------------------------------------------------------------------#
@@ -3374,6 +3409,35 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
         pass
     statsData = {}
 
+
+    #   Change note: added checks for pairs of percentiles. This is intended to alert the user of
+    #       (previously unanticipated) issues with percentiles not in pairs causing errors in
+    #       Median and percentiles plots. Median (i.e. 50th percentile) will be treated correctly by
+    #       plotting algorithms regardless (hopefully...), but this change should alert that
+    #       pairwise creation is needed for "fill-between" shaded regions in median and percentiles
+    #       plots.
+    medianIncluded = np.all(np.isin(np.asarray([50.00]),np.asarray(TRACERSPARAMS["percentiles"])))
+    nPercentiles = len(TRACERSPARAMS["percentiles"])
+    if medianIncluded:
+        nPercentiles-=1
+        if ((nPercentiles%2 != 0)&(hush==False)):
+            print("[@calculate_statistics]: WARNING! Percentiles have been entered without matching upper and lower pairs"
+                  +"\n"
+                  +"e.g. for 1 sigma  15.87% and 84.13%."
+                  +"\n"
+                  +"Median (i.e. 50.0%) was detected."
+                  +"\n"
+                  +"Percentiles not entered in pairs as described above may cause errors for median and percentiles plots.")
+    else:
+        if ((nPercentiles%2 != 0)&(hush==False)):
+            print("[@calculate_statistics]: WARNING! Percentiles have been entered without matching upper and lower pairs"
+                  +"\n"
+                  +"e.g. for 1 sigma  15.87% and 84.13%."
+                  +"\n"
+                  +"Median (i.e. 50.0%) was ~not~ detected."
+                  +"\n"
+                  +"Percentiles not entered in pairs as described above may cause errors for median and percentiles plots.")
+            
     for k, v in Cells.items():
         if k in saveParams:
             whereErrorKey = f"{k}"
@@ -3386,7 +3450,14 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
             #       This is because if key does not exist yet in statsData, we want to create a new entry in statsData
             #           else we want to append to it, not create a new entry or overwrite the old one
             # whereGas = np.where(FullDict[key]['type'] == 0)
-            for percentile in TRACERSPARAMS["percentiles"]:
+            #
+            #   Change note: added np sort to percentiles below. This is intended to mitigate any
+            #       (previously unanticipated) issues with percentile ordering not being
+            #       monotonic. Median (i.e. 50th percentile) will be treated correctly by
+            #       plotting algorithms regardless (hopefully...), but this change should impose
+            #       pairwise ordering for "fill-between" shaded regions in median and percentiles
+            #       plots.
+            for percentile in np.sort(np.asarray(TRACERSPARAMS["percentiles"])):
                 saveKey = f"{k}_{percentile:2.2f}%"
 
                 truthy = np.all(np.isnan(v))
