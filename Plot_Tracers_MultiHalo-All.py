@@ -49,10 +49,10 @@ logParameters = [ "nh", "dens", "ndens", "rho_rhomean", "rho", "vol", "csound", 
 ylabel = {
     "T": r"Temperature (K)",
     "R": r"Radius (kpc)",
-    "n_H": r"n$_H$ (cm$^{-3}$)",
-    "n_H_col": r"n$_H$ (cm$^{-2}$)",
-    "n_HI": r"n$_{HI}$ (cm$^{-3}$)",
-    "n_HI_col": r"n$_{HI}$ (cm$^{-2}$)",
+    "n_H": r"n$_{\mathrm{H}}$ (cm$^{-3}$)",
+    "n_H_col": r"n$_{\mathrm{H}}$ (cm$^{-2}$)",
+    "n_HI": r"n$_{\mathrm{HI}}$ (cm$^{-3}$)",
+    "n_HI_col": r"n$_{\mathrm{HI}}$ (cm$^{-2}$)",
     "nh": r"Neutral Hydrogen Fraction",
     "B": r"|B| ($ \mu $G)",
     "vrad": r"Radial Velocity (km s$^{-1}$)",
@@ -61,25 +61,25 @@ ylabel = {
     "P_thermal": r"P$_{Thermal}$ / k$_B$ (K cm$^{-3}$)",
     "P_magnetic": r"P$_{Magnetic}$ / k$_B$ (K cm$^{-3}$)",
     "P_kinetic": r"P$_{Kinetic}$ / k$_B$ (K cm$^{-3}$)",
-    "P_tot": r"P$_{tot}$ = (P$_{thermal}$ + P$_{magnetic}$)/ k$_B$"
+    "P_tot": r"P$_{\mathrm{Tot}}$ = (P$_{thermal}$ + P$_{magnetic}$)/ k$_B$"
     + "\n"
     + r"(K cm$^{-3}$)",
     "Pthermal_Pmagnetic": r"P$_{thermal}$/P$_{magnetic}$",
-    "P_CR": r"P$_{CR}$ (K cm$^{-3}$)",
-    "PCR_Pthermal": r"(X$_{CR}$ = P$_{CR}$/P$_{Thermal}$)",
+    "P_CR": r"P$_{\mathrm{CR}}$ (K cm$^{-3}$)",
+    "PCR_Pthermal": r"(X$_{\mathrm{CR}}$ = P$_{\mathrm{CR}}$/P$_{Thermal}$)",
     "gah": r"Alfven Gas Heating (erg s$^{-1}$)",
     "bfld": r"||B-Field|| ($ \mu $G)",
     "Grad_T": r"||Temperature Gradient|| (K kpc$^{-1}$)",
-    "Grad_n_H": r"||n$_H$ Gradient|| (cm$^{-3}$ kpc$^{-1}$)",
+    "Grad_n_H": r"||n$_{\mathrm{H}}$ Gradient|| (cm$^{-3}$ kpc$^{-1}$)",
     "Grad_bfld": r"||B-Field Gradient|| ($ \mu $G kpc$^{-1}$)",
-    "Grad_P_CR": r"||P$_{CR}$ Gradient|| (K kpc$^{-4}$)",
+    "Grad_P_CR": r"||P$_{\mathrm{CR}}$ Gradient|| (K kpc$^{-4}$)",
     "gima" : r"Star Formation Rate (M$_{\odot}$ yr$^{-1}$)",
     # "crac" : r"Alfven CR Cooling (erg s$^{-1}$)",
     "tcool": r"Cooling Time (Gyr)",
     "theat": r"Heating Time (Gyr)",
     "tcross": r"Sound Crossing Cell Time (Gyr)",
     "tff": r"Free Fall Time (Gyr)",
-    "tcool_tff": r"t$_{Cool}$/t$_{FreeFall}$",
+    "tcool_tff": r"t$_{\mathrm{Cool}}$/t$_{FreeFall}$",
     "csound": r"Sound Speed (km s$^{-1}$)",
     "rho_rhomean": r"$\rho / \langle \rho \rangle$",
     "rho": r"Density (M$_{\odot}$ kpc$^{-3}$)",
@@ -110,7 +110,9 @@ print("\n"+f"Saved Property Symbol to Label Map as 'Tracers_Property_Legend_Dict
 
 
 for entry in logParameters:
-    ylabel[entry] = r"$\mathrm{Log_{10}}$" + ylabel[entry]
+    ylabel[entry] = r"$\mathrm{Log_{10}}$ " + ylabel[entry]
+    ylabel[entry] = ylabel[entry].replace("(","[")
+    ylabel[entry] = ylabel[entry].replace(")","]")
 
 #   Perform forbidden log of Grad check
 deleteParams = []
