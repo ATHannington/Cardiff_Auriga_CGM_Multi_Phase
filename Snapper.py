@@ -172,7 +172,7 @@ def PlotHistogram(
         WeightsLabel        : Opt. Weight bins by param.    : Default = 'mass'
         Normed              : Opt. Normalise bins?          : Default = False. True is NOT recommended!
     """
-    AxesLabels = ["X", "Y", "Z"]
+    AxesLabels = ["z","x","y"]
     if WeightsLabel == "mass":
         Weights = snap.mass
     else:
@@ -304,7 +304,7 @@ def PlotProjections(
     print\((.*?),flush=True\)
 
     # Axes Labels to allow for adaptive axis selection
-    AxesLabels = ["x", "y", "z"]
+    AxesLabels = ["z","x","y"]
 
     # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in SetCentre)
     imgcent = [0.0, 0.0, 0.0]
