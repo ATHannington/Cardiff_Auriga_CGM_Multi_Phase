@@ -3145,25 +3145,25 @@ def get_copy_of_cell_for_every_tracer(
 # ------------------------------------------------------------------------------#
 
 
-def hdf5_save(path, data):
+def hdf5_save(path, data, delimiter="-"):
     """
     Save nested dictionary as hdf5 file.
     Dictionary must have form:
-        {(Meta-Key1 , Meta-Key2):{key1:... , key2: ...}}
+        {(MetaKey1 , MetaKey2):{key1:... , key2: ...}}
     and will be saved in the form:
-        {Meta-key1_Meta-key2:{key1:... , key2: ...}}
+        {Metakey1-Metakey2:{key1:... , key2: ...}}
     """
     with h5py.File(path, "w") as f:
         for key, value in data.items():
             saveKey = None
             # Loop over Metakeys in tuple key of met-dictionary
-            # Save this new metakey as one string, separated by '_'
+            # Save this new metakey as one string, separated by '-'
             if isinstance(key, tuple) == True:
                 for entry in key:
                     if saveKey is None:
                         saveKey = entry
                     else:
-                        saveKey = saveKey + "-" + str(entry)
+                        saveKey = saveKey + delimiter + str(entry)
             else:
                 saveKey = key
             # Create meta-dictionary entry with above saveKey
@@ -3177,13 +3177,13 @@ def hdf5_save(path, data):
 
 
 # ------------------------------------------------------------------------------#
-def hdf5_load(path):
+def hdf5_load(path,selectKeyLen=2,delimiter="-"):
     """
     Load nested dictionary from hdf5 file.
     Dictionary will be saved in the form:
-        {Meta-key1_Meta-key2:{key1:... , key2: ...}}
+        {Metakey1-Metakey2:{key1:... , key2: ...}}
     and output in the following form:
-        {(Meta-Key1 , Meta-Key2):{key1:... , key2: ...}}
+        {(MetaKey1 , MetaKey2):{key1:... , key2: ...}}
 
     """
     loaded = h5py.File(path, "r")
@@ -3191,12 +3191,18 @@ def hdf5_load(path):
     dataDict = {}
     for key, value in loaded.items():
 
-        loadKey = None
-        for entry in key.split("-"):
-            if loadKey is None:
-                loadKey = entry
+        loadKeyList = []
+        lastKeyList = []
+        for ii,entry in enumerate(key.split(delimiter)):
+            ii = ii + 1
+            if ii >= selectKeyLen:
+                lastKeyList.append(entry)
             else:
-                loadKey = tuple(key.split("-"))
+                loadKeyList.append(entry)
+        if ii < selectKeyLen: 
+            loadKey = tuple(loadKeyList)
+        else:
+            loadKey = tuple(loadKeyList+[delimiter.join(lastKeyList)])
         # Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k, v in value.items():
@@ -3793,7 +3799,7 @@ def plot_projections(
         cmap = plt.get_cmap(CMAP)
 
     # Axes Labels to allow for adaptive axis selection
-    AxesLabels = ["x", "y", "z"]
+    AxesLabels = ["z","x","y"]
 
     # Centre image on centre of simulation (typically [0.,0.,0.] for centre of HaloID in set_centre)
     imgcent = [0.0, 0.0, 0.0]
@@ -4002,7 +4008,7 @@ def plot_projections(
 
     cax2 = inset_axes(ax2, width="5%", height="95%", loc="right")
     fig.colorbar(pcm2, cax=cax2, orientation="vertical").set_label(
-        label=r"n$_H$ (cm$^{-3}$)", size=fontsize, weight="bold"
+        label=r"n$_{\mathrm{H}}$ (cm$^{-3}$)", size=fontsize, weight="bold"
     )
     cax2.yaxis.set_ticks_position("left")
     cax2.yaxis.set_label_position("left")
