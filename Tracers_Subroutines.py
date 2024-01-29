@@ -22,6 +22,7 @@ import math
 import random
 from itertools import combinations, chain
 import copy
+import warnings
 
 # ==============================================================================#
 #       MAIN ANALYSIS CODE - IN FUNC FOR MULTIPROCESSING
@@ -1177,7 +1178,7 @@ def weighted_percentile(data, weights, perc, key="Unspecified Error key..."):
         out = sorted_data[whereperc[0][0]]
     else:
         print(key)
-        print("[@WeightPercent:] Warning! Data all nan! Returning 0 value!")
+        warnings.warn("[@WeightPercent:] Data all nan! Returning 0 value!")
         out = np.array([0.0])
 
     return out
@@ -1739,7 +1740,7 @@ def calculate_tracked_parameters(
                 logParameters.append("P_CR")
 
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: P_CR {str(e)}")
     
 
     try:
@@ -1750,7 +1751,7 @@ def calculate_tracked_parameters(
                 snapGas.data["P_tot"][whereGas] + snapGas.data["P_CR"][whereGas]
             )
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: P_CR {str(e)}")
 
     try:
         if np.any(np.isin(np.array(["P_tot+k"]), np.array(paramsOfInterest))) | (
@@ -1760,7 +1761,7 @@ def calculate_tracked_parameters(
                 snapGas.data["P_tot+k"][whereGas] + snapGas.data["P_CR"][whereGas]
             )
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: P_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: P_CR {str(e)}")
 
 
     try:
@@ -1776,7 +1777,7 @@ def calculate_tracked_parameters(
             if genLogParameters:
                 logParameters.append("e_CR")
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: e_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: e_CR {str(e)}")
         
 
     try:
@@ -1790,7 +1791,7 @@ def calculate_tracked_parameters(
                 logParameters.append("PCR_Pthermal")
 
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: PCR_Pthermal {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: PCR_Pthermal {str(e)}")
 
     try:
         if np.any(np.isin(np.array(["PCR_Pmagnetic"]), np.array(paramsOfInterest))) | (
@@ -1803,7 +1804,7 @@ def calculate_tracked_parameters(
                 logParameters.append("PCR_Pmagnetic")
 
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: PCR_Pmagnetic {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: PCR_Pmagnetic {str(e)}")
 
 
 
@@ -1829,7 +1830,7 @@ def calculate_tracked_parameters(
 
             )
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: Grad_P_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: Grad_P_CR {str(e)}")
 
     try:
         if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (
@@ -1859,7 +1860,7 @@ def calculate_tracked_parameters(
                 logParameters.append("gah")
 
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: gah {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: gah {str(e)}")
 
     try:
         if np.any(
@@ -1872,7 +1873,7 @@ def calculate_tracked_parameters(
                 snapGas.data["Grad_P_CR"], axis=1
             )
     except Exception as e:
-        print(f"[@calculate_tracked_parameters]: Warning! Param not found: Norm Grad_P_CR {str(e)}")
+        warnings.warn(f"[@calculate_tracked_parameters]: Param not found: Norm Grad_P_CR {str(e)}")
 
     if np.any(np.isin(np.array(["rho"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
@@ -1930,7 +1931,7 @@ def calculate_gradient_of_parameter(
 
     transposeBool = False
     # if gridres is not None:
-    #     print("[verbose @calculate_gradient_of_parameter]: WARNING! Use of kwarg 'gridres' deprecated. ~Value given will be ignored~")
+    #     warnings.warn("[verbose @calculate_gradient_of_parameter]: Use of kwarg 'gridres' deprecated. ~Value given will be ignored~")
     # if (box is False) | (box is None):
     #     boxsize = snap.boxsize*2.
     # elif np.all(box==box[0]):
@@ -1956,7 +1957,7 @@ def calculate_gradient_of_parameter(
             box = pylab.array([bb for ii in range(0, 3)])
     elif np.all(box == box[0]) is False:
         raise Exception(
-            f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE!"
+            f"[@calculate_gradient_of_parameter]:"
             + "\n"
             + "Box not False, None, or all elements equal."
             + "\n"
@@ -2020,7 +2021,7 @@ def calculate_gradient_of_parameter(
 
     if FORCE is False:
         if gridres > 1500:
-            raise Exception(f"[@calculate_gradient_of_parameter]: WARNING! FAILURE! CRITICAL! Grid Resolution of {gridres}^3 attempted. This will almost certainly cause a segmentation fault. Check logic! Aborting!" +
+            raise Exception(f"[@calculate_gradient_of_parameter]: Grid Resolution of {gridres}^3 attempted. This will almost certainly cause a segmentation fault. Check logic! Aborting!" +
                             "\n"+"... if you actually wanted this resolution, use kwarg FORCE=True in calculate_gradient_of_parameter() call")
 
     spacing = boxsize / float(gridres)
@@ -2071,7 +2072,7 @@ def calculate_gradient_of_parameter(
                     np.prod(valdata.shape)) + 3.0 * 2.0 * 3.0 * (float(gridres)**3)) * numthreadsCopy * nParentProcesses
     if reqMem >= maxRamSysTot:
         raise Exception(
-            f"[@calculate_gradient_of_parameter]: WARNING! RAM requirements will be exceeded by resolution of ({gridres})**3 !" + "\n" +
+            f"[@calculate_gradient_of_parameter]: RAM requirements will be exceeded by resolution of ({gridres})**3 !" + "\n" +
             f"RAM requirements are {reqMem} ({(reqMem/maxRamSysTot):.2%} of total RAM)!")
         # )
         # suggested = math.floor(
@@ -2118,8 +2119,8 @@ def calculate_gradient_of_parameter(
         elif valdata.shape[1] == 3:
             transposeBool = False
         else:
-            print(
-                f"[@calculate_gradient_of_parameter]: WARNING! 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."
+            warnings.warn(
+                f"[@calculate_gradient_of_parameter]: 2nd Dim of Dimensionality of arg={arg} not 3 (x,y,z)."
                 + "\n"
                 + f"Shape {np.shape(snap.data[arg][use_only_cells][pp])} cannot be handled!"
                 + "\n"
@@ -2177,8 +2178,8 @@ def calculate_gradient_of_parameter(
         if transposeBool:
             snap.data[key] = snap.data[key].T
     else:
-        print(
-            f"[@calculate_gradient_of_parameter]: WARNING! Dimensionality of arg={arg} not 1D or 2D."
+        warnings.warn(
+            f"[@calculate_gradient_of_parameter]: Dimensionality of arg={arg} not 1D or 2D."
             + "\n"
             + f"Shape {np.shape(snap.data[arg][use_only_cells][pp])} cannot be handled!"
             + "\n"
@@ -2283,18 +2284,15 @@ def calculate_gradient_of_parameter(
                 (3.0 * float(gridres) * numthreadsCopy)
             )
             if reqMem >= maxRamSysTot:
-                print(
-                    f"[@calculate_gradient_of_parameter]: WARNING! RAM requirements will be exceeded by resolution of ({gridres})**3 !"
-                )
-                print(
-                    f"RAM requirements are {reqMem} ({(reqMem/maxRamSysTot):.2%} of total RAM)!"
-                )
                 suggested = math.floor(
                     (((maxRamSysTot / 64.0) - np.prod(posdata.shape)) / (3.0))
-                    ** (1.0 / 3.0)
-                )
-                print(
-                    f"We suggest a GridRes < {suggested} for this system. Remember to leave RAM for other objects too!"
+                    ** (1.0 / 3.0))
+                warnings.warn(
+                    f"[@calculate_gradient_of_parameter]: RAM requirements will be exceeded by resolution of ({gridres})**3 !"
+                    +"\n"
+                    +f"RAM requirements are {reqMem} ({(reqMem/maxRamSysTot):.2%} of total RAM)!"
+                    +"\n"
+                    +f"We suggest a GridRes < {suggested} for this system. Remember to leave RAM for other objects too!"
                 )
 
             nchunks = int(max(nchunks, numthreadsCopy))
@@ -2376,7 +2374,7 @@ def calculate_gradient_of_parameter(
 
         assert (
             np.shape(snap.data[key])[0] == np.shape(snap.data[arg])[0]
-        ), f"[@calculate_gradient_of_parameter]: WARNING! CRITICAL! FAILURE! Output from Gradient Calc and subsequent mapping not equal in shape to input data! Check Logic!"
+        ), f"[@calculate_gradient_of_parameter]: Output from Gradient Calc and subsequent mapping not equal in shape to input data! Check Logic!"
 
     print(f"... compute gradient of {arg} done!")
 
@@ -3190,22 +3188,26 @@ def hdf5_load(path,selectKeyLen=2,delimiter="-"):
     
     dataDict = {}
     for key, value in loaded.items():
-
-        loadKeyList = []
-        lastKeyList = []
-        for ii,entry in enumerate(key.split(delimiter)):
-            ii = ii + 1
-            if ii >= selectKeyLen:
-                lastKeyList.append(entry)
-            else:
-                loadKeyList.append(entry)
-        if len(loadKeyList)>1:
-            if ii < selectKeyLen: 
-                loadKey = tuple(loadKeyList)
-            else:
-                loadKey = tuple(loadKeyList+[delimiter.join(lastKeyList)])
+        
+        if selectKeyLen is None:
+            loadKey = tuple(key.split(delimiter))
         else:
-            loadKey = loadKeyList[0]
+            loadKeyList = []
+            lastKeyList = []
+            for ii,entry in enumerate(key.split(delimiter)):
+                # ii = ii + 1
+                if ii >= selectKeyLen:
+                    lastKeyList.append(entry)
+                else:
+                    loadKeyList.append(entry)
+            if len(loadKeyList)>1:
+                if ii < selectKeyLen: 
+                    loadKey = tuple(loadKeyList)
+                else:
+                    loadKey = tuple(loadKeyList+[delimiter.join(lastKeyList)])
+            else:
+                loadKey = loadKeyList[0]
+        
         # Take the sub-dict out from hdf5 format and save as new temporary dictionary
         tmpDict = {}
         for k, v in value.items():
@@ -3215,6 +3217,33 @@ def hdf5_load(path,selectKeyLen=2,delimiter="-"):
 
     return dataDict
 
+# # # def hdf5_load(path,selectKeyLen=2,delimiter="-"):
+# # #     """
+# # #     Load nested dictionary from hdf5 file.
+# # #     Dictionary will be saved in the form:
+# # #         {Metakey1-Metakey2:{key1:... , key2: ...}}
+# # #     and output in the following form:
+# # #         {(MetaKey1 , MetaKey2):{key1:... , key2: ...}}
+
+# # #     """
+# # #     loaded = h5py.File(path, "r")
+    
+# # #     dataDict = {}
+# # #     for key, val in loaded.items():
+# # #         if isinstance(key, tuple) == True:
+# # #             loadKey = tuple(key.split(delimiter))
+# # #         else:
+# # #             loadKey = key
+
+# # #         # Take the sub-dict out from hdf5 format and save as new temporary dictionary
+# # #         tmpDict = {}
+# # #         for k, v in val.items():
+# # #             tmpDict.update({k: v.value})
+# # #         # Add the sub-dictionary to the meta-dictionary
+# # #         dataDict.update({loadKey: tmpDict})
+
+# # #     return dataDict
+
 
 # ------------------------------------------------------------------------------#
 
@@ -3222,10 +3251,10 @@ def hdf5_load(path,selectKeyLen=2,delimiter="-"):
 def full_dict_hdf5_load(path, TRACERSPARAMS, FullDataPathSuffix, hush=False):
 
     if hush == False: 
-        print("\n"
+        warnings.warn("\n"
             +"***!!!***"
             +"\n"
-            +"[@full_dict_hdf5_load]: WARNING! NOTE: The data included in the full dictionary loaded here is NOT in a time flattened format!"
+            +"[@full_dict_hdf5_load]: NOTE: The data included in the full dictionary loaded here is NOT in a time flattened format!"
             +"\n"
             +"The tracer information (e.g. 'prid' and 'trid') does NOT map to the rest of the data!"
             +"\n"
@@ -3336,11 +3365,12 @@ def pad_non_entries(snapGas, snapNumber):
                     )
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
-                        print(
+                        warnings.warn(
                             "[@ GAS @pad_non_entries 1D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
-                        )
-                        print(f"Key: {key}")
-                        print(f"shape: {np.shape(paddedValues)}")
+                            +"\n"
+                            +f"Key: {key}"
+                            +"\n"
+                            +f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] == NStars:
                     # Opposite addition order to maintain sensible ordering.
@@ -3349,18 +3379,20 @@ def pad_non_entries(snapGas, snapNumber):
                     )
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
-                        print(
+                        warnings.warn(
                             "[@ STARS @pad_non_entries 1D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
-                        )
-                        print(f"Key: {key}")
-                        print(f"shape: {np.shape(paddedValues)}")
+                            +"\n"
+                            +f"Key: {key}"
+                            +"\n"
+                            +f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] != (NTot):
-                    print(
-                        "[@ ELSE @pad_non_entries 1D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
-                    )
-                    print(f"Key: {key}")
-                    print(f"shape: {np.shape(value)}")
+                    warnings.warn(
+                        "[@ ELSE @pad_non_entries 1D:] Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
+                        +"\n"
+                        +f"Key: {key}"
+                        +"\n"
+                        +f"shape: {np.shape(value)}")
             else:
                 if np.shape(value)[0] == NGas:
                     paddedValues = np.pad(
@@ -3371,11 +3403,12 @@ def pad_non_entries(snapGas, snapNumber):
                     )
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
-                        print(
+                        warnings.warn(
                             "[@ GAS @pad_non_entries 2D:] Padded List not of length NTot. Data Does not have non-entries for STARS!"
-                        )
-                        print(f"Key: {key}")
-                        print(f"shape: {np.shape(paddedValues)}")
+                            +"\n"
+                            +f"Key: {key}"
+                            +"\n"
+                            +f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] == NStars:
                     # Opposite addition order to maintain sensible ordering.
@@ -3384,18 +3417,20 @@ def pad_non_entries(snapGas, snapNumber):
                     )
                     snapGas.data[key] = paddedValues
                     if np.shape(paddedValues)[0] != NTot:
-                        print(
+                        warnings.warn(
                             "[@ STARS @pad_non_entries 2D:] Padded List not of length NTot. Data Does not have non-entries for GAS!"
-                        )
-                        print(f"Key: {key}")
-                        print(f"shape: {np.shape(paddedValues)}")
+                            +"\n"
+                            +f"Key: {key}"
+                            +"\n"
+                            +f"shape: {np.shape(paddedValues)}")
 
                 elif np.shape(value)[0] != NTot:
-                    print(
-                        "[@ ELSE @pad_non_entries 2D:] Warning! Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
-                    )
-                    print(f"Key: {key}")
-                    print(f"shape: {np.shape(value)}")
+                    warnings.warn(
+                        "[@ ELSE @pad_non_entries 2D:] Rule Exception! Original Data does not have shape consistent with number of stars or number of gas as defined by NGas NStars!"
+                            +"\n"
+                            +f"Key: {key}"
+                            +"\n"
+                            +f"shape: {np.shape(value)}")
 
     return snapGas
 
@@ -3404,11 +3439,13 @@ def pad_non_entries(snapGas, snapNumber):
 
 
 def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=False, hush=False):
-    # ------------------------------------------------------------------------------#
-    #       Flatten dict and take subset
-    # ------------------------------------------------------------------------------#
-    # print("")
-    # print(f"Analysing Statistics!")
+    """
+        Calculate weighted/unweighted median based percentiles for data in Cells.
+        For non-standard weightings with weightedStatsBool == True,
+        please either pass them in nonMassWeightDict (i.e. the dictionary for which properties
+        _shouldn't_ be weighted by mass) or set them to None / null.
+        Note: if you are weighting by 'count', this will default to an unweighted percentile.
+    """
 
     try:
         nonMassWeightDict = TRACERSPARAMS["nonMassWeightDict"]
@@ -3430,7 +3467,7 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
     if medianIncluded:
         nPercentiles-=1
         if ((nPercentiles%2 != 0)&(hush==False)):
-            print("[@calculate_statistics]: WARNING! Percentiles have been entered without matching upper and lower pairs"
+            warnings.warn("[@calculate_statistics]: Percentiles have been entered without matching upper and lower pairs"
                   +"\n"
                   +"e.g. for 1 sigma  15.87% and 84.13%."
                   +"\n"
@@ -3439,7 +3476,7 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                   +"Percentiles not entered in pairs as described above may cause errors for median and percentiles plots.")
     else:
         if ((nPercentiles%2 != 0)&(hush==False)):
-            print("[@calculate_statistics]: WARNING! Percentiles have been entered without matching upper and lower pairs"
+            warnings.warn("[@calculate_statistics]: Percentiles have been entered without matching upper and lower pairs"
                   +"\n"
                   +"e.g. for 1 sigma  15.87% and 84.13%."
                   +"\n"
@@ -3471,8 +3508,12 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
 
                 truthy = np.all(np.isnan(v))
                 if truthy == True:
-                    print(
-                        f"[@calculate_statistics]: WARNING! truthy == False! All data is NaN!")
+                    warnings.warn(
+                        f"[@calculate_statistics]: All data is NaN for statistics saveKey {saveKey}!"
+                        +"\n"
+                        +"This can be an error with data selection, or can be a low probability possbility dependent"
+                        +"on selections and binByParam chosen. Please check logic to be confident this latter case has occured."
+                    )
 
                 if weightedStatsBool is False:
                     if truthy == False:
@@ -3483,11 +3524,25 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                     if truthy == False:
                         try:
                             weightKey = nonMassWeightDict[k]
+                            if nonMassWeightDict[k] == "count":
+                                weightKey = None
+                                warnings.warn(f"[@calculate_statistics]: Weightkey==count will default to unweighted statistics calculation for this"
+                                    +"\n"
+                                    +f"physical property: {k}")
                             if weightKey is not None:
                                 weightData = Cells[weightKey]
                             else:
                                 pass
-                        except:
+                            
+                        except Exception as e:
+                            # # # print(str(e))
+                            # # # if hush==False:
+                            # # #     warnings.warn(f"[@calculate_statistics]: Weightkey for {k} not recognised in nonMassWeightDict!"
+                            # # #       +"\n"
+                            # # #       +"Default of mass will be used! Please check nonMassWeightDictionary used, and documentation/doc-strings for"
+                            # # #       +"\n"
+                            # # #       +"advised treatment of non-standard weightings!"
+                            # # #       )
                             weightKey = "mass"
                             weightData = Cells[weightKey]
 
@@ -5040,7 +5095,7 @@ def multi_halo_merge(
     import collections
 
     if hush == False: 
-        print("\n"
+        warnings.warn("\n"
             +"***!!!***"
             +"\n"
             +"[@Multi Halo Merge]: WARNING! NOTE: This is NOT the flatten_wrt_time version!"
@@ -5162,7 +5217,7 @@ def multi_halo_merge(
         print("In the order of the following sims:")
         print(simList)
         raise Exception(
-            "[@ multi_halo_merge]: WARNING! CRITICAL! Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!"
+            "[@ multi_halo_merge]: Simulations do not contain same Save Parameters (saveParams)! Check TracersParams.csv!"
         )
 
     ### Check all LOADED DATA contained same params ###
@@ -5177,7 +5232,7 @@ def multi_halo_merge(
         print("In the order of the following sims:")
         print(simList)
         raise Exception(
-            "[@ multi_halo_merge]: WARNING! CRITICAL! Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!"
+            "[@ multi_halo_merge]: Flattened Data do not contain same Save Parameters (saveParams)! Check TracersParams.csv BEFORE flatten_wrt_time contained same Save Parameters (saveParams)!"
         )
 
     saveParams = np.unique(np.array(saveParams)).tolist()
@@ -5255,7 +5310,7 @@ def multi_halo_merge_flat_wrt_time(
                     tmp = hdf5_load(loadPath)
                     dataDict.update(tmp)
                 except Exception as e:
-                    print(f"[Multi Halo Merge Time]: WARNING! {e}")
+                    warnings.warn(f"[Multi Halo Merge Time]: WARNING! {e}")
                     pass
 
         print("LOADED")
