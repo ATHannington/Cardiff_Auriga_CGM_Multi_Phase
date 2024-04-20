@@ -27,7 +27,7 @@ DPI = 150
 xsize = 7.0
 ysize = 4.0
 epsilon = 0.50
-epsilonRadial = 50.0
+epsilonVrad = 50.0
 radialLimit = 200.0
 opacityPercentiles = 0.25
 lineStyleMedian = "solid"
@@ -402,6 +402,7 @@ plt.close("all")
 # ============================================================================#
 # # #                   Bar Chart PLOT                                            #
 # # # =============================================================================#
+
 matplotlib.rc_file_defaults()
 plt.close("all")
 bars_plot(
@@ -421,7 +422,7 @@ bars_plot(
     lineStylePercentiles=lineStylePercentiles,
     colourmapMain=colourmapMain,
     epsilon = epsilon,
-    epsilonRadial = epsilonRadial,
+    epsilonVrad = epsilonVrad,
     radialLimit = radialLimit,
 )
 matplotlib.rc_file_defaults()
@@ -446,11 +447,12 @@ bars_plot(
     lineStylePercentiles=lineStylePercentiles,
     colourmapMain=colourmapMain,
     epsilon = epsilon,
-    epsilonRadial = epsilonRadial,
+    epsilonVrad = epsilonVrad,
     radialLimit = radialLimit,
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
+
 # ============================================================================#
 # # ============================================================================#
 # # #                         Non-Paper Plots

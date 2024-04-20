@@ -1522,7 +1522,7 @@ def bar_plot_statistics(
     shortSnapRangeBool=False,
     shortSnapRangeNumber=None,
     epsilon = None,
-    epsilonRadial = 50.0,
+    epsilonVrad = 50.0,
     radialLimit = 200.0,
 ):
 
@@ -1637,17 +1637,13 @@ def bar_plot_statistics(
 
             print("Ever fast-flowing")
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["vrad"][pre, :] >= epsilonRadial)
-                &
-                (FlatDataDict[Tkey]["R"][pre, :] <= radialLimit)
+                (FlatDataDict[Tkey]["vrad"][pre, :] >= epsilonVrad)
             )
             everoutflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["vrad"][post, :] >= epsilonRadial)
-                &
-                (FlatDataDict[Tkey]["R"][post, :] <= radialLimit)
+                (FlatDataDict[Tkey]["vrad"][post, :] >= epsilonVrad)
             )
             everoutflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -1657,17 +1653,13 @@ def bar_plot_statistics(
 
 
             rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["vrad"][pre, :] <= -1.0*epsilonRadial)
-                &
-                (FlatDataDict[Tkey]["R"][pre, :] <= radialLimit)
+                (FlatDataDict[Tkey]["vrad"][pre, :] <= -1.0*epsilonVrad)
             )
             everinflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["vrad"][post, :] <= -1.0*epsilonRadial)
-                &
-                (FlatDataDict[Tkey]["R"][post, :] <= radialLimit)
+                (FlatDataDict[Tkey]["vrad"][post, :] <= -1.0*epsilonVrad)
             )
             everinflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
@@ -2019,35 +2011,35 @@ def bar_plot_statistics(
             data = FlatDataDict[Tkey]["vrad"][post, :]
             vradPostDat = np.nanmedian(data, axis=0)
 
-            colspre = np.where(vradPreDat <= 0.0 - epsilonRadial)[0]
+            colspre = np.where(vradPreDat <= 0.0 - epsilonVrad)[0]
             inflowpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            colspost = np.where(vradPostDat <= 0.0 - epsilonRadial)[0]
+            colspost = np.where(vradPostDat <= 0.0 - epsilonVrad)[0]
             inflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             inflow.append([inflowpre, inflowpost])
 
             colspre = np.where(
-                (vradPreDat > 0.0 - epsilonRadial)
-                & (vradPreDat < 0.0 + epsilonRadial)
+                (vradPreDat > 0.0 - epsilonVrad)
+                & (vradPreDat < 0.0 + epsilonVrad)
             )[0]
             statflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             colspost = np.where(
-                (vradPostDat > 0.0 - epsilonRadial)
-                & (vradPostDat < 0.0 + epsilonRadial)
+                (vradPostDat > 0.0 - epsilonVrad)
+                & (vradPostDat < 0.0 + epsilonVrad)
             )[0]
             statflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
             statflow.append([statflowpre, statflowpost])
 
-            colspre = np.where(vradPreDat >= 0.0 + epsilonRadial)[0]
+            colspre = np.where(vradPreDat >= 0.0 + epsilonVrad)[0]
             outflowpre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
-            colspost = np.where(vradPostDat >= 0.0 + epsilonRadial)[0]
+            colspost = np.where(vradPostDat >= 0.0 + epsilonVrad)[0]
             outflowpost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
@@ -2354,7 +2346,7 @@ def bars_plot(
     TracersMasterParamsPath="TracersParamsMaster.csv",
     SelectedHaloesPath="TracersSelectedHaloes.csv",
     epsilon = None,
-    epsilonRadial = 50.0,
+    epsilonVrad = 50.0,
     radialLimit = 200.0
 ):
     colourmapMain = "plasma"
@@ -2376,7 +2368,7 @@ def bars_plot(
         shortSnapRangeBool=shortSnapRangeBool,
         shortSnapRangeNumber=shortSnapRangeNumber,
         epsilon = epsilon,
-        epsilonRadial = epsilonRadial,
+        epsilonVrad = epsilonVrad,
         radialLimit=radialLimit,
     )
 
