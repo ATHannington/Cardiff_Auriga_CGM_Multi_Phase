@@ -1020,7 +1020,7 @@ timeAvDF = flat_analyse_time_averages(
 )
 
 # Save
-savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
+savePath = DataSavepath + "_Bar-Charts-Statistics-Table.csv"
 
 print("\n" + f"Saving Stats table .csv as {savePath}")
 

@@ -1136,13 +1136,27 @@ def save_cells_data(
 # ------------------------------------------------------------------------------#
 # FvdV weighted percentile code:
 # ------------------------------------------------------------------------------#
-def weighted_percentile(data, weights, perc, key="Unspecified Error key..."):
+def weighted_percentile(data, weights, perc, key="Unspecified Error key...",hush=False):
     """
     Find the weighted Percentile of the data. perc should be given in
     ercentage NOT in decimal!
     Returns a zero value and warning if all Data (or all weights) are NaN
     """
 
+    if (perc<=1.00):
+        if hush is False: 
+            warnings.warn(f"[@weighted_percentile]: entered value for percentile kwarg, 'perc', detected as <= 1"
+                      +"\n"
+                      +"Percentile must be entered as 0 <= perc <= 100!" 
+                      +"\n"
+                      +"This is to ensure consistency with NumPy function naming convention"
+                      +"\n"
+                      +"Where percentile is given between 0 - 100, and quantile is given between 0 - 1"
+                      +"\n"
+                      +"Please ensure the value passed into kwarg is intended as less than the 1st percentile (<1%)"
+                      +"\n"
+                      +"To disable this warning, pass kwarg of 'hush = True' in the call to this function.")
+            
     # percentage to decimal
     perc /= 100.0
 
@@ -3511,8 +3525,11 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                     warnings.warn(
                         f"[@calculate_statistics]: All data is NaN for statistics saveKey {saveKey}!"
                         +"\n"
-                        +"This can be an error with data selection, or can be a low probability possbility dependent"
-                        +"on selections and binByParam chosen. Please check logic to be confident this latter case has occured."
+                        +"This can be an error with data selection, or can be a low probability possibility dependent"
+                        +"\n"
+                        +"on selections and paramater chosen to bin the data by (often referred to as 'xParam' in this codebase)."
+                        +"\n"
+                        +"Please check logic to be confident this latter case has occurred."
                     )
 
                 if weightedStatsBool is False:

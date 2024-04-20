@@ -1570,11 +1570,11 @@ def bars_plot(
 
     # Save
     if (shortSnapRangeBool is False) & (shortSnapRangeNumber is None):
-        savePath = DataSavepath + "_Time-Averages-Statistics-Table.csv"
+        savePath = DataSavepath + "_Bar-Charts-Statistics-Table.csv"
     else:
         savePath = (
             DataSavepath
-            + f"_Time-Averages-Statistics-Table_shortSnapRange-{int(shortSnapRangeNumber)}snaps.csv"
+            + f"_Bar-Charts-Statistics-Table_shortSnapRange-{int(shortSnapRangeNumber)}snaps.csv"
         )
     print("\n" + f"Saving Stats table .csv as {savePath}")
 

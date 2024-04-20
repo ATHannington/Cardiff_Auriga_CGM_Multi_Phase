@@ -1,0 +1,25 @@
+simfile /home/universe/spxfv/Auriga/level3_MHD_new/halo_L8/output/                             # Set path to simulation data
+savepath /home/universe/c1838736/Tracers/V11-1/Convergence_Tests/level3/halo_L8/                       # Set path to save data
+saveParams "T,R,n_H,rho,B,vrad,gz,L,P_thermal,P_magnetic,P_kinetic,P_tot,Pthermal_Pmagnetic,tcool,tff,tcool_tff"
+saveTracersOnly "sfr,age"                                                 # Optional Tracer only (no stats in .csv) parameters to be saved. nCannot guarantee that all Plotting and post-processing are independent of these. Will attempt to ensure any necessary parameters are stored in ESSENTIALS
+saveEssentials "halo,subhalo,Lookback,Ntracers,Snap,id,prid,trid,type,mass,pos"  # SAVE ESSENTIALS : The data required to be tracked in order for the analysis to work
+finalSnap 127                                                                    # Max number of snapshots in simulation
+selectSnap 119                                                                   # Set snapshot to select data from
+snapMin 111                                                                      # Set minimum snap (largest lookback time) to look at
+snapMax 127                                                                      # Set Max snapshot to look at tracers from snapnum
+percentiles "15.87, 50.0, 84.13"       #"0.13, 2.28 , 15.87, 50.0, 84.13, 97.72, 99.87"                      # Set Percentiles of parameter of interest
+targetTLst "4,5,6"                                                               # Set target temperatures of form: [10^{target +- delta}]
+phasesSnaps "111, 119, 127"                                                      # Select snaps to save copy of snapGas for phases data
+deltaT 0.25                                                                      # Set delta dex for Temperature as given in above form
+Rinner "25.0, 75.0, 125.0"                                                       # Inner Radius of selection kpc
+Router "75.0, 125.0, 175.0"                                                      # Outer Radius of selection kpc
+Axes "2,0"                                                                       # Axis for Plots 0 = x, 1 = y, 2 = z whichever is not chosen will be used as line of sight axis
+QuadPlotBool 0                                                                   # "Boolean" for whether to plot QUAD plot. 0 = False, 1 = True
+boxsize 400                                                                      # Plots box size (+/- boxsize/2 kpc on each edge)
+boxlos 50                                                                        # Plots Line of sight box size (+/- boxlos/2 kpc centred on galaxy centre)
+pixres 0.2                                                                       # Pixel Resolution in plane of Plot
+pixreslos 0.2                                                                      # Pixel Resolution in LOS of plot
+haloID 0                                                                         # Select SubHalo to select. Unbound in relevant FoF halo will also be selected
+dtwSubset 1750                                                                  #
+dtwParams "T,R,n_H,vrad"
+dtwlogParams "T,n_H"
