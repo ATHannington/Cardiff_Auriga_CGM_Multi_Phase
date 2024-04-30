@@ -1,0 +1,54 @@
+###Ignore proprietary dirs###
+*/1314459/*
+###Ignore Files of given Type: ###
+
+### git files ###
+hooks/
+lfs/
+
+### Old scripts dir for personal use/reference ###
+Old/
+
+###Output Data###
+*.exe
+*.h5
+*Data*.csv
+*.xlsx
+
+###Output Images###
+*.png
+*.jpg
+*.pdf
+
+###Analysis completion assessment files###
+*first_files_per_halo_ls*
+
+###Zip###
+*.zip
+
+###Video###
+*.mp4
+
+###Compiled Files###
+*.o
+*.mod
+
+###Compiled F2py files###
+*.so
+
+###Whatever these are? Tmp files?###
+*.*~
+3
+
+###Executable###
+*run*
+
+###pycache###
+__pycache__/
+.pytest_cache/
+
+###ipynb###
+.ipynb*
+
+###idea###
+.idea/
