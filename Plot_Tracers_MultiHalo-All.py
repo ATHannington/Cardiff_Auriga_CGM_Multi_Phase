@@ -18,7 +18,7 @@ from gadget_subfind import *
 import h5py
 import os
 from Tracers_Subroutines import *
-from Tracers_MultiHalo_Plotting_Tools import *
+from alt_Tracers_MultiHalo_Plotting_Tools import *
 from random import sample
 import math
 
@@ -36,6 +36,8 @@ colourmapMain = "plasma"
 
 # Toggle Titles
 titleBool = False
+#Toggle exclude ISM
+noISMBool = False
 # Toggle separate legend output pdf
 separateLegend = True
 
@@ -152,8 +154,27 @@ snapRange = [
         1,
     )
 ]
+# ==============================================================================#
+# ==============================================================================#
+#
+#               Safety check to ensure tracer id (trid) to parent cell id (prid) mapping is consistent
+#                 between time flattened and original data formats
+#
+# ==============================================================================#
+# ==============================================================================#
 
+print("Safety check of time flat data and original format match!")
 
+check_flat_id_match_original(
+        SELECTEDHALOES,
+        HALOPATHS,
+        DataSavepathSuffix,
+        snapRange,
+        Tlst,
+        TracersParamsPath
+)
+
+# ==============================================================================#
 # ==============================================================================#
 print("Load Non Time Flattened Data 1st Halo ONLY!")
 mergedDict, _ = multi_halo_merge(
@@ -196,8 +217,11 @@ tlookback = np.array(tlookback)
 #                   Load Flattened Data                                       #
 # =============================================================================#
 
-# del mergedDict
-
+# # # # del mergedDict
+# # # print("Load Time Flattened Data!")
+# # # oneHalo, _ = multi_halo_merge_flat_wrt_time(
+# # #     SELECTEDHALOES[:1], HALOPATHS[:1], DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
+# # # )
 print("Load Time Flattened Data!")
 flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
     SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
@@ -226,15 +250,28 @@ for rin, rout in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
 # for snap in snapRange:
 #     timeIndex =  np.where(np.array(snapRange) == snap)[0]
 #     print(flatMergedDict[selectTimeKey]['pos'][timeIndex])
-
+# =============================================================================#
+#                     Check cell_change and labelling of tracers!                                                   # 
+# =============================================================================#
+print("Tracer cell changes and labelling checks!")
+_ = multi_halo_flat_wrt_time_tracer_cell_changes_and_labelling_checks(
+    flatMergedDict,
+    snapRange,
+    TRACERSPARAMS,
+    epsilon=epsilon,
+    dataExcludedTolerance = 0.05,
+    tracerLossTolerance = 0.0,
+)
 # =============================================================================#
 #                     Stats!                                                   # 
 # =============================================================================#
 print("Calculate multi halo statistics")
 statsData = multi_halo_statistics(
-    flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst
+    flatMergedDict, TRACERSPARAMS, saveParams, snapRange, Tlst, noISM = noISMBool
 )
-
+# oneHaloStatsData = multi_halo_statistics(
+#     oneHalo, TRACERSPARAMS, saveParams, snapRange, Tlst
+# )
 print("Save multi halo statistics")
 save_statistics_csv(statsData, TRACERSPARAMS, Tlst, snapRange)
 # ============================================================================#
@@ -360,6 +397,7 @@ currently_or_persistently_at_temperature_plot(
     Tlst,
     DataSavepath,
     titleBool=titleBool,
+    noISM = noISMBool,
     DPI=DPI,
     xsize=xsize,
     ysize=ysize,
@@ -402,6 +440,7 @@ plt.close("all")
 # ============================================================================#
 # # #                   Bar Chart PLOT                                            #
 # # # =============================================================================#
+
 matplotlib.rc_file_defaults()
 plt.close("all")
 bars_plot(
@@ -451,6 +490,7 @@ bars_plot(
 )
 matplotlib.rc_file_defaults()
 plt.close("all")
+
 # ============================================================================#
 # # ============================================================================#
 # # #                         Non-Paper Plots

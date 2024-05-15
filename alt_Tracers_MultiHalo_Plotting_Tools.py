@@ -453,6 +453,7 @@ def currently_or_persistently_at_temperature_plot(
     Tlst,
     DataSavepath,
     titleBool,
+    noISM = False,
     DPI=100,
     xsize=5.0,
     ysize=6.0,
@@ -508,11 +509,17 @@ def currently_or_persistently_at_temperature_plot(
                 data = dataDict[key]["T"][timeIndexSelect][0][whereGas]
                 sfrData = dataDict[key]["sfr"][timeIndexSelect][0][whereGas]
 
-                selectedAtSelection = np.where(
-                    (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
-                    & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
-                    & (sfrData == 0.0)
-                )[0]        #  Have removed ISM gas to see impacts made
+                if noISM:
+                    selectedAtSelection = np.where(
+                        (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                        & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
+                        & (sfrData == 0.0)
+                    )[0]        #  Have removed ISM gas to see impacts made
+                else:
+                    selectedAtSelection = np.where(
+                        (data >= 1.0 * 10 ** (T - TRACERSPARAMS["deltaT"]))
+                        & (data <= 1.0 * 10 ** (T + TRACERSPARAMS["deltaT"]))
+                    )[0]
 
                 for tmpsnapRange in rangeSet:
                     currentSelection = selectedAtSelection
@@ -524,22 +531,35 @@ def currently_or_persistently_at_temperature_plot(
                         if persistenceBool is True:
                             data = dataDict[key]["T"][timeIndex][0][whereGas]
                             sfrData = dataDict[key]["sfr"][timeIndex][0][whereGas]
-                            selected = np.where(
-                                (data >= 1.0 * 10 ** (T - deltaT))
-                                & (data <= 1.0 * 10 ** (T + deltaT))
-                                & (sfrData == 0.0)
-                            )[0]        #  Have removed ISM gas to see impacts made
+
+                            if noISM:
+                                selected = np.where(
+                                    (data >= 1.0 * 10 ** (T - deltaT))
+                                    & (data <= 1.0 * 10 ** (T + deltaT))
+                                    & (sfrData == 0.0)
+                                )[0]        #  Have removed ISM gas to see impacts made
+                            else:
+                                selected = np.where(
+                                    (data >= 1.0 * 10 ** (T - deltaT))
+                                    & (data <= 1.0 * 10 ** (T + deltaT))
+                                )[0]
                             currentSelection = np.intersect1d(selected, currentSelection)
                             nTracers = int(np.shape(currentSelection)[0])
 
                         else:
                             data = dataDict[key]["T"][timeIndex][0][whereGas]
                             sfrData = dataDict[key]["sfr"][timeIndex][0][whereGas]
-                            selected = np.where(
-                                (data >= 1.0 * 10 ** (T - deltaT))
-                                & (data <= 1.0 * 10 ** (T + deltaT))
-                                & (sfrData == 0.0)
-                            )[0]        #  Have removed ISM gas to see impacts made
+                            if noISM:
+                                selected = np.where(
+                                    (data >= 1.0 * 10 ** (T - deltaT))
+                                    & (data <= 1.0 * 10 ** (T + deltaT))
+                                    & (sfrData == 0.0)
+                                )[0]        #  Have removed ISM gas to see impacts made
+                            else:
+                                selected = np.where(
+                                    (data >= 1.0 * 10 ** (T - deltaT))
+                                    & (data <= 1.0 * 10 ** (T + deltaT))
+                                )[0]
                             nTracers = int(np.shape(selected)[0])
 
                         # print("nTracers",nTracers)
@@ -1535,8 +1555,9 @@ def bar_plot_statistics(
     everinflow = []
     satellites = []
     noHalo = []
-    stars = []
-    wind = []
+    stellarWindsAndSNe = []
+    # stars = []
+    # wind = []
     ism = []
     disk = []
     cgm = []
@@ -1722,22 +1743,20 @@ def bar_plot_statistics(
             # )
             # noHalo.append([noHalopre, noHalopost])
 
-            print("Stars")
+            print("Stellar Winds And SNe")
             rowspre, colspre = np.where(
                 (FlatDataDict[Tkey]["type"][pre, :] == 4)
-                & (FlatDataDict[Tkey]["age"][pre, :] >= 0.0)
             )
-            starspre = (
+            starparticlespre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["type"][post, :] == 4)
-                & (FlatDataDict[Tkey]["age"][post, :] >= 0.0)
             )
-            starspost = (
+            starparticlespost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
-            stars.append([starspre, starspost])
+            stellarWindsAndSNe.append([starparticlespre, starparticlespost])
 
             print("ISM")
             rowspre, colspre = np.where(
@@ -1754,22 +1773,22 @@ def bar_plot_statistics(
             )
             ism.append([ismpre, ismpost])
 
-            print("Wind")       # Have included wind again to check association in inner CGM, especially for warm gas
-            rowspre, colspre = np.where(
-                (FlatDataDict[Tkey]["type"][pre, :] == 4)
-                & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
-            )
-            windpre = (
-                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            )
-            rowspost, colspost = np.where(
-                (FlatDataDict[Tkey]["type"][post, :] == 4)
-                & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
-            )
-            windpost = (
-                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            )
-            wind.append([windpre, windpost])
+            # print("Wind")       # Have included wind again to check association in inner CGM, especially for warm gas
+            # rowspre, colspre = np.where(
+            #     (FlatDataDict[Tkey]["type"][pre, :] == 4)
+            #     & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
+            # )
+            # windpre = (
+            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            # )
+            # rowspost, colspost = np.where(
+            #     (FlatDataDict[Tkey]["type"][post, :] == 4)
+            #     & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
+            # )
+            # windpost = (
+            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            # )
+            # wind.append([windpre, windpost])
 
             # rowspre, colspre = np.where(igm
             #     (FlatDataDict[Tkey]["R"][pre, :] < rmin)
@@ -2194,14 +2213,14 @@ def bar_plot_statistics(
                 "Pre-Selection": np.array(ism)[:, 0],
                 "Post-Selection": np.array(ism)[:, 1],
             },
-            "Stars": {
-                "Pre-Selection": np.array(stars)[:, 0],
-                "Post-Selection": np.array(stars)[:, 1],
-            },
             "Wind": {
-                "Pre-Selection": np.array(wind)[:, 0],
-                "Post-Selection": np.array(wind)[:, 1],
+                "Pre-Selection": np.array(stellarWindsAndSNe)[:, 0],
+                "Post-Selection": np.array(stellarWindsAndSNe)[:, 1],
             },
+            # "Wind": {
+            #     "Pre-Selection": np.array(wind)[:, 0],
+            #     "Post-Selection": np.array(wind)[:, 1],
+            # },
             # "Disk": {
             #     "Pre-Selection": np.array(disk)[:, 0],
             #     "Post-Selection": np.array(disk)[:, 1],
@@ -2465,7 +2484,7 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.745, 0.01),
+            xytext=(0.730, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -2480,29 +2499,30 @@ def bars_plot(
         #)
         plt.annotate(
             text="",
-            xy=(0.760, bottomParam),
-            xytext=(0.760, 0.05),
+            xy=(0.745, bottomParam),
+            xytext=(0.745, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="On Average",
-            xy=(0.80, 0.02),
-            xytext=(0.80, 0.02),
+            xy=(0.775, 0.02),
+            xytext=(0.775, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.775, 0.01),
-            xytext=(0.975, 0.01),
+            xy=(0.75, 0.01),
+            xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-        
+
+
         #plt.annotate(
         #    text="Ever Matched" + "\n" + "Feature",
         #    xy=(0.15, 0.02),
@@ -2651,7 +2671,7 @@ def bars_plot(
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.745, 0.01),
+            xytext=(0.730, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
@@ -2666,29 +2686,29 @@ def bars_plot(
         #)
         plt.annotate(
             text="",
-            xy=(0.760, bottomParam),
-            xytext=(0.760, 0.05),
+            xy=(0.745, bottomParam),
+            xytext=(0.745, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
         plt.annotate(
             text="On Average",
-            xy=(0.80, 0.02),
-            xytext=(0.80, 0.02),
+            xy=(0.775, 0.02),
+            xytext=(0.775, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
         plt.annotate(
             text="",
-            xy=(0.775, 0.01),
-            xytext=(0.975, 0.01),
+            xy=(0.75, 0.01),
+            xytext=(0.95, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-        
+
         #plt.annotate(
         #    text="",
         #    xy=(0.575, bottomParam),
@@ -2715,7 +2735,7 @@ def bars_plot(
         #    annotation_clip=False,
         #)
 
-        # fig.transFigure
+        fig.transFigure
         #     text="",
         #     xy=(0.10, bottomParam),
         #     xytext=(0.10, 0.05),
@@ -2798,7 +2818,7 @@ def bars_plot(
         #     annotation_clip=False,
         # )
 
-        # fig.transFigure
+        fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
         ax.tick_params(axis="both", which="both", labelsize=fontsize)
