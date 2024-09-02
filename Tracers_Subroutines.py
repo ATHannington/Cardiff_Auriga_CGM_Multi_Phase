@@ -3617,14 +3617,14 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                 else:
                     if truthy == False:
                         try:
-                            weightKey = nonMassWeightDict[k]
+                            weightKey = copy.deepcopy(nonMassWeightDict[k])
                             if nonMassWeightDict[k] == "count":
                                 weightKey = None
                                 warnings.warn(f"[@calculate_statistics]: Weightkey==count will default to unweighted statistics calculation for this"
                                     +"\n"
                                     +f"physical property: {k}")
                             if weightKey is not None:
-                                weightData = Cells[weightKey]
+                                weightData = copy.deepcopy(Cells[weightKey])
                             else:
                                 pass
                             
@@ -3638,7 +3638,7 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                             # # #       +"advised treatment of non-standard weightings!"
                             # # #       )
                             weightKey = "mass"
-                            weightData = Cells[weightKey]
+                            weightData = copy.deepcopy(Cells[weightKey])
 
                         if weightKey is not None:
                             whereReal = np.where((np.isfinite(v) == True) & (
@@ -3647,6 +3647,9 @@ def calculate_statistics(Cells, TRACERSPARAMS, saveParams, weightedStatsBool=Fal
                                 v[whereReal], weights=weightData[whereReal], perc=percentile, key=k
                             )
                         else:
+                            warnings.warn(f"[@calculate_statistics]: Weightkey == None will default to unweighted statistics calculation for this"
+                                    +"\n"
+                                    +f"physical property: {k}")
                             stat = np.nanpercentile(v, percentile, axis=0)
                     else:
                         stat = np.asarray(0.0)
@@ -5421,7 +5424,7 @@ def multi_halo_merge_flat_wrt_time(
     mergedDict = {}
     saveParams = []
     loadedParams = []
-    for (saveHalo, sim), loadPath in zip(enumerate(simList), haloPathList):
+    for sim, loadPath in zip(simList, haloPathList):
         loadPath += "/"
 
         TRACERSPARAMS, DataSavepath, _ = load_tracers_parameters(
