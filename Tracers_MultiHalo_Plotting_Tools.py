@@ -215,10 +215,14 @@ def medians_plot(
                 currentAx.plot(
                     tlookback,
                     plotData[median],
-                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                    label=r"T = $10^{%3.0f}$ K" % (float(temp)),
                     color=colour,
                     linestyle=lineStyleMedian,
                 )
+
+                if analysisParam == "vrad":
+                    currentAx.axhline(y=0.0, color="tab:grey", linestyle="--",alpha=opacityPercentiles*2.0)
+
                 if (jj > 0) & (radialSummaryBool is True):
                     nRadialData = len(list(radialPlotData.keys()))
                     for (kk, (key, rData)) in enumerate(radialPlotData.items()):
@@ -270,7 +274,7 @@ def medians_plot(
                 #     # STOP160IF
 
                 plot_patch = matplotlib.patches.Patch(
-                    color=colour, label=r"$T = 10^{%3.0f} K$" % (float(temp))
+                    color=colour, label=r"T = $10^{%3.0f}$ K" % (float(temp))
                 )
                 patchList.append(plot_patch)
 
@@ -278,8 +282,8 @@ def medians_plot(
                     fig.suptitle(
                         f"Cells Containing Tracers selected by: "
                         + "\n"
-                        + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                        + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                        + r"T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout)
                         + "\n"
                         + f" and selected at {vline[0]:3.2f} Gyr",
                         fontsize=fontsizeTitle,
@@ -307,8 +311,8 @@ def medians_plot(
             ):
                 print("Data All Inf/NaN! Skipping entry!")
                 continue
-            finalymin = numpy.round_(finalymin, decimals=1)
-            finalymax = numpy.round_(finalymax, decimals=1)
+            finalymin = np.round_(finalymin, decimals=1)
+            finalymax = np.round_(finalymax, decimals=1)
 
             custom_ylim = (finalymin, finalymax)
             plt.setp(
@@ -649,7 +653,7 @@ def currently_or_persistently_at_temperature_plot(
                 currentAx.plot(
                     tlookback,
                     plotYdata,
-                    label=r"$T = 10^{%3.0f} K$" % (float(T)),
+                    label=r"T = $10^{%3.0f}$ K" % (float(T)),
                     color=colour,
                     linestyle="-",
                 )
@@ -666,19 +670,19 @@ def currently_or_persistently_at_temperature_plot(
                 if titleBool is True:
                     if persistenceBool is True:
                         fig.suptitle(
-                            f"Percentage Tracers Persistently Within Temperature Range "
-                            + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                            f"Percentage of Tracers Persistently Within Temperature Range "
+                            + r"T = $10^{n \pm %3.2f}$ K" % (deltaT)
                             + "\n"
-                            + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                            + r" selected at $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc" % (rin, rout)
                             + f" and selected at {vline[0]:3.2f} Gyr",
                             fontsize=fontsizeTitle,
                         )
                     else:
                         fig.suptitle(
-                            f"Percentage Tracers Currently Within Temperature Range "
-                            + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                            f"Percentage of Tracers Currently Within Temperature Range "
+                            + r"T = $10^{n \pm %3.2f}$ K" % (deltaT)
                             + "\n"
-                            + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                            + r" selected at $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc" % (rin, rout)
                             + f" and selected at {vline[0]:3.2f} Gyr",
                             fontsize=fontsizeTitle,
                         )
@@ -693,7 +697,7 @@ def currently_or_persistently_at_temperature_plot(
 
             axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
             midax.set_ylabel(
-                f"Percentage Tracers Within" + f"\n" + f"Temperature Range",
+                f"% of Tracers Within" + f"\n" + f"Temperature Range",
                 fontsize=fontsize,
             )
             axis0.legend(loc="upper right", fontsize=fontsize)
@@ -745,7 +749,7 @@ def currently_or_persistently_at_temperature_plot(
 
 
 
-    yProductData = {}
+    yDataNoCorrelation = {}
     deltaT = float(TRACERSPARAMS["deltaT"]) * 2.0
     for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
         print(f"{rin}R{rout}")
@@ -808,8 +812,8 @@ def currently_or_persistently_at_temperature_plot(
                 )
             # Add the full list of snaps data to temperature dependent dictionary.
             key = (f"T{T}", f"{rin}R{rout}")
-            yProductData.update({key: tmpYarray*100.})
-            ## STOP733
+            yDataNoCorrelation.update({key: tmpYarray*100.})
+            
         # ==============================================================================#
         #           PLOT!!
         # ==============================================================================#
@@ -844,13 +848,14 @@ def currently_or_persistently_at_temperature_plot(
             temp = TRACERSPARAMS["targetTLst"][ii]
 
             try:
-                tmp = yProductData[key]
+                tmp = yDataNoCorrelation[key]
                 tmp = Xdata[key]
                 del tmp
             except:
                 continue
 
-            plotYProductdata = yProductData[key]
+            plotYDataNoCorrelation = yDataNoCorrelation[key]
+            plotYDataMaxCorrelation = yDataCurrently[key]
             plotYdata = yDataPersistence[key]
             plotXdata = Xdata[key]
 
@@ -859,7 +864,7 @@ def currently_or_persistently_at_temperature_plot(
             colourTracers = "tab:gray"
 
             datamin = 0.0
-            datamax = np.nanmax(plotYProductdata)
+            datamax = np.nanmax(plotYDataNoCorrelation)
 
             print("")
             print("Sub-Plot!")
@@ -870,26 +875,34 @@ def currently_or_persistently_at_temperature_plot(
 
             currentAx.fill_between(
                 plotXdata,
-                tmpMinData,
-                plotYProductdata,
+                plotYDataNoCorrelation,
+                plotYDataMaxCorrelation,
                 facecolor=colour,
-                alpha=0.25,
+                alpha=opacityPercentiles,
                 interpolate=False,
             )
 
-            currentAx.plot(
-                plotXdata,
-                plotYProductdata,
-                label=r"$T = 10^{%3.0f} K$" % (float(T)),
-                color=colour,
-                linestyle="-",
-            )
+            # currentAx.plot(
+            #     plotXdata,
+            #     plotYDataNoCorrelation,
+            #     label=r"T = $10^{%3.0f}$ K" % (float(T)),
+            #     color=colour,
+            #     linestyle="-",
+            # )
+
+            # currentAx.plot(
+            #     plotXdata,
+            #     plotYDataMaxCorrelation,
+            #     color=colour,
+            #     linestyle="-",
+            # )
 
             currentAx.plot(
                 plotXdata,
                 plotYdata,
+                label=r"T = $10^{%3.0f}$ K" % (float(T)),
                 color=colour,
-                linestyle="-.",
+                linestyle="-",
             )
 
             currentAx.axvline(x=vline, c="red")
@@ -903,10 +916,10 @@ def currently_or_persistently_at_temperature_plot(
             )
             if titleBool is True:
                 fig.suptitle(
-                    f"Percentage Tracers Persistently Within Temperature Range if Randomly Drawn"
-                    + r"$T = 10^{n \pm %3.2f} K$" % (deltaT)
+                    f"Tracer temperature versus time correlation comparison"
+                    + r"T = $10^{n \pm %3.2f}$ K" % (deltaT)
                     + "\n"
-                    + r" selected at $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                    + r" selected at $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc" % (rin, rout)
                     + f" and selected at {vline[0]:3.2f} Gyr",
                     fontsize=fontsizeTitle,
                 )
@@ -922,7 +935,7 @@ def currently_or_persistently_at_temperature_plot(
 
         axis0.set_xlabel("Lookback Time (Gyr)", fontsize=fontsize)
         midax.set_ylabel(
-            f"Percentage Tracers Within" + f"\n" + f"Temperature Range Random Draw",
+            f"% of Tracers",
             fontsize=fontsize,
         )
         axis0.legend(loc="upper right", fontsize=fontsize)
@@ -935,21 +948,21 @@ def currently_or_persistently_at_temperature_plot(
             + f"{int(rin)}R{int(rout)}"
             + "/"
             + f"Tracers_MultiHalo_selectSnap{int(TRACERSPARAMS['selectSnap'])}_T"
-            + f"_Random_Draw_within_Temperature.pdf"
+            + f"_within_Temperature_Correlation.pdf"
         )
         plt.savefig(opslaan, dpi=DPI, transparent=False)
         print(opslaan)
         plt.close()
 
-    yProductDataout = {tuple(list([k[0].split("T")[-1]])+list(k[1].split("R"))): v for k,v in yProductData.items()} 
-    dict_of_df = {k: pd.DataFrame(v) for k, v in yProductDataout.items()}
+    yDataNoCorrelationout = {tuple(list([k[0].split("T")[-1]])+list(k[1].split("R"))): v for k,v in yDataNoCorrelation.items()} 
+    dict_of_df = {k: pd.DataFrame(v) for k, v in yDataNoCorrelationout.items()}
     df = pd.concat(dict_of_df, axis=0)
     df = df.reset_index()
     df.columns = ["Log10(T) [K]", "R_inner [kpc]", "R_outer [kpc]", "Snap Number", "%"] 
     df["Snap Number"] = df['Snap Number'].map(lambda xx: snapRange[xx])  
 
     print(f"Saving temperature persistence/currently random draw comparison data...")
-    savePath = DataSavepath + "_Temperature-Random-Draw-Table.csv"
+    savePath = DataSavepath + "_within-Temperature-Correlation-Table.csv"
 
     df.to_csv(savePath,index=False)
     print(f"... saved as {savePath} !")
@@ -1233,7 +1246,7 @@ def stacked_pdf_plot(
 
                 plt.xlim(xmin, xmax)
                 #
-                # plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
+                # plot_label = r"T = $10^{%3.0f}$ K" % (float(T))
                 # plt.text(
                 #     0.75,
                 #     0.95,
@@ -1274,8 +1287,8 @@ def stacked_pdf_plot(
                     fig.suptitle(
                         f"PDF of Cells Containing Tracers selected by: "
                         + "\n"
-                        + r"$T = 10^{%3.2f \pm %3.2f} K$" % (T, TRACERSPARAMS["deltaT"])
-                        + r" and $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + r"T = $10^{%3.2f \pm %3.2f}$ K" % (T, TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc" % (rin, rout)
                         + "\n"
                         + f" and selected at {selectTime:3.2f} Gyr",
                         fontsize=fontsizeTitle,
@@ -1474,7 +1487,7 @@ def phases_plot(
                     colour = cmap(float(ii) / float(len(Tlst)))
 
                     plot_patch = matplotlib.patches.Patch(color=colour)
-                    plot_label = r"$T = 10^{%3.0f} K$" % (float(T))
+                    plot_label = r"T = $10^{%3.0f}$ K" % (float(T))
                     currentAx.legend(
                         handles=[plot_patch],
                         labels=[plot_label],
@@ -1492,7 +1505,7 @@ def phases_plot(
                     cax1.tick_params(axis="y", colors="black", labelsize=fontsize)
 
                     currentAx.set_title(
-                        r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
+                        r"$10^{%03.2f \pm %3.2f}$ K  Tracers Data"
                         % (float(T), TRACERSPARAMS["deltaT"]),
                         fontsize=fontsizeTitle,
                     )
@@ -1507,9 +1520,9 @@ def phases_plot(
                         + f" at {currentTime:3.2f} Gyr"
                         + "\n"
                         + f"Tracers Data, selected at {selectTime:3.2f} Gyr with"
-                        + r" $%3.0f \leq R \leq %3.0f $ kpc" % (rin, rout)
+                        + r" $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc" % (rin, rout)
                         + r" and temperatures "
-                        + r"$ 10^{n \pm %3.2f} K $" % (TRACERSPARAMS["deltaT"]),
+                        + r"$10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"]),
                         fontsize=fontsizeTitle,
                     )
 
@@ -1555,9 +1568,8 @@ def bar_plot_statistics(
     everinflow = []
     satellites = []
     noHalo = []
-    stellarWindsAndSNe = []
-    # stars = []
-    # wind = []
+    winds = []
+    stars = []
     ism = []
     disk = []
     cgm = []
@@ -1743,20 +1755,23 @@ def bar_plot_statistics(
             # )
             # noHalo.append([noHalopre, noHalopost])
 
-            print("Stellar Winds And SNe")
+            print("Stars")
             rowspre, colspre = np.where(
                 (FlatDataDict[Tkey]["type"][pre, :] == 4)
+                & (FlatDataDict[Tkey]["age"][pre, :] >= 0.0)
             )
             starparticlespre = (
                 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
             )
             rowspost, colspost = np.where(
                 (FlatDataDict[Tkey]["type"][post, :] == 4)
+                & (FlatDataDict[Tkey]["age"][post, :] >= 0.0)
             )
             starparticlespost = (
                 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
             )
-            stellarWindsAndSNe.append([starparticlespre, starparticlespost])
+
+            stars.append([starparticlespre, starparticlespost])
 
             print("ISM")
             rowspre, colspre = np.where(
@@ -1773,44 +1788,22 @@ def bar_plot_statistics(
             )
             ism.append([ismpre, ismpost])
 
-            # print("Wind")       # Have included wind again to check association in inner CGM, especially for warm gas
-            # rowspre, colspre = np.where(
-            #     (FlatDataDict[Tkey]["type"][pre, :] == 4)
-            #     & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
-            # )
-            # windpre = (
-            #     100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            # )
-            # rowspost, colspost = np.where(
-            #     (FlatDataDict[Tkey]["type"][post, :] == 4)
-            #     & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
-            # )
-            # windpost = (
-            #     100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            # )
-            # wind.append([windpre, windpost])
-
-            # rowspre, colspre = np.where(igm
-            #     (FlatDataDict[Tkey]["R"][pre, :] < rmin)
-            # )
-            # diskpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            # rowspost, colspost = np.where(
-            #     (FlatDataDict[Tkey]["R"][post, :] < rmin)
-            # )
-            # diskpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            # disk.append([diskpre, diskpost])
-
-            # rowspre, colspre = np.where(
-            #     (FlatDataDict[Tkey]["R"][pre, :] >= rmin)
-            #     & (FlatDataDict[Tkey]["R"][pre, :] <= rmax)
-            # )
-            # cgmpre = 100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
-            # rowspost, colspost = np.where(
-            #     (FlatDataDict[Tkey]["R"][post, :] >= rmin)
-            #     & (FlatDataDict[Tkey]["R"][post, :] <= rmax)
-            # )
-            # cgmpost = 100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
-            # cgm.append([cgmpre, cgmpost])
+            print("Wind")       # Have included wind again to check association in inner CGM, especially for warm gas
+            rowspre, colspre = np.where(
+                (FlatDataDict[Tkey]["type"][pre, :] == 4)
+                & (FlatDataDict[Tkey]["age"][pre, :] < 0.0)
+            )
+            windpre = (
+                100.0 * float(np.shape(np.unique(colspre))[0]) / float(ntracers)
+            )
+            rowspost, colspost = np.where(
+                (FlatDataDict[Tkey]["type"][post, :] == 4)
+                & (FlatDataDict[Tkey]["age"][post, :] < 0.0)
+            )
+            windpost = (
+                100.0 * float(np.shape(np.unique(colspost))[0]) / float(ntracers)
+            )
+            winds.append([windpre, windpost])
 
             print("IGM")
 
@@ -2214,8 +2207,12 @@ def bar_plot_statistics(
                 "Post-Selection": np.array(ism)[:, 1],
             },
             "Wind": {
-                "Pre-Selection": np.array(stellarWindsAndSNe)[:, 0],
-                "Post-Selection": np.array(stellarWindsAndSNe)[:, 1],
+                "Pre-Selection": np.array(winds)[:, 0],
+                "Post-Selection": np.array(winds)[:, 1],
+            },
+            "Stars": {
+                "Pre-Selection": np.array(stars)[:, 0],
+                "Post-Selection": np.array(stars)[:, 1],
             },
             # "Wind": {
             #     "Pre-Selection": np.array(wind)[:, 0],
@@ -2454,7 +2451,7 @@ def bars_plot(
         patchList = [
             matplotlib.patches.Patch(
                 color=cmap(float(ii) / float(len(Tlst))),
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                label=r"T = $10^{%3.0f}$ K" % (float(temp)),
             )
             for ii, temp in enumerate(Tlst)
         ]
@@ -2468,10 +2465,51 @@ def bars_plot(
                 r"Percentage of Tracers Ever Meeting Criterion Pre Selection at $t_{Lookback}$"
                 + f"={selectTime:3.2f} Gyr"
                 + "\n"
-                + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
+                + r"selected by T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout),
                 fontsize=fontsizeTitle,
             )
+
+        # # plt.annotate(
+        # #     text="Ever Matched",
+        # #     xy=(0.325, 0.02),
+        # #     xytext=(0.325, 0.02),
+        # #     textcoords=fig.transFigure,
+        # #     annotation_clip=False,
+        # #     fontsize=fontsize,
+        # # )
+        # # plt.annotate(
+        # #     text="",
+        # #     xy=(0.10, 0.01),
+        # #     xytext=(0.730, 0.01),
+        # #     arrowprops=dict(arrowstyle="<->"),
+        # #     xycoords=fig.transFigure,
+        # #     annotation_clip=False,
+        # # )
+        # # plt.annotate(
+        # #     text="",
+        # #     xy=(0.745, bottomParam),
+        # #     xytext=(0.745, 0.05),
+        # #     arrowprops=dict(arrowstyle="-"),
+        # #     xycoords=fig.transFigure,
+        # #     annotation_clip=False,
+        # # )
+        # # plt.annotate(
+        # #     text="On Average",
+        # #     xy=(0.775, 0.02),
+        # #     xytext=(0.775, 0.02),
+        # #     textcoords=fig.transFigure,
+        # #     annotation_clip=False,
+        # #     fontsize=fontsize,
+        # # )
+        # # plt.annotate(
+        # #     text="",
+        # #     xy=(0.75, 0.01),
+        # #     xytext=(0.95, 0.01),
+        # #     arrowprops=dict(arrowstyle="<->"),
+        # #     xycoords=fig.transFigure,
+        # #     annotation_clip=False,
+        # # )
 
         plt.annotate(
             text="Ever Matched",
@@ -2481,115 +2519,43 @@ def bars_plot(
             annotation_clip=False,
             fontsize=fontsize,
         )
+
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.730, 0.01),
+            xytext=(0.745, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.39, bottomParam),
-        #    xytext=(0.39, 0.05),
-        #    arrowprops=dict(arrowstyle="-"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
+
         plt.annotate(
             text="",
-            xy=(0.745, bottomParam),
-            xytext=(0.745, 0.05),
+            xy=(0.760, bottomParam),
+            xytext=(0.760, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
         plt.annotate(
             text="On Average",
-            xy=(0.775, 0.02),
-            xytext=(0.775, 0.02),
+            xy=(0.80, 0.02),
+            xytext=(0.80, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
+        
         plt.annotate(
             text="",
-            xy=(0.75, 0.01),
-            xytext=(0.95, 0.01),
+            xy=(0.775, 0.01),
+            xytext=(0.975, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
-
-        #plt.annotate(
-        #    text="Ever Matched" + "\n" + "Feature",
-        #    xy=(0.15, 0.02),
-        #    xytext=(0.15, 0.02),
-        #    textcoords=fig.transFigure,
-        #    annotation_clip=False,
-        #    fontsize=fontsize,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.10, 0.01),
-        #    xytext=(0.385, 0.01),
-        #    arrowprops=dict(arrowstyle="<->"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.39, bottomParam),
-        #    xytext=(0.39, 0.05),
-        #    arrowprops=dict(arrowstyle="-"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-
-        #plt.annotate(
-        #    text="On Average" + "\n" + "Feature",
-        #    xy=(0.40, 0.02),
-        #    xytext=(0.40, 0.02),
-        #    textcoords=fig.transFigure,
-        #    annotation_clip=False,
-        #    fontsize=fontsize,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.395, 0.01),
-        #    xytext=(0.570, 0.01),
-        #    arrowprops=dict(arrowstyle="<->"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.575, bottomParam),
-        #    xytext=(0.575, 0.05),
-        #    arrowprops=dict(arrowstyle="-"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-
-        #plt.annotate(
-        #    text="-1 Snapshot" + "\n" + "Feature",
-        #    xy=(0.70, 0.02),
-        #    xytext=(0.70, 0.02),
-        #    textcoords=fig.transFigure,
-        #    annotation_clip=False,
-        #    fontsize=fontsize,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.580, 0.01),
-        #    xytext=(0.95, 0.01),
-        #    arrowprops=dict(arrowstyle="<->"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-
+        
         fig.transFigure
 
         ax.yaxis.set_minor_locator(AutoMinorLocator())
@@ -2640,7 +2606,7 @@ def bars_plot(
         patchList = [
             matplotlib.patches.Patch(
                 color=cmap(float(ii) / float(len(Tlst))),
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                label=r"T = $10^{%3.0f}$ K" % (float(temp)),
             )
             for ii, temp in enumerate(Tlst)
         ]
@@ -2655,8 +2621,8 @@ def bars_plot(
                 r"Percentage of Tracers Ever Meeting Criterion Post Selection at $t_{Lookback}$"
                 + f"={selectTime:3.2f} Gyr"
                 + "\n"
-                + r"selected by $T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout),
+                + r"selected by T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout),
                 fontsize=fontsizeTitle,
             )
 
@@ -2668,155 +2634,42 @@ def bars_plot(
             annotation_clip=False,
             fontsize=fontsize,
         )
+
         plt.annotate(
             text="",
             xy=(0.10, 0.01),
-            xytext=(0.730, 0.01),
+            xytext=(0.745, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.39, bottomParam),
-        #    xytext=(0.39, 0.05),
-        #    arrowprops=dict(arrowstyle="-"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
+
         plt.annotate(
             text="",
-            xy=(0.745, bottomParam),
-            xytext=(0.745, 0.05),
+            xy=(0.760, bottomParam),
+            xytext=(0.760, 0.05),
             arrowprops=dict(arrowstyle="-"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
+
         plt.annotate(
             text="On Average",
-            xy=(0.775, 0.02),
-            xytext=(0.775, 0.02),
+            xy=(0.80, 0.02),
+            xytext=(0.80, 0.02),
             textcoords=fig.transFigure,
             annotation_clip=False,
             fontsize=fontsize,
         )
+
         plt.annotate(
             text="",
-            xy=(0.75, 0.01),
-            xytext=(0.95, 0.01),
+            xy=(0.775, 0.01),
+            xytext=(0.975, 0.01),
             arrowprops=dict(arrowstyle="<->"),
             xycoords=fig.transFigure,
             annotation_clip=False,
         )
-
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.575, bottomParam),
-        #    xytext=(0.575, 0.05),
-        #    arrowprops=dict(arrowstyle="-"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-
-        #plt.annotate(
-        #    text="+1 Snapshot" + "\n" + "Feature",
-        #    xy=(0.70, 0.02),
-        #    xytext=(0.70, 0.02),
-        #    textcoords=fig.transFigure,
-        #    annotation_clip=False,
-        #    fontsize=fontsize,
-        #)
-        #plt.annotate(
-        #    text="",
-        #    xy=(0.580, 0.01),
-        #    xytext=(0.95, 0.01),
-        #    arrowprops=dict(arrowstyle="<->"),
-        #    xycoords=fig.transFigure,
-        #    annotation_clip=False,
-        #)
-
-        fig.transFigure
-        #     text="",
-        #     xy=(0.10, bottomParam),
-        #     xytext=(0.10, 0.05),
-        #     arrowprops=dict(arrowstyle="-"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        # plt.annotate(
-        #     text="Ever Matched Feature",
-        #     xy=(0.17, 0.02),
-        #     xytext=(0.17, 0.02),
-        #     textcoords=fig.transFigure,
-        #     annotation_clip=False,
-        #     fontsize=fontsize,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.10, 0.01),
-        #     xytext=(0.45, 0.01),
-        #     arrowprops=dict(arrowstyle="<->"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.47, bottomParam),
-        #     xytext=(0.47, 0.05),
-        #     arrowprops=dict(arrowstyle="-"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        #
-        # plt.annotate(
-        #     text="On Average Feature",
-        #     xy=(0.48, 0.02),
-        #     xytext=(0.48, 0.02),
-        #     textcoords=fig.transFigure,
-        #     annotation_clip=False,
-        #     fontsize=fontsize,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.47, 0.01),
-        #     xytext=(0.73, 0.01),
-        #     arrowprops=dict(arrowstyle="<->"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.74, bottomParam),
-        #     xytext=(0.74, 0.05),
-        #     arrowprops=dict(arrowstyle="-"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        #
-        # plt.annotate(
-        #     text="+1 Snapshot Feature",
-        #     xy=(0.75, 0.02),
-        #     xytext=(0.75, 0.02),
-        #     textcoords=fig.transFigure,
-        #     annotation_clip=False,
-        #     fontsize=fontsize,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.74, 0.01),
-        #     xytext=(0.95, 0.01),
-        #     arrowprops=dict(arrowstyle="<->"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
-        # plt.annotate(
-        #     text="",
-        #     xy=(0.95, bottomParam),
-        #     xytext=(0.95, 0.05),
-        #     arrowprops=dict(arrowstyle="-"),
-        #     xycoords=fig.transFigure,
-        #     annotation_clip=False,
-        # )
 
         fig.transFigure
 
@@ -3048,7 +2901,7 @@ def hist_plot(
 
                 if jj == 0:
                     currentAx.set_title(
-                        r"$ 10^{%03.2f \pm %3.2f} K $"
+                        r"$10^{%03.2f \pm %3.2f}$ K "
                         % (float(T), TRACERSPARAMS["deltaT"]),
                         fontsize=fontsizeTitle,
                     )
@@ -3066,8 +2919,8 @@ def hist_plot(
             fig.suptitle(
                 f"Cells Containing Tracers selected by: "
                 + "\n"
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                + r"T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout)
                 + "\n"
                 + f" and selected at {selectTime:3.2f} Gyr",
                 fontsize=fontsizeTitle,
@@ -3314,7 +3167,7 @@ def medians_phases_plot(
             currentAx.plot(
                 tlookback,
                 plotData[median],
-                label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                label=r"T = $10^{%3.0f}$ K" % (float(temp)),
                 color="black",
                 linestyle=lineStyleMedian,
             )
@@ -3497,7 +3350,7 @@ def medians_phases_plot(
                 )
 
             currentAx.set_title(
-                r"$ 10^{%03.2f \pm %3.2f} K $ Tracers Data"
+                r"$10^{%03.2f \pm %3.2f}$ K  Tracers Data"
                 % (float(T), TRACERSPARAMS["deltaT"]),
                 fontsize=fontsizeTitle,
             )
@@ -3509,8 +3362,8 @@ def medians_phases_plot(
             fig.suptitle(
                 f"Cells Containing Tracers selected by: "
                 + "\n"
-                + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                + r"T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout)
                 + "\n"
                 + f" and selected at {vline[0]:3.2f} Gyr",
                 fontsize=fontsizeTitle,
@@ -3726,7 +3579,7 @@ def temperature_variation_plot(
                 currentAx.plot(
                     xData,
                     plotData[median],
-                    label=r"$T = 10^{%3.0f} K$" % (float(temp)),
+                    label=r"T = $10^{%3.0f}$ K" % (float(temp)),
                     color=colour,
                     linestyle=lineStyleMedian,
                 )
@@ -3745,7 +3598,7 @@ def temperature_variation_plot(
                 #     # STOP160IF
 
                 # plot_patch = matplotlib.patches.Patch(color=colour)
-                # plot_label = r"$T = 10^{%3.0f} K$" % (float(temp))
+                # plot_label = r"T = $10^{%3.0f}$ K" % (float(temp))
                 # patchList.append(plot_patch)
                 # labelList.append(plot_label)
 
@@ -3753,8 +3606,8 @@ def temperature_variation_plot(
                     fig.suptitle(
                         f"Cells Containing Tracers selected by: "
                         + "\n"
-                        + r"$T = 10^{n \pm %3.2f} K$" % (TRACERSPARAMS["deltaT"])
-                        + r" and $%3.0f \leq R \leq %3.0f $ kpc " % (rin, rout)
+                        + r"T = $10^{n \pm %3.2f}$ K" % (TRACERSPARAMS["deltaT"])
+                        + r" and $%3.0f \leq \mathrm{R} \leq %3.0f $ kpc " % (rin, rout)
                         + "\n"
                         + f" and selected at {vline[0]:3.2f} Gyr",
                         fontsize=fontsizeTitle,
