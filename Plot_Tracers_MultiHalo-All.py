@@ -18,18 +18,18 @@ from gadget_subfind import *
 import h5py
 import os
 from Tracers_Subroutines import *
-from alt_Tracers_MultiHalo_Plotting_Tools import *
+from Tracers_MultiHalo_Plotting_Tools import *
 from random import sample
 import math
 
 
-DPI = 150
+DPI = 200
 xsize = 7.0
 ysize = 4.0
 epsilon = 0.50
 epsilonVrad = 50.0
 radialLimit = 200.0
-opacityPercentiles = 0.25
+opacityPercentiles = 0.20
 lineStyleMedian = "solid"
 lineStylePercentiles = "-."
 colourmapMain = "plasma"
