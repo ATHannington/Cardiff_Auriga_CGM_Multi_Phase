@@ -15,7 +15,9 @@ import copy
 TracersParamsPath = "TracersParams.csv"
 TracersMasterParamsPath = "TracersParamsMaster.csv"
 SelectedHaloesPath = "TracersSelectedHaloes.csv"
-timeAverageBool = True
+ISMpercentile = 99.5 # 3 sigma
+timeAverageBool = False
+
 
 # ==============================================================================#
 #       Chemical Properties
@@ -124,6 +126,7 @@ summaryDictTemplate = {
     "Log10(T) [K]": np.array(fullTList),
     "Snap Number": np.array(fullSnapRangeList),
     f"Average R200c (per halo) [kpc]": blankList.copy(),
+    f"Average {ISMpercentile}th percentile R_ISM (per halo) [kpc]": blankList.copy(),
     f"Total N_tracers (all haloes) within R200c": blankList.copy(),
     f"Total gas mass (all haloes) within R200c [msol]": blankList.copy(),
     f"Average gas n_H density (per halo) within R200c [cm-3]": blankList.copy(),
@@ -244,6 +247,13 @@ for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
         dictRowSnap = np.where((summaryDict["Snap Number"] == snapNumber))[0]
 
         summaryDict[f"Average R200c (per halo) [kpc]"][dictRowSnap] = np.full(shape=summaryDict[f"Average R200c (per halo) [kpc]"][dictRowSnap].shape, fill_value=rvir)
+
+        whereCentralISM = np.where((snap.sfr > 0.0)&(snap.subhalo[whereGas] == 0)&(snap.halo[whereGas] == 0))[0]
+        radiusISMproxy = np.nanpercentile(snap.data["R"][whereCentralISM], ISMpercentile, axis=0)
+        summaryDict[f"Average {ISMpercentile}th percentile R_ISM (per halo) [kpc]"][dictRowSnap] = np.full(shape=summaryDict[f"Average {ISMpercentile}th percentile R_ISM (per halo) [kpc]"][dictRowSnap].shape, fill_value=radiusISMproxy)
+
+        print(f"For {halo} at snap {snapNumber} {ISMpercentile}th percentile R_ISM [kpc] = ", radiusISMproxy)
+
 
         ###-------------------------------------------
         #   Find total number of tracers and gas mass in halo within rVir
@@ -413,13 +423,6 @@ for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
                 summaryDict["Average gas n_H density (per halo) per temperature in spherical shell [cm-3]"][dictRowSelect] = np.full(shape=summaryDict["Average gas n_H density (per halo) per temperature in spherical shell [cm-3]"][dictRowSelect].shape,fill_value=nHRT)
     fullSummaryDict[f"{halo}"] = copy.deepcopy(summaryDict)
 #-------------------------------------------------------------------------------------#
-print("Load Full Non Time Flattened Data!")
-flatMergedDict, _ = multi_halo_merge(
-    SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath,
-    hush = True
-)
-#-------------------------------------------------------------------------------------#
-
 perHaloSummaryDict = copy.deepcopy(fullSummaryDict[list(fullSummaryDict.keys())[0]])
 # perHaloSummaryDict = {}
 for key in summaryDictTemplate.keys():
@@ -462,29 +465,99 @@ for key in summaryDictTemplate.keys():
 #-------------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------------#
 
-ntracersDict = {"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "Snap Number": [], "N_tracers": [],"Gas mass": []}
+if timeAverageBool is True:
+    ntracersDict = {"halo": [], "Snap Number": [], "R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "N_tracers": [],"Gas mass": []}
+else:
+    ntracersDict = {"halo": [], "R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "N_tracers": [],"Gas mass": []}
 nSnaps = float(len(snapRange))
 fullTracerTotal = 0
 fullMassTotal = 0
-for snapNumber in snapRange:
-    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-        for (ii, T) in enumerate(Tlst):
-            FullDictKey = (f"T{float(T)}", f"{rin}R{rout}", f"{int(snapNumber)}")
-            whereGas = np.where(flatMergedDict[FullDictKey]["type"]==0)[0]
-            print(FullDictKey)
-            ntr = float(np.shape(flatMergedDict[FullDictKey]["trid"])[0])
-            massGas = np.sum(flatMergedDict[FullDictKey]["mass"][whereGas])
-            ntracersDict["R_inner [kpc]"].append(rin)
-            ntracersDict["R_outer [kpc]"].append(rout)
-            ntracersDict["Log10(T) [K]"].append(float(T))
-            ntracersDict["Snap Number"].append(snapNumber)
-            ntracersDict["N_tracers"].append(ntr)
-            ntracersDict["Gas mass"].append(massGas)
-    #             fullTracerTotal += ntr
-    #             fullMassTotal += massGas
+for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
+    haloPath = TRACERSPARAMSCOMBI["simfile"] + halo + "/output/"
+
+    loadPath += "/"
+    _, DataSavepath, _ = load_tracers_parameters(
+            loadPath + TracersParamsPath
+     )
+    
+
+    saveHalo = (halo.split("_"))[-1]
+    if "L" in saveHalo:
+        saveHalo = saveHalo.split("L")[-1]
+        saveHalo = int(saveHalo) + 50
+    else:
+        saveHalo = int(saveHalo)
+
+    print("")
+    print(f"Loading {halo} Data!")
+    for T in Tlst:
+        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+            if timeAverageBool is True:
+                dataLoadPath = (
+                    DataSavepath
+                    + f"_T{T}_{rin}R{rout}_flat-wrt-time"
+                    + ".h5"
+                )
+            
+                tmp = hdf5_load(dataLoadPath)
+
+
+                for jj,snapNumber in enumerate(snapRange):
+
+                    FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+
+                    print(FullDictKey,f" snapNumber {snapNumber}: #{(jj+1)} of {int(nSnaps)}")
+
+                    whereGas = np.where(tmp[FullDictKey]["type"][jj,:]==0)[0]
+                    ntr = float(np.shape(tmp[FullDictKey]["trid"][jj,:])[-1])
+                    massGas = np.sum(tmp[FullDictKey]["mass"][jj,whereGas])
+                    "Andy, do we want to be able to perform time-averaging of the `selected` mass? If so, need to iterate over snapNumber and change if timeAverageBool is True stuff below..."
+                    ntracersDict["halo"].append(saveHalo)
+                    ntracersDict["Snap Number"].append(snapNumber)
+                    ntracersDict["R_inner [kpc]"].append(rin)
+                    ntracersDict["R_outer [kpc]"].append(rout)
+                    ntracersDict["Log10(T) [K]"].append(float(T))
+                    ntracersDict["N_tracers"].append(ntr)
+                    ntracersDict["Gas mass"].append(massGas)
+            else:
+                dataLoadPath = (
+                    DataSavepath
+                    + f"_T{T}_{rin}R{rout}_flat-wrt-time"
+                    + ".h5"
+                )
+            
+                tmp = hdf5_load(dataLoadPath)
+
+                timeIndex = np.where(
+                    np.array([
+                            snap
+                            for snap in range(
+                                int(TRACERSPARAMS["snapMin"]),
+                                min(int(TRACERSPARAMS["snapMax"] + 1), int(TRACERSPARAMS["finalSnap"]) + 1),
+                                1,
+                            )
+                        ]) == int(TRACERSPARAMS["selectSnap"])
+                    )[0]
+                
+
+                FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+
+                print(FullDictKey,f" snapNumber {snapNumber}")
+
+                whereGas = np.where(tmp[FullDictKey]["type"][timeIndex,:]==0)[0]
+                ntr = float(np.shape(tmp[FullDictKey]["trid"][timeIndex,:])[-1])
+                massGas = np.sum(tmp[FullDictKey]["mass"][timeIndex,whereGas])
+                # "Andy, do we want to be able to perform time-averaging of the `selected` mass? If so, need to iterate over snapNumber and change if timeAverageBool is True stuff below..."
+                ntracersDict["halo"].append(saveHalo)
+                # # # ntracersDict["Snap Number"].append(snapNumber)
+                ntracersDict["R_inner [kpc]"].append(rin)
+                ntracersDict["R_outer [kpc]"].append(rout)
+                ntracersDict["Log10(T) [K]"].append(float(T))
+                ntracersDict["N_tracers"].append(ntr)
+                ntracersDict["Gas mass"].append(massGas)                
 
 # tracerTotalsDict ={"R_inner [kpc]": "All", "R_outer [kpc]": "All", "Log10(T) [K]": "All", "Snap Number": "All", "N_tracers" : fullTracerTotal, "Gas mass" : fullMassTotal}
-ntracersDict = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in ntracersDict.items() }
+ntracersDict = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in ntracersDict.items()}
 # ntracersDict = {}
 # fullTracerTotal = 0
 # for snapNumber in snapRange:
@@ -527,30 +600,139 @@ if timeAverageBool is True:
 
                     averagedSummaryDict[key].append(np.nanmedian(perHaloSummaryDict[key][dictRowSelect]))
 
-    averagedNtracersDict = {"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "N_tracers": []}
+    timeAveragedNtracersDict = {"halo": [],"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "N_tracers": []}
     nSnaps = float(len(snapRange))
-    for (ii, T) in enumerate(Tlst):
-        for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
-            
-            print(f"N_tracers Averaging",f"T{float(T)}", f"{rin}R{rout}")
-            
+    for halo, loadPath in zip(SELECTEDHALOES, HALOPATHS):
+        saveHalo = (halo.split("_"))[-1]
+        if "L" in saveHalo:
+            saveHalo = saveHalo.split("L")[-1]
+            saveHalo = int(saveHalo) + 50
+        else:
+            saveHalo = int(saveHalo)
+
+        for (ii, T) in enumerate(Tlst):
+            for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+                
+                print(f"N_tracers Averaging",f"T{float(T)}", f"{rin}R{rout}")
+                
+                dictRowSelect = np.where(
+                    (ntracersDict["halo"] == saveHalo)
+                    & (ntracersDict["R_inner [kpc]"] == rin)
+                    & (ntracersDict["R_outer [kpc]"] == rout)
+                    & (ntracersDict["Log10(T) [K]"] == float(T))
+                )[0]
+
+                timeAveragedNtracersDict["halo"].append(saveHalo) 
+                timeAveragedNtracersDict["R_inner [kpc]"].append(rin) 
+                timeAveragedNtracersDict["R_outer [kpc]"].append(rout)
+                timeAveragedNtracersDict["Log10(T) [K]"].append(float(T))
+
+                for key in ntracersDict.keys():
+                    if key not in ["halo", "R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"]:
+                        if key not in timeAveragedNtracersDict.keys():
+                            timeAveragedNtracersDict[key] = []
+
+                        timeAveragedNtracersDict[key].append(np.nanmedian(ntracersDict[key][dictRowSelect]))
+
+try:
+    tracersDictToAverage = copy.deepcopy(timeAveragedNtracersDict)
+except:
+    tracersDictToAverage = copy.deepcopy(ntracersDict)
+#-------------------------------------------------------------------------------------#
+print("Load Full Time Flattened Data!")
+flatMergedDict, _ = multi_halo_merge_flat_wrt_time(
+    SELECTEDHALOES, HALOPATHS, DataSavepathSuffix, snapRange, Tlst, TracersParamsPath
+)
+tmptotalNtracersDict = {"Snap Number": [],"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "Total_N_tracers": []}
+fullTracerTotal = 0
+for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+    for T in Tlst:
+        FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+        print(FullDictKey)
+        tmpNtracers = float(np.shape(flatMergedDict[FullDictKey]["trid"][0,:])[-1])
+        tmptotalNtracersDict["R_inner [kpc]"].append(rin) 
+        tmptotalNtracersDict["R_outer [kpc]"].append(rout)
+        tmptotalNtracersDict["Log10(T) [K]"].append(float(T))
+        tmptotalNtracersDict["Total_N_tracers"].append(tmpNtracers)
+
+tmptotalNtracersDict = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in tmptotalNtracersDict.items() }
+
+totalNtracersDict = {"Snap Number": [],"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "Total_N_tracers": []}
+fullTracerTotal = 0
+for ii,snapNumber in enumerate(snapRange):
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        for T in Tlst:
+            FullDictKey = (f"T{float(T)}", f"{rin}R{rout}")
+            print(FullDictKey)
             dictRowSelect = np.where(
-                (ntracersDict["R_inner [kpc]"] == rin)
-                & (ntracersDict["R_outer [kpc]"] == rout)
-                & (ntracersDict["Log10(T) [K]"] == float(T))
+                (tmptotalNtracersDict["R_inner [kpc]"] == rin)
+                & (tmptotalNtracersDict["R_outer [kpc]"] == rout)
+                & (tmptotalNtracersDict["Log10(T) [K]"] == float(T))
             )[0]
+            totalNtracersDict["R_inner [kpc]"].append(rin) 
+            totalNtracersDict["R_outer [kpc]"].append(rout)
+            totalNtracersDict["Log10(T) [K]"].append(float(T))
+            totalNtracersDict["Snap Number"].append(snapNumber) 
+            totalNtracersDict["Total_N_tracers"].append(np.sum(tmptotalNtracersDict["Total_N_tracers"][dictRowSelect]))
 
-            averagedNtracersDict["R_inner [kpc]"].append(rin) 
-            averagedNtracersDict["R_outer [kpc]"].append(rout)
-            averagedNtracersDict["Log10(T) [K]"].append(float(T))
+totalNtracersDict = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in totalNtracersDict.items() }
 
-            for key in ntracersDict.keys():
-                if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"]:
-                    if key not in averagedNtracersDict.keys():
-                        averagedNtracersDict[key] = []
+timeAveragedTotalNtracersDict = {"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "Total_N_tracers": []}
+nSnaps = float(len(snapRange))
+for (ii, T) in enumerate(Tlst):
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        
+        print(f"N_tracers Averaging",f"T{float(T)}", f"{rin}R{rout}")
+        
+        dictRowSelect = np.where(
+            (totalNtracersDict["R_inner [kpc]"] == rin)
+            & (totalNtracersDict["R_outer [kpc]"] == rout)
+            & (totalNtracersDict["Log10(T) [K]"] == float(T))
+        )[0]
 
-                    averagedNtracersDict[key].append(np.nanmedian(ntracersDict[key][dictRowSelect]))
+        timeAveragedTotalNtracersDict["R_inner [kpc]"].append(rin) 
+        timeAveragedTotalNtracersDict["R_outer [kpc]"].append(rout)
+        timeAveragedTotalNtracersDict["Log10(T) [K]"].append(float(T))
 
+        for key in totalNtracersDict.keys():
+            if key not in ["halo", "R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"]:
+                if key not in timeAveragedTotalNtracersDict.keys():
+                    timeAveragedTotalNtracersDict[key] = []
+
+                timeAveragedTotalNtracersDict[key].append(np.nanmedian(totalNtracersDict[key][dictRowSelect]))
+
+
+timeAveragedTotalNtracersDict = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in timeAveragedTotalNtracersDict.items() }
+
+
+#-------------------------------------------------------------------------------------#
+tracersDictToAverage = {key: np.asarray(val).astype(np.float64) if key not in ["R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"] else np.asarray(val) for key, val in tracersDictToAverage.items() }
+
+averagedNtracersDict = {"R_inner [kpc]": [], "R_outer [kpc]": [], "Log10(T) [K]": [], "N_tracers": []}
+nSnaps = float(len(snapRange))
+for (ii, T) in enumerate(Tlst):
+    for (rin, rout) in zip(TRACERSPARAMS["Rinner"], TRACERSPARAMS["Router"]):
+        
+        print(f"N_tracers Averaging",f"T{float(T)}", f"{rin}R{rout}")
+        
+        dictRowSelect = np.where(
+            (tracersDictToAverage["R_inner [kpc]"] == rin)
+            & (tracersDictToAverage["R_outer [kpc]"] == rout)
+            & (tracersDictToAverage["Log10(T) [K]"] == float(T))
+        )[0]
+
+        averagedNtracersDict["R_inner [kpc]"].append(rin) 
+        averagedNtracersDict["R_outer [kpc]"].append(rout)
+        averagedNtracersDict["Log10(T) [K]"].append(float(T))
+
+        for key in tracersDictToAverage.keys():
+            if key not in ["halo", "R_inner [kpc]", "R_outer [kpc]", "Log10(T) [K]", "Snap Number"]:
+                if key not in averagedNtracersDict.keys():
+                    averagedNtracersDict[key] = []
+
+                averagedNtracersDict[key].append(np.nanmedian(tracersDictToAverage[key][dictRowSelect]))
+
+averagedNtracersDict.update(timeAveragedTotalNtracersDict)
 
 if timeAverageBool is True:
     summaryDf = pd.DataFrame(averagedSummaryDict, index=[ii for ii in range(len(averagedSummaryDict["Log10(T) [K]"]))])
@@ -562,7 +744,7 @@ else:
     summaryDfAllSnaps = pd.DataFrame(perHaloSummaryDict, index=[ii for ii in range(len(perHaloSummaryDict["Log10(T) [K]"]))])
     summaryDf = copy.deepcopy(summaryDfAllSnaps)
     # ntracersDict = {key: np.concatenate((val,np.asarray([tracerTotalsDict[key]]))) for key, val in ntracersDict.items()}
-    tracersDf = pd.DataFrame(ntracersDict, index=[ii for ii in range(len(ntracersDict["Log10(T) [K]"]))])
+    tracersDf = pd.DataFrame(averagedNtracersDict, index=[ii for ii in range(len(averagedNtracersDict["Log10(T) [K]"]))])
 
 nHaloes = float(len(SELECTEDHALOES))
 summaryDf["Number of Haloes"] = nHaloes
