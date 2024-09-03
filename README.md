@@ -12,17 +12,13 @@ The code presented in this repository forms the basis upon which the software in
 *Supervisor*: Dr Freeke van de Voort (*Email*: vandevoortF@cardiff.ac.uk)
 
 > [!IMPORTANT]
-> The code in this repository builds upon proprietary software from the Auriga collaboration that is not available to the general public (there is, however, a publicly available version of Arepo here: https://arepo-code.org/wp-content/userguide/index.html). As such, **the code of this repository cannot be run without membership of the Auriga collaboration and access to Arepo Snap Utils**. Thus, for all other persons, the software of this repository is for illustrative purposes only.
-
----
+> The code in this repository builds upon proprietary software from the Auriga Project (https://wwwmpa.mpa-garching.mpg.de/auriga/) collaboration that is not available to the general public (there is, however, a publicly available version of Arepo here: https://arepo-code.org/wp-content/userguide/index.html). As such, **the code of this repository cannot be run without membership of the Auriga Project collaboration and access to Arepo Snap Utils**. Thus, for all other persons, the software of this repository is for illustrative purposes only.
 
 ## The introduction in brief
 Given a set of selection criteria, we want to track the evolution of tracer particles through our simulation as they follow the flow of gas.
 
 > [!NOTE]
 > Throughout my PhD I have found a metaphor that likens tracer particles to rubber ducks to be particularly helpful in aiding understanding. In this metaphor, tracer particles can be thought of as individually numbered rubber ducks that are floating downstream in the flow of gas in our simulations, much like rubber ducks on a stream. The individual numbers of each rubber duck do not change, and therefore we can follow each from beginning to end of their journey downstream without confusion between which duck is which.
-
----
 
 ## The introduction in full
 The code presented in this repository form the basis of the analysis of multi-phase gas in the Circumgalactic Medium of Milky Way-mass galaxies, the first research project of my PhD. The key scientific question of this work was to explore:
@@ -34,8 +30,6 @@ The code presented in this repository form the basis of the analysis of multi-ph
 To investigate this question in simulations performed with Arepo is particularly challenging owing to the moving mesh used to discretise space in Arepo. There are, of course, advantages and disadvantages of using the moving mesh method as implemented in Arepo, compared to other hydrodynamical simulation techniques such as Smoothed Particle Hydrodynamics (SPH), fixed grid, and adaptive mesh-refinement hydrodynamics codes. However, the gas cells in Arepo move with the flow of gas, and are merged, split and otherwise deform during the simulation. Therefore, due to the finite number of simulation outputs (created at time intervals that are significantly larger than the time steps used by Arepo to evolve the simulated gas and other simulation elements) without additional methods it is impossible to map the identifier of each gas cell from one simulation output to the next. 
 
 Thus, to track the evolution of individual parcels of gas mass in Arepo we use additional Monte Carlo Tracer Particles that move with gas flow and have a constant, unique identifier throughout the entire simulation. To track the gas evolution using tracer particles, we use the unique, constant tracer ID ('trid') of each tracer particle, and the current ID of the parent gas cell ('prid') within which the tracer particle resides. The tracer particles themselves have no physical properties as they are purely a numerical tool that allows us to track the evolution of the simulated gas over time. As such, to obtain the physical properties of each indidividual parcel of gas we map between the parent ID of the gas cell the tracer particle is situated within and the cell ID ('id') of the gas cells in the main simulation data. 
-
----
 
 ## Problems/numerical challenges solved by the code in this repository 
 Each gas cell within the simulation may contain zero, one, or more tracer particles at any simulation output. Thus, the mapping between tracer particles and gas cells is often many-to-one, rather than simply one-to-one. This represents the first problem that the code in this repository solves bin order to make use of these tracer particles:
@@ -55,8 +49,6 @@ The method used to solve 2. is implemented in `pad_non_entries()` in `Tracers_Su
 > The current method is only configured for gas cells and star particles. The tracking of additional particle types will require modification of the code as presented here. Please contact me should you need assistance with this.
 > [!WARNING]
 > The current method is only configured for gas cells and star particles. The load order of gas (type zero), and then star particles (type 4) must not be altered!
-
----
 
 ## Software outline
 My analysis is split into two core functions in the main analysis as performed in `Tracers.py`.
