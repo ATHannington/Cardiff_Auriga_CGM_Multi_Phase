@@ -37,7 +37,7 @@ Each gas cell within the simulation may contain zero, one, or more tracer partic
 > 1. How can we efficiently perform a many-to-one mapping that returns a copy of the gas cell data for every tracer particle within the cell, and that returns this data in a sensible, consistent ordering that matches the ordering of the tracer particle ID's?
 
 The method used to solve 1. is implemented in `get_copy_of_cell_for_every_tracer()` in `Tracers_Subroutines.py`. The current version of this method make use of pandas to perform SQL-style dataframe joins.
-> [!CAUTION]
+> [!WARNING]
 > The current method uses pandas, which may not be suited to the analysis of very large numbers of tracer particles (for my own research, the method was applied to 17 sets of ~560,000 tracer particles) or simulations with an extremely large number of gas cells. Whilst chunking the process into loops over smaller sets of tracer particles may help, alternative python packages may be needed in order to handle cases with large number of simulation cells.
 
 There are different physical properties asssociated with the gas cells and each of the different particle types. For example, the gas cells each have densities associated with them, however it is meaningless to associate density to the point-mass approximations used for the particles representing stars, dark matter, and black holes. As such, the lengths of each physical property vary accordingly. Thus, the second problem solved by the code in this repository is:
@@ -47,6 +47,7 @@ There are different physical properties asssociated with the gas cells and each 
 The method used to solve 2. is implemented in `pad_non_entries()` in `Tracers_Subroutines.py`. This method modifies the data such that the data from gas and star particles (the only particle type analysed in the original work using these tools) have the same shape. The gas data is followed by a NaN value for every star particle, and vice versa, such that both gas and star particle data arrays have a length `N == number of gas cells + number of star particles`.
 > [!WARNING]
 > The current method is only configured for gas cells and star particles. The tracking of additional particle types will require modification of the code as presented here. Please contact me should you need assistance with this.
+
 > [!WARNING]
 > The current method is only configured for gas cells and star particles. The load order of gas (type zero), and then star particles (type 4) must not be altered!
 
