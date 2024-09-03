@@ -1,5 +1,6 @@
 # Tracer particle analysis tools
-### Forming the basis of the research into the multi-phase Circumgalactic Medium (CGM) of low-redshift Milky Way-mass Galaxies in cosmological-zoom in Auriga galaxy formation and evolution simulations using the massively multi-parallelised magneto-hydrodynamical simulation code Arepo
+### Forming the basis of the research into: the evolution of the multi-phase Circumgalactic Medium (CGM) of low-redshift Milky Way-mass Galaxies
+### Using cosmological-zoom in Auriga galaxy formation and evolution simulations using the massively-parallelised magneto-hydrodynamical simulation code Arepo
 The code presented in this repository forms the basis upon which the software in my other PhD research repositories CGM_Cosmic-Rays and CGM_Hybrid-Refinement were developed. The analysis tools in this repository are used by the aforementioned other two repositories, but can be used standalone.
 
 ---
