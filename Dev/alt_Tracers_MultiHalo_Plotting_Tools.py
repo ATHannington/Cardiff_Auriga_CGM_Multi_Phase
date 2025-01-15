@@ -164,8 +164,8 @@ def medians_plot(
                         analysisParam + "_" + str(percentile) + "%"
                         for percentile in TRACERSPARAMS["percentiles"]
                     ]
-                    LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
-                    UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
+                    LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):.2f}%"
+                    UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):.2f}%"
                     median = analysisParam + "_" + "50.00%"
 
                     if analysisParam in logParameters:
@@ -3269,8 +3269,8 @@ def medians_phases_plot(
                 analysisParam + "_" + str(percentile) + "%"
                 for percentile in TRACERSPARAMS["percentiles"]
             ]
-            LO = analysisParam + "_" + str(min(TRACERSPARAMS["percentiles"])) + "%"
-            UP = analysisParam + "_" + str(max(TRACERSPARAMS["percentiles"])) + "%"
+            LO = analysisParam + "_" + f"{min(TRACERSPARAMS['percentiles']):.2f}%"
+            UP = analysisParam + "_" + f"{max(TRACERSPARAMS['percentiles']):.2f}%"
             median = analysisParam + "_" + "50.00%"
 
             if analysisParam in logParameters:
