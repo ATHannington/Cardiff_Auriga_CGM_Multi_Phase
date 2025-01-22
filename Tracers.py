@@ -1,13 +1,12 @@
 """
 Author: A. T. Hannington
 Created: 19/03/2020
-Known Bugs:
-    pandas read_csv is loading nested dicts. Have implemented temporary fix.
+
+Main analysis file for CGM multiphase analysis with Monte Carlo Tracer Particles. This script performs the inital analysis of selection the tracer particle for a single simulations (controlled in TracerParams.csv) before selecting the relevant cell data for those tracer particles at each simulation output ('snapshot', in Arepo terminology).
 """
 import numpy as np
 import pandas as pd
 import matplotlib
-
 matplotlib.use("Agg")  # For suppressing plotting on clusters
 import matplotlib.pyplot as plt
 import const as c
@@ -159,6 +158,8 @@ omegabaryon0 = 0.048
 #       MAIN PROGRAM
 # ==============================================================================#
 def err_catcher(arg):
+    """ Should allow Child processes of multiprocessing package to properly Raise (or, at the very least, print to stdout) error messages that otherwise might not appear while multiprocessing methods are running.
+    """
     raise Exception(f"Child Process died and gave error: {arg}")
     return
 
@@ -250,6 +251,9 @@ if __name__ == "__main__":
     assert all(success) == True, "WARNING: CRITICAL: Child Process Returned Error!"
     print("Done! End of Analysis :)")
     #
+    #
+    ## Serial variant of analysis that is particularly useful when error messages from child processes (via multiprocessing package) are not indicating simple fixes. Use of this serial variant will allow for use of interactive python debugger to properly delve into, and resolve, bugs in the main snap_analysis subroutine.
+    ##
     # print("\n" + f"Starting SERIAL type Analysis!")
     # for snap in snapRange:
     #     out = snap_analysis(snap,TRACERSPARAMS,HaloID,TracersTFC,\
