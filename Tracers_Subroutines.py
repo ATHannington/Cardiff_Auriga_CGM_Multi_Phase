@@ -1,8 +1,8 @@
 """
 Author: A. T. Hannington
 Created: 12/03/2020
-Known Bugs:
-    None
+
+My own functions which constitute my main toolkit for the analysis of Auriga cosmological zoom simulations run with Arepo. The functions in this file form the basis of much of my later research in CGM_Cosmic_Rays, and CGM_Hybrid_Refinement.
 """
 import numpy as np
 import pandas as pd
@@ -49,15 +49,29 @@ def snap_analysis(
     lazyLoadBool=True,
     nParentProcesses=1,
 ):
+    """ As the function name suggests, this is the main tracer analysis function. 
+    
+    I found it best to have this all-in-one function as it allows for parallelisation of the tracer particle analysis. This is possible due to the separation of 
+    1) analysing the simulations to collect cell data for each tracer particle, and 
+    2) matching the cell based, raw data to the tracer particle data.
+    
+    It is only within the post-processing analysis of step 2) that we perform the database JOIN() between the cell data and tracer particle data. In the default mode of `get_copy_of_cell_for_every_tracer()`, where `how=="left"`, we are taking the subset of cell data relevant to our tracer particles. Therefore, the separation of these two steps does  increase significantly the memory use and storage requirements of step 1).
+    """
+
     print("")
     print(f"[@{int(snapNumber)}]: Starting Snap {snapNumber}")
 
     # load in the subfind group files
+    #    This brings in the dark matter halo structures identified by SubFind
     snap_subfind = load_subfind(snapNumber, dir=TRACERSPARAMS["simfile"])
 
-    # load in the gas particles mass and position only for HaloID 0.
+    # load in the gas particles, stars, and high res dark matter
     #   0 is gas, 1 is DM, 4 is stars, 5 is BHs, 6 is tracers
     #       gas and stars (type 0 and 4) MUST be loaded first!!
+    #    Read in the full gas cell data from the relevant snapshot==snapNumber
+    #    from the simulation in location specified by "simfile" in TracersParams.csv .
+    #    lazy_load loads data from the snapshot into RAM only when the specific data key is called.
+    #    We do not want to select any specific subhalo yet, as this will unintentionally remove satellites from our selected data.
     snapGas = gadget_readsnap(
         snapNumber,
         TRACERSPARAMS["simfile"],
@@ -67,7 +81,7 @@ def snap_analysis(
         subfind=snap_subfind,
     )
 
-    # load tracers data
+    # load data of the MC tracer particles (`tracers`)
     snapTracers = gadget_readsnap(
         snapNumber,
         TRACERSPARAMS["simfile"],
@@ -76,8 +90,8 @@ def snap_analysis(
         lazy_load=lazyLoadBool,
     )
 
-    # Load Cell IDs - avoids having to turn lazy_load off...
-    # But ensures 'id' is loaded into memory before halo_only_gas_select is called
+    # Load some Cell data immediately that we will need - avoids having to turn lazy_load off...
+    # But ensures, for example, that 'id' is loaded into memory before halo_only_gas_select is called
     #  Else we wouldn't limit the IDs to the nearest Halo for that step as they wouldn't
     #   Be in memory so taking the subset would be skipped.
 
@@ -98,6 +112,7 @@ def snap_analysis(
     #     snap=snapGas, snap_subfind=snap_subfind, HaloID=HaloID, snapNumber=snapNumber
     # )
 
+    ## Arepo snap-utils method for assigning halo and subhalo IDs, and for rotating the galaxy such that the galaxy disc lies in the x-y plane, with the angular momentum vector of the disc aligned parallel to the z-axis. 
     snapGas.calc_sf_indizes(snap_subfind)
     if rotation_matrix is None:
         rotation_matrix = snapGas.select_halo(snap_subfind, do_rotation=True)
@@ -112,7 +127,6 @@ def snap_analysis(
     # --------------------------#
 
     # Convert Units
-    # Make this a seperate function at some point??
     snapGas.pos *= 1e3  # [kpc]
     snapGas.vol *= 1e9  # [kpc^3]
     snapGas.mass *= 1e10  # [Msol]
@@ -126,7 +140,7 @@ def snap_analysis(
 
     # # snapGas.boxsize = boxMaxGas
 
-    # Calculate New Parameters and Load into memory others we want to track
+    # Calculate New physical Parameters and Load into memory others we want to track
     snapGas = calculate_tracked_parameters(
         snapGas,
         elements,
@@ -196,6 +210,7 @@ def snap_analysis(
     # Assign subhalo and halos
     # snapGas = halo_id_finder(snapGas, snap_subfind, snapNumber)
 
+    ## At the selection snapshot we only want to select tracer particles within the halo of interest.
     if snapNumber == int(TRACERSPARAMS["selectSnap"]):
         snapGas = halo_only_gas_select(
             snapGas, HaloID, snapNumber)
@@ -203,6 +218,7 @@ def snap_analysis(
     # Pad stars and gas data with Nones so that all keys have values of same first dimension shape
     snapGas = pad_non_entries(snapGas, snapNumber)
 
+    ## Some in-built image generation of the halo of interest. Plots a 2 by 2 plot of images, but may require physical properties that are removed by the selection steps acting in tracer particles that follow this section.
     if TRACERSPARAMS["QuadPlotBool"]:
         TRACERSPARAMS["saveParams"] = copy.copy(
             TRACERSPARAMS["saveParamsOriginal"])
@@ -210,7 +226,15 @@ def snap_analysis(
         print(TRACERSPARAMS["saveParams"])
 
     ###
-    ##  Selection   ##
+    ##  Selection of tracer particles ##
+    ##    Defs: 
+    ##    CFT - Cells From Tracers
+    ##    TFC - Tracers From Cells
+    ##    Parent ID (`prid`) - Cell ID for the cell the tracer particle is currently located within
+    ##    TracerID (`trid`) - Unique ID for every tracer particle
+    ##    Cell ID (`id`) - Unique ID for each simulation cell of current snapshot. Note that this uniqueness is not guaranteed across different snapshots. Cell 1 at snapshot 1 is not guaranteed to be the same physical gas parcel as Cell 1 at snapshot 2. 
+    ##    Cells - Gas cell data
+    ##    CellIDs - Gas cell IDs only
     ###
     TracersCFTFinal = {}
     CellsCFTFinal = {}
@@ -252,7 +276,9 @@ def snap_analysis(
                 + savePath
             )
 
+            ## Save raw data products as hdf5 file that maintains above dictionary structure
             hdf5_save(savePath, out)
+
             #
             # statsdat = calculate_statistics(
             #     CellsCFT,
@@ -275,6 +301,10 @@ def snap_analysis(
             #
             # hdf5_save(statsSavePath, statsout)
 
+
+            ###
+            ## If quadplot images were desired, they will now be generated for the cuyrrent simulation, snapshot, and halo of interest.
+            ###
             if (
                 (TRACERSPARAMS["QuadPlotBool"] == True)
                 & (targetT == int(TRACERSPARAMS["targetTLst"][0]))
@@ -296,6 +326,8 @@ def snap_analysis(
                     pixres=TRACERSPARAMS["pixres"],
                     pixreslos=TRACERSPARAMS["pixreslos"],
                 )
+
+            ## Add the current snapshot data to output dictionaries with appropriate temperature and radial-shell keys, per our tracrer particle selection criterion in `get_tracers_from_cells()`.
 
             TracersCFTFinal.update(
                 {(f"T{targetT}", f"{rin}R{rout}", f"{int(snapNumber)}"): TracersCFT}
@@ -344,6 +376,10 @@ def tracer_selection_snap_analysis(
     TFCbool=True,
     loadonlyhalo=True,
 ):
+    """ This function is where the initial tracer particle selection criteria are applied, and therefore is the function which returns the IDs of the tracer particles selected that should be tracked in `snap_analysis()`.
+
+    Much of this function is the same as in snap `snap_analysis()`. Realistically, it may be possible to merge the two functions for ease of modification and consistent treatment of the data between this and `snap_analysis()`. However, when first developed it was crucial that I could easily separate the two functions and individually apply the PyTest testing framework to each.
+    """
     print("")
     print("***")
     print(f"From {TRACERSPARAMS['simfile']} :")
@@ -502,7 +538,7 @@ def tracer_selection_snap_analysis(
         # --------------------------------------------------------------------------#
         print(f"[@{int(snapNumber)}]: Setting Selection Condition!")
 
-        # Get Cell data and Cell IDs from tracers based on condition
+        # Get Cell data and Cell IDs from tracers based on condition defined within `get_tracers_from_cells()`.
         TracersTFC, CellsTFC, CellIDsTFC, ParentsTFC = get_tracers_from_cells(
             snapGas,
             snapTracers,
@@ -540,6 +576,7 @@ def tracer_selection_snap_analysis(
                         + savePath
                     )
 
+                    ## Save raw data products as hdf5 file that maintains above dictionary structure
                     hdf5_save(savePath, out)
     else:
         TracersTFC = None
@@ -880,11 +917,11 @@ def get_cells_from_tracers(
     snapGas, snapTracers, Tracers, saveParams, saveTracersOnly, snapNumber
 ):
     """
-    Get the IDs and data from cells containing the Tracers passed in in Tracers.
+    Get the IDs and data from cells containing the Tracers passed in in `Tracers` kwarg.
     Pass the indices of these cells to save_tracer_data for adjusting the entries of Cells
     by which cells contain tracers.
-    Will return an entry for EACH tracer, which will include duplicates of certain
-    Cells where more than one tracer is contained.
+    Will return an entry for cell containing a selected tracer, but will NOT include duplicates of 
+    Cells which contain more than one tracer particle.
     """
 
     # Select indices (positions in array) of Tracer IDs which are in the Tracers list
@@ -959,7 +996,7 @@ def save_tracer_data(
 ):
     """
     Save the requested data from the Tracers' Cells data. Only saves the cells
-    assoicated with a Tracer, as determined by CellsIndices.
+    associated with a Tracer, as determined by CellsIndices.
     """
     print(f"[@{snapNumber}]: Saving Tracer Data!")
 
@@ -1029,8 +1066,8 @@ def save_cells_data(
     saveTracersOnly,
 ):
     """
-    Save the requested data from the Tracers' Cells data. Should save an entry for every Tracer,
-    duplicating some cells.
+    Save the requested data from the Cells containg the selected tracer particles. 
+    Will return a copy of each relevant cell containing one or more tracer particles but will NOT include duplicates of Cells which contain more than one tracer particle.
     """
     print(f"[@{snapNumber}]: Saving Cells Data!")
 
@@ -1139,8 +1176,10 @@ def save_cells_data(
 def weighted_percentile(data, weights, perc, key="Unspecified Error key...",hush=False):
     """
     Find the weighted Percentile of the data. perc should be given in
-    ercentage NOT in decimal!
+    percentage NOT in decimal!
     Returns a zero value and warning if all Data (or all weights) are NaN
+
+    Use `key` kwarg to have this function raise a warning/error specific to the current data being analysed in this function. For example, give it `T_84.00%` to have any errors highlight that the problem relates to the `T_84.00%` calculation.
     """
 
     if (perc<=1.00):
@@ -1203,9 +1242,14 @@ def weighted_percentile(data, weights, perc, key="Unspecified Error key...",hush
 
 def set_centre(snap, snap_subfind, HaloID, snapNumber):
     """
+    **Deprecated function! Use `calc_sf_indizes()`, and `select_halo()` instead**
+
     Set centre of simulation box to centre on Halo HaloID.
     Set velocities to be centred on the median velocity of this halo.
     """
+
+    warnings.deprecated("[@set_centre:] **Deprecated function! Use `calc_sf_indizes()`, and `select_halo()` instead**")
+
     print(f"[@{snapNumber}]: Centering!")
 
     # subfind has calculated its centre of mass for you
@@ -1232,6 +1276,9 @@ def set_centre(snap, snap_subfind, HaloID, snapNumber):
 # ------------------------------------------------------------------------------
 #
 def _map_cart_grid_to_cells(pos_array, xx, yy, zz):
+    """
+        Fast, vectorised function to map a cartesian grid back on to the voronoi tesselated mesh of gas cells.
+    """
     nn = xx.shape[0]
     return np.array(
         [
@@ -1248,10 +1295,17 @@ def _map_cart_grid_to_cells(pos_array, xx, yy, zz):
     ).flatten()
 
 def _multi_inner_product(x, y):
+    """
+        Fast, vectorised function to perform multiple inner products simultaneously. 
+    """
     return np.array([np.inner(xx, yy) for (xx, yy) in zip(x, y)])
 
 
 def _wrapper_map_cart_grid_to_cells(pos_array, boxsize, gridres, center):
+    """
+        wrapper that performs vectorisation and subsequent execution of map_cart_grid_to_cells() function.
+        Takes position data array of original voronoi mesh, boxsize, resolution of cartesian grid, and centre of grid.
+    """
     import copy
 
     v_map_cart_grid_to_cells = np.vectorize(
@@ -1287,7 +1341,15 @@ def calculate_tracked_parameters(
     verbose=False,
 ):
     """
-    Calculate the physical properties of all cells, or gas only where necessary
+    Calculate the physical properties requested by the user. 
+    Default is to calculate the properties of gas cells only wherever possible.
+
+    paramsOfInterest specifies the physical properties we should calculate and track. All properties will be calculated if non-empty list is not passed in by function call. (Except for gradient properties, which are experimental and need further development).
+
+    logParameters is a list of properties that will be displayed on logarithmic axes in subsequent plots. This ought to be specified by the user, but will assume some defaults if not. 
+    # TODO: refactor genLogParameters to make explicit the default logParameter set. Current method avoids adding properties to logParameters that aren't included in paramsOfInterest, but the default behaviour when an empty list is provided is extremely unclear.
+
+
     """
     print(f"[@{snapNumber}]: Calculate Tracked Parameters!")
 
@@ -1336,9 +1398,12 @@ def calculate_tracked_parameters(
     # # )
     # # Tfacfvfv = Tfac/1e10
 
+    ## mass density  [g cm^-3]
     snapGas.data["dens"] = (
         (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3) * c.msol * 1e10
     )  # [g cm^-3]
+
+    ## Gas metallicity data
     gasX = snapGas.gmet[whereGas, 0]
 
     # # Ideal Gas PV = ndens KB T
@@ -1369,6 +1434,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
+        ## gas temperature
         snapGas.data["T"] = (snapGas.u[whereGas] * 1e10) / (Tfac)  # K
         if genLogParameters:
             logParameters.append("T")
@@ -1379,6 +1445,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
+        ## hydrogen number density [cm^-3]
         snapGas.data["n_H"] = snapGas.data["dens"][whereGas] / \
             c.amu * gasX  # cm^-3
         if genLogParameters:
@@ -1390,6 +1457,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
+        ## neutral hydrogen number density [cm^-3]
         snapGas.data["n_HI"] = snapGas.data["n_H"][whereGas]*snapGas.data["nh"][whereGas]
         snapGas.data["nh"] = snapGas.data["nh"][whereGas]
         if genLogParameters:
@@ -1408,6 +1476,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["Tdens"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        # Mass density weighted temperature - helpful to precalculate as will be needed for generation of temperature map images.
         snapGas.data["Tdens"] = (
             snapGas.data["T"][whereGas] * snapGas.data["rho_rhomean"][whereGas]
         )
@@ -1435,7 +1504,7 @@ def calculate_tracked_parameters(
         np.isin(np.array(["R", "vrad", "vrad_in", "vrad_out", "tff", "tcool_tff"]),
                 np.array(paramsOfInterest))
     ) | (len(paramsOfInterest) == 0):
-        # Radius [kpc]
+        # Galactocentric radial distance [kpc]
         snapGas.data["R"] = np.linalg.norm(snapGas.data["pos"], axis=1)
 
     KpcTokm = 1e3 * c.parsec * 1e-5
@@ -1452,12 +1521,14 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["vrad_in"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        ## Inflowing (negative) radial velocity
         snapGas.data["vrad_in"] = copy.deepcopy(snapGas.data["vrad"])
         snapGas.data["vrad_in"][np.where(snapGas.data["vrad_in"]> 0.0)[0]] = np.nan
 
     if np.any(np.isin(np.array(["vrad_in"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        ## Outflowing (positive) radial velocity
         snapGas.data["vrad_out"] = copy.deepcopy(snapGas.data["vrad"])
         snapGas.data["vrad_out"][np.where(snapGas.data["vrad_out"]< 0.0)[0]] = np.nan
 
@@ -1469,6 +1540,7 @@ def calculate_tracked_parameters(
         np.isin(np.array(["tcool", "tcool_tff", "theat", "cool_length"]),
                 np.array(paramsOfInterest))
     ) | (len(paramsOfInterest) == 0):
+        ## Gas cooling time [Gyrs]
         snapGas.data["tcool"] = (
             snapGas.data["u"][whereGas] * 1e10 * snapGas.data["dens"][whereGas]
         ) / (
@@ -1478,6 +1550,8 @@ def calculate_tracked_parameters(
         )  # [Gyrs]
         snapGas.data["theat"] = snapGas.data["tcool"].copy()
 
+        # Gas heating and cooling times now separated
+        # Note: gas that is neither heating nor cooling is not included in `theat` or `tcool` data
         coolingGas = np.where(snapGas.data["tcool"] < 0.0)
         heatingGas = np.where(snapGas.data["tcool"] > 0.0)
         zeroChangeGas = np.where(snapGas.data["tcool"] == 0.0)
@@ -1500,6 +1574,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["gz"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        # Gas metallicity as a fraction of solar metal abundance 
         snapGas.data["gz"] = snapGas.data["gz"][whereGas] / Zsolar
         if genLogParameters:
             logParameters.append("gz")
@@ -1529,6 +1604,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
+        ## Total (rather than hydrogen specific) gas number density
         snapGas.data["ndens"] = snapGas.data["dens"][whereGas] / \
             (meanweight * c.amu)
         if genLogParameters:
@@ -1540,7 +1616,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
-        # Thermal Pressure : P = KB n T [K cm^-3]
+        # Thermal Pressure : P = KB n T [erg cm^-3]
         snapGas.data["P_thermal"] = snapGas.data["ndens"][whereGas] * snapGas.T * c.KB
             # snapGas.data["T"] = (snapGas.u[whereGas] * 1e10 * meanweight * c.amu) * (5.0 / 3.0 - 1.0) / c.KB # K
 
@@ -1552,7 +1628,7 @@ def calculate_tracked_parameters(
             np.array(paramsOfInterest),
         )
     ) | (len(paramsOfInterest) == 0):
-        # Magnetic Pressure [K cm^-3]
+        # Magnetic Pressure [erg cm^-3]
         snapGas.data["P_magnetic"] = ((snapGas.data["B"][whereGas] * 1e-6) ** 2) / (
             8.0 * pi #* c.KB
         )
@@ -1562,7 +1638,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["P_kinetic","P_tot+k"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
-        # Kinetic "Pressure" [K cm^-3]
+        # Kinetic "Pressure" [erg cm^-3]
         snapGas.data["P_kinetic"] = (
             (snapGas.rho[whereGas] / (c.parsec * 1e6) ** 3)
             * 1e10
@@ -1576,6 +1652,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        ## Total pressure, excluding "kinetic" pressure
         snapGas.data["P_tot"] = (
             snapGas.data["P_thermal"][whereGas] +
             snapGas.data["P_magnetic"][whereGas]
@@ -1586,6 +1663,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["P_tot+k"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        ## Total pressure, *including* "kinetic" pressure
         snapGas.data["P_tot+k"] = (
             snapGas.data["P_thermal"][whereGas] +
             snapGas.data["P_magnetic"][whereGas] +
@@ -1597,6 +1675,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["Pthermal_Pmagnetic"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
+        # ratio of thermal pressure over magnetic pressure
         snapGas.data["Pthermal_Pmagnetic"] = (
             snapGas.data["P_thermal"][whereGas] /
             snapGas.data["P_magnetic"][whereGas]
@@ -1618,7 +1697,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["tcross"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
-        # [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
+        # gas cell crossing time at sound speed [cm kpc^-1 kpc cm^-1 s^1 = s / GyrToSeconds = Gyr]
         snapGas.data["tcross"] = (
             (KpcTokm / GyrToSeconds)
             * (snapGas.data["vol"][whereGas]) ** (1.0 / 3.0)
@@ -1630,7 +1709,7 @@ def calculate_tracked_parameters(
     if np.any(np.isin(np.array(["cool_length"]), np.array(paramsOfInterest))) | (
         len(paramsOfInterest) == 0
     ):
-        # [((km s^-1) / (KpcTokm) = kpc s^-1 )*(Gyr*GyrToSeconds = s ) = kpc]
+        # Gas cell cooling length [((km s^-1) / (KpcTokm) = kpc s^-1 )*(Gyr*GyrToSeconds = s ) = kpc]
         snapGas.data["cool_length"] = (snapGas.data["csound"][whereGas]/KpcTokm)*(snapGas.data["tcool"][whereGas]*GyrToSeconds)
 
         if genLogParameters:
@@ -1667,9 +1746,12 @@ def calculate_tracked_parameters(
         if genLogParameters:
             logParameters.append("tcool_tff")
 
-    if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))) | (
-        len(paramsOfInterest) == 0
-    ):
+
+    ##
+    ## These gradient of properties are experimental, and thus are not included by default.
+    ## Use with caution!!
+    ## 
+    if np.any(np.isin(np.array(["Grad_T"]), np.array(paramsOfInterest))):
         snapGas, mapping = calculate_gradient_of_parameter(
             snapGas,
             "T",
@@ -1682,9 +1764,7 @@ def calculate_tracked_parameters(
             nParentProcesses=nParentProcesses,
             verbose=verbose,
         )
-    if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))) | (
-        len(paramsOfInterest) == 0
-    ):
+    if np.any(np.isin(np.array(["Grad_n_H"]), np.array(paramsOfInterest))):
         snapGas, mapping = calculate_gradient_of_parameter(
             snapGas,
             "n_H",
@@ -1698,9 +1778,7 @@ def calculate_tracked_parameters(
             verbose=verbose,
 
         )
-    if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))) | (
-        len(paramsOfInterest) == 0
-    ):
+    if np.any(np.isin(np.array(["Grad_bfld"]), np.array(paramsOfInterest))):
         # if genLogParameters: logParameters.append("bfld")
 
         snapGas, mapping = calculate_gradient_of_parameter(
@@ -1746,7 +1824,7 @@ def calculate_tracked_parameters(
                 np.array(paramsOfInterest),
             )
         ) | (len(paramsOfInterest) == 0):
-            # erg cm^-3
+            # Cosmic Ray pressure  [erg cm^-3]
             snapGas.data["P_CR"] = (
                 (4.0/3.0 - 1.0) * snapGas.data["cren"][whereGas] * (1e10 * meanweight * c.amu) * snapGas.data["ndens"][whereGas]
             )
@@ -1757,6 +1835,7 @@ def calculate_tracked_parameters(
         warnings.warn(f"[@calculate_tracked_parameters]: Param not found: P_CR {str(e)}")
     
 
+    # Add Cosmic Ray pressure to total pressure [erg cm^-3]
     try:
         if np.any(np.isin(np.array(["P_tot"]), np.array(paramsOfInterest))) | (
             len(paramsOfInterest) == 0
@@ -1777,7 +1856,7 @@ def calculate_tracked_parameters(
     except Exception as e:
         warnings.warn(f"[@calculate_tracked_parameters]: Param not found: P_CR {str(e)}")
 
-
+    ## Specific Cosmic ray energy
     try:
         if np.any(
             np.isin(
@@ -1808,9 +1887,7 @@ def calculate_tracked_parameters(
         warnings.warn(f"[@calculate_tracked_parameters]: Param not found: PCR_Pthermal {str(e)}")
 
     try:
-        if np.any(np.isin(np.array(["PCR_Pmagnetic"]), np.array(paramsOfInterest))) | (
-            len(paramsOfInterest) == 0
-        ):
+        if np.any(np.isin(np.array(["PCR_Pmagnetic"]), np.array(paramsOfInterest))):
             snapGas.data["PCR_Pmagnetic"] = (
                 snapGas.data["P_CR"][whereGas] / snapGas.data["P_magnetic"][whereGas]
             )
@@ -1825,7 +1902,7 @@ def calculate_tracked_parameters(
     try:
         if np.any(
             np.isin(np.array(["Grad_P_CR", "gah"]), np.array(paramsOfInterest))
-        ) | (len(paramsOfInterest) == 0):
+        ):
             # P [kg m^-1 s^-2]
             # kb [kg m^2 s^-2]
             # P / kb = m^-3
@@ -1847,9 +1924,7 @@ def calculate_tracked_parameters(
         warnings.warn(f"[@calculate_tracked_parameters]: Param not found: Grad_P_CR {str(e)}")
 
     try:
-        if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) | (
-            len(paramsOfInterest) == 0
-        ):
+        if np.any(np.isin(np.array(["gah"]), np.array(paramsOfInterest))) :
             # cm s^-1
             snapGas.data["valf"] = (
                 snapGas.data["bfld"][whereGas]
@@ -1889,9 +1964,7 @@ def calculate_tracked_parameters(
     except Exception as e:
         warnings.warn(f"[@calculate_tracked_parameters]: Param not found: Norm Grad_P_CR {str(e)}")
 
-    if np.any(np.isin(np.array(["rho"]), np.array(paramsOfInterest))) | (
-        len(paramsOfInterest) == 0
-    ):
+    if np.any(np.isin(np.array(["rho"]), np.array(paramsOfInterest))):
         snapGas.data["rho"] *= 10.0 # (1e10 M_sol /1e9 (Mpc/Kpc)**3)
 
         if genLogParameters:
